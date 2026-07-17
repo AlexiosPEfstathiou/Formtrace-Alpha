@@ -1222,9 +1222,35 @@ function expandOfferRow(wrap,o,c,shortName,coachName){
   hydrateVideos(exp);
 }
 async function acceptOffer(offerId){
-  // Per spec: accepting shows a loading state and nothing else happens (yet).
   const accBtn=document.querySelector(`[data-acc="${offerId}"]`);
+  const rejBtn=document.querySelector(`[data-rej="${offerId}"]`);
   if(accBtn){ accBtn.disabled=true; accBtn.innerHTML=`<span class="spin" style="width:16px;height:16px;border-width:2px"></span>`; }
+  if(rejBtn) rejBtn.disabled=true;
+  try{
+    const o=await store.offers.get(offerId);
+    // 1. accept this offer
+    await store.offers.update(offerId,{status:"accepted"});
+    // 2. create the engagement (the coach<->trainee working relationship)
+    await store.engagements.add({offer_id:o.id,coach_id:o.coach_id,trainee_id:o.trainee_id,goal_title:o.title,status:"active"});
+    // 3. close the goal + auto-decline the other pending offers on it
+    if(o.listing_id){
+      await store.listings.update(o.listing_id,{status:"closed"});
+      const siblings=await store.offers.list({listing_id:o.listing_id});
+      for(const s of siblings){
+        if(s.id!==offerId && s.status==="pending"){
+          try{ await store.offers.update(s.id,{status:"rejected"}); }catch(e){console.error("auto-decline",e);}
+        }
+      }
+    }
+    // 4. into training
+    toast("Offer accepted — engagement started ✓",3400);
+    go("trainee-home");
+  }catch(err){
+    console.error(err);
+    toast(err.message||"Couldn't accept the offer",4000);
+    if(accBtn){ accBtn.disabled=false; accBtn.textContent="Accept"; }
+    if(rejBtn) rejBtn.disabled=false;
+  }
 }
 
 /* trainee: post a goal */
@@ -1260,12 +1286,30 @@ $("#lst-post").addEventListener("click",async()=>{
 async function renderMarket(){
   const body=$("#market-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   const open=await store.listings.list({status:"open"});
-  // which of these has THIS coach already pitched?
+  // this coach's sent offers (for the pitched-lock AND the outcomes section)
   const mySent=await store.offers.list({coach_id:ME.id});
   const pitchedIds=new Set(mySent.map(o=>o.listing_id));
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
-  if(!open.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p></div>`; return; }
+  // --- Your sent offers (statuses, incl. "Not selected") ---
+  if(mySent.length){
+    const wrap=document.createElement("div");wrap.style.marginBottom="8px";
+    wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your sent offers</div>`;
+    const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Expired"};
+    const statusClass={pending:"pending",accepted:"accepted",rejected:"rejected",expired:"rejected"};
+    for(const o of mySent){
+      const row=document.createElement("div");row.className="offer-row";row.style.cursor="default";
+      row.innerHTML=`<div class="or-main">
+          <div class="or-t">${escapeHtml(o.title)}</div>
+          <div class="or-s">${escapeHtml(o.price_text||"—")} · ${escapeHtml(o.length_text||"")}</div>
+        </div>
+        <span class="badge ${statusClass[o.status]||"pending"}">${statusLabel[o.status]||o.status}</span>`;
+      wrap.appendChild(row);
+    }
+    body.appendChild(wrap);
+    body.appendChild(Object.assign(document.createElement("div"),{className:"eyebrow",style:"margin:20px 2px 10px",textContent:"Open goals"}));
+  }
+  if(!open.length){ const e=document.createElement("div");e.className="empty";e.style.padding="40px 20px";e.innerHTML=`<div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p>`; body.appendChild(e); return; }
   for(const l of open){
     const pitched=pitchedIds.has(l.id);
     const div=document.createElement("div");div.className="card";
