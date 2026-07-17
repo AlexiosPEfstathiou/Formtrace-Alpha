@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>FormTrace Coach</title>
+<style>
+  :root{
+    --bg:#0B0E11; --bg2:#10151A; --panel:#151B21; --panel2:#1B232B;
+    --line:#232C35; --line2:#2E3944;
+    --ink:#EEF3F6; --muted:#8593A0; --faint:#5B6773;
+    --lime:#C8FF3D; --lime-dim:#8Fb82c; --lime-ink:#0E1206;
+    --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF;
+    --shadow:0 12px 40px rgba(0,0,0,.5);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;background:#05070A;color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;}
+
+  #frame{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  #phone{position:relative;width:100%;height:100%;max-width:440px;max-height:940px;
+    background:var(--bg);overflow:hidden;display:flex;flex-direction:column;}
+  @media(min-width:480px){
+    #frame{background:radial-gradient(120% 120% at 50% 0%, #12181E 0%, #05070A 60%);}
+    #phone{border-radius:44px;box-shadow:var(--shadow),0 0 0 11px #0d1116,0 0 0 12px #1c242c;max-height:92vh;}
+  }
+
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;
+    opacity:0;pointer-events:none;transform:translateX(12px);transition:opacity .22s,transform .22s;z-index:1;}
+  .screen.active{opacity:1;pointer-events:auto;transform:none;z-index:2;}
+
+  .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 18px 120px;}
+  .body::-webkit-scrollbar{width:0;}
+
+  .top{padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;display:flex;align-items:center;gap:12px;}
+  .top .back{width:36px;height:36px;border-radius:11px;background:var(--panel);border:1px solid var(--line);
+    color:var(--ink);font-size:19px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .top .back:active{background:var(--panel2);}
+  .top h1{font-size:18px;font-weight:700;letter-spacing:-.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .top .sub{font-size:12px;color:var(--muted);font-weight:500;}
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);font-weight:700;}
+
+  #s-home{justify-content:space-between;}
+  .hero{padding:calc(env(safe-area-inset-top) + 60px) 26px 0;}
+  .logo{font-size:15px;letter-spacing:.28em;font-weight:800;}
+  .logo b{color:var(--lime);}
+  .hero h2{font-size:40px;line-height:1.02;font-weight:800;letter-spacing:-.03em;margin-top:26px;}
+  .hero h2 .g{color:var(--lime);}
+  .hero p{color:var(--muted);font-size:15px;line-height:1.55;margin-top:16px;max-width:300px;}
+  .roles{padding:0 22px calc(env(safe-area-inset-bottom) + 26px);display:flex;flex-direction:column;gap:12px;}
+  .role{position:relative;border-radius:20px;padding:20px;cursor:pointer;border:1px solid var(--line);
+    background:var(--panel);display:flex;align-items:center;gap:16px;transition:transform .12s,border-color .15s,background .15s;}
+  .role:active{transform:scale(.985);}
+  .role.coach{background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18;}
+  .role .ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0;background:var(--panel2);}
+  .role.coach .ic{background:var(--lime);color:var(--lime-ink);}
+  .role .tt{flex:1;}
+  .role .tt b{font-size:17px;font-weight:700;display:block;}
+  .role .tt span{font-size:13px;color:var(--muted);}
+  .role .arw{color:var(--faint);font-size:20px;}
+
+  .section-h{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 12px;}
+  .section-h .eyebrow{margin:0;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;}
+  .ex-card{cursor:pointer;transition:transform .12s,border-color .15s;}
+  .ex-card:active{transform:scale(.99);}
+  .ex-top{display:flex;align-items:flex-start;gap:12px;}
+  .ex-thumb{width:58px;height:58px;border-radius:13px;background:#0a0d10;border:1px solid var(--line2);
+    flex-shrink:0;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;}
+  .ex-thumb video{width:100%;height:100%;object-fit:cover;}
+  .ex-thumb .ph{color:var(--faint);font-size:22px;}
+  .ex-thumb .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:18px;}
+  .ex-info{flex:1;min-width:0;}
+  .ex-info h3{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ex-meta{display:flex;gap:14px;margin-top:5px;flex-wrap:wrap;}
+  .ex-meta div{font-size:12px;color:var(--muted);}
+  .ex-meta b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:700;}
+  .ref-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;margin-top:8px;padding:3px 8px;border-radius:7px;}
+  .ref-yes{background:rgba(200,255,61,.12);color:var(--lime);}
+  .ref-no{background:rgba(255,90,90,.1);color:var(--red);}
+
+  .setrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);}
+  .setrow:first-child{border-top:none;}
+  .set-n{width:30px;height:30px;border-radius:9px;background:var(--panel2);border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;color:var(--muted);}
+  .setrow.done .set-n{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  .set-mid{flex:1;min-width:0;}
+  .set-mid .lab{font-size:14px;font-weight:600;}
+  .set-mid .det{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums;}
+  .set-cta{font-size:13px;font-weight:700;color:var(--lime-ink);background:var(--lime);padding:8px 14px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;}
+  .set-cta:active{transform:scale(.96);}
+  .set-cta.locked{background:var(--panel2);color:var(--faint);}
+  .grade-badge{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .grade-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
+  .grade-lab{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+
+  .btn{width:100%;height:52px;border-radius:15px;font-size:15px;font-weight:700;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);transition:transform .1s,background .15s;}
+  .btn:active{transform:scale(.98);}
+  .btn.primary{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  .btn.ghost{background:transparent;}
+  .btn.sm{height:44px;font-size:14px;border-radius:12px;}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .fab-row{position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(env(safe-area-inset-bottom) + 14px);
+    background:linear-gradient(#0b0e1100,#0B0E11 32%);display:flex;gap:10px;z-index:5;}
+
+  /* coach tab bar */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;
+    padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);gap:8px;background:#0b0e11;border-top:1px solid var(--line);}
+  .tabbar button{flex:1;height:46px;border-radius:12px;border:none;background:transparent;color:var(--muted);
+    font-size:13px;font-weight:700;letter-spacing:.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .tabbar button .i{font-size:16px;}
+  .tabbar button.on{background:var(--panel2);color:var(--lime);}
+  .with-tabs{padding-bottom:170px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+  .field input{width:100%;height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:16px;padding:0 15px;outline:none;transition:border-color .15s;}
+  .field input:focus{border-color:var(--lime-dim);}
+  .stepper{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line2);border-radius:13px;overflow:hidden;height:50px;}
+  .stepper button{width:52px;height:100%;background:var(--panel2);border:none;color:var(--ink);font-size:22px;cursor:pointer;flex-shrink:0;}
+  .stepper button:active{background:var(--line2);}
+  .stepper input{flex:1;text-align:center;background:transparent;border:none;color:var(--ink);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;outline:none;height:100%;width:100%;}
+  .two{display:flex;gap:12px;}
+  .two>.field{flex:1;}
+
+  /* workout builder item */
+  .wo-item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px;}
+  .wo-item .hd{display:flex;align-items:center;gap:11px;}
+  .wo-item .hd .ex-thumb{width:44px;height:44px;border-radius:11px;}
+  .wo-item .hd h4{flex:1;font-size:15px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wo-item .hd .rm{width:30px;height:30px;border-radius:9px;background:var(--panel2);border:1px solid var(--line2);color:var(--red);font-size:15px;cursor:pointer;flex-shrink:0;}
+  .wo-item .sr{display:flex;gap:10px;margin-top:12px;}
+  .wo-item .sr .blk{flex:1;}
+  .wo-item .sr .blk .l{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);font-weight:700;margin-bottom:6px;}
+  .mini-stepper{display:flex;align-items:center;background:var(--panel2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;height:40px;}
+  .mini-stepper button{width:38px;height:100%;background:transparent;border:none;color:var(--ink);font-size:19px;cursor:pointer;flex-shrink:0;}
+  .mini-stepper button:active{background:var(--line2);}
+  .mini-stepper span{flex:1;text-align:center;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;}
+
+  /* library picker sheet */
+  .sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .sheet-scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:31;background:var(--bg2);border-radius:24px 24px 0 0;
+    border-top:1px solid var(--line2);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
+    max-height:82%;display:flex;flex-direction:column;padding-bottom:calc(env(safe-area-inset-bottom) + 14px);}
+  .sheet.on{transform:none;}
+  .sheet .sh-h{padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between;}
+  .sheet .sh-h h3{font-size:17px;font-weight:700;}
+  .sheet .sh-h .x{width:32px;height:32px;border-radius:9px;background:var(--panel2);border:none;color:var(--ink);font-size:16px;cursor:pointer;}
+  .sheet .sh-body{overflow-y:auto;padding:0 16px;flex:1;}
+  .sheet .sh-body::-webkit-scrollbar{width:0;}
+  .sh-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel);margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+  .sh-item.sel{border-color:var(--lime);background:linear-gradient(120deg,#1a2410,#141a10);}
+  .sh-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--lime-ink);font-size:13px;}
+  .sh-item.sel .sh-check{background:var(--lime);border-color:var(--lime);}
+  .sheet .sh-foot{padding:12px 18px 0;}
+
+  /* recorder */
+  #rec{position:absolute;inset:0;background:#000;z-index:40;display:none;flex-direction:column;}
+  #rec.on{display:flex;}
+  #rec .stage{position:relative;flex:1;overflow:hidden;background:#000;}
+  #rvideo,#roverlay,#rplay{position:absolute;inset:0;width:100%;height:100%;}
+  #rvideo{object-fit:cover;transform:scaleX(-1);}
+  #roverlay{object-fit:cover;pointer-events:none;}
+  #rplay{object-fit:contain;display:none;background:#000;}
+  #rec .rtop{position:absolute;top:0;left:0;right:0;z-index:3;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#000A,#0000);}
+  #rec .rtop .ttl{font-size:14px;font-weight:700;text-align:center;}
+  #rec .rtop .ttl small{display:block;color:var(--muted);font-weight:500;font-size:11px;}
+  #rec .close{width:34px;height:34px;border-radius:10px;background:#ffffff18;border:none;color:#fff;font-size:17px;cursor:pointer;}
+  #rtimer{font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;opacity:0;transition:opacity .2s;}
+  #rtimer.on{opacity:1;}
+  #rdot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1s steps(2,start) infinite;}
+  @keyframes blink{50%{opacity:.2;}}
+  #rec .rstat{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:2;padding:0 40px;text-align:center;pointer-events:none;}
+  #rec .rstat .m{font-size:14px;color:var(--muted);line-height:1.5;}
+  .spin{width:32px;height:32px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--lime);animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #rec .rdeck{background:#0b0e11;border-top:1px solid var(--line);z-index:3;padding:16px 24px calc(env(safe-area-inset-bottom) + 16px);display:flex;align-items:center;justify-content:center;gap:40px;min-height:108px;}
+  #rbtn{position:relative;width:70px;height:70px;border-radius:50%;background:transparent;border:3px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  #rbtn::after{content:"";width:54px;height:54px;border-radius:50%;background:var(--red);transition:all .22s cubic-bezier(.4,0,.2,1);}
+  #rbtn.rec::after{width:26px;height:26px;border-radius:7px;}
+  #rbtn:active:not(:disabled){transform:scale(.94);}
+  #rbtn:disabled{opacity:.4;}
+  .rside{width:50px;height:50px;border-radius:50%;background:#ffffff14;border:none;color:#fff;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;flex-shrink:0;}
+  .rside .i{font-size:19px;line-height:1;}
+  #rreview{position:absolute;left:0;right:0;bottom:0;z-index:4;background:#0b0e11;border-top:1px solid var(--line);padding:14px 18px calc(env(safe-area-inset-bottom) + 14px);display:none;flex-direction:column;gap:10px;}
+  #rreview .row{display:flex;gap:10px;}
+
+  #analyze{position:absolute;inset:0;z-index:50;background:#0B0E11;display:none;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;text-align:center;gap:20px;}
+  #analyze.on{display:flex;}
+  #analyze .ring{width:88px;height:88px;}
+  #analyze .m{font-size:15px;font-weight:600;}
+  #analyze .s{font-size:13px;color:var(--muted);margin-top:-12px;}
+
+  #result{position:absolute;inset:0;z-index:55;background:linear-gradient(180deg,#0B0E11,#0d1319);display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 20px) 24px calc(env(safe-area-inset-bottom) + 20px);}
+  #result.on{display:flex;}
+  #result .rh{text-align:center;margin-bottom:8px;}
+  #result .rh .eyebrow{margin-bottom:6px;}
+  #result .rh h2{font-size:24px;font-weight:800;letter-spacing:-.01em;}
+  .result-grid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;}
+  .dial-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .dial{position:relative;width:200px;height:200px;}
+  .dial .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .dial .val .n{font-size:64px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+  .dial .val .d{font-size:15px;color:var(--muted);font-weight:600;margin-top:2px;}
+  .verdict{font-size:15px;font-weight:600;text-align:center;}
+  .stat-row{display:flex;gap:12px;}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:center;}
+  .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700;}
+  .stat .v{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1;}
+  .stat .v small{font-size:14px;color:var(--muted);font-weight:600;}
+  .breakdown{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;}
+  .breakdown .eyebrow{margin-bottom:12px;}
+  .bd-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bd-row:last-child{margin-bottom:0;}
+  .bd-row .bl{font-size:13px;width:78px;color:var(--muted);flex-shrink:0;}
+  .bd-bar{flex:1;height:7px;background:var(--panel2);border-radius:4px;overflow:hidden;}
+  .bd-fill{height:100%;border-radius:4px;}
+  .bd-row .bv{font-size:12px;font-variant-numeric:tabular-nums;width:34px;text-align:right;color:var(--ink);font-weight:600;}
+
+  #toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(16px);background:var(--panel2);border:1px solid var(--line2);color:var(--ink);padding:12px 18px;border-radius:13px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s;z-index:60;max-width:86%;text-align:center;line-height:1.45;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .empty{text-align:center;padding:60px 20px;color:var(--faint);}
+  .empty .ic{font-size:40px;opacity:.5;}
+  .empty p{font-size:14px;margin-top:12px;line-height:1.5;}
+  .hidden{display:none !important;}
+  .filepick{display:none;}
+</style>
+<style>
+  /* ---- additions for auth / marketplace / roles (same design language) ---- */
+  #s-auth{justify-content:center;}
+  .auth-wrap{padding:0 26px;display:flex;flex-direction:column;justify-content:center;flex:1;}
+  .auth-logo{font-size:15px;letter-spacing:.28em;font-weight:800;margin-bottom:28px;}
+  .auth-logo b{color:var(--lime);}
+  .auth-wrap h2{font-size:32px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
+  .auth-wrap p.subtle{color:var(--muted);font-size:14px;line-height:1.5;margin-top:10px;margin-bottom:26px;}
+  .auth-switch{margin-top:20px;text-align:center;font-size:13px;color:var(--muted);}
+  .auth-switch b{color:var(--lime);cursor:pointer;font-weight:700;}
+  .field textarea{width:100%;min-height:84px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:15px;padding:13px 15px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;transition:border-color .15s;}
+  .field textarea:focus{border-color:var(--lime-dim);}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{padding:8px 14px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;}
+  .pill.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:.03em;text-transform:uppercase;}
+  .badge.coach{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.trainee{background:rgba(90,176,255,.14);color:var(--blue);}
+  .badge.admin{background:rgba(255,194,74,.16);color:var(--amber);}
+  .badge.pending{background:rgba(255,194,74,.14);color:var(--amber);}
+  .badge.approved{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.rejected{background:rgba(255,90,90,.12);color:var(--red);}
+  .badge.open{background:rgba(90,176,255,.14);color:var(--blue);}
+  .badge.accepted{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.active{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.completed{background:rgba(139,184,44,.18);color:var(--lime-dim);}
+  .avatar{width:46px;height:46px;border-radius:13px;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:var(--lime);flex-shrink:0;letter-spacing:.02em;}
+  .avatar.lg{width:66px;height:66px;border-radius:18px;font-size:23px;}
+  .prof-head{display:flex;align-items:center;gap:15px;margin-bottom:6px;}
+  .prof-head .nm{font-size:21px;font-weight:800;letter-spacing:-.01em;}
+  .prof-head .ct{font-size:13px;color:var(--muted);margin-top:3px;}
+  .stars{display:inline-flex;gap:2px;color:var(--amber);font-size:14px;}
+  .stars .off{color:var(--line2);}
+  .video-card{position:relative;border-radius:16px;overflow:hidden;background:#05070a;border:1px solid var(--line2);aspect-ratio:9/16;max-height:280px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .video-card video{width:100%;height:100%;object-fit:cover;}
+  .video-card .play-big{position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(11,14,17,.6);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;backdrop-filter:blur(4px);}
+  .video-slot{border:1.5px dashed var(--line2);border-radius:16px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;}
+  .video-slot:active{background:var(--panel);}
+  .video-slot.filled{border-style:solid;border-color:var(--lime-dim);color:var(--lime);}
+  .video-slot .vic{font-size:26px;}
+  .video-slot .vt{font-size:14px;font-weight:700;margin-top:8px;}
+  .video-slot .vs{font-size:12px;color:var(--faint);margin-top:4px;line-height:1.4;}
+  .rate-stars{display:flex;gap:10px;justify-content:center;font-size:38px;color:var(--line2);margin:10px 0;}
+  .rate-stars span{cursor:pointer;transition:transform .1s;}
+  .rate-stars span.on{color:var(--amber);}
+  .rate-stars span:active{transform:scale(1.15);}
+  .list-row{display:flex;align-items:center;gap:13px;}
+  .list-row .lr-main{flex:1;min-width:0;}
+  .list-row .lr-main h3{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .list-row .lr-main .sub{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .seg{display:flex;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:4px;gap:4px;margin-bottom:16px;}
+  .seg button{flex:1;height:38px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
+  .seg button.on{background:var(--panel2);color:var(--lime);}
+  .signout{font-size:13px;color:var(--red);font-weight:600;cursor:pointer;}
+  .kv{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:14px;}
+  .kv:first-child{border-top:none;}
+  .kv .k{color:var(--muted);}
+  .kv .v{font-weight:600;text-align:right;}
+  .loading-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:80;background:var(--bg);}
+  .review-set{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
+  .review-set .rs-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<div id="frame"><div id="phone">
+
+  <!-- ============ APP LOADING ============ -->
+  <div class="loading-screen" id="app-loading">
+    <div class="spin"></div>
+    <div style="font-size:13px;color:var(--muted)">Starting FormTrace…</div>
+  </div>
+
+  <!-- ============ AUTH ============ -->
+  <section class="screen" id="s-auth">
+    <div class="auth-wrap">
+      <div class="auth-logo">FORM<b>TRACE</b> · COACH</div>
+      <h2 id="auth-h">Welcome back</h2>
+      <p class="subtle" id="auth-p">Sign in to your library, workouts and coaching.</p>
+      <div class="field" id="auth-name-field" style="display:none"><label>Display name</label><input id="au-name" placeholder="e.g. Sam Rivera" autocomplete="name"></div>
+      <div class="field"><label>Email</label><input id="au-email" type="email" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="field"><label>Password</label><input id="au-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn primary" id="au-submit">Sign in</button>
+      <div class="auth-switch" id="auth-switch">New here? <b id="au-toggle">Create an account</b></div>
+    </div>
+  </section>
+
+  <!-- ============ HOME (role-aware hub) ============ -->
+  <section class="screen" id="s-home">
+    <div class="hero">
+      <div class="logo">FORM<b>TRACE</b> · COACH</div>
+      <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
+      <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
+    </div>
+    <div class="roles" id="home-roles"></div>
+  </section>
+
+  <!-- ============ COACH (tabbed: library / workouts) ============ -->
+  <section class="screen" id="s-coach">
+    <div class="top">
+      <div class="back" data-go="home">←</div>
+      <div style="flex:1"><h1 id="coach-title">Exercise library</h1><div class="sub" id="coach-sub">Loading…</div></div>
+    </div>
+    <div class="body with-tabs" id="coach-body"></div>
+    <div class="fab-row" id="coach-fab-row" style="bottom:70px;">
+      <button class="btn primary" id="coach-fab">+ Add</button>
+    </div>
+    <div class="tabbar">
+      <button data-tab="library" class="on"><span class="i">▤</span>Library</button>
+      <button data-tab="workouts"><span class="i">▦</span>Workouts</button>
+    </div>
+  </section>
+
+  <!-- ============ EXERCISE EDITOR ============ -->
+  <section class="screen" id="s-ex-edit">
+    <div class="top"><div class="back" data-go="coach">←</div><div style="flex:1"><h1 id="ex-edit-title">New exercise</h1></div></div>
+    <div class="body">
+      <div class="field"><label>Exercise name</label><input id="in-name" placeholder="e.g. Back squat" autocomplete="off"></div>
+      <div class="field">
+        <label>Correct form reference</label>
+        <div class="card" style="margin:0;">
+          <div class="ex-top">
+            <div class="ex-thumb" id="ref-thumb"><span class="ph">◉</span></div>
+            <div class="ex-info"><h3 id="ref-state">No reference yet</h3>
+              <div class="ex-meta"><div id="ref-hint" style="line-height:1.4">Record one clean rep with correct form. This is what trainees are graded against.</div></div></div>
+          </div>
+          <button class="btn sm" style="margin-top:14px" id="btn-record-ref">● Record reference</button>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--faint);line-height:1.5;margin-top:4px;padding:0 2px;">Sets and reps aren't set here — you'll choose those when you add this exercise to a workout.</p>
+    </div>
+    <div class="fab-row">
+      <button class="btn ghost sm" style="flex:0 0 auto;width:52px;color:var(--red)" id="ex-delete" title="Delete">🗑</button>
+      <button class="btn primary" id="ex-save">Save to library</button>
+    </div>
+  </section>
+
+  <!-- ============ WORKOUT BUILDER ============ -->
+  <section class="screen" id="s-wo-build">
+    <div class="top"><div class="back" data-go="coach">←</div><div style="flex:1"><h1 id="wo-edit-title">New workout</h1></div></div>
+    <div class="body">
+      <div class="field"><label>Workout name</label><input id="in-wo-name" placeholder="e.g. Monday · Lower body" autocomplete="off"></div>
+      <div class="section-h"><div class="eyebrow">Exercises</div><div class="eyebrow" id="wo-item-count"></div></div>
+      <div id="wo-items"></div>
+      <div id="wo-items-empty" class="empty hidden" style="padding:34px 20px;"><div class="ic">▦</div><p>No exercises added.<br>Pull movements from your library.</p></div>
+      <button class="btn sm" id="wo-add-ex" style="margin-top:6px">+ Add from library</button>
+    </div>
+    <div class="fab-row">
+      <button class="btn ghost sm" style="flex:0 0 auto;width:52px;color:var(--red)" id="wo-delete" title="Delete">🗑</button>
+      <button class="btn primary" id="wo-save">Save workout</button>
+    </div>
+  </section>
+
+  <!-- ============ COACH: MARKETPLACE (browse open listings) ============ -->
+  <section class="screen" id="s-market">
+    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Open goals</h1><div class="sub" id="market-sub">Trainees looking for a coach</div></div></div>
+    <div class="body" id="market-body"></div>
+  </section>
+
+  <!-- ============ COACH: SEND OFFER ============ -->
+  <section class="screen" id="s-offer">
+    <div class="top"><div class="back" data-go="market">←</div><div style="flex:1"><h1>Send an offer</h1><div class="sub" id="offer-sub"></div></div></div>
+    <div class="body">
+      <div class="card" id="offer-listing-card" style="display:none"></div>
+      <div class="field"><label>Offer title</label><input id="of-title" placeholder="e.g. 8-week strength block" autocomplete="off"></div>
+      <div class="field"><label>Focus</label><input id="of-focus" placeholder="e.g. Squat depth & posterior chain" autocomplete="off"></div>
+      <div class="two">
+        <div class="field"><label>Length</label><input id="of-length" placeholder="8 weeks"></div>
+        <div class="field"><label>Sessions</label><input id="of-sessions" placeholder="3 / week"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label>Start</label><input id="of-start" placeholder="Next Monday"></div>
+        <div class="field"><label>Price</label><input id="of-price" placeholder="£240 / block"></div>
+      </div>
+      <div class="field">
+        <label>Video pitch — required</label>
+        <div class="video-slot" id="of-video-slot">
+          <div class="vic">●</div><div class="vt">Record your pitch</div>
+          <div class="vs">Every offer carries a short video. No attachments.</div>
+        </div>
+      </div>
+    </div>
+    <div class="fab-row"><button class="btn primary" id="of-send">Send offer</button></div>
+  </section>
+
+  <!-- ============ TRAINEE: assigned workouts + engagements ============ -->
+  <section class="screen" id="s-trainee-home">
+    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Your training</h1><div class="sub" id="tr-sub">Loading…</div></div></div>
+    <div class="body">
+      <div id="tr-list"></div>
+      <div id="tr-empty" class="empty hidden"><div class="ic">◉</div><p>No assigned workouts yet.<br>Find a coach in the marketplace to get started.</p>
+        <button class="btn sm" style="margin-top:18px;display:inline-flex;width:auto;padding:0 20px" data-go="listings">Find a coach</button></div>
+    </div>
+  </section>
+
+  <!-- ============ TRAINEE: single workout tracker ============ -->
+  <section class="screen" id="s-trainee-workout">
+    <div class="top"><div class="back" data-go="trainee-home">←</div><div style="flex:1"><h1 id="tw-title">Workout</h1><div class="sub" id="tw-sub"></div></div></div>
+    <div class="body">
+      <div id="tw-progress-card" class="card" style="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div><div class="eyebrow" style="color:var(--lime-dim)">Progress</div><div style="font-size:22px;font-weight:800;margin-top:6px;" id="tw-progress-txt">0 / 0 sets</div></div>
+          <div style="text-align:right"><div class="eyebrow" style="color:var(--lime-dim)">Avg form</div><div style="font-size:26px;font-weight:800;margin-top:4px;" id="tw-avg">—</div></div>
+        </div>
+      </div>
+      <div id="tw-list"></div>
+      <button class="btn primary hidden" id="tw-submit" style="margin-top:8px">Submit to coach</button>
+    </div>
+  </section>
+
+  <!-- ============ TRAINEE: marketplace (my listings) ============ -->
+  <section class="screen" id="s-listings">
+    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Find a coach</h1><div class="sub" id="listings-sub">Post a goal, receive video offers</div></div></div>
+    <div class="body with-tabs" id="listings-body"></div>
+    <div class="fab-row" style="bottom:70px;"><button class="btn primary" id="listings-fab">+ Post a goal</button></div>
+    <div class="tabbar">
+      <button data-ltab="goals" class="on"><span class="i">◎</span>My goals</button>
+      <button data-ltab="offers"><span class="i">✉</span>Offers</button>
+    </div>
+  </section>
+
+  <!-- ============ TRAINEE: post a goal listing ============ -->
+  <section class="screen" id="s-listing-new">
+    <div class="top"><div class="back" data-go="listings">←</div><div style="flex:1"><h1>Post a goal</h1></div></div>
+    <div class="body">
+      <div class="field"><label>Goal title</label><input id="lst-title" placeholder="e.g. First unassisted pull-up" autocomplete="off"></div>
+      <div class="field"><label>Focus area</label>
+        <div class="pill-row" id="lst-focus-pills">
+          <span class="pill" data-focus="Strength">Strength</span>
+          <span class="pill" data-focus="Mobility">Mobility</span>
+          <span class="pill" data-focus="Fat loss">Fat loss</span>
+          <span class="pill" data-focus="Technique">Technique</span>
+          <span class="pill" data-focus="Rehab">Rehab</span>
+        </div>
+      </div>
+      <div class="field"><label>Details</label><textarea id="lst-details" placeholder="Where you're starting from, what you've tried, any constraints."></textarea></div>
+      <div class="field">
+        <label>Goal video — required</label>
+        <div class="video-slot" id="lst-video-slot">
+          <div class="vic">●</div><div class="vt">Record your goal</div>
+          <div class="vs">Show coaches where you are and what you want. No attachments.</div>
+        </div>
+      </div>
+    </div>
+    <div class="fab-row"><button class="btn primary" id="lst-post">Post to marketplace</button></div>
+  </section>
+
+  <!-- ============ PROFILE ============ -->
+  <section class="screen" id="s-profile">
+    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Profile</h1></div><div class="signout" id="prof-signout">Sign out</div></div>
+    <div class="body" id="profile-body"></div>
+  </section>
+
+  <!-- ============ COACH APPLICATION ============ -->
+  <section class="screen" id="s-coach-apply">
+    <div class="top"><div class="back" data-go="profile">←</div><div style="flex:1"><h1>Apply for Coach profile</h1></div></div>
+    <div class="body">
+      <p style="font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:20px">Tell us about your coaching. An admin reviews every application before your account becomes a coach profile.</p>
+      <div class="field"><label>Full name</label><input id="ca-name" placeholder="Your name" autocomplete="name"></div>
+      <div class="field"><label>Qualifications</label><input id="ca-quals" placeholder="e.g. NASM-CPT, BSc Sport Science"></div>
+      <div class="field"><label>Years of experience</label><input id="ca-exp" placeholder="e.g. 6 years"></div>
+      <div class="field"><label>Specialties</label><input id="ca-spec" placeholder="e.g. Powerlifting, post-injury return"></div>
+      <div class="field"><label>Typical price band</label>
+        <div class="pill-row" id="ca-price-pills">
+          <span class="pill" data-band="£">£</span>
+          <span class="pill" data-band="££">££</span>
+          <span class="pill" data-band="£££">£££</span>
+        </div>
+      </div>
+      <div class="field"><label>Note to reviewer</label><textarea id="ca-note" placeholder="Anything else we should know."></textarea></div>
+    </div>
+    <div class="fab-row"><button class="btn primary" id="ca-submit">Submit application</button></div>
+  </section>
+
+  <!-- ============ ADMIN ============ -->
+  <section class="screen" id="s-admin">
+    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Coach applications</h1><div class="sub" id="admin-sub">Pending review</div></div></div>
+    <div class="body" id="admin-body"></div>
+  </section>
+
+  <!-- ============ ENGAGEMENT DETAIL (shared coach/trainee) ============ -->
+  <section class="screen" id="s-engagement">
+    <div class="top"><div class="back" id="eng-back">←</div><div style="flex:1"><h1 id="eng-title">Engagement</h1><div class="sub" id="eng-sub"></div></div></div>
+    <div class="body" id="engagement-body"></div>
+    <div class="fab-row hidden" id="eng-fab-row"><button class="btn primary" id="eng-fab"></button></div>
+  </section>
+
+  <!-- ============ SUBMISSION REVIEW (coach) ============ -->
+  <section class="screen" id="s-review">
+    <div class="top"><div class="back" id="rev-back">←</div><div style="flex:1"><h1>Review submission</h1><div class="sub" id="rev-sub"></div></div></div>
+    <div class="body" id="review-body"></div>
+    <div class="fab-row"><button class="btn primary" id="rev-submit">Send review</button></div>
+  </section>
+
+  <!-- ============ RATE (mutual) ============ -->
+  <section class="screen" id="s-rate">
+    <div class="top"><div class="back" id="rate-back">←</div><div style="flex:1"><h1 id="rate-title">Rate</h1></div></div>
+    <div class="body">
+      <div style="text-align:center;padding:20px 0 6px">
+        <div class="avatar lg" id="rate-avatar" style="margin:0 auto 14px">?</div>
+        <div style="font-size:19px;font-weight:800" id="rate-name">—</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px" id="rate-role">—</div>
+      </div>
+      <div class="rate-stars" id="rate-stars"><span data-s="1">★</span><span data-s="2">★</span><span data-s="3">★</span><span data-s="4">★</span><span data-s="5">★</span></div>
+      <div class="field" style="margin-top:16px"><label>Comments</label><textarea id="rate-text" placeholder="How did it go?"></textarea></div>
+    </div>
+    <div class="fab-row"><button class="btn primary" id="rate-submit">Submit rating</button></div>
+  </section>
+
+  <!-- ============ RECORDER ============ -->
+  <div id="rec">
+    <div class="stage">
+      <video id="rvideo" playsinline autoplay muted></video>
+      <canvas id="roverlay"></canvas>
+      <video id="rplay" playsinline controls></video>
+      <div class="rtop">
+        <button class="close" id="r-close">✕</button>
+        <div class="ttl" id="r-title">Reference<small id="r-subtitle">correct form</small></div>
+        <div id="rtimer"><span id="rdot"></span><span id="rtval">0:00</span></div>
+      </div>
+      <div class="rstat" id="r-stat"><div class="spin" id="r-spin"></div><div class="m" id="r-statmsg">Loading pose engine…</div></div>
+    </div>
+    <div class="rdeck" id="r-deck">
+      <button class="rside" id="r-flip"><span class="i">⟳</span>Flip</button>
+      <button id="rbtn" disabled></button>
+      <button class="rside" id="r-ghost"><span class="i">◉</span>Lines</button>
+    </div>
+    <div id="rreview">
+      <div class="row"><button class="btn primary" id="r-use">✓ Use this trace</button></div>
+      <div class="row"><button class="btn sm" id="r-retake" style="flex:1">↺ Retake</button><button class="btn sm" id="r-preview" style="flex:1">▶ Replay</button></div>
+    </div>
+  </div>
+
+  <!-- ============ ANALYZE ============ -->
+  <div id="analyze">
+    <svg class="ring" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#232C35" stroke-width="6"/>
+      <circle id="an-ring" cx="50" cy="50" r="42" fill="none" stroke="#C8FF3D" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/>
+    </svg>
+    <div><div class="m" id="an-msg">Analyzing your set…</div><div class="s" id="an-sub">Counting repetitions</div></div>
+  </div>
+
+  <!-- ============ RESULT ============ -->
+  <div id="result">
+    <div class="rh"><div class="eyebrow" id="res-eyebrow">Set complete</div><h2 id="res-title">Back squat · Set 1</h2></div>
+    <div class="result-grid">
+      <div class="dial-wrap">
+        <div class="dial">
+          <svg viewBox="0 0 100 100" style="width:100%;height:100%">
+            <circle cx="50" cy="50" r="43" fill="none" stroke="#1B232B" stroke-width="7"/>
+            <circle id="res-ring" cx="50" cy="50" r="43" fill="none" stroke="#C8FF3D" stroke-width="7" stroke-linecap="round" stroke-dasharray="270" stroke-dashoffset="270" transform="rotate(-90 50 50)"/>
+          </svg>
+          <div class="val"><div class="n" id="res-grade">—</div><div class="d">/ 10 form</div></div>
+        </div>
+        <div class="verdict" id="res-verdict"></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="k">Reps done</div><div class="v" id="res-reps">0<small id="res-target"></small></div></div>
+        <div class="stat"><div class="k">Set</div><div class="v" id="res-setno">1</div></div>
+      </div>
+      <div class="breakdown">
+        <div class="eyebrow">Where the score came from</div>
+        <div class="bd-row"><div class="bl">Motion match</div><div class="bd-bar"><div class="bd-fill" id="bd-shape"></div></div><div class="bv" id="bd-shape-v">—</div></div>
+        <div class="bd-row"><div class="bl">Range / depth</div><div class="bd-bar"><div class="bd-fill" id="bd-rom"></div></div><div class="bv" id="bd-rom-v">—</div></div>
+        <div class="bd-row"><div class="bl">Tempo</div><div class="bd-bar"><div class="bd-fill" id="bd-tempo"></div></div><div class="bv" id="bd-tempo-v">—</div></div>
+      </div>
+    </div>
+    <button class="btn primary" id="res-continue" style="margin-top:16px">Continue</button>
+  </div>
+
+  <!-- ============ LIBRARY PICKER SHEET ============ -->
+  <div class="sheet-scrim" id="sheet-scrim"></div>
+  <div class="sheet" id="sheet-lib">
+    <div class="sh-h"><h3>Add from library</h3><button class="x" id="sheet-close">✕</button></div>
+    <div class="sh-body" id="sheet-body"></div>
+    <div class="sh-foot"><button class="btn primary" id="sheet-add">Add selected</button></div>
+  </div>
+
+  <div id="toast"></div>
+</div></div>
+
+
+<!-- Supabase client + config + data layer (window.store).  Load order matters. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="store.supabase.js"></script>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+/* =========================================================================
+   0. helpers
+   ========================================================================= */
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+function toast(msg,ms=2600){const t=$("#toast");t.innerHTML=msg;t.classList.add("show");clearTimeout(toast._t);if(ms)toast._t=setTimeout(()=>t.classList.remove("show"),ms);}
+function fmt(sec){const m=Math.floor(sec/60),s=Math.floor(sec%60);return m+":"+String(s).padStart(2,"0");}
+function gradeColor(g){ if(g>=8)return "#C8FF3D"; if(g>=6)return "#B6E84A"; if(g>=4)return "#FFC24A"; return "#FF5A5A"; }
+function gradeWord(g){ return ["","Way off","Needs work","Rough","Getting there","Halfway","Decent","Solid","Strong","Great","Textbook"][g]||""; }
+function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function initials(name){ if(!name)return "?"; const p=name.trim().split(/\s+/); return ((p[0]||"")[0]||"").toUpperCase()+((p[1]||"")[0]||"").toUpperCase()||((p[0]||"?")[0]||"?").toUpperCase(); }
+function starsHtml(n){ n=Math.round(n||0); let h=""; for(let i=1;i<=5;i++)h+=`<span class="${i<=n?"":"off"}">★</span>`; return `<span class="stars">${h}</span>`; }
+
+/* A tiny in-memory cache of signed URLs so we don't re-sign on every render. */
+const urlCache=new Map();
+async function playable(path){
+  if(!path)return null;
+  if(urlCache.has(path))return urlCache.get(path);
+  try{ const u=await store.video.signedUrl(path,3600); urlCache.set(path,u); return u; }
+  catch(e){ console.error("signedUrl",e); return null; }
+}
+/* Fill a container that has data-video="<path>" with a playable <video>. */
+async function hydrateVideos(root){
+  for(const el of (root||document).querySelectorAll("[data-video]:not([data-hydrated])")){
+    const path=el.getAttribute("data-video");
+    el.setAttribute("data-hydrated","1");
+    const url=await playable(path);
+    if(url){ el.innerHTML=`<video src="${url}" muted playsinline preload="metadata"></video><div class="play-big">▶</div>`;
+      el.addEventListener("click",()=>{ const v=el.querySelector("video"); if(!v)return; if(v.paused){v.muted=false;v.play();el.querySelector(".play-big")?.remove();}else{v.pause();} }); }
+    else el.innerHTML=`<span class="ph" style="color:var(--faint)">video unavailable</span>`;
+  }
+}
+
+/* =========================================================================
+   2. Pose engine
+   ========================================================================= */
+let landmarker=null;
+async function ensureModel(onmsg){
+  if(landmarker)return;
+  onmsg&&onmsg("Loading pose engine…");
+  const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker=await PoseLandmarker.createFromOptions(fileset,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},
+    runningMode:"VIDEO",numPoses:1});
+}
+
+/* =========================================================================
+   3. Skeleton renderer (FormTrace vocabulary)
+   ========================================================================= */
+const P={nose:0,Leye:2,Reye:5,Lear:7,Rear:8,Lsh:11,Rsh:12,Lel:13,Rel:14,Lwr:15,Rwr:16,
+  Lpinky:17,Rpinky:18,Lindex:19,Rindex:20,Lthumb:21,Rthumb:22,Lhip:23,Rhip:24,Lknee:25,Rknee:26,Lank:27,Rank:28,Ltoe:31,Rtoe:32};
+const STROKE="#C8FF3D",FILL="rgba(200,255,61,0.12)",HEAD_FILL="rgba(200,255,61,0.10)",MIN_VIS=0.5;
+const Vec={add:(a,b)=>({x:a.x+b.x,y:a.y+b.y}),sub:(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mul:(a,s)=>({x:a.x*s,y:a.y*s}),
+  mid:(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}),len:a=>Math.hypot(a.x,a.y),norm:a=>{const l=Math.hypot(a.x,a.y)||1;return{x:a.x/l,y:a.y/l};},perp:a=>({x:-a.y,y:a.x}),dist:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
+
+function drawFigure(ctx,lm,W,H){
+  let baseW=4;
+  const pt=i=>({x:lm[i].x*W,y:lm[i].y*H,v:(lm[i].visibility??lm[i].v??1)});
+  const ok=p=>p&&p.v>=MIN_VIS;
+  const line=(a,b,w)=>{ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineWidth=w;ctx.strokeStyle=STROKE;ctx.lineCap="round";ctx.stroke();};
+  const poly=(pts,fill=FILL)=>{if(!pts.length)return;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}ctx.lineWidth=baseW;ctx.strokeStyle=STROKE;ctx.lineJoin="round";ctx.stroke();};
+  const ell=(c,rx,ry,a)=>{ctx.beginPath();ctx.ellipse(c.x,c.y,rx,ry,a,0,Math.PI*2);ctx.fillStyle=HEAD_FILL;ctx.fill();ctx.lineWidth=baseW;ctx.strokeStyle=STROKE;ctx.stroke();};
+  const orect=(start,dir,length,width)=>{const d=Vec.norm(dir),n=Vec.perp(d),hw=width/2;const p1=Vec.add(start,Vec.mul(n,hw));const p2=Vec.add(p1,Vec.mul(d,length));const p3=Vec.add(p2,Vec.mul(n,-width));const p4=Vec.add(p3,Vec.mul(d,-length));poly([p1,p2,p3,p4]);};
+
+  const nose=pt(P.nose),Lear=pt(P.Lear),Rear=pt(P.Rear),Leye=pt(P.Leye),Reye=pt(P.Reye),
+    Lsh=pt(P.Lsh),Rsh=pt(P.Rsh),Lel=pt(P.Lel),Rel=pt(P.Rel),Lwr=pt(P.Lwr),Rwr=pt(P.Rwr),
+    Lidx=pt(P.Lindex),Ridx=pt(P.Rindex),Lpk=pt(P.Lpinky),Rpk=pt(P.Rpinky),Lth=pt(P.Lthumb),Rth=pt(P.Rthumb),
+    Lhip=pt(P.Lhip),Rhip=pt(P.Rhip),Lkn=pt(P.Lknee),Rkn=pt(P.Rknee),Lan=pt(P.Lank),Ran=pt(P.Rank),Lto=pt(P.Ltoe),Rto=pt(P.Rtoe);
+  let scale=(ok(Lsh)&&ok(Rsh))?Vec.dist(Lsh,Rsh):(ok(Lhip)&&ok(Rhip))?Vec.dist(Lhip,Rhip):W*0.15;
+  baseW=Math.max(2.5,scale*0.05);
+  const shC=(ok(Lsh)&&ok(Rsh))?Vec.mid(Lsh,Rsh):null, hipC=(ok(Lhip)&&ok(Rhip))?Vec.mid(Lhip,Rhip):null;
+  if(ok(Lsh)&&ok(Rsh)) line(Lsh,Rsh,baseW);
+  let waistApex=null;
+  if(ok(Lhip)&&ok(Rhip)){const base=Vec.dist(Lhip,Rhip),half=(135*Math.PI/180)/2,h=(base/2)/Math.tan(half);const up=shC?Vec.norm(Vec.sub(shC,hipC)):{x:0,y:-1};waistApex=Vec.add(hipC,Vec.mul(up,h));}
+  if(shC){const end=waistApex||hipC;if(end)line(shC,end,baseW);}
+  let headBase=null,headAngle=0,headRx=scale*0.42,headRy=scale*0.52,headCenter=null;
+  if(ok(Lear)&&ok(Rear)){headBase=Vec.mid(Lear,Rear);headAngle=Math.atan2(Lear.y-Rear.y,Lear.x-Rear.x);headRx=Vec.dist(Lear,Rear)*0.62;headRy=headRx*1.25;}
+  else if(ok(Leye)&&ok(Reye)){headBase=Vec.mid(Leye,Reye);headAngle=Math.atan2(Leye.y-Reye.y,Leye.x-Reye.x);headRx=Vec.dist(Leye,Reye)*0.95;headRy=headRx*1.3;}
+  else if(ok(nose)){headBase={x:nose.x,y:nose.y};}
+  if(headBase){const up=shC?Vec.norm(Vec.sub(headBase,shC)):{x:0,y:-1};headCenter=Vec.add(headBase,Vec.mul(up,headRy*0.7));if(shC)line(shC,headBase,baseW);}
+  if(headCenter)ell(headCenter,headRx,headRy,headAngle+Math.PI/2);
+  if(ok(Lhip)&&ok(Rhip)&&waistApex)poly([Lhip,Rhip,waistApex]);
+  if(ok(Lsh)&&ok(Lel))line(Lsh,Lel,baseW); if(ok(Rsh)&&ok(Rel))line(Rsh,Rel,baseW);
+  if(ok(Lel)&&ok(Lwr))line(Lel,Lwr,baseW); if(ok(Rel)&&ok(Rwr))line(Rel,Rwr,baseW);
+  drawHand(Lwr,Lidx,Lpk,Lth,Lel); drawHand(Rwr,Ridx,Rpk,Rth,Rel);
+  if(ok(Lhip)&&ok(Lkn))line(Lhip,Lkn,baseW); if(ok(Rhip)&&ok(Rkn))line(Rhip,Rkn,baseW);
+  if(ok(Lkn)&&ok(Lan))line(Lkn,Lan,baseW); if(ok(Rkn)&&ok(Ran))line(Rkn,Ran,baseW);
+  drawFoot(Lan,Lto,Lkn); drawFoot(Ran,Rto,Rkn);
+  function drawHand(wr,idx,pk,th,el){
+    if(!ok(wr))return; let dir=null;
+    if(ok(idx)&&ok(pk))dir=Vec.sub(Vec.mid(idx,pk),wr); else if(ok(idx))dir=Vec.sub(idx,wr); else if(ok(el))dir=Vec.sub(wr,el);
+    if(!dir)return; const len=Vec.len(dir)||scale*0.28, handLen=Math.max(scale*0.22,len*1.05);
+    const width=(ok(idx)&&ok(pk))?Vec.dist(idx,pk)*1.1:scale*0.26; orect(wr,dir,handLen,width);
+    if(ok(th))line(wr,th,baseW*0.85);
+    else{const d=Vec.norm(dir),n=Vec.perp(d);const tip=Vec.add(wr,Vec.add(Vec.mul(d,handLen*0.4),Vec.mul(n,width*0.7)));line(wr,tip,baseW*0.85);}
+  }
+  function drawFoot(an,toe,kn){
+    if(!ok(an))return; let dir=null; const hasToe=ok(toe)&&Vec.dist(toe,an)>scale*0.08;
+    if(hasToe)dir=Vec.sub(toe,an);
+    else if(ok(kn)){const shank=Vec.norm(Vec.sub(an,kn));let n=Vec.perp(shank);if(n.y<0)n=Vec.mul(n,-1);dir=Vec.norm(Vec.add(Vec.mul(shank,0.5),Vec.mul(n,0.9)));}
+    else dir={x:0,y:1};
+    const len=hasToe?Math.max(scale*0.28,Vec.len(dir)):scale*0.30, width=scale*0.18, back=Vec.mul(Vec.norm(dir),-width*0.3);
+    orect(Vec.add(an,back),dir,len,width);
+  }
+}
+
+/* =========================================================================
+   4. Analysis — rep counting + DTW form grading (validated offline)
+   ========================================================================= */
+const DEG=180/Math.PI;
+const JOINTS=[[11,13,15],[12,14,16],[13,11,23],[14,12,24],[11,23,25],[12,24,26],[23,25,27],[24,26,28]];
+function jAngle(A,B,C){const v1={x:A.x-B.x,y:A.y-B.y},v2={x:C.x-B.x,y:C.y-B.y};const d=v1.x*v2.x+v1.y*v2.y;const m=(Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y))||1e-9;let c=d/m;c=Math.max(-1,Math.min(1,c));return Math.acos(c)*DEG;}
+function angleVec(f){return JOINTS.map(([a,b,c])=>jAngle(f[a],f[b],f[c]));}
+function smooth(sig,w=5){const out=[],h=Math.floor(w/2);for(let i=0;i<sig.length;i++){let s=0,n=0;for(let j=i-h;j<=i+h;j++)if(j>=0&&j<sig.length){s+=sig[j];n++;}out.push(s/n);}return out;}
+const rng=s=>Math.max(...s)-Math.min(...s);
+const norm01=s=>{const mn=Math.min(...s),mx=Math.max(...s),d=(mx-mn)||1;return s.map(v=>(v-mn)/d);};
+function countReps(frames){
+  if(frames.length<6)return {reps:0,dominant:null};
+  const av=frames.map(angleVec),cand=[],names=["elbows","shoulders","hips","knees"];
+  for(let p=0;p<4;p++)cand.push({sig:av.map(a=>(a[p*2]+a[p*2+1])/2),name:names[p]});
+  cand.push({sig:frames.map(f=>((f[11].y+f[12].y+f[23].y+f[24].y)/4)*180),name:"body height"});
+  let best=cand[0],bestR=rng(smooth(cand[0].sig));
+  for(const c of cand){const r=rng(smooth(c.sig));if(r>bestR){bestR=r;best=c;}}
+  const sm=smooth(best.sig);
+  if(rng(sm)<12)return {reps:0,dominant:best.name};
+  const n=norm01(sm);const hi=.6,lo=.4;let st=null,cr=0;
+  for(const v of n){if(v>hi){if(st==="lo")cr++;st="hi";}else if(v<lo){if(st==="hi")cr++;st="lo";}}
+  return {reps:Math.round(cr/2),dominant:best.name};
+}
+function subsample(f,cap=140){if(f.length<=cap)return f;const out=[],step=f.length/cap;for(let i=0;i<cap;i++)out.push(f[Math.floor(i*step)]);return out;}
+function vecDist(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.abs(a[i]-b[i]);return s/a.length;}
+function dtwCost(A,B){const a=A.map(angleVec),b=B.map(angleVec),n=a.length,m=b.length,INF=1e12;
+  const D=Array.from({length:n+1},()=>new Float64Array(m+1).fill(INF));D[0][0]=0;
+  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){const c=vecDist(a[i-1],b[j-1]);D[i][j]=c+Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);}
+  let i=n,j=m,len=0;while(i>0&&j>0){len++;const m3=Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);if(m3===D[i-1][j-1]){i--;j--;}else if(m3===D[i-1][j]){i--;}else{j--;}}
+  return D[n][m]/Math.max(1,len);
+}
+function gradeForm(trainee,coach){
+  const t=subsample(trainee),c=subsample(coach);
+  const shapeDeg=dtwCost(t,c);
+  const tv=t.map(angleVec),cv=c.map(angleVec);
+  const jr=vs=>vs[0].map((_,j)=>{let mn=Infinity,mx=-Infinity;for(const v of vs){if(v[j]<mn)mn=v[j];if(v[j]>mx)mx=v[j];}return mx-mn;});
+  const tr=jr(tv),cr=jr(cv);let romDiff=0;for(let j=0;j<tr.length;j++)romDiff+=Math.abs(tr[j]-cr[j]);romDiff/=tr.length;
+  const err=shapeDeg*0.7+romDiff*0.6;
+  let g=10-(err-5)/((45-5)/9);g=Math.max(1,Math.min(10,Math.round(g)));
+  const shapeScore=Math.max(0,Math.min(100,Math.round(100-(shapeDeg-3)/0.5)));
+  const romScore=Math.max(0,Math.min(100,Math.round(100-romDiff*3)));
+  return {grade:g,shape:shapeScore,rom:romScore,shapeDeg:+shapeDeg.toFixed(1),romDiff:+romDiff.toFixed(1)};
+}
+function tempoScore(traineeFrames,traineeReps,coachFrames,coachReps){
+  if(!traineeReps||!coachReps)return 70;
+  const tpr=traineeFrames.length/traineeReps, cpr=coachFrames.length/coachReps;
+  const ratio=tpr/cpr, dev=Math.abs(Math.log(ratio));
+  return Math.max(0,Math.min(100,Math.round(100-dev*90)));
+}
+/* ==== end analysis ==== */
+
+/* =========================================================================
+   5. Session + navigation
+   ========================================================================= */
+let ME=null;          // profiles row for the signed-in user
+let currentView="trainee";  // which "hat" the user is currently using on home
+
+function roleOf(){ if(!ME)return null; return ME.role; }   // base role; admin is ME.is_admin
+function isAdmin(){ return !!(ME && ME.is_admin); }
+
+function go(name){
+  if(name==="ex-edit-new"){ openExEditor(null); name="ex-edit"; }
+  if(name==="wo-build-new"){ openBuilder(null); name="wo-build"; }
+  if(name==="listing-new"){ openListingNew(); name="listing-new"; }
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  const el=$("#s-"+name); if(el)el.classList.add("active");
+  if(name==="home")renderHome();
+  if(name==="coach")renderCoach();
+  if(name==="market")renderMarket();
+  if(name==="trainee-home")renderTraineeHome();
+  if(name==="trainee-workout")renderAssignedWorkout();
+  if(name==="listings")renderListings();
+  if(name==="profile")renderProfile();
+  if(name==="admin")renderAdmin();
+}
+document.addEventListener("click",e=>{const el=e.target.closest("[data-go]");if(el)go(el.getAttribute("data-go"));});
+
+/* =========================================================================
+   6. Auth gate
+   ========================================================================= */
+let authMode="signin";
+function setAuthMode(mode){
+  authMode=mode;
+  const signup=mode==="signup";
+  $("#auth-h").textContent=signup?"Create your account":"Welcome back";
+  $("#auth-p").textContent=signup?"Everyone starts as a trainee. You can apply to coach later.":"Sign in to your library, workouts and coaching.";
+  $("#auth-name-field").style.display=signup?"block":"none";
+  $("#au-submit").textContent=signup?"Create account":"Sign in";
+  $("#au-pass").setAttribute("autocomplete",signup?"new-password":"current-password");
+  $("#auth-switch").innerHTML=signup?'Already have an account? <b id="au-toggle">Sign in</b>':'New here? <b id="au-toggle">Create an account</b>';
+  $("#au-toggle").addEventListener("click",()=>setAuthMode(signup?"signin":"signup"));
+}
+$("#au-toggle").addEventListener("click",()=>setAuthMode(authMode==="signup"?"signin":"signup"));
+$("#au-submit").addEventListener("click",async()=>{
+  const email=$("#au-email").value.trim(), pass=$("#au-pass").value, name=$("#au-name").value.trim();
+  if(!email||!pass){toast("Enter your email and password");return;}
+  const btn=$("#au-submit"); btn.disabled=true; const orig=btn.textContent; btn.textContent="…";
+  try{
+    if(authMode==="signup"){
+      if(!name){toast("Add a display name");btn.disabled=false;btn.textContent=orig;return;}
+      await store.auth.signUp(email,pass,name);
+      // Some projects require email confirmation; if no session, prompt sign-in.
+      const u=await store.auth.currentUser();
+      if(!u){ toast("Account created. Check your email to confirm, then sign in.",4200); setAuthMode("signin"); btn.disabled=false;btn.textContent=orig; return; }
+    }else{
+      await store.auth.signIn(email,pass);
+    }
+    await bootSignedIn();
+  }catch(err){ console.error(err); toast(err.message||"Couldn't sign in",4000); }
+  finally{ btn.disabled=false; btn.textContent=orig; }
+});
+$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); showAuth(); });
+
+function showAuth(){
+  $("#app-loading").style.display="none";
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  $("#s-auth").classList.add("active");
+  setAuthMode("signin");
+}
+
+async function bootSignedIn(){
+  ME=await store.auth.myProfile();
+  if(!ME){ toast("Couldn't load your profile",4000); return; }
+  $("#app-loading").style.display="none";
+  currentView = roleOf()==="coach" ? "coach" : "trainee";
+  go("home");
+}
+
+/* =========================================================================
+   7. Home — role-aware hub
+   ========================================================================= */
+function roleCard(go_,ic,title,sub,coach){
+  return `<div class="role ${coach?"coach":""}" data-go="${go_}"><div class="ic">${ic}</div><div class="tt"><b>${title}</b><span>${sub}</span></div><div class="arw">→</div></div>`;
+}
+function renderHome(){
+  // Base role (trainee/coach) decides the main hub; admin is an ADDITIVE capability.
+  const base = ME && ME.role==="coach" ? "coach" : "trainee";
+  const name=ME?ME.display_name||"there":"there";
+  $("#home-h").innerHTML=`Hi ${escapeHtml(name.split(" ")[0])}.<br><span class="g">What's the plan today?</span>`;
+  let cards="";
+  if(base==="coach"){
+    $("#home-p").textContent="Build your library, browse open goals, and manage your engagements.";
+    cards+=roleCard("coach","✎","Library &amp; workouts","References, plans and grading",true);
+    cards+=roleCard("market","◎","Open goals","Trainees looking for a coach",false);
+    cards+=roleCard("trainee-home","◉","My engagements","Assign & review your trainees",false);
+  }else{
+    $("#home-p").textContent="Find a coach, complete your assigned sets, and get your form graded.";
+    cards+=roleCard("trainee-home","◉","My training","Assigned workouts & progress",true);
+    cards+=roleCard("listings","◎","Find a coach","Post a goal, get video offers",false);
+  }
+  if(ME && ME.is_admin){
+    cards+=roleCard("admin","★","Coach applications","Review & approve coaches",false);
+  }
+  cards+=roleCard("profile","☰","Profile","Account, role & reputation",false);
+  $("#home-roles").innerHTML=cards;
+}
+
+/* =========================================================================
+   8. Coach — tabbed library / workouts   (ported to window.store)
+   ========================================================================= */
+let coachTab="library";
+function exThumb(ex){
+  // ex.ref_video_path -> hydrated after render
+  if(ex&&ex.ref_video_path){return `<div data-video="${ex.ref_video_path}" style="width:100%;height:100%"></div>`;}
+  return `<span class="ph">◉</span>`;
+}
+function hasRef(ex){ return !!(ex && ex.landmarks && ex.landmarks.frames && ex.landmarks.frames.length); }
+
+$$(".tabbar button[data-tab]").forEach(b=>b.addEventListener("click",()=>{coachTab=b.getAttribute("data-tab");$$(".tabbar button[data-tab]").forEach(x=>x.classList.toggle("on",x===b));renderCoach();}));
+$("#coach-fab").addEventListener("click",()=>{ if(coachTab==="library")go("ex-edit-new"); else go("wo-build-new"); });
+
+async function renderCoach(){
+  if(coachTab==="library"){
+    $("#coach-title").textContent="Exercise library";
+    $("#coach-fab").textContent="+ Add exercise";
+    const list=await store.exercises.list({coach_id:ME.id});
+    $("#coach-sub").textContent=list.length?`${list.length} exercise${list.length>1?"s":""} saved`:"Record your first exercise";
+    renderLibraryInto($("#coach-body"),list);
+  }else{
+    $("#coach-title").textContent="Workouts";
+    $("#coach-fab").textContent="+ New workout";
+    const [wos,exs]=await Promise.all([store.workouts.list({coach_id:ME.id}),store.exercises.list({coach_id:ME.id})]);
+    $("#coach-sub").textContent=wos.length?`${wos.length} workout${wos.length>1?"s":""}`:"Assemble a day from your library";
+    renderWorkoutsInto($("#coach-body"),wos,exs);
+  }
+}
+function renderLibraryInto(el,list){
+  el.innerHTML="";
+  if(!list.length){el.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="ic">▤</div><p>Your library is empty.<br>Record an exercise and its correct form.</p></div>`;return;}
+  el.innerHTML=`<div class="section-h"><div class="eyebrow">Movements</div><div class="eyebrow">${list.length}</div></div>`;
+  for(const ex of list){
+    const div=document.createElement("div");div.className="card ex-card";
+    div.innerHTML=`<div class="ex-top"><div class="ex-thumb">${exThumb(ex)}</div>
+      <div class="ex-info"><h3>${escapeHtml(ex.name)}</h3>
+        <span class="ref-tag ${hasRef(ex)?"ref-yes":"ref-no"}">${hasRef(ex)?"✓ correct form set":"● no reference"}</span></div></div>`;
+    div.addEventListener("click",()=>openExEditor(ex.id));
+    el.appendChild(div);
+  }
+  hydrateVideos(el);
+}
+function renderWorkoutsInto(el,wos,exs){
+  el.innerHTML="";
+  if(!wos.length){el.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="ic">▦</div><p>No workouts yet.<br>Build a single-day plan from your library.</p></div>`;return;}
+  const exMap=Object.fromEntries(exs.map(e=>[e.id,e]));
+  el.innerHTML=`<div class="section-h"><div class="eyebrow">Single-day plans</div><div class="eyebrow">${wos.length}</div></div>`;
+  for(const w of wos){
+    const items=w.items||[];
+    const totalSets=items.reduce((s,i)=>s+(i.sets||0),0);
+    const names=items.map(i=>exMap[i.exercise_id]?exMap[i.exercise_id].name:"(removed)").slice(0,3).join(", ");
+    const div=document.createElement("div");div.className="card ex-card";
+    div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="min-width:0"><h3 style="font-size:17px;font-weight:700">${escapeHtml(w.name)}</h3>
+          <div class="ex-meta"><div><b>${items.length}</b> exercises</div><div><b>${totalSets}</b> sets</div></div>
+          <div style="font-size:12px;color:var(--faint);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(names)||"empty"}</div></div>
+        <div style="color:var(--faint);font-size:20px">›</div></div>`;
+    div.addEventListener("click",()=>openBuilder(w.id));
+    el.appendChild(div);
+  }
+}
+
+/* =========================================================================
+   9. Exercise editor   (ref video -> Storage path; landmarks -> jsonb)
+   ========================================================================= */
+let editingExId=null, pendingRef=null; // pendingRef={frames,fps,reps,blob}
+async function openExEditor(id){
+  editingExId=id; pendingRef=null;
+  const ex=id?await store.exercises.get(id):null;
+  $("#ex-edit-title").textContent=ex?"Edit exercise":"New exercise";
+  $("#in-name").value=ex?ex.name:"";
+  $("#ex-delete").style.display=ex?"flex":"none";
+  await updateRefCard(ex);
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-ex-edit").classList.add("active");
+}
+async function updateRefCard(ex){
+  const has = pendingRef ? true : hasRef(ex);
+  const frames = pendingRef ? pendingRef.frames.length : (has?ex.landmarks.frames.length:0);
+  const reps = pendingRef ? pendingRef.reps : (has?ex.landmarks.reps:0);
+  $("#ref-state").textContent=has?"Correct form captured":"No reference yet";
+  $("#ref-hint").textContent=has?`${frames} frames · ${reps||"?"} rep detected`:"Record one clean rep with correct form. This is what trainees are graded against.";
+  const th=$("#ref-thumb");
+  if(pendingRef&&pendingRef.blob){ th.innerHTML=`<video muted playsinline></video>`; th.querySelector("video").src=URL.createObjectURL(pendingRef.blob); }
+  else if(ex&&ex.ref_video_path){ th.setAttribute("data-video",ex.ref_video_path); th.removeAttribute("data-hydrated"); hydrateVideos($("#s-ex-edit")); }
+  else th.innerHTML=`<span class="ph">◉</span>`;
+  $("#btn-record-ref").textContent=has?"● Re-record reference":"● Record reference";
+}
+$("#ex-save").addEventListener("click",async()=>{
+  const name=$("#in-name").value.trim()||"Untitled exercise";
+  const btn=$("#ex-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+  try{
+    let ref_video_path, landmarks;
+    if(pendingRef){
+      btn.textContent="Uploading video…";
+      ref_video_path=await store.video.upload(pendingRef.blob,"webm");
+      landmarks={frames:pendingRef.frames,fps:pendingRef.fps,reps:pendingRef.reps};
+    }
+    if(editingExId){
+      const patch={name}; if(pendingRef){patch.ref_video_path=ref_video_path;patch.landmarks=landmarks;}
+      await store.exercises.update(editingExId,patch);
+    }else{
+      await store.exercises.add({coach_id:ME.id,name,ref_video_path:ref_video_path||null,landmarks:landmarks||null});
+    }
+    toast("Saved to library"); go("coach");
+  }catch(err){console.error(err);toast(err.message||"Couldn't save",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+$("#ex-delete").addEventListener("click",async()=>{ if(!editingExId)return; await store.exercises.remove(editingExId); toast("Exercise removed"); go("coach"); });
+$("#btn-record-ref").addEventListener("click",()=>{
+  openRecorder({title:"Reference",subtitle:"record correct form",review:true,onComplete:cap=>{
+    const reps=countReps(cap.frames).reps;
+    pendingRef={frames:cap.frames,fps:cap.fps,reps,blob:cap.blob};
+    updateRefCard(null);
+    toast(reps?`Reference saved · ${reps} rep detected`:"Reference saved");
+  }});
+});
+
+/* =========================================================================
+   10. Workout builder + library picker sheet   (ported)
+   ========================================================================= */
+let builder=null, libCache=[];
+async function openBuilder(id){
+  libCache=await store.exercises.list({coach_id:ME.id});
+  const w=id?await store.workouts.get(id):null;
+  builder=w?{id:w.id,name:w.name,items:(w.items||[]).map(i=>({...i})),isNew:false}
+           :{id:null,name:"",items:[],isNew:true};
+  $("#wo-edit-title").textContent=w?"Edit workout":"New workout";
+  $("#in-wo-name").value=builder.name;
+  $("#wo-delete").style.display=w?"flex":"none";
+  renderBuilderItems();
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-wo-build").classList.add("active");
+}
+function renderBuilderItems(){
+  const wrap=$("#wo-items");wrap.innerHTML="";
+  const exMap=Object.fromEntries(libCache.map(e=>[e.id,e]));
+  $("#wo-item-count").textContent=builder.items.length?`${builder.items.length}`:"";
+  $("#wo-items-empty").classList.toggle("hidden",builder.items.length>0);
+  builder.items.forEach((it,idx)=>{
+    const ex=exMap[it.exercise_id];
+    const row=document.createElement("div");row.className="wo-item";
+    row.innerHTML=`
+      <div class="hd">
+        <div class="ex-thumb">${exThumb(ex)}</div>
+        <h4>${escapeHtml(ex?ex.name:"(removed exercise)")}</h4>
+        <button class="rm" data-rm="${idx}">✕</button>
+      </div>
+      ${hasRef(ex)?"":'<div class="ref-tag ref-no" style="margin-top:10px">● no reference — won\'t be graded</div>'}
+      <div class="sr">
+        <div class="blk"><div class="l">Sets</div>
+          <div class="mini-stepper"><button data-b="sets" data-d="-1" data-i="${idx}">−</button><span id="sv-${idx}">${it.sets}</span><button data-b="sets" data-d="1" data-i="${idx}">+</button></div></div>
+        <div class="blk"><div class="l">Reps / set</div>
+          <div class="mini-stepper"><button data-b="reps" data-d="-1" data-i="${idx}">−</button><span id="rv-${idx}">${it.reps}</span><button data-b="reps" data-d="1" data-i="${idx}">+</button></div></div>
+      </div>`;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{builder.items.splice(+b.getAttribute("data-rm"),1);renderBuilderItems();}));
+  wrap.querySelectorAll("[data-b]").forEach(b=>b.addEventListener("click",()=>{
+    const i=+b.getAttribute("data-i"),field=b.getAttribute("data-b"),d=+b.getAttribute("data-d");
+    const min=1,max=field==="sets"?20:100;
+    builder.items[i][field]=Math.max(min,Math.min(max,builder.items[i][field]+d));
+    $((field==="sets"?"#sv-":"#rv-")+i).textContent=builder.items[i][field];
+  }));
+  hydrateVideos(wrap);
+}
+$("#wo-add-ex").addEventListener("click",openSheet);
+$("#wo-save").addEventListener("click",async()=>{
+  const name=$("#in-wo-name").value.trim()||"Untitled workout";
+  if(!builder.items.length){toast("Add at least one exercise");return;}
+  const items=builder.items.map(i=>({exercise_id:i.exercise_id,sets:i.sets,reps:i.reps}));
+  if(builder.isNew) await store.workouts.add({coach_id:ME.id,name,items});
+  else await store.workouts.update(builder.id,{name,items});
+  toast("Workout saved"); go("coach");
+});
+$("#wo-delete").addEventListener("click",async()=>{ if(!builder||builder.isNew)return; await store.workouts.remove(builder.id); toast("Workout removed"); go("coach"); });
+
+let sheetSel=new Set();
+function openSheet(){
+  sheetSel=new Set();
+  const body=$("#sheet-body");body.innerHTML="";
+  if(!libCache.length){body.innerHTML=`<div class="empty" style="padding:30px"><p>No exercises in your library yet. Add some from the Library tab first.</p></div>`;}
+  for(const ex of libCache){
+    const row=document.createElement("div");row.className="sh-item";row.setAttribute("data-id",ex.id);
+    row.innerHTML=`<div class="sh-check">✓</div><div class="ex-thumb" style="width:42px;height:42px;border-radius:11px">${exThumb(ex)}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(ex.name)}</div>
+      <div style="font-size:11px;color:${hasRef(ex)?'var(--lime-dim)':'var(--red)'};font-weight:600;margin-top:2px">${hasRef(ex)?'correct form set':'no reference'}</div></div>`;
+    row.addEventListener("click",()=>{ if(sheetSel.has(ex.id)){sheetSel.delete(ex.id);row.classList.remove("sel");}else{sheetSel.add(ex.id);row.classList.add("sel");} updateSheetBtn();});
+    body.appendChild(row);
+  }
+  updateSheetBtn();
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  hydrateVideos(body);
+}
+function updateSheetBtn(){ $("#sheet-add").textContent=sheetSel.size?`Add ${sheetSel.size} exercise${sheetSel.size>1?"s":""}`:"Add selected"; $("#sheet-add").disabled=!sheetSel.size; }
+function closeSheet(){ $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on"); }
+$("#sheet-close").addEventListener("click",closeSheet);
+$("#sheet-scrim").addEventListener("click",closeSheet);
+$("#sheet-add").addEventListener("click",()=>{
+  for(const id of sheetSel) builder.items.push({exercise_id:id,sets:3,reps:10});
+  closeSheet(); renderBuilderItems();
+});
+
+
+/* =========================================================================
+   11. Marketplace — trainee listings & coach offers
+   ========================================================================= */
+let listingsTab="goals";
+let pendingListingVideo=null;   // {blob,frames,fps}
+let listingFocus=null;
+
+$$(".tabbar button[data-ltab]").forEach(b=>b.addEventListener("click",()=>{listingsTab=b.getAttribute("data-ltab");$$(".tabbar button[data-ltab]").forEach(x=>x.classList.toggle("on",x===b));renderListings();}));
+$("#listings-fab").addEventListener("click",()=>go("listing-new"));
+
+async function renderListings(){
+  const body=$("#listings-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
+  if(listingsTab==="goals"){
+    const mine=await store.listings.list({trainee_id:ME.id});
+    $("#listings-sub").textContent=mine.length?`${mine.length} goal${mine.length>1?"s":""} posted`:"Post a goal, receive video offers";
+    body.innerHTML="";
+    if(!mine.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No goals posted yet.<br>Post one and coaches will send video offers.</p></div>`; return; }
+    for(const l of mine){
+      const div=document.createElement("div");div.className="card";
+      div.innerHTML=`<div class="list-row">
+          <div class="ex-thumb" style="width:52px;height:52px" ${l.pitch_video_path?`data-video="${l.pitch_video_path}"`:""}>${l.pitch_video_path?"":'<span class="ph">◉</span>'}</div>
+          <div class="lr-main"><h3>${escapeHtml(l.title)}</h3><div class="sub">${escapeHtml(l.focus||"")}</div></div>
+          <span class="badge ${l.status}">${l.status}</span></div>`;
+      body.appendChild(div);
+    }
+    hydrateVideos(body);
+  }else{
+    // offers received
+    const offers=await store.offers.list({trainee_id:ME.id});
+    $("#listings-sub").textContent=offers.length?`${offers.length} offer${offers.length>1?"s":""} received`:"No offers yet";
+    body.innerHTML="";
+    if(!offers.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">✉</div><p>No offers yet.<br>Post a goal to attract coaches.</p></div>`; return; }
+    const coaches=Object.fromEntries((await store.coaches()).map(c=>[c.id,c]));
+    for(const o of offers){
+      const c=coaches[o.coach_id]||{};
+      const div=document.createElement("div");div.className="card";
+      div.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div class="avatar">${escapeHtml(c.avatar_initials||initials(c.display_name))}</div>
+          <div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"Coach")}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
+          <span class="badge ${o.status}">${o.status}</span></div>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:4px">${escapeHtml(o.title)}</h3>
+        <div class="video-card" style="margin:12px 0" data-video="${o.pitch_video_path}"></div>
+        <div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(o.length_text||"—")}</span></div>
+        <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(o.sessions_text||"—")}</span></div>
+        <div class="kv"><span class="k">Start</span><span class="v">${escapeHtml(o.start_text||"—")}</span></div>
+        <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>`;
+      if(o.status==="pending"){
+        const row=document.createElement("div");row.className="row";row.style.cssText="display:flex;gap:10px;margin-top:14px";
+        row.innerHTML=`<button class="btn sm" style="flex:1;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
+        div.appendChild(row);
+      }
+      body.appendChild(div);
+    }
+    body.querySelectorAll("[data-acc]").forEach(b=>b.addEventListener("click",()=>acceptOffer(b.getAttribute("data-acc"))));
+    body.querySelectorAll("[data-rej]").forEach(b=>b.addEventListener("click",async()=>{ await store.offers.update(b.getAttribute("data-rej"),{status:"rejected"}); toast("Offer declined"); renderListings(); }));
+    hydrateVideos(body);
+  }
+}
+async function acceptOffer(offerId){
+  try{
+    const o=await store.offers.get(offerId);
+    await store.offers.update(offerId,{status:"accepted"});
+    await store.engagements.add({offer_id:o.id,coach_id:o.coach_id,trainee_id:o.trainee_id,goal_title:o.title,status:"active"});
+    if(o.listing_id) await store.listings.update(o.listing_id,{status:"matched"});
+    toast("Offer accepted — engagement started ✓",3400);
+    go("trainee-home");
+  }catch(err){console.error(err);toast(err.message||"Couldn't accept",4000);}
+}
+
+/* trainee: post a goal */
+function openListingNew(){
+  pendingListingVideo=null; listingFocus=null;
+  $("#lst-title").value=""; $("#lst-details").value="";
+  $$("#lst-focus-pills .pill").forEach(p=>p.classList.remove("on"));
+  const slot=$("#lst-video-slot"); slot.classList.remove("filled");
+  slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your goal</div><div class="vs">Show coaches where you are and what you want. No attachments.</div>`;
+}
+$$("#lst-focus-pills .pill").forEach(p=>p.addEventListener("click",()=>{$$("#lst-focus-pills .pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");listingFocus=p.getAttribute("data-focus");}));
+$("#lst-video-slot").addEventListener("click",()=>{
+  openRecorder({title:"Your goal",subtitle:"describe where you are",review:true,onComplete:cap=>{
+    pendingListingVideo=cap;
+    const slot=$("#lst-video-slot"); slot.classList.add("filled");
+    slot.innerHTML=`<div class="vic">✓</div><div class="vt">Goal video recorded</div><div class="vs">Tap to re-record</div>`;
+  }});
+});
+$("#lst-post").addEventListener("click",async()=>{
+  const title=$("#lst-title").value.trim();
+  if(!title){toast("Give your goal a title");return;}
+  if(!pendingListingVideo){toast("Record your goal video first");return;}
+  const btn=$("#lst-post");btn.disabled=true;const o=btn.textContent;btn.textContent="Uploading…";
+  try{
+    const path=await store.video.upload(pendingListingVideo.blob,"webm");
+    await store.listings.add({trainee_id:ME.id,title,focus:listingFocus,details:$("#lst-details").value.trim(),pitch_video_path:path,status:"open"});
+    toast("Goal posted ✓"); listingsTab="goals"; go("listings");
+  }catch(err){console.error(err);toast(err.message||"Couldn't post",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+
+/* coach: browse open listings */
+async function renderMarket(){
+  const body=$("#market-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
+  const open=await store.listings.list({status:"open"});
+  $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
+  body.innerHTML="";
+  if(!open.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p></div>`; return; }
+  for(const l of open){
+    const div=document.createElement("div");div.className="card";
+    div.innerHTML=`<h3 style="font-size:17px;font-weight:800">${escapeHtml(l.title)}</h3>
+      <div style="margin:6px 0 12px"><span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
+      <div class="video-card" data-video="${l.pitch_video_path}"></div>
+      ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
+      <button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`;
+    body.appendChild(div);
+  }
+  body.querySelectorAll("[data-offer]").forEach(b=>b.addEventListener("click",()=>openOffer(b.getAttribute("data-offer"))));
+  hydrateVideos(body);
+}
+
+/* coach: compose offer */
+let offerListing=null, pendingOfferVideo=null;
+async function openOffer(listingId){
+  offerListing=await store.listings.get(listingId); pendingOfferVideo=null;
+  $("#offer-sub").textContent=`Re: ${offerListing.title}`;
+  $("#of-title").value=offerListing.title; $("#of-focus").value=offerListing.focus||"";
+  $("#of-length").value="";$("#of-sessions").value="";$("#of-start").value="";$("#of-price").value="";
+  const slot=$("#of-video-slot");slot.classList.remove("filled");
+  slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your pitch</div><div class="vs">Every offer carries a short video. No attachments.</div>`;
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-offer").classList.add("active");
+}
+$("#of-video-slot").addEventListener("click",()=>{
+  openRecorder({title:"Your pitch",subtitle:"why you're the right coach",review:true,onComplete:cap=>{
+    pendingOfferVideo=cap;
+    const slot=$("#of-video-slot");slot.classList.add("filled");
+    slot.innerHTML=`<div class="vic">✓</div><div class="vt">Pitch recorded</div><div class="vs">Tap to re-record</div>`;
+  }});
+});
+$("#of-send").addEventListener("click",async()=>{
+  const title=$("#of-title").value.trim();
+  if(!title){toast("Add an offer title");return;}
+  if(!pendingOfferVideo){toast("Record your video pitch — it's required");return;}
+  const btn=$("#of-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Uploading…";
+  try{
+    const path=await store.video.upload(pendingOfferVideo.blob,"webm");
+    await store.offers.add({
+      listing_id:offerListing.id,coach_id:ME.id,trainee_id:offerListing.trainee_id,kind:"offer",
+      title,focus:$("#of-focus").value.trim(),length_text:$("#of-length").value.trim(),
+      start_text:$("#of-start").value.trim(),sessions_text:$("#of-sessions").value.trim(),
+      price_text:$("#of-price").value.trim(),pitch_video_path:path,status:"pending"
+    });
+    toast("Offer sent ✓"); go("market");
+  }catch(err){console.error(err);toast(err.message||"Couldn't send offer",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+
+/* =========================================================================
+   12. Engagements — trainee "My training" & coach "My engagements"
+   ========================================================================= */
+async function renderTraineeHome(){
+  const iAmCoach=roleOf()==="coach";
+  const wrap=$("#tr-list");wrap.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
+  const engs=await store.engagements.list(iAmCoach?{coach_id:ME.id}:{trainee_id:ME.id});
+  $("#s-trainee-home").querySelector("h1").textContent=iAmCoach?"My engagements":"Your training";
+  $("#tr-sub").textContent=engs.length?`${engs.length} engagement${engs.length>1?"s":""}`:(iAmCoach?"No active trainees yet":"Nothing yet");
+  wrap.innerHTML="";
+  $("#tr-empty").classList.toggle("hidden",engs.length>0);
+  if(!engs.length)return;
+  // fetch counterpart names
+  const ids=[...new Set(engs.map(e=>iAmCoach?e.trainee_id:e.coach_id))];
+  const profs={}; for(const p of await store.coaches()) profs[p.id]=p; // coaches
+  // trainees may not be in coaches(); fetch individually via _sb
+  for(const id of ids){ if(!profs[id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",id).single(); if(data)profs[id]=data; }catch(e){} } }
+  for(const e of engs){
+    const other=profs[iAmCoach?e.trainee_id:e.coach_id]||{};
+    const div=document.createElement("div");div.className="card ex-card";
+    div.innerHTML=`<div class="list-row">
+        <div class="avatar">${escapeHtml(other.avatar_initials||initials(other.display_name))}</div>
+        <div class="lr-main"><h3>${escapeHtml(e.goal_title||"Engagement")}</h3><div class="sub">${escapeHtml(other.display_name||"—")}</div></div>
+        <span class="badge ${e.status}">${e.status}</span></div>`;
+    div.addEventListener("click",()=>openEngagement(e.id));
+    wrap.appendChild(div);
+  }
+}
+
+let currentEng=null, currentEngOther=null;
+async function openEngagement(id){
+  currentEng=await store.engagements.get(id);
+  const iAmCoach=currentEng.coach_id===ME.id;
+  const otherId=iAmCoach?currentEng.trainee_id:currentEng.coach_id;
+  try{ const {data}=await store._sb.from("profiles").select("*").eq("id",otherId).single(); currentEngOther=data||{}; }catch(e){currentEngOther={};}
+  $("#eng-title").textContent=currentEng.goal_title||"Engagement";
+  $("#eng-sub").textContent=(iAmCoach?"Trainee: ":"Coach: ")+(currentEngOther.display_name||"—");
+  $("#eng-back").onclick=()=>go(iAmCoach?"trainee-home":"trainee-home");
+  await renderEngagement();
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
+}
+async function renderEngagement(){
+  const iAmCoach=currentEng.coach_id===ME.id;
+  const body=$("#engagement-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  const assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
+  body.innerHTML="";
+
+  // status / completion banner
+  const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18";
+  banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
+      <div><div class="eyebrow" style="color:var(--lime-dim)">Goal</div><div style="font-size:18px;font-weight:800;margin-top:5px">${escapeHtml(currentEng.goal_title||"—")}</div></div>
+      <span class="badge ${currentEng.status}">${currentEng.status}</span></div>`;
+  body.appendChild(banner);
+
+  const secH=document.createElement("div");secH.className="section-h";secH.innerHTML=`<div class="eyebrow">Assigned workouts</div><div class="eyebrow">${assigned.length}</div>`;
+  body.appendChild(secH);
+
+  if(!assigned.length){
+    const em=document.createElement("div");em.className="empty";em.style.padding="30px 20px";
+    em.innerHTML=`<p>${iAmCoach?"No workouts assigned yet.":"Your coach hasn't assigned a workout yet."}</p>`;
+    body.appendChild(em);
+  }
+  for(const a of assigned){
+    const snap=a.snapshot||{};
+    const div=document.createElement("div");div.className="card ex-card";
+    div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="min-width:0;flex:1"><h3 style="font-size:16px;font-weight:700">${escapeHtml(snap.name||"Workout")}</h3>
+          <div class="ex-meta"><div><b>${(snap.items||[]).length}</b> exercises</div>${a.due_date?`<div>due ${escapeHtml(a.due_date)}</div>`:""}</div></div>
+        <span class="badge ${a.status==="reviewed"?"completed":a.status==="submitted"?"pending":"open"}">${a.status}</span></div>`;
+    div.addEventListener("click",()=>{
+      if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Waiting for the trainee to submit"); }
+      else { if(a.status==="assigned")openAssigned(a.id); else if(a.status==="reviewed")openAssigned(a.id); else toast("Submitted — waiting for coach review"); }
+    });
+    body.appendChild(div);
+  }
+
+  // FAB: coach assigns; either side can complete + rate
+  const fabRow=$("#eng-fab-row"),fab=$("#eng-fab");
+  fabRow.classList.remove("hidden");
+  if(currentEng.status==="active" && iAmCoach){
+    fab.textContent="+ Assign a workout"; fab.onclick=assignWorkoutFlow;
+  }else if(currentEng.status==="active" && !iAmCoach){
+    fab.textContent="Mark goal complete"; fab.onclick=completeEngagement;
+  }else if(currentEng.status==="completed"){
+    // offer rating if not yet rated
+    const rated=await myRatingExists();
+    if(!rated){ fab.textContent=`Rate your ${iAmCoach?"trainee":"coach"}`; fab.onclick=()=>openRate(); }
+    else { fabRow.classList.add("hidden"); }
+  }else fabRow.classList.add("hidden");
+}
+async function myRatingExists(){
+  try{ const {data}=await store._sb.from("ratings").select("id").eq("engagement_id",currentEng.id).eq("rater_id",ME.id).maybeSingle(); return !!data; }catch(e){return false;}
+}
+async function completeEngagement(){
+  await store.engagements.update(currentEng.id,{status:"completed",completed_at:new Date().toISOString()});
+  currentEng.status="completed";
+  toast("Goal marked complete 🎉",3200);
+  openRate();
+}
+
+/* coach: assign a workout (snapshot of workout + its exercises) */
+async function assignWorkoutFlow(){
+  const wos=await store.workouts.list({coach_id:ME.id});
+  if(!wos.length){toast("Build a workout in your Library first");return;}
+  const body=$("#sheet-body");body.innerHTML="";$("#sheet-lib").querySelector("h3").textContent="Assign which workout?";$("#sheet-add").style.display="none";
+  for(const w of wos){
+    const row=document.createElement("div");row.className="sh-item";
+    row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(w.name)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(w.items||[]).length} exercises</div></div><div style="color:var(--lime)">→</div>`;
+    row.addEventListener("click",async()=>{
+      closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
+      await doAssign(w);
+    });
+    body.appendChild(row);
+  }
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+async function doAssign(w){
+  toast("Assigning…",1500);
+  const exs=await store.exercises.list({coach_id:ME.id});
+  const exMap=Object.fromEntries(exs.map(e=>[e.id,e]));
+  // snapshot freezes the plan + reference landmarks (no video blobs; paths only)
+  const snapItems=(w.items||[]).map(it=>{
+    const ex=exMap[it.exercise_id]||{};
+    return {exercise_id:it.exercise_id,name:ex.name||"(removed)",sets:it.sets,reps:it.reps,
+      ref_video_path:ex.ref_video_path||null, landmarks:ex.landmarks||null};
+  });
+  const snapshot={name:w.name,items:snapItems};
+  await store.assignedWorkouts.add({engagement_id:currentEng.id,workout_id:w.id,snapshot,status:"assigned"});
+  toast("Workout assigned ✓"); renderEngagement();
+}
+
+/* =========================================================================
+   13. Trainee — perform an assigned workout (pose grading), then submit
+   ========================================================================= */
+let currentAssigned=null;   // the assigned_workouts row
+let localResults=null;      // per-item arrays, held until submit
+async function openAssigned(id){
+  currentAssigned=await store.assignedWorkouts.get(id);
+  const items=currentAssigned.snapshot.items||[];
+  // restore results if a report already exists (reviewed), else fresh
+  if(currentAssigned.status!=="assigned" && currentAssigned._report){ localResults=currentAssigned._report; }
+  else {
+    localResults=items.map(it=>Array(it.sets).fill(null));
+  }
+  go("trainee-workout");
+}
+function renderAssignedWorkout(){
+  const a=currentAssigned; if(!a)return;
+  const snap=a.snapshot, items=snap.items||[];
+  $("#tw-title").textContent=snap.name||"Workout";
+  let total=0,done=0,gs=0,gn=0;
+  items.forEach((it,i)=>{total+=it.sets;(localResults[i]||[]).forEach(r=>{if(r){done++;if(!r.ungraded){gs+=r.grade;gn++;}}});});
+  $("#tw-sub").textContent=`${items.length} exercises · ${total} sets`;
+  $("#tw-progress-txt").textContent=`${done} / ${total} sets`;
+  $("#tw-avg").textContent=gn?(gs/gn).toFixed(1):"—";$("#tw-avg").style.color=gn?gradeColor(Math.round(gs/gn)):"var(--ink)";
+  const locked = a.status!=="assigned";
+  const wrap=$("#tw-list");wrap.innerHTML="";
+  items.forEach((it,i)=>{
+    const ex={landmarks:it.landmarks,ref_video_path:it.ref_video_path,name:it.name};
+    const ref=hasRef(ex);
+    const results=localResults[i]||[];
+    const doneCount=results.filter(Boolean).length;
+    const card=document.createElement("div");card.className="card";
+    let inner=`<div class="ex-top" style="margin-bottom:6px">
+        <div class="ex-thumb" ${ref?'data-ref="'+i+'"':""} style="${ref?'cursor:pointer':''}">${ref&&it.ref_video_path?`<div data-video="${it.ref_video_path}" style="width:100%;height:100%"></div><div class="play">▶</div>`:'<span class="ph">◉</span>'}</div>
+        <div class="ex-info"><h3>${escapeHtml(it.name)}</h3>
+          <div class="ex-meta"><div><b>${it.sets}</b> sets</div><div><b>${it.reps}</b> reps</div><div><b>${doneCount}</b> done</div></div></div></div>`;
+    const nextUndone=results.findIndex(x=>!x);
+    for(let s=0;s<it.sets;s++){
+      const r=results[s];
+      if(r){
+        inner+=`<div class="setrow done"><div class="set-n">✓</div>
+          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${r.reps} reps · target ${it.reps}</div></div>
+          <div class="grade-badge">${r.ungraded?'<div class="grade-lab">logged</div>':`<div class="grade-num" style="color:${gradeColor(r.grade)}">${r.grade}</div><div class="grade-lab">/10</div>`}</div></div>`;
+      }else{
+        const isNext=(s===nextUndone)&&!locked;
+        inner+=`<div class="setrow"><div class="set-n">${s+1}</div>
+          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${it.reps} reps target</div></div>
+          <button class="set-cta ${isNext?"":"locked"}" data-i="${i}" data-s="${s}">${locked?"—":isNext?"● Record":"Locked"}</button></div>`;
+      }
+    }
+    card.innerHTML=inner;wrap.appendChild(card);
+  });
+  wrap.querySelectorAll("[data-i][data-s]").forEach(b=>b.addEventListener("click",()=>{
+    if(b.classList.contains("locked")){toast("Finish the previous set first");return;}
+    startTraineeSet(+b.getAttribute("data-i"),+b.getAttribute("data-s"));
+  }));
+  wrap.querySelectorAll("[data-ref]").forEach(t=>t.addEventListener("click",e=>{ if(e.target.closest("video"))return; previewReference(+t.getAttribute("data-ref")); }));
+  // submit button: enabled when all sets done and not yet submitted
+  const allDone=done===total&&total>0;
+  const submitBtn=$("#tw-submit");
+  submitBtn.classList.toggle("hidden",locked||!allDone);
+  submitBtn.onclick=submitToCoach;
+  hydrateVideos(wrap);
+}
+async function previewReference(itemIndex){
+  const it=currentAssigned.snapshot.items[itemIndex];
+  if(!it||!it.ref_video_path){toast("No reference video");return;}
+  const url=await playable(it.ref_video_path);
+  if(!url){toast("Reference unavailable");return;}
+  openRecorder({mode:"preview"});
+  $("#rplay").src=url;$("#rplay").style.display="block";
+  $("#rvideo").style.display="none";$("#roverlay").style.display="none";
+  $("#r-stat").classList.add("hidden");$("#r-deck").style.display="none";$("#rreview").style.display="none";
+  $("#r-title").innerHTML='Coach reference<small>correct form</small>';
+  $("#rplay").play();
+}
+function startTraineeSet(itemIndex,setIndex){
+  const it=currentAssigned.snapshot.items[itemIndex];
+  if(!hasRef({landmarks:it.landmarks}))toast("No coach reference — reps will be counted but form can't be graded.",3600);
+  openRecorder({
+    title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:false,
+    onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
+  });
+}
+async function runAnalysis(itemIndex,setIndex,capture){
+  const it=currentAssigned.snapshot.items[itemIndex];
+  const refFrames = it.landmarks && it.landmarks.frames ? it.landmarks.frames : null;
+  const A=$("#analyze");A.classList.add("on");const ring=$("#an-ring");
+  const steps=[["Counting repetitions","Tracking the dominant joint"],["Aligning your motion","Matching against the reference"],["Grading form","Scoring range, shape & tempo"]];
+  const setStep=i=>{$("#an-msg").textContent=steps[i][0];$("#an-sub").textContent=steps[i][1];ring.style.strokeDashoffset=264-(264*(i+1)/steps.length);};
+  setStep(0);await wait(650);setStep(1);await wait(650);setStep(2);await wait(500);
+  const rc=countReps(capture.frames);
+  let grade=null,shape=70,rom=70,tempo=70;
+  const ref = refFrames && refFrames.length>4;
+  if(ref&&capture.frames.length>4){
+    const gf=gradeForm(capture.frames,refFrames);grade=gf.grade;shape=gf.shape;rom=gf.rom;
+    tempo=tempoScore(capture.frames,rc.reps||1,refFrames,(it.landmarks.reps)||1);
+  }
+  const result={reps:rc.reps,grade:grade??0,ungraded:grade===null,shape,rom,tempo};
+  if(!localResults[itemIndex])localResults[itemIndex]=[];
+  localResults[itemIndex][setIndex]=result;
+  A.classList.remove("on");ring.style.strokeDashoffset=264;
+  showResult(it.name||"Set",it,setIndex,result);
+}
+function showResult(exName,it,setIndex,r){
+  const R=$("#result");R.classList.add("on");
+  $("#res-title").textContent=`${exName} · Set ${setIndex+1}`;
+  $("#res-setno").textContent=setIndex+1;
+  $("#res-reps").innerHTML=`${r.reps}<small> / ${it.reps}</small>`;
+  const ring=$("#res-ring"),g=r.ungraded?0:r.grade,col=r.ungraded?"#5B6773":gradeColor(g);
+  $("#res-grade").textContent=r.ungraded?"—":g;$("#res-grade").style.color=col;ring.style.stroke=col;
+  $("#res-verdict").textContent=r.ungraded?"No reference — reps counted only":gradeWord(g);$("#res-verdict").style.color=col;
+  $("#res-eyebrow").textContent=r.ungraded?"Set logged":"Set complete";
+  ring.style.transition="none";ring.style.strokeDashoffset=270;
+  requestAnimationFrame(()=>{ring.style.transition="stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)";ring.style.strokeDashoffset=270-(270*g/10);});
+  const bars=[["#bd-shape","#bd-shape-v",r.shape],["#bd-rom","#bd-rom-v",r.rom],["#bd-tempo","#bd-tempo-v",r.tempo]];
+  for(const [bar,val,pct] of bars){
+    const el=$(bar);el.style.width="0%";el.style.transition="none";el.style.background=r.ungraded?"#3a4650":gradeColor(Math.round(pct/10));
+    $(val).textContent=r.ungraded?"—":Math.round(pct);
+    requestAnimationFrame(()=>{el.style.transition="width .8s ease .2s";el.style.width=(r.ungraded?0:pct)+"%";});
+  }
+  $("#res-continue").onclick=()=>{R.classList.remove("on");renderAssignedWorkout();};
+}
+async function submitToCoach(){
+  const btn=$("#tw-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="Submitting…";
+  try{
+    const report={items:currentAssigned.snapshot.items.map((it,i)=>({name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
+    await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
+    await store.assignedWorkouts.update(currentAssigned.id,{status:"submitted"});
+    toast("Sent to your coach ✓",3200);
+    go("trainee-home");
+  }catch(err){console.error(err);toast(err.message||"Couldn't submit",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+}
+
+/* =========================================================================
+   14. Coach — review a submission (per-set labels + optional video)
+   ========================================================================= */
+let currentSubmission=null, reviewState=null, reviewReadonly=false;
+async function openReview(assignedId,readonly=false){
+  reviewReadonly=readonly;
+  const subs=await store.submissions.list({assigned_id:assignedId});
+  currentSubmission=subs[0];
+  if(!currentSubmission){toast("No submission found");return;}
+  const rep=currentSubmission.report||{};
+  const existing=readonly?(await store.reviews.list({submission_id:currentSubmission.id}))[0]:null;
+  reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId};
+  $("#rev-sub").textContent=currentEngOther.display_name?`From ${currentEngOther.display_name}`:"";
+  $("#rev-back").onclick=()=>renderEngagement()||go("engagement");
+  const body=$("#review-body");body.innerHTML="";
+  (rep.items||[]).forEach((item,ii)=>{
+    (item.results||[]).forEach((r,si)=>{
+      if(!r)return;
+      const key=ii+"-"+si;
+      const div=document.createElement("div");div.className="review-set";
+      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>
+        <div class="grade-badge">${r.ungraded?'<span class="grade-lab">logged</span>':`<span class="grade-num" style="color:${gradeColor(r.grade)}">${r.grade}</span><span class="grade-lab">/10</span>`}</div></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${r.reps} reps · target ${item.reps} · motion ${r.shape||"—"} · range ${r.rom||"—"}</div>`;
+      if(!readonly){
+        const pills=document.createElement("div");pills.className="pill-row";
+        ["Nailed it","Good","Watch depth","Slow down","Fix form"].forEach(lab=>{
+          const p=document.createElement("span");p.className="pill";p.textContent=lab;
+          p.addEventListener("click",()=>{ pills.querySelectorAll(".pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");
+            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,label:lab}; });
+          pills.appendChild(p);
+        });
+        div.appendChild(pills);
+      }else if(existing&&existing.per_set){
+        const ps=(existing.per_set||[]).find(p=>p.exercise===item.name&&p.set===si+1);
+        if(ps)div.innerHTML+=`<div style="margin-top:6px"><span class="badge coach">${escapeHtml(ps.label||"")}</span> <span style="font-size:13px;color:var(--muted)">${escapeHtml(ps.comment||"")}</span></div>`;
+      }
+      body.appendChild(div);
+    });
+  });
+  const oaWrap=document.createElement("div");oaWrap.className="field";oaWrap.style.marginTop="8px";
+  oaWrap.innerHTML=`<label>Overall feedback</label>`;
+  if(!readonly){ const ta=document.createElement("textarea");ta.id="rev-overall";ta.placeholder="A sentence or two for your trainee.";ta.value=reviewState.overall;oaWrap.appendChild(ta); }
+  else oaWrap.innerHTML+=`<p style="font-size:14px;color:var(--muted);line-height:1.5">${escapeHtml(existing?existing.overall||"—":"—")}</p>`;
+  body.appendChild(oaWrap);
+  $("#rev-submit").style.display=readonly?"none":"flex";
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-review").classList.add("active");
+}
+$("#rev-submit").addEventListener("click",async()=>{
+  const btn=$("#rev-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
+  try{
+    const per_set=Object.values(reviewState.per_set);
+    await store.reviews.add({submission_id:currentSubmission.id,coach_id:ME.id,overall:($("#rev-overall")?.value||"").trim(),per_set});
+    await store.assignedWorkouts.update(reviewState.assignedId,{status:"reviewed"});
+    toast("Review sent ✓"); openEngagement(currentEng.id);
+  }catch(err){console.error(err);toast(err.message||"Couldn't send review",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+
+/* =========================================================================
+   15. Mutual rating
+   ========================================================================= */
+let rateStars=0;
+function openRate(){
+  rateStars=0;
+  const iAmCoach=currentEng.coach_id===ME.id;
+  $("#rate-title").textContent=`Rate your ${iAmCoach?"trainee":"coach"}`;
+  $("#rate-avatar").textContent=currentEngOther.avatar_initials||initials(currentEngOther.display_name);
+  $("#rate-name").textContent=currentEngOther.display_name||"—";
+  $("#rate-role").textContent=iAmCoach?"Trainee":"Coach";
+  $("#rate-text").value="";
+  $$("#rate-stars span").forEach(s=>s.classList.remove("on"));
+  $("#rate-back").onclick=()=>openEngagement(currentEng.id);
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-rate").classList.add("active");
+}
+$$("#rate-stars span").forEach(s=>s.addEventListener("click",()=>{
+  rateStars=+s.getAttribute("data-s");
+  $$("#rate-stars span").forEach(x=>x.classList.toggle("on",+x.getAttribute("data-s")<=rateStars));
+}));
+$("#rate-submit").addEventListener("click",async()=>{
+  if(!rateStars){toast("Pick a star rating");return;}
+  const iAmCoach=currentEng.coach_id===ME.id;
+  const btn=$("#rate-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="…";
+  try{
+    await store.ratings.add({engagement_id:currentEng.id,rater_id:ME.id,ratee_id:iAmCoach?currentEng.trainee_id:currentEng.coach_id,stars:rateStars,text:$("#rate-text").value.trim()});
+    toast("Thanks — rating submitted ✓"); openEngagement(currentEng.id);
+  }catch(err){console.error(err);toast(err.message||"Couldn't submit rating",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+
+/* =========================================================================
+   16. Profile + coach application
+   ========================================================================= */
+async function renderProfile(){
+  const body=$("#profile-body");
+  const r=roleOf();
+  // reputation
+  let ratings=[];
+  try{ ratings=(await store._sb.from("ratings").select("stars").eq("ratee_id",ME.id)).data||[]; }catch(e){}
+  const avg=ratings.length?ratings.reduce((s,x)=>s+x.stars,0)/ratings.length:0;
+  let html=`<div class="prof-head">
+      <div class="avatar lg">${escapeHtml(ME.avatar_initials||initials(ME.display_name))}</div>
+      <div><div class="nm">${escapeHtml(ME.display_name||"—")}</div>
+        <div style="margin-top:6px"><span class="badge ${r}">${r}</span>${isAdmin()?' <span class="badge admin">admin</span>':""}</div>
+        <div class="ct">${ratings.length?`${starsHtml(avg)} ${avg.toFixed(1)} · ${ratings.length} rating${ratings.length>1?"s":""}`:"No ratings yet"}</div></div>
+    </div>`;
+  html+=`<div class="card" style="margin-top:18px">
+      <div class="field" style="margin:0 0 12px"><label>Display name</label><input id="pf-name" value="${escapeHtml(ME.display_name||"")}"></div>
+      <div class="field" style="margin:0 0 12px"><label>City</label><input id="pf-city" value="${escapeHtml(ME.city||"")}"></div>
+      <div class="field" style="margin:0"><label>Bio</label><textarea id="pf-bio">${escapeHtml(ME.bio||"")}</textarea></div>
+      <button class="btn sm" id="pf-save" style="margin-top:14px">Save profile</button>
+    </div>`;
+  if(r==="trainee"){
+    const apps=await store.coachApps.mine();
+    const pending=apps.find(a=>a.status==="pending");
+    const rejected=apps.find(a=>a.status==="rejected");
+    if(pending){
+      html+=`<div class="card" style="margin-top:14px;border-color:#3a3418"><div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-weight:700">Coach application</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Under review by an admin</div></div><span class="badge pending">pending</span></div></div>`;
+    }else{
+      html+=`<div class="card ex-card" id="apply-card" style="margin-top:14px;background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18">
+        <div class="list-row"><div class="ic" style="font-size:22px">✎</div><div class="lr-main"><h3>Apply for Coach profile</h3><div class="sub">${rejected?"Previous application declined — you can re-apply":"Build a library, take on trainees"}</div></div><div class="arw">→</div></div></div>`;
+    }
+  }
+  body.innerHTML=html;
+  $("#pf-save").addEventListener("click",async()=>{
+    try{ ME=await store.auth.updateProfile({display_name:$("#pf-name").value.trim(),city:$("#pf-city").value.trim(),bio:$("#pf-bio").value.trim()}); toast("Profile saved ✓"); }
+    catch(err){console.error(err);toast("Couldn't save profile",4000);}
+  });
+  $("#apply-card")?.addEventListener("click",()=>go("coach-apply"));
+}
+
+let applyBand=null;
+$$("#ca-price-pills .pill").forEach(p=>p.addEventListener("click",()=>{$$("#ca-price-pills .pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");applyBand=p.getAttribute("data-band");}));
+$("#ca-submit").addEventListener("click",async()=>{
+  const full_name=$("#ca-name").value.trim();
+  if(!full_name){toast("Add your name");return;}
+  const btn=$("#ca-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="Submitting…";
+  try{
+    await store.coachApps.apply({full_name,qualifications:$("#ca-quals").value.trim(),experience:$("#ca-exp").value.trim(),specialties:$("#ca-spec").value.trim(),price_band:applyBand,note:$("#ca-note").value.trim()});
+    toast("Application submitted ✓ An admin will review it.",3600); go("profile");
+  }catch(err){console.error(err);toast(err.message||"Couldn't submit",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+
+/* =========================================================================
+   17. Admin — review & approve coach applications
+   ========================================================================= */
+async function renderAdmin(){
+  const body=$("#admin-body");body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
+  let apps=[];
+  try{ apps=await store.coachApps.pending(); }catch(err){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><p>${escapeHtml(err.message||"Couldn't load applications")}</p></div>`; return; }
+  $("#admin-sub").textContent=apps.length?`${apps.length} pending`:"Nothing pending";
+  body.innerHTML="";
+  if(!apps.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`; return; }
+  for(const a of apps){
+    const prof=a.profiles||{};
+    const div=document.createElement("div");div.className="card";
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="avatar">${escapeHtml(initials(a.full_name||prof.display_name))}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:800">${escapeHtml(a.full_name||prof.display_name||"—")}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(prof.city||"")}</div></div>
+        ${a.price_band?`<span class="badge coach">${escapeHtml(a.price_band)}</span>`:""}</div>
+      <div class="kv"><span class="k">Qualifications</span><span class="v">${escapeHtml(a.qualifications||"—")}</span></div>
+      <div class="kv"><span class="k">Experience</span><span class="v">${escapeHtml(a.experience||"—")}</span></div>
+      <div class="kv"><span class="k">Specialties</span><span class="v">${escapeHtml(a.specialties||"—")}</span></div>
+      ${a.note?`<p style="font-size:13px;color:var(--muted);line-height:1.5;margin-top:10px">${escapeHtml(a.note)}</p>`:""}
+      <div style="display:flex;gap:10px;margin-top:14px"><button class="btn sm" style="flex:1;color:var(--red)" data-rej="${a.id}">Reject</button><button class="btn primary sm" style="flex:1" data-app="${a.id}">Approve</button></div>`;
+    body.appendChild(div);
+  }
+  body.querySelectorAll("[data-app]").forEach(b=>b.addEventListener("click",async()=>{
+    b.disabled=true;
+    try{ await store.coachApps.approve(b.getAttribute("data-app")); toast("Approved — they're now a coach ✓",3200); renderAdmin(); }
+    catch(err){console.error(err);toast(err.message||"Couldn't approve",4000);b.disabled=false;}
+  }));
+  body.querySelectorAll("[data-rej]").forEach(b=>b.addEventListener("click",async()=>{
+    try{ await store.coachApps.reject(b.getAttribute("data-rej")); toast("Application rejected"); renderAdmin(); }
+    catch(err){console.error(err);toast(err.message||"Couldn't reject",4000);}
+  }));
+}
+
+
+/* =========================================================================
+   18. Recorder (camera + skeleton + landmark capture) — callback based
+   Produces {frames,fps,blob}. Callers upload blob via store.video.upload().
+   ========================================================================= */
+const rvideo=$("#rvideo"),roverlay=$("#roverlay"),rctx=roverlay.getContext("2d"),rplay=$("#rplay");
+let rStream=null,rFacing="user",rShow=true,rRAF=null,rLastT=-1;
+let rRecording=false,rRecorder=null,rChunks=[],rBlob=null,rURL=null,rStart=0,rTimerInt=null;
+let capFrames=[],capStart=0, recOpts=null, lastCapture=null;
+let recCanvas,recCtx,recPaintRAF;
+
+function sizeCanvas(){const w=rvideo.videoWidth||rvideo.clientWidth,h=rvideo.videoHeight||rvideo.clientHeight;if(w&&h&&(roverlay.width!==w||roverlay.height!==h)){roverlay.width=w;roverlay.height=h;}}
+async function openRecorder(opts){
+  recOpts=opts||{};
+  $("#rec").classList.add("on");
+  rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";
+  $("#r-deck").style.display="flex";$("#rreview").style.display="none";$("#r-stat").classList.remove("hidden");$("#r-spin").classList.remove("hidden");
+  $("#rbtn").disabled=true;$("#rbtn").classList.remove("rec");$("#rtimer").classList.remove("on");
+  if(recOpts.mode==="preview")return;
+  $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
+  try{
+    await ensureModel(m=>$("#r-statmsg").textContent=m);
+    $("#r-statmsg").textContent="Starting camera…";
+    await startCam();
+    $("#r-stat").classList.add("hidden");$("#rbtn").disabled=false;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";
+    rLoop();
+  }catch(err){console.error(err);$("#r-spin").classList.add("hidden");
+    $("#r-statmsg").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS (or localhost). Open this over https and retry.";}
+}
+function closeRecorder(){cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");}
+async function startCam(){
+  if(rStream)rStream.getTracks().forEach(t=>t.stop());
+  rStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:rFacing,width:{ideal:1280},height:{ideal:720}},audio:false});
+  rvideo.srcObject=rStream;rvideo.style.transform=rFacing==="user"?"scaleX(-1)":"none";
+  await rvideo.play();await new Promise(r=>{if(rvideo.readyState>=2)return r();rvideo.onloadeddata=()=>r();});sizeCanvas();
+}
+function rLoop(){
+  if(rvideo.readyState>=2&&landmarker){
+    sizeCanvas();const now=performance.now();
+    if(rvideo.currentTime!==rLastT){
+      rLastT=rvideo.currentTime;
+      const res=landmarker.detectForVideo(rvideo,now);
+      rctx.save();rctx.clearRect(0,0,roverlay.width,roverlay.height);
+      const mirror=rFacing==="user"; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}
+      if(rShow&&res.landmarks){for(const lm of res.landmarks)drawFigure(rctx,lm,roverlay.width,roverlay.height);}
+      rctx.restore();
+      if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
+    }
+  }
+  rRAF=requestAnimationFrame(rLoop);
+}
+function pickMime(){const c=["video/mp4;codecs=h264","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];return c.find(t=>MediaRecorder.isTypeSupported(t))||"";}
+function startRec(){
+  const w=rvideo.videoWidth,h=rvideo.videoHeight;
+  recCanvas=document.createElement("canvas");recCanvas.width=w;recCanvas.height=h;recCtx=recCanvas.getContext("2d");
+  const mirror=rFacing==="user";
+  const paint=()=>{recCtx.save();if(mirror){recCtx.translate(w,0);recCtx.scale(-1,1);}recCtx.drawImage(rvideo,0,0,w,h);recCtx.restore();recCtx.drawImage(roverlay,0,0,w,h);recPaintRAF=requestAnimationFrame(paint);};
+  paint();
+  const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capStart=performance.now();
+  rRecorder=new MediaRecorder(cs,mime?{mimeType:mime,videoBitsPerSecond:6_000_000}:undefined);
+  rRecorder.ondataavailable=e=>{if(e.data.size)rChunks.push(e.data);};rRecorder.onstop=onRecStop;rRecorder.start();
+  rRecording=true;$("#rbtn").classList.add("rec");$("#r-flip").style.visibility="hidden";$("#r-ghost").style.visibility="hidden";
+  rStart=Date.now();$("#rtimer").classList.add("on");$("#rtval").textContent="0:00";rTimerInt=setInterval(()=>$("#rtval").textContent=fmt((Date.now()-rStart)/1000),250);
+}
+function stopRec(silent){
+  if(!rRecorder||rRecorder.state==="inactive")return;
+  rRecorder._silent=silent;rRecorder.stop();cancelAnimationFrame(recPaintRAF);
+  rRecording=false;$("#rbtn").classList.remove("rec");clearInterval(rTimerInt);$("#rtimer").classList.remove("on");
+  $("#r-flip").style.visibility="visible";$("#r-ghost").style.visibility="visible";
+}
+function onRecStop(){
+  const type=rRecorder.mimeType||"video/webm";
+  rBlob=new Blob(rChunks,{type});if(rURL)URL.revokeObjectURL(rURL);rURL=URL.createObjectURL(rBlob);
+  if(rRecorder._silent)return;
+  const fps=capFrames.length/Math.max(0.001,(performance.now()-capStart)/1000);
+  lastCapture={frames:capFrames.slice(),fps,blob:rBlob};
+  if(recOpts.review){
+    rvideo.style.display="none";roverlay.style.display="none";rplay.src=rURL;rplay.style.display="block";
+    $("#r-deck").style.display="none";$("#rreview").style.display="flex";cancelAnimationFrame(rRAF);
+  }else{
+    const cb=recOpts.onComplete;closeRecorder();cb&&cb(lastCapture);
+  }
+}
+$("#rbtn").addEventListener("click",()=>rRecording?stopRec(false):startRec());
+$("#r-close").addEventListener("click",closeRecorder);
+$("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"environment":"user";try{await startCam();}catch(e){toast("Couldn't switch camera");}});
+$("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);});
+$("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";rLastT=-1;rLoop();});
+$("#r-preview").addEventListener("click",()=>{rplay.currentTime=0;rplay.play();});
+$("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;closeRecorder();cb&&cb(lastCapture);});
+
+/* =========================================================================
+   19. Boot — auth gate decides what shows first
+   ========================================================================= */
+(async function(){
+  try{
+    if(!window.store){ throw new Error("store not loaded"); }
+    const u=await store.auth.currentUser();
+    if(u){ await bootSignedIn(); }
+    else { showAuth(); }
+    // keep UI in sync if auth changes in another tab
+    store.auth.onChange(async(session)=>{
+      if(session&&session.user){ if(!ME) await bootSignedIn(); }
+      else { ME=null; urlCache.clear(); showAuth(); }
+    });
+  }catch(e){
+    console.error(e);
+    $("#app-loading").innerHTML=`<div style="text-align:center;padding:0 30px"><div style="font-size:14px;color:var(--red);font-weight:700;margin-bottom:8px">Couldn't start</div><div style="font-size:13px;color:var(--muted);line-height:1.5">${escapeHtml(e.message||"Check config.js and your connection.")}</div></div>`;
+  }
+})();
+</script>
+</body>
+</html>

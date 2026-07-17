@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormTrace — Supabase smoke test</title>
+<style>
+  :root{--bg:#0B0E11;--panel:#151B21;--line:#2E3944;--ink:#EEF3F6;--muted:#8593A0;--lime:#C8FF3D;--red:#FF5A5A;--amber:#FFC24A;--green:#7ee0a0;}
+  *{box-sizing:border-box;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;}
+  body{margin:0;background:#05070A;color:var(--ink);padding:24px 16px 80px;max-width:760px;margin:0 auto;}
+  h1{font-size:20px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.5;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px;font-weight:700;}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 5px;font-weight:700;}
+  input{width:100%;background:#0d1319;border:1px solid var(--line);border-radius:9px;color:var(--ink);font-size:14px;padding:10px;margin-bottom:10px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .row>div{flex:1;min-width:150px;}
+  button{background:var(--lime);color:#0a0d10;border:0;border-radius:9px;font-weight:800;font-size:13px;padding:10px 14px;cursor:pointer;margin:0 8px 8px 0;}
+  button.ghost{background:#1B232B;color:var(--ink);border:1px solid var(--line);}
+  button:disabled{opacity:.4;cursor:default;}
+  #log{background:#05080b;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word;max-height:360px;overflow:auto;}
+  .ok{color:var(--green);} .err{color:var(--red);} .info{color:var(--amber);} .dim{color:var(--muted);}
+  .who{font-size:12px;color:var(--muted);margin-bottom:12px;}
+  .who b{color:var(--lime);}
+  video{width:100%;max-width:240px;border-radius:10px;background:#000;margin-top:8px;display:none;}
+</style>
+</head>
+<body>
+<h1>FormTrace · Supabase smoke test</h1>
+<div class="sub">Verifies the backend wiring end-to-end — auth, profile row, table write/read under RLS, and video upload + signed-URL playback — without touching the main app. Run top to bottom. Green is pass, red is fail.</div>
+
+<div class="who" id="who">Not signed in.</div>
+
+<div class="card">
+  <h2>1 · Connection</h2>
+  <button onclick="testConn()">Check config &amp; connect</button>
+  <span class="dim">Confirms config.js is filled and the Supabase client initialises.</span>
+</div>
+
+<div class="card">
+  <h2>2 · Auth</h2>
+  <div class="row">
+    <div><label>Email</label><input id="email" placeholder="you@example.com"></div>
+    <div><label>Password</label><input id="pass" type="password" placeholder="min 6 chars"></div>
+  </div>
+  <label>Display name (sign-up only)</label><input id="dname" placeholder="Alex Morgan">
+  <div>
+    <button onclick="doSignUp()">Sign up</button>
+    <button class="ghost" onclick="doSignIn()">Sign in</button>
+    <button class="ghost" onclick="doSignOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>3 · Profile row</h2>
+  <button onclick="testProfile()">Read my profile</button>
+  <span class="dim">The sign-up trigger should have auto-created this row.</span>
+</div>
+
+<div class="card">
+  <h2>4 · Table write/read under RLS</h2>
+  <button onclick="testTable()">Create + read a listing</button>
+  <span class="dim">Inserts a listing owned by you, then reads it back.</span>
+</div>
+
+<div class="card">
+  <h2>5 · Video upload + playback</h2>
+  <button onclick="testVideo()">Record 3s &amp; round-trip</button>
+  <span class="dim">Records from your camera, uploads to Storage, plays back via a signed URL.</span>
+  <video id="vid" controls playsinline></video>
+</div>
+
+<div class="card">
+  <h2>Log</h2>
+  <button class="ghost" onclick="document.getElementById('log').textContent=''">Clear</button>
+  <div id="log"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="store.supabase.js"></script>
+<script>
+const logEl = document.getElementById('log');
+function log(msg, cls){ const s=document.createElement('span'); if(cls)s.className=cls; s.textContent=msg+"\n"; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
+function ok(m){log("✓ "+m,"ok");} function err(m){log("✗ "+m,"err");} function info(m){log("• "+m,"info");}
+
+async function refreshWho(){
+  try{
+    const u = await store.auth.currentUser();
+    document.getElementById('who').innerHTML = u ? ('Signed in as <b>'+u.email+'</b> ('+u.id.slice(0,8)+'…)') : 'Not signed in.';
+  }catch(e){ document.getElementById('who').textContent='Not signed in.'; }
+}
+
+function testConn(){
+  try{
+    if(!window.FT_CONFIG || String(window.FT_CONFIG.SUPABASE_URL).includes('YOUR-PROJECT')){
+      err("config.js not filled in — add your Supabase URL and anon key."); return;
+    }
+    if(!window.store){ err("store.supabase.js did not load / window.store missing."); return; }
+    ok("Config present and store loaded.");
+    info("URL: "+window.FT_CONFIG.SUPABASE_URL);
+  }catch(e){ err(e.message||e); }
+}
+
+async function doSignUp(){
+  try{
+    const email=val('email'), pass=val('pass'), dn=val('dname')||'Test User';
+    if(!email||!pass){ err("Enter email and password."); return; }
+    info("Signing up "+email+" …");
+    const d = await store.auth.signUp(email, pass, dn);
+    if(d && d.user && !d.session){
+      ok("Sign-up accepted. Email confirmation is ON — confirm via the email link, then Sign in.");
+    }else{
+      ok("Signed up and session active.");
+    }
+    await refreshWho();
+  }catch(e){ err("Sign-up: "+(e.message||e)); }
+}
+
+async function doSignIn(){
+  try{
+    const email=val('email'), pass=val('pass');
+    info("Signing in "+email+" …");
+    await store.auth.signIn(email, pass);
+    ok("Signed in.");
+    await refreshWho();
+  }catch(e){ err("Sign-in: "+(e.message||e)+"  (if 'Email not confirmed', confirm the link or disable confirmation in Supabase → Auth → Providers → Email)"); }
+}
+
+async function doSignOut(){
+  try{ await store.auth.signOut(); ok("Signed out."); await refreshWho(); }
+  catch(e){ err("Sign-out: "+(e.message||e)); }
+}
+
+async function testProfile(){
+  try{
+    const p = await store.auth.myProfile();
+    if(!p){ err("No profile row — are you signed in?"); return; }
+    ok("Profile: role="+p.role+", name="+(p.display_name||'∅')+", admin="+p.is_admin);
+  }catch(e){ err("Profile: "+(e.message||e)); }
+}
+
+async function testTable(){
+  try{
+    info("Inserting a listing …");
+    const u = await store.auth.currentUser();
+    if(!u){ err("Sign in first."); return; }
+    const row = await store.listings.add({
+      trainee_id: u.id,
+      title: "Smoke test goal "+new Date().toISOString().slice(11,19),
+      focus: "General",
+      details: "created by smoke-test.html"
+    });
+    ok("Insert OK — id "+row.id.slice(0,8)+"…");
+    const mine = await store.listings.list({ trainee_id: u.id });
+    ok("Read back "+mine.length+" listing(s) owned by me.");
+  }catch(e){ err("Table: "+(e.message||e)); }
+}
+
+async function testVideo(){
+  const vid=document.getElementById('vid');
+  try{
+    const u = await store.auth.currentUser();
+    if(!u){ err("Sign in first (uploads go to your folder)."); return; }
+    info("Requesting camera …");
+    const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    vid.style.display='block'; vid.srcObject=stream; vid.muted=true; await vid.play().catch(()=>{});
+    const rec = new MediaRecorder(stream); const chunks=[];
+    rec.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+    const done = new Promise(res=> rec.onstop=res);
+    rec.start(); info("Recording 3s …");
+    await new Promise(r=>setTimeout(r,3000));
+    rec.stop(); await done;
+    stream.getTracks().forEach(t=>t.stop());
+    const blob = new Blob(chunks,{type:'video/webm'});
+    ok("Recorded "+(blob.size/1024|0)+" KB.");
+    info("Uploading to Storage …");
+    const path = await store.video.upload(blob);
+    ok("Uploaded → "+path);
+    info("Creating signed URL …");
+    const url = await store.video.signedUrl(path, 600);
+    ok("Signed URL obtained.");
+    vid.srcObject=null; vid.muted=false; vid.src=url; await vid.play().catch(()=>{});
+    ok("Playback started from Storage. Full round-trip works. 🎉");
+  }catch(e){ err("Video: "+(e.message||e)); vid.style.display='none'; }
+}
+
+function val(id){ return document.getElementById(id).value.trim(); }
+store.auth.onChange(()=>refreshWho());
+refreshWho();
+</script>
+</body>
+</html>

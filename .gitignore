@@ -1,0 +1,10 @@
+# FormTrace alpha
+# config.js holds only the anon (public) key, which is safe to commit,
+# but if you prefer to keep it out of git, uncomment the next line and
+# copy config.example.js -> config.js locally / on the host.
+# config.js
+
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
