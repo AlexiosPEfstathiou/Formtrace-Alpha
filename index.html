@@ -291,6 +291,32 @@
   .loading-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:80;background:var(--bg);}
   .review-set{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
   .review-set .rs-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  /* offer form controls */
+  .field input.ro{background:var(--panel2);color:var(--muted);cursor:not-allowed;opacity:.85;}
+  .field select.sel{width:100%;height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:16px;padding:0 14px;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238593A0' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center;}
+  .field select.sel:focus{border-color:var(--lime-dim);}
+  .stepper-lite{flex:1;}
+  .stepper-lite input{width:100%;height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:16px;text-align:center;font-weight:700;outline:none;font-variant-numeric:tabular-nums;}
+  .stepper-lite input:focus{border-color:var(--lime-dim);}
+  .field input[type=date]{width:100%;height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:16px;padding:0 14px;outline:none;}
+  .field input[type=date]:focus{border-color:var(--lime-dim);}
+  .field input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer;}
+  /* pitched badge on marketplace */
+  .pitched-tag{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--panel2);color:var(--faint);font-size:14px;font-weight:700;border:1px solid var(--line2);}
+  /* collapsed trainee offer row */
+  .offer-row{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;align-items:center;gap:13px;}
+  .offer-row:active{transform:scale(.995);}
+  .offer-row .or-av{width:42px;height:42px;border-radius:12px;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--lime);flex-shrink:0;}
+  .offer-row .or-main{flex:1;min-width:0;}
+  .offer-row .or-main .or-t{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .offer-row .or-main .or-s{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .offer-row .or-chev{color:var(--faint);font-size:18px;flex-shrink:0;}
+  .offer-row .or-ago{font-size:11px;color:var(--amber);font-weight:700;margin-top:3px;}
+  .offer-row.unviewed{border-color:var(--lime-dim);}
+  .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
+  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
+  .offer-expanded{background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
+  .offer-expanded .oe-collapse{margin-top:12px;}
 </style>
 </head>
 <body>
@@ -393,15 +419,33 @@
     <div class="top"><div class="back" data-go="market">←</div><div style="flex:1"><h1>Send an offer</h1><div class="sub" id="offer-sub"></div></div></div>
     <div class="body">
       <div class="card" id="offer-listing-card" style="display:none"></div>
-      <div class="field"><label>Offer title</label><input id="of-title" placeholder="e.g. 8-week strength block" autocomplete="off"></div>
+      <div class="field"><label>Goal</label><input id="of-title" readonly class="ro" autocomplete="off"></div>
       <div class="field"><label>Focus</label><input id="of-focus" placeholder="e.g. Squat depth & posterior chain" autocomplete="off"></div>
-      <div class="two">
-        <div class="field"><label>Length</label><input id="of-length" placeholder="8 weeks"></div>
-        <div class="field"><label>Sessions</label><input id="of-sessions" placeholder="3 / week"></div>
+      <div class="field">
+        <label>Length (weeks)</label>
+        <div class="two">
+          <div class="stepper-lite"><input id="of-length-min" type="number" min="1" max="52" placeholder="4"></div>
+          <div style="align-self:center;color:var(--muted);font-weight:700">to</div>
+          <div class="stepper-lite"><input id="of-length-max" type="number" min="1" max="52" placeholder="6"></div>
+        </div>
       </div>
-      <div class="two">
-        <div class="field"><label>Start</label><input id="of-start" placeholder="Next Monday"></div>
-        <div class="field"><label>Price</label><input id="of-price" placeholder="£240 / block"></div>
+      <div class="field"><label>Sessions / week</label>
+        <select id="of-sessions" class="sel">
+          <option value="">Select…</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option>
+        </select>
+      </div>
+      <div class="field"><label>Start date</label><input id="of-start" type="date"></div>
+      <div class="field"><label>Price / week</label>
+        <div class="two">
+          <select id="of-currency" class="sel" style="max-width:96px">
+            <option value="$">$ USD</option>
+            <option value="€">€ EUR</option>
+            <option value="¥">¥ JPY</option>
+          </select>
+          <input id="of-price" type="number" min="0" placeholder="40" style="flex:1">
+        </div>
       </div>
       <div class="field">
         <label>Video pitch — required</label>
@@ -445,8 +489,8 @@
     <div class="body with-tabs" id="listings-body"></div>
     <div class="fab-row" style="bottom:70px;"><button class="btn primary" id="listings-fab">+ Post a goal</button></div>
     <div class="tabbar">
-      <button data-ltab="goals" class="on"><span class="i">◎</span>My goals</button>
-      <button data-ltab="offers"><span class="i">✉</span>Offers</button>
+      <button data-ltab="goals"><span class="i">◎</span>My goals</button>
+      <button data-ltab="offers" class="on"><span class="i">✉</span>Offers</button>
     </div>
   </section>
 
@@ -632,6 +676,7 @@ function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&l
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function initials(name){ if(!name)return "?"; const p=name.trim().split(/\s+/); return ((p[0]||"")[0]||"").toUpperCase()+((p[1]||"")[0]||"").toUpperCase()||((p[0]||"?")[0]||"?").toUpperCase(); }
 function starsHtml(n){ n=Math.round(n||0); let h=""; for(let i=1;i<=5;i++)h+=`<span class="${i<=n?"":"off"}">★</span>`; return `<span class="stars">${h}</span>`; }
+function timeAgo(ts){ if(!ts)return ""; const s=Math.floor((Date.now()-new Date(ts).getTime())/1000); if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return `${m} minute${m>1?"s":""} ago`; const h=Math.floor(m/60); if(h<24)return `${h} hour${h>1?"s":""} ago`; const d=Math.floor(h/24); return `${d} day${d>1?"s":""} ago`; }
 
 /* A tiny in-memory cache of signed URLs so we don't re-sign on every render. */
 const urlCache=new Map();
@@ -1089,7 +1134,7 @@ $("#sheet-add").addEventListener("click",()=>{
 /* =========================================================================
    11. Marketplace — trainee listings & coach offers
    ========================================================================= */
-let listingsTab="goals";
+let listingsTab="offers";   // trainee lands on Offers by default
 let pendingListingVideo=null;   // {blob,frames,fps}
 let listingFocus=null;
 
@@ -1097,6 +1142,8 @@ $$(".tabbar button[data-ltab]").forEach(b=>b.addEventListener("click",()=>{listi
 $("#listings-fab").addEventListener("click",()=>go("listing-new"));
 
 async function renderListings(){
+  // keep the tabbar highlight in sync with listingsTab (covers default landing + post-goal)
+  $$(".tabbar button[data-ltab]").forEach(x=>x.classList.toggle("on",x.getAttribute("data-ltab")===listingsTab));
   const body=$("#listings-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   if(listingsTab==="goals"){
     const mine=await store.listings.list({trainee_id:ME.id});
@@ -1113,7 +1160,7 @@ async function renderListings(){
     }
     hydrateVideos(body);
   }else{
-    // offers received
+    // offers received — collapsed rows that expand on tap
     const offers=await store.offers.list({trainee_id:ME.id});
     $("#listings-sub").textContent=offers.length?`${offers.length} offer${offers.length>1?"s":""} received`:"No offers yet";
     body.innerHTML="";
@@ -1121,38 +1168,63 @@ async function renderListings(){
     const coaches=Object.fromEntries((await store.coaches()).map(c=>[c.id,c]));
     for(const o of offers){
       const c=coaches[o.coach_id]||{};
-      const div=document.createElement("div");div.className="card";
-      div.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <div class="avatar">${escapeHtml(c.avatar_initials||initials(c.display_name))}</div>
-          <div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"Coach")}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
-          <span class="badge ${o.status}">${o.status}</span></div>
-        <h3 style="font-size:17px;font-weight:800;margin-bottom:4px">${escapeHtml(o.title)}</h3>
-        <div class="video-card" style="margin:12px 0" data-video="${o.pitch_video_path}"></div>
-        <div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(o.length_text||"—")}</span></div>
-        <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(o.sessions_text||"—")}</span></div>
-        <div class="kv"><span class="k">Start</span><span class="v">${escapeHtml(o.start_text||"—")}</span></div>
-        <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>`;
-      if(o.status==="pending"){
-        const row=document.createElement("div");row.className="row";row.style.cssText="display:flex;gap:10px;margin-top:14px";
-        row.innerHTML=`<button class="btn sm" style="flex:1;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
-        div.appendChild(row);
-      }
-      body.appendChild(div);
+      const coachName=c.display_name||"Coach";
+      const shortName=(()=>{const p=coachName.trim().split(/\s+/);return p.length>1?`${p[0]} ${p[1][0]}.`:p[0];})();
+      const unviewed=!o.viewed_at;
+      const wrap=document.createElement("div");
+      renderOfferRow(wrap,o,c,shortName,unviewed,coachName);
+      body.appendChild(wrap);
     }
-    body.querySelectorAll("[data-acc]").forEach(b=>b.addEventListener("click",()=>acceptOffer(b.getAttribute("data-acc"))));
-    body.querySelectorAll("[data-rej]").forEach(b=>b.addEventListener("click",async()=>{ await store.offers.update(b.getAttribute("data-rej"),{status:"rejected"}); toast("Offer declined"); renderListings(); }));
     hydrateVideos(body);
   }
 }
+/* Renders the collapsed offer row into `wrap`; wires expand/collapse + view-marking. */
+function renderOfferRow(wrap,o,c,shortName,unviewed,coachName){
+  wrap.innerHTML=`<div class="offer-row${unviewed?" unviewed":""}">
+      <div class="or-av">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
+      <div class="or-main">
+        <div class="or-t">Offer from ${escapeHtml(shortName)} — ${escapeHtml(o.price_text||"—")}</div>
+        ${unviewed?`<div class="or-ago">${escapeHtml(timeAgo(o.created_at))}</div>`:`<div class="or-s">${escapeHtml(o.title)}</div>`}
+      </div>
+      <div class="or-chev">›</div>
+    </div>`;
+  wrap.querySelector(".offer-row").addEventListener("click",async()=>{
+    // mark viewed on first expand
+    if(!o.viewed_at){
+      try{ await store.offers.update(o.id,{viewed_at:new Date().toISOString()}); o.viewed_at=new Date().toISOString(); }catch(e){console.error(e);}
+    }
+    expandOfferRow(wrap,o,c,shortName,coachName);
+  });
+}
+function expandOfferRow(wrap,o,c,shortName,coachName){
+  const exp=document.createElement("div");exp.className="offer-expanded";
+  exp.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div class="avatar">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
+      <div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(coachName)}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
+      <span class="badge ${o.status}">${o.status}</span></div>
+    <h3 style="font-size:17px;font-weight:800;margin-bottom:4px">${escapeHtml(o.title)}</h3>
+    <div class="video-card" style="margin:12px 0" data-video="${o.pitch_video_path}"></div>
+    <div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(o.length_text||"—")}</span></div>
+    <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(o.sessions_text||"—")}</span></div>
+    <div class="kv"><span class="k">Start</span><span class="v">${escapeHtml(o.start_text||"—")}</span></div>
+    <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>`;
+  if(o.status==="pending"){
+    const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;margin-top:14px";
+    row.innerHTML=`<button class="btn sm" style="flex:1;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
+    exp.appendChild(row);
+    row.querySelector("[data-acc]").addEventListener("click",()=>acceptOffer(o.id));
+    row.querySelector("[data-rej]").addEventListener("click",async()=>{ await store.offers.update(o.id,{status:"rejected"}); toast("Offer declined"); renderListings(); });
+  }
+  const collapse=document.createElement("button");collapse.className="btn ghost sm oe-collapse";collapse.textContent="Collapse ▲";
+  collapse.addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,false,coachName));
+  exp.appendChild(collapse);
+  wrap.innerHTML="";wrap.appendChild(exp);
+  hydrateVideos(exp);
+}
 async function acceptOffer(offerId){
-  try{
-    const o=await store.offers.get(offerId);
-    await store.offers.update(offerId,{status:"accepted"});
-    await store.engagements.add({offer_id:o.id,coach_id:o.coach_id,trainee_id:o.trainee_id,goal_title:o.title,status:"active"});
-    if(o.listing_id) await store.listings.update(o.listing_id,{status:"matched"});
-    toast("Offer accepted — engagement started ✓",3400);
-    go("trainee-home");
-  }catch(err){console.error(err);toast(err.message||"Couldn't accept",4000);}
+  // Per spec: accepting shows a loading state and nothing else happens (yet).
+  const accBtn=document.querySelector(`[data-acc="${offerId}"]`);
+  if(accBtn){ accBtn.disabled=true; accBtn.innerHTML=`<span class="spin" style="width:16px;height:16px;border-width:2px"></span>`; }
 }
 
 /* trainee: post a goal */
@@ -1188,16 +1260,22 @@ $("#lst-post").addEventListener("click",async()=>{
 async function renderMarket(){
   const body=$("#market-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   const open=await store.listings.list({status:"open"});
+  // which of these has THIS coach already pitched?
+  const mySent=await store.offers.list({coach_id:ME.id});
+  const pitchedIds=new Set(mySent.map(o=>o.listing_id));
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
   if(!open.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p></div>`; return; }
   for(const l of open){
+    const pitched=pitchedIds.has(l.id);
     const div=document.createElement("div");div.className="card";
     div.innerHTML=`<h3 style="font-size:17px;font-weight:800">${escapeHtml(l.title)}</h3>
       <div style="margin:6px 0 12px"><span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
       <div class="video-card" data-video="${l.pitch_video_path}"></div>
       ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
-      <button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`;
+      ${pitched
+        ? `<div class="pitched-tag">✓ Pitched</div>`
+        : `<button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`}`;
     body.appendChild(div);
   }
   body.querySelectorAll("[data-offer]").forEach(b=>b.addEventListener("click",()=>openOffer(b.getAttribute("data-offer"))));
@@ -1210,7 +1288,8 @@ async function openOffer(listingId){
   offerListing=await store.listings.get(listingId); pendingOfferVideo=null;
   $("#offer-sub").textContent=`Re: ${offerListing.title}`;
   $("#of-title").value=offerListing.title; $("#of-focus").value=offerListing.focus||"";
-  $("#of-length").value="";$("#of-sessions").value="";$("#of-start").value="";$("#of-price").value="";
+  $("#of-length-min").value="";$("#of-length-max").value="";$("#of-sessions").value="";
+  $("#of-start").value="";$("#of-price").value="";$("#of-currency").value="$";
   const slot=$("#of-video-slot");slot.classList.remove("filled");
   slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your pitch</div><div class="vs">Every offer carries a short video. No attachments.</div>`;
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-offer").classList.add("active");
@@ -1224,16 +1303,27 @@ $("#of-video-slot").addEventListener("click",()=>{
 });
 $("#of-send").addEventListener("click",async()=>{
   const title=$("#of-title").value.trim();
-  if(!title){toast("Add an offer title");return;}
+  const lmin=$("#of-length-min").value.trim(), lmax=$("#of-length-max").value.trim();
+  const sessions=$("#of-sessions").value, start=$("#of-start").value, cur=$("#of-currency").value, price=$("#of-price").value.trim();
+  if(!title){toast("Missing goal");return;}
+  if(!lmin||!lmax){toast("Enter a length range in weeks");return;}
+  if(Number(lmin)>Number(lmax)){toast("Length range: min can't exceed max");return;}
+  if(!sessions){toast("Choose sessions per week");return;}
+  if(!start){toast("Pick a start date");return;}
+  if(!price){toast("Enter a price per week");return;}
   if(!pendingOfferVideo){toast("Record your video pitch — it's required");return;}
+  const length_text = lmin===lmax ? `${lmin} weeks` : `${lmin}–${lmax} weeks`;
+  const sessions_text = `${sessions} / week`;
+  const start_text = new Date(start+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+  const price_text = `${cur}${price} / week`;
   const btn=$("#of-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Uploading…";
   try{
     const path=await store.video.upload(pendingOfferVideo.blob,"webm");
     await store.offers.add({
       listing_id:offerListing.id,coach_id:ME.id,trainee_id:offerListing.trainee_id,kind:"offer",
-      title,focus:$("#of-focus").value.trim(),length_text:$("#of-length").value.trim(),
-      start_text:$("#of-start").value.trim(),sessions_text:$("#of-sessions").value.trim(),
-      price_text:$("#of-price").value.trim(),pitch_video_path:path,status:"pending"
+      title,focus:$("#of-focus").value.trim(),length_text,
+      start_text,sessions_text,
+      price_text,pitch_video_path:path,status:"pending"
     });
     toast("Offer sent ✓"); go("market");
   }catch(err){console.error(err);toast(err.message||"Couldn't send offer",4000);}
