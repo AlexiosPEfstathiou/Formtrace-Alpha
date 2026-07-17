@@ -12,7 +12,7 @@
     --line:#232C35; --line2:#2E3944;
     --ink:#EEF3F6; --muted:#8593A0; --faint:#5B6773;
     --lime:#C8FF3D; --lime-dim:#8Fb82c; --lime-ink:#0E1206;
-    --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF;
+    --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF; --violet:#B79CFF;
     --shadow:0 12px 40px rgba(0,0,0,.5);
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -317,6 +317,41 @@
   @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
   .offer-expanded{background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
   .offer-expanded .oe-collapse{margin-top:12px;}
+  /* ===== shared calendar (coach & trainee) ===== */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 16px;}
+  .cal-head .mtitle{font-size:18px;font-weight:800;letter-spacing:-.01em;}
+  .cal-head button{width:38px;height:38px;border-radius:11px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .cal-head button:active{background:var(--panel2);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-dow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;padding-bottom:4px;}
+  .cal-day{aspect-ratio:1/1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;font-variant-numeric:tabular-nums;border:1px solid transparent;}
+  .cal-day .dn{font-size:14px;font-weight:700;line-height:1;}
+  .cal-day .dot{width:5px;height:5px;border-radius:50%;}
+  .cal-empty{background:transparent;}
+  .cal-rest{background:var(--panel);color:var(--faint);}
+  .cal-rest .dn{font-weight:500;color:var(--faint);}
+  .cal-workout{background:var(--lime);color:var(--lime-ink);cursor:pointer;box-shadow:0 4px 14px rgba(200,255,61,.22);}
+  .cal-workout .dn{color:var(--lime-ink);}
+  .cal-workout:active{transform:scale(.95);}
+  .cal-done{background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.35);color:var(--blue);cursor:pointer;}
+  .cal-done .dn{color:#cfe8ff;}
+  .cal-done:active{transform:scale(.95);}
+  .cal-reviewed{background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45);color:var(--amber);cursor:pointer;}
+  .cal-reviewed .dn{color:#ffe6b0;}
+  .cal-reviewed:active{transform:scale(.95);}
+  .cal-today{outline:2px solid var(--ink);outline-offset:1px;}
+  .cal-badge{position:absolute;top:3px;right:4px;font-size:9px;font-weight:800;}
+  .cal-multi{position:absolute;bottom:3px;font-size:8px;font-weight:700;opacity:.7;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px 16px;margin-top:20px;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:16px;}
+  .leg-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);}
+  .leg-sw{width:16px;height:16px;border-radius:6px;flex-shrink:0;border:1px solid transparent;}
+  .cal-tap{cursor:pointer;}
+  .cal-tap:active{transform:scale(.95);}
+  .cal-add-plus{font-size:14px;font-weight:700;color:var(--faint);line-height:1;opacity:.45;}
+  .cal-log-dot{position:absolute;left:4px;bottom:4px;width:6px;height:6px;border-radius:50%;background:var(--violet);}
+  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--lime),0 0 12px rgba(200,255,61,.35);}
+  .cal-glisten::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.7) 50%,transparent 68%);background-size:230% 100%;animation:calglisten 2.2s linear infinite;pointer-events:none;}
+  @keyframes calglisten{0%{background-position:130% 0;}100%{background-position:-130% 0;}}
 </style>
 </head>
 <body>
@@ -677,6 +712,13 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function initials(name){ if(!name)return "?"; const p=name.trim().split(/\s+/); return ((p[0]||"")[0]||"").toUpperCase()+((p[1]||"")[0]||"").toUpperCase()||((p[0]||"?")[0]||"?").toUpperCase(); }
 function starsHtml(n){ n=Math.round(n||0); let h=""; for(let i=1;i<=5;i++)h+=`<span class="${i<=n?"":"off"}">★</span>`; return `<span class="stars">${h}</span>`; }
 function timeAgo(ts){ if(!ts)return ""; const s=Math.floor((Date.now()-new Date(ts).getTime())/1000); if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return `${m} minute${m>1?"s":""} ago`; const h=Math.floor(m/60); if(h<24)return `${h} hour${h>1?"s":""} ago`; const d=Math.floor(h/24); return `${d} day${d>1?"s":""} ago`; }
+/* ---- calendar date helpers ---- */
+const CAL_MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const CAL_DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const pad2=n=>String(n).padStart(2,"0");
+const isoOf=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+const todayISO=()=>isoOf(new Date());
+function fmtDay(iso){ if(!iso)return "—"; const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}); }
 
 /* A tiny in-memory cache of signed URLs so we don't re-sign on every render. */
 const urlCache=new Map();
@@ -1386,6 +1428,8 @@ async function renderTraineeHome(){
   wrap.innerHTML="";
   $("#tr-empty").classList.toggle("hidden",engs.length>0);
   if(!engs.length)return;
+  // Trainee with a single engagement: the calendar IS "My Training" — open it directly.
+  if(!iAmCoach && engs.length===1){ openEngagement(engs[0].id); return; }
   // fetch counterpart names
   const ids=[...new Set(engs.map(e=>iAmCoach?e.trainee_id:e.coach_id))];
   const profs={}; for(const p of await store.coaches()) profs[p.id]=p; // coaches
@@ -1404,6 +1448,7 @@ async function renderTraineeHome(){
 }
 
 let currentEng=null, currentEngOther=null;
+let engCalYear=null, engCalMonth=null, engAssignedByDate={};
 async function openEngagement(id){
   currentEng=await store.engagements.get(id);
   const iAmCoach=currentEng.coach_id===ME.id;
@@ -1411,7 +1456,7 @@ async function openEngagement(id){
   try{ const {data}=await store._sb.from("profiles").select("*").eq("id",otherId).single(); currentEngOther=data||{}; }catch(e){currentEngOther={};}
   $("#eng-title").textContent=currentEng.goal_title||"Engagement";
   $("#eng-sub").textContent=(iAmCoach?"Trainee: ":"Coach: ")+(currentEngOther.display_name||"—");
-  $("#eng-back").onclick=()=>go(iAmCoach?"trainee-home":"trainee-home");
+  $("#eng-back").onclick=()=>go(iAmCoach?"trainee-home":"home");
   await renderEngagement();
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
 }
@@ -1419,50 +1464,126 @@ async function renderEngagement(){
   const iAmCoach=currentEng.coach_id===ME.id;
   const body=$("#engagement-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
   const assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
+  // index assigned workouts by due_date
+  engAssignedByDate={};
+  for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
   body.innerHTML="";
 
-  // status / completion banner
+  // goal banner
   const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18";
   banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
       <div><div class="eyebrow" style="color:var(--lime-dim)">Goal</div><div style="font-size:18px;font-weight:800;margin-top:5px">${escapeHtml(currentEng.goal_title||"—")}</div></div>
       <span class="badge ${currentEng.status}">${currentEng.status}</span></div>`;
   body.appendChild(banner);
 
-  const secH=document.createElement("div");secH.className="section-h";secH.innerHTML=`<div class="eyebrow">Assigned workouts</div><div class="eyebrow">${assigned.length}</div>`;
-  body.appendChild(secH);
+  // calendar
+  if(engCalYear==null){const t=new Date();engCalYear=t.getFullYear();engCalMonth=t.getMonth();}
+  const head=document.createElement("div");head.className="cal-head";
+  head.innerHTML=`<button id="eng-cal-prev">‹</button><div class="mtitle">${CAL_MONTHS[engCalMonth]} ${engCalYear}</div><button id="eng-cal-next">›</button>`;
+  body.appendChild(head);
+  const dow=document.createElement("div");dow.className="cal-grid";dow.innerHTML=CAL_DOW.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  body.appendChild(dow);
+  const grid=document.createElement("div");grid.className="cal-grid";grid.style.marginTop="6px";body.appendChild(grid);
 
-  if(!assigned.length){
-    const em=document.createElement("div");em.className="empty";em.style.padding="30px 20px";
-    em.innerHTML=`<p>${iAmCoach?"No workouts assigned yet.":"Your coach hasn't assigned a workout yet."}</p>`;
-    body.appendChild(em);
-  }
-  for(const a of assigned){
-    const snap=a.snapshot||{};
-    const div=document.createElement("div");div.className="card ex-card";
-    div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-        <div style="min-width:0;flex:1"><h3 style="font-size:16px;font-weight:700">${escapeHtml(snap.name||"Workout")}</h3>
-          <div class="ex-meta"><div><b>${(snap.items||[]).length}</b> exercises</div>${a.due_date?`<div>due ${escapeHtml(a.due_date)}</div>`:""}</div></div>
-        <span class="badge ${a.status==="reviewed"?"completed":a.status==="submitted"?"pending":"open"}">${a.status}</span></div>`;
-    div.addEventListener("click",()=>{
-      if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Waiting for the trainee to submit"); }
-      else { if(a.status==="assigned")openAssigned(a.id); else if(a.status==="reviewed")openAssigned(a.id); else toast("Submitted — waiting for coach review"); }
-    });
-    body.appendChild(div);
+  const first=new Date(engCalYear,engCalMonth,1).getDay();
+  const days=new Date(engCalYear,engCalMonth+1,0).getDate();
+  const today=todayISO();
+  for(let i=0;i<first;i++){const c=document.createElement("div");c.className="cal-day cal-empty";grid.appendChild(c);}
+  for(let d=1;d<=days;d++){
+    const iso=engCalYear+"-"+pad2(engCalMonth+1)+"-"+pad2(d);
+    const wl=engAssignedByDate[iso]||[];
+    let cls="cal-rest",badge="";
+    if(wl.length){
+      const toDo=wl.some(a=>a.status==="assigned");
+      const reviewed=wl.some(a=>a.status==="reviewed");
+      const submitted=wl.some(a=>a.status==="submitted");
+      if(iAmCoach){
+        if(submitted){cls="cal-reviewed";badge="●";}       // needs coach review (amber)
+        else if(reviewed){cls="cal-done";badge="✓";}        // reviewed (blue)
+        else {cls="cal-workout";}                            // scheduled (lime)
+      }else{
+        if(toDo){cls="cal-workout";}                         // to do (lime)
+        else if(reviewed){cls="cal-reviewed";badge="✎";}    // reviewed by coach (amber)
+        else {cls="cal-done";badge="✓";}                    // submitted, pending (blue)
+      }
+    }
+    // unopened glisten: coach = submissions awaiting review; trainee = newly assigned/reviewed not opened
+    const glisten = iAmCoach ? wl.some(a=>a.status==="submitted") : wl.some(a=>(a.status==="assigned"||a.status==="reviewed")&&!a.opened);
+    const cell=document.createElement("div");
+    cell.className="cal-day cal-tap "+cls+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
+    cell.innerHTML=`<div class="dn">${d}</div>${badge?`<div class="cal-badge">${badge}</div>`:(wl.length&&cls==="cal-workout"?'<div class="dot" style="background:var(--lime-ink)"></div>':(iAmCoach&&!wl.length?'<div class="cal-add-plus">+</div>':""))}${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
+    cell.addEventListener("click",()=>openEngDay(iso));
+    grid.appendChild(cell);
   }
 
-  // FAB: coach assigns; either side can complete + rate
+  // legend
+  const legend=document.createElement("div");legend.className="legend";
+  legend.innerHTML = iAmCoach ? `
+      <div class="leg-item"><span class="leg-sw" style="background:var(--lime)"></span>Scheduled</div>
+      <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Submitted — review</div>
+      <div class="leg-item"><span class="leg-sw" style="background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.4)"></span>Reviewed</div>
+      <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap a day to assign</div>` : `
+      <div class="leg-item"><span class="leg-sw" style="background:var(--lime)"></span>Workout — tap to start</div>
+      <div class="leg-item"><span class="leg-sw" style="background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.4)"></span>Submitted</div>
+      <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Reviewed by coach</div>
+      <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Rest</div>`;
+  body.appendChild(legend);
+
+  $("#eng-cal-prev").onclick=()=>{engCalMonth--;if(engCalMonth<0){engCalMonth=11;engCalYear--;}renderEngagement();};
+  $("#eng-cal-next").onclick=()=>{engCalMonth++;if(engCalMonth>11){engCalMonth=0;engCalYear++;}renderEngagement();};
+
+  // FAB: coach completes only via trainee side; either side rates when complete
   const fabRow=$("#eng-fab-row"),fab=$("#eng-fab");
   fabRow.classList.remove("hidden");
-  if(currentEng.status==="active" && iAmCoach){
-    fab.textContent="+ Assign a workout"; fab.onclick=assignWorkoutFlow;
-  }else if(currentEng.status==="active" && !iAmCoach){
+  if(currentEng.status==="active" && !iAmCoach){
     fab.textContent="Mark goal complete"; fab.onclick=completeEngagement;
   }else if(currentEng.status==="completed"){
-    // offer rating if not yet rated
     const rated=await myRatingExists();
     if(!rated){ fab.textContent=`Rate your ${iAmCoach?"trainee":"coach"}`; fab.onclick=()=>openRate(); }
     else { fabRow.classList.add("hidden"); }
   }else fabRow.classList.add("hidden");
+}
+/* Open a calendar day: coach assigns/reviews; trainee performs/views */
+async function openEngDay(iso){
+  const iAmCoach=currentEng.coach_id===ME.id;
+  const wl=engAssignedByDate[iso]||[];
+  if(iAmCoach){
+    if(!wl.length){
+      if(currentEng.status!=="active"){toast("This engagement isn't active");return;}
+      assignWorkoutFlow(iso); return;
+    }
+    // one workout: act directly; multiple: show a day sheet
+    if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
+    openEngDaySheet(iso,wl,iAmCoach); return;
+  }else{
+    if(!wl.length){toast("No workout scheduled this day");return;}
+    if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
+    openEngDaySheet(iso,wl,iAmCoach); return;
+  }
+}
+function engDayAction(a,iAmCoach){
+  if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Scheduled — waiting for the trainee to submit"); }
+  else { if(a.status==="assigned")openAssigned(a.id); else if(a.status==="reviewed")openAssigned(a.id); else toast("Submitted — waiting for coach review"); }
+}
+function openEngDaySheet(iso,wl,iAmCoach){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
+  $("#sheet-add").style.display="none";
+  for(const a of wl){
+    const snap=a.snapshot||{};
+    const row=document.createElement("div");row.className="sh-item";
+    const stcol=a.status==="reviewed"?"var(--amber)":a.status==="submitted"?"var(--blue)":"var(--lime-dim)";
+    row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(snap.name||"Workout")}</div><div style="font-size:11px;color:${stcol};margin-top:2px;font-weight:600">${a.status} · ${(snap.items||[]).length} exercises</div></div><div style="color:var(--faint)">›</div>`;
+    row.addEventListener("click",()=>{closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";engDayAction(a,iAmCoach);});
+    body.appendChild(row);
+  }
+  if(iAmCoach && currentEng.status==="active"){
+    const add=document.createElement("div");add.className="sh-item";add.style.borderStyle="dashed";
+    add.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--lime)">+ Assign another workout</div></div>`;
+    add.addEventListener("click",()=>{closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";assignWorkoutFlow(iso);});
+    body.appendChild(add);
+  }
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 async function myRatingExists(){
   try{ const {data}=await store._sb.from("ratings").select("id").eq("engagement_id",currentEng.id).eq("rater_id",ME.id).maybeSingle(); return !!data; }catch(e){return false;}
@@ -1474,23 +1595,23 @@ async function completeEngagement(){
   openRate();
 }
 
-/* coach: assign a workout (snapshot of workout + its exercises) */
-async function assignWorkoutFlow(){
+/* coach: assign a workout (snapshot of workout + its exercises) to a specific day */
+async function assignWorkoutFlow(targetDate){
   const wos=await store.workouts.list({coach_id:ME.id});
   if(!wos.length){toast("Build a workout in your Library first");return;}
-  const body=$("#sheet-body");body.innerHTML="";$("#sheet-lib").querySelector("h3").textContent="Assign which workout?";$("#sheet-add").style.display="none";
+  const body=$("#sheet-body");body.innerHTML="";$("#sheet-lib").querySelector("h3").textContent=targetDate?("Assign · "+fmtDay(targetDate)):"Assign which workout?";$("#sheet-add").style.display="none";
   for(const w of wos){
     const row=document.createElement("div");row.className="sh-item";
     row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(w.name)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(w.items||[]).length} exercises</div></div><div style="color:var(--lime)">→</div>`;
     row.addEventListener("click",async()=>{
       closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
-      await doAssign(w);
+      await doAssign(w,targetDate);
     });
     body.appendChild(row);
   }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
-async function doAssign(w){
+async function doAssign(w,targetDate){
   toast("Assigning…",1500);
   const exs=await store.exercises.list({coach_id:ME.id});
   const exMap=Object.fromEntries(exs.map(e=>[e.id,e]));
@@ -1501,7 +1622,9 @@ async function doAssign(w){
       ref_video_path:ex.ref_video_path||null, landmarks:ex.landmarks||null};
   });
   const snapshot={name:w.name,items:snapItems};
-  await store.assignedWorkouts.add({engagement_id:currentEng.id,workout_id:w.id,snapshot,status:"assigned"});
+  const row={engagement_id:currentEng.id,workout_id:w.id,snapshot,status:"assigned"};
+  if(targetDate) row.due_date=targetDate;
+  await store.assignedWorkouts.add(row);
   toast("Workout assigned ✓"); renderEngagement();
 }
 
@@ -1513,6 +1636,8 @@ let localResults=null;      // per-item arrays, held until submit
 async function openAssigned(id){
   currentAssigned=await store.assignedWorkouts.get(id);
   const items=currentAssigned.snapshot.items||[];
+  // mark opened so the trainee's "new" glisten stops (best-effort; column may not exist)
+  if(!currentAssigned.opened){ try{ await store.assignedWorkouts.update(id,{opened:true}); currentAssigned.opened=true; }catch(e){} }
   // restore results if a report already exists (reviewed), else fresh
   if(currentAssigned.status!=="assigned" && currentAssigned._report){ localResults=currentAssigned._report; }
   else {
