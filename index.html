@@ -615,7 +615,8 @@
             <div class="ex-info"><h3 id="ref-state">No reference yet</h3>
               <div class="ex-meta"><div id="ref-hint" style="line-height:1.4">Record one clean rep with correct form. This is what trainees are graded against.</div></div></div>
           </div>
-          <button class="btn sm" style="margin-top:14px" id="btn-record-ref">● Record reference</button>
+          <button class="btn sm" style="margin-top:10px;display:none" id="btn-review-ref">▶ Review recording</button>
+          <button class="btn sm" style="margin-top:10px" id="btn-record-ref">● Record reference</button>
         </div>
       </div>
       <p style="font-size:12px;color:var(--faint);line-height:1.5;margin-top:4px;padding:0 2px;">Sets and reps aren't set here — you'll choose those when you add this exercise to a workout.</p>
@@ -1528,6 +1529,27 @@ async function updateRefCard(ex){
   else if(ex&&ex.ref_video_path){ th.setAttribute("data-video",ex.ref_video_path); th.removeAttribute("data-hydrated"); hydrateVideos($("#s-ex-edit")); }
   else th.innerHTML=`<span class="ph">◉</span>`;
   $("#btn-record-ref").textContent=has?"● Re-record reference":"● Record reference";
+  // Let the coach play back what they recorded before committing with Save.
+  const reviewBtn=$("#btn-review-ref");
+  reviewBtn.style.display=has?"block":"none";
+  th.style.cursor=has?"pointer":"";
+  const src = pendingRef&&pendingRef.blob ? {blob:pendingRef.blob} : (ex&&ex.ref_video_path ? {path:ex.ref_video_path} : null);
+  const playIt=()=>{ if(src) playReferencePreview(src); };
+  reviewBtn.onclick=playIt;
+  th.onclick=has?playIt:null;
+}
+/* Play back a just-recorded (blob) or saved (path) reference so the coach can review it. */
+async function playReferencePreview(src){
+  let url;
+  if(src.blob){ url=URL.createObjectURL(src.blob); }
+  else if(src.path){ url=await playable(src.path); }
+  if(!url){ toast("Recording unavailable"); return; }
+  openRecorder({mode:"preview"});
+  $("#rplay").src=url;$("#rplay").style.display="block";
+  $("#rvideo").style.display="none";$("#roverlay").style.display="none";
+  $("#r-stat").classList.add("hidden");$("#r-deck").style.display="none";$("#rreview").style.display="none";
+  $("#r-title").innerHTML='Your reference<small>correct form — review before saving</small>';
+  $("#rplay").play();
 }
 $("#ex-save").addEventListener("click",async()=>{
   const name=$("#in-name").value.trim()||"Untitled exercise";
