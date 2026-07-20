@@ -879,14 +879,15 @@ function go(name){
   if(name==="listing-new"){ openListingNew(); name="listing-new"; }
   $$(".screen").forEach(s=>s.classList.remove("active"));
   const el=$("#s-"+name); if(el)el.classList.add("active");
-  if(name==="home")renderHome();
-  if(name==="coach")renderCoach();
-  if(name==="market")renderMarket();
-  if(name==="trainee-home")renderTraineeHome();
-  if(name==="trainee-workout")renderAssignedWorkout();
-  if(name==="listings")renderListings();
-  if(name==="profile")renderProfile();
-  if(name==="admin")renderAdmin();
+  const R=fn=>{ try{ const p=fn(); if(p&&p.catch)p.catch(err=>{console.error(name+" render failed",err);toast((err&&err.message)||"Something went wrong loading this screen",4500);}); }catch(err){console.error(name+" render threw",err);toast((err&&err.message)||"Something went wrong",4500);} };
+  if(name==="home")R(renderHome);
+  if(name==="coach")R(renderCoach);
+  if(name==="market")R(renderMarket);
+  if(name==="trainee-home")R(renderTraineeHome);
+  if(name==="trainee-workout")R(renderAssignedWorkout);
+  if(name==="listings")R(renderListings);
+  if(name==="profile")R(renderProfile);
+  if(name==="admin")R(renderAdmin);
 }
 document.addEventListener("click",e=>{const el=e.target.closest("[data-go]");if(el)go(el.getAttribute("data-go"));});
 
