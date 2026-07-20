@@ -1429,7 +1429,11 @@ async function renderTraineeHome(){
   $("#tr-empty").classList.toggle("hidden",engs.length>0);
   if(!engs.length)return;
   // Trainee with a single engagement: the calendar IS "My Training" — open it directly.
-  if(!iAmCoach && engs.length===1){ openEngagement(engs[0].id); return; }
+  if(!iAmCoach && engs.length===1){
+    try{ await openEngagement(engs[0].id); }
+    catch(err){ console.error("openEngagement failed",err); toast(err.message||"Couldn't open your training",4000); }
+    return;
+  }
   // fetch counterpart names
   const ids=[...new Set(engs.map(e=>iAmCoach?e.trainee_id:e.coach_id))];
   const profs={}; for(const p of await store.coaches()) profs[p.id]=p; // coaches
@@ -1461,6 +1465,7 @@ async function openEngagement(id){
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
 }
 async function renderEngagement(){
+ try{
   const iAmCoach=currentEng.coach_id===ME.id;
   const body=$("#engagement-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
   const assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
@@ -1542,8 +1547,12 @@ async function renderEngagement(){
     if(!rated){ fab.textContent=`Rate your ${iAmCoach?"trainee":"coach"}`; fab.onclick=()=>openRate(); }
     else { fabRow.classList.add("hidden"); }
   }else fabRow.classList.add("hidden");
+ }catch(err){
+  console.error("renderEngagement failed",err);
+  $("#engagement-body").innerHTML=`<div class="empty" style="padding:40px 20px"><div class="ic">⚠</div><p style="color:var(--red)">Couldn't load the calendar.<br><span style="font-size:12px;color:var(--muted)">${escapeHtml(err&&err.message||String(err))}</span></p></div>`;
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
+ }
 }
-/* Open a calendar day: coach assigns/reviews; trainee performs/views */
 async function openEngDay(iso){
   const iAmCoach=currentEng.coach_id===ME.id;
   const wl=engAssignedByDate[iso]||[];
