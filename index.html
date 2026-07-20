@@ -382,6 +382,49 @@
   #streak-badge .sflame{font-size:15px;line-height:1;}
   #streak-badge.danger{background:linear-gradient(135deg,#ff7676,#e03b3b);color:#fff;animation:caldanger 1s ease-in-out infinite;}
   #streak-badge.zero{background:var(--panel2);color:var(--faint);box-shadow:none;}
+  /* generic confirm dialog */
+  #confirm-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);z-index:80;width:calc(100% - 56px);max-width:320px;
+    background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:24px 22px;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  #confirm-box.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+  #confirm-box .cf-ic{width:52px;height:52px;border-radius:50%;background:rgba(200,255,61,.14);color:var(--lime);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;}
+  #confirm-box.danger .cf-ic{background:rgba(255,90,90,.14);color:var(--red);}
+  #confirm-box h3{font-size:18px;font-weight:800;margin:0 0 8px;}
+  #confirm-box p{font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 20px;}
+  #confirm-scrim{z-index:79;}
+  /* celebration */
+  #s-celebrate{background:var(--bg);}
+  .cele{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 30px;overflow:hidden;}
+  .cele .ring{width:132px;height:132px;transform:rotate(-90deg);}
+  .cele .ring circle{fill:none;stroke-width:9;stroke-linecap:round;}
+  .cele .ring .bg{stroke:var(--line2);}
+  .cele .ring .fg{stroke:var(--lime);stroke-dasharray:364;stroke-dashoffset:364;}
+  #s-celebrate.active .ring .fg{animation:draw 1s .25s cubic-bezier(.6,0,.2,1) forwards;}
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  .cele .tick{position:absolute;font-size:52px;color:var(--lime);opacity:0;transform:scale(.4);}
+  #s-celebrate.active .tick{animation:cpop .5s .95s cubic-bezier(.2,1.4,.4,1) forwards;}
+  @keyframes cpop{to{opacity:1;transform:scale(1);}}
+  .cele h2{font-size:26px;font-weight:900;margin:22px 0 0;letter-spacing:-.01em;opacity:0;transform:translateY(10px);}
+  .cele .gsum{color:var(--muted);font-size:14px;margin-top:8px;opacity:0;transform:translateY(10px);line-height:1.5;}
+  .cele .gstat{display:flex;gap:18px;margin-top:20px;opacity:0;transform:translateY(10px);}
+  .cele .gstat .v{font-size:22px;font-weight:800;color:var(--lime);}
+  .cele .gstat .k{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+  #s-celebrate.active .cele h2{animation:crise .5s 1.15s ease forwards;}
+  #s-celebrate.active .cele .gsum{animation:crise .5s 1.3s ease forwards;}
+  #s-celebrate.active .cele .gstat{animation:crise .5s 1.5s ease forwards;}
+  @keyframes crise{to{opacity:1;transform:translateY(0);}}
+  .cf{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;opacity:0;will-change:transform;z-index:5;}
+  #s-celebrate.active .cf{animation:cfall linear forwards;}
+  @keyframes cfall{0%{opacity:1;transform:translateY(0) rotate(0);}100%{opacity:1;transform:translateY(760px) rotate(720deg);}}
+  /* timelapse */
+  .tl-wrap{position:relative;border-radius:16px;overflow:hidden;height:340px;background:#0a0e12;border:1px solid var(--line);}
+  .tl-frame{position:absolute;inset:0;opacity:0;transition:opacity .5s;background-size:cover;background-position:center;}
+  .tl-frame.on{opacity:1;}
+  .tl-meta{position:absolute;left:0;right:0;bottom:0;z-index:2;width:100%;padding:14px;box-sizing:border-box;background:linear-gradient(transparent,rgba(0,0,0,.75));display:flex;justify-content:space-between;align-items:flex-end;}
+  .tl-date{font-size:13px;color:#fff;font-weight:700;}
+  .tl-wt{font-size:12px;color:var(--lime);font-weight:800;}
+  .tl-bar{display:flex;gap:4px;margin-top:12px;}
+  .tl-bar i{flex:1;height:4px;border-radius:2px;background:var(--line2);}
+  .tl-bar i.on{background:var(--lime);}
 </style>
 </head>
 <body>
@@ -654,6 +697,41 @@
       <div class="field" style="margin-top:16px"><label>Comments</label><textarea id="rate-text" placeholder="How did it go?"></textarea></div>
     </div>
     <div class="fab-row"><button class="btn primary" id="rate-submit">Submit rating</button></div>
+  </section>
+
+  <!-- ============ CONFIRM (generic) ============ -->
+  <div class="sheet-scrim" id="confirm-scrim"></div>
+  <div class="confirm-box" id="confirm-box">
+    <div class="cf-ic" id="confirm-ic">✓</div>
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-body">This can't be undone.</p>
+    <button class="btn primary" id="confirm-ok">Confirm</button>
+    <button class="btn ghost" id="confirm-cancel" style="margin-top:10px">Go back</button>
+  </div>
+
+  <!-- ============ CELEBRATION ============ -->
+  <section class="screen" id="s-celebrate">
+    <div class="cele" id="cele">
+      <div style="position:relative;display:flex;align-items:center;justify-content:center">
+        <svg class="ring" viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="58"/><circle class="fg" cx="66" cy="66" r="58"/></svg>
+        <div class="tick">✓</div>
+      </div>
+      <h2>Goal complete!</h2>
+      <div class="gsum" id="cele-sum">—</div>
+      <div class="gstat" id="cele-stats"></div>
+      <button class="btn primary" style="margin-top:30px;max-width:220px" id="cele-continue">Continue</button>
+    </div>
+  </section>
+
+  <!-- ============ TIMELAPSE ============ -->
+  <section class="screen" id="s-timelapse">
+    <div class="top"><div class="back" id="tl-back">←</div><div style="flex:1"><h1>The journey</h1></div></div>
+    <div class="body">
+      <p style="font-size:13px;color:var(--muted);margin:2px 2px 12px;line-height:1.5" id="tl-intro">Your weekly check-ins, played back.</p>
+      <div class="tl-wrap" id="tl-wrap"><div class="tl-empty" id="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px;text-align:center;padding:0 30px">No check-in photos to play back.</div></div>
+      <div class="tl-bar" id="tl-bar"></div>
+      <button class="btn primary" style="margin-top:18px" id="tl-done">Done</button>
+    </div>
   </section>
 
   <!-- ============ RECORDER ============ -->
@@ -1041,6 +1119,29 @@ async function bootSignedIn(){
   currentView = roleOf()==="coach" ? "coach" : "trainee";
   refreshStreakBadge();
   go("home");
+  checkPendingReview();
+}
+/* On login, if the other party ended/completed a goal I haven't reviewed, prompt me to review. */
+async function checkPendingReview(){
+  try{
+    if(!ME)return;
+    const asCoach=await store.engagements.list({coach_id:ME.id});
+    const asTrainee=await store.engagements.list({trainee_id:ME.id});
+    const ended=[...asCoach,...asTrainee].filter(e=>e.status==="completed"||e.status==="ended");
+    for(const e of ended){
+      const {data}=await store._sb.from("ratings").select("id").eq("engagement_id",e.id).eq("rater_id",ME.id).maybeSingle();
+      if(data)continue; // already rated
+      // found one to review
+      const iAmCoach=e.coach_id===ME.id;
+      const otherId=iAmCoach?e.trainee_id:e.coach_id;
+      let other={}; try{ const r=await store._sb.from("profiles").select("*").eq("id",otherId).single(); other=r.data||{}; }catch(_){}
+      const ok=await openConfirm({title:"Review your "+(iAmCoach?"trainee":"coach")+"?",
+        body:`"${e.goal_title||"A goal"}" has wrapped up. Leave a quick rating for ${other.display_name||(iAmCoach?"your trainee":"your coach")}.`,
+        confirmLabel:"Leave a review",cancelLabel:"Maybe later",icon:"⭐"});
+      if(ok){ currentEng=e; currentEngOther=other; openRate(); }
+      return; // one at a time
+    }
+  }catch(err){ console.error("pending review",err); }
 }
 /* Load the trainee's logs+assigned workouts and refresh the persistent streak badge. */
 async function refreshStreakBadge(){
@@ -1621,12 +1722,16 @@ async function renderGoals(){
   }
 }
 async function cancelGoal(e){
-  if(!confirm(`Cancel "${e.goal_title||"this goal"}"? Your coach will no longer be able to assign workouts.`))return;
+  const ok=await openConfirm({title:`Cancel "${e.goal_title||"this goal"}"?`,body:"Your coach will no longer be able to assign workouts. Afterwards you'll be asked to review your coach.",confirmLabel:"Cancel goal",cancelLabel:"Keep going",danger:true});
+  if(!ok)return;
   try{
     await store.engagements.update(e.id,{status:"ended",completed_at:new Date().toISOString()});
     try{ await store.engagements.update(e.id,{billing_active:false}); }catch(_){/* column optional */}
     toast("Goal cancelled");
-    renderGoals();
+    // route into review of the coach
+    currentEng=await store.engagements.get(e.id);
+    try{ const {data}=await store._sb.from("profiles").select("*").eq("id",currentEng.coach_id).single(); currentEngOther=data||{}; }catch(_){currentEngOther={};}
+    openRate();
   }catch(err){console.error(err);toast(err.message||"Couldn't cancel",4000);}
 }
 async function openEngagement(id){
@@ -2198,14 +2303,18 @@ async function myRatingExists(){
   try{ const {data}=await store._sb.from("ratings").select("id").eq("engagement_id",currentEng.id).eq("rater_id",ME.id).maybeSingle(); return !!data; }catch(e){return false;}
 }
 async function completeEngagement(){
-  await store.engagements.update(currentEng.id,{status:"completed",completed_at:new Date().toISOString()});
-  currentEng.status="completed";
-  toast("Goal marked complete 🎉",3200);
-  openRate();
+  const ok=await openConfirm({title:"Mark this goal complete?",body:"This ends the engagement. You'll then review each other and see your journey played back.",confirmLabel:"Yes, I did it 🎉",icon:"🎯"});
+  if(!ok)return;
+  try{
+    await store.engagements.update(currentEng.id,{status:"completed",completed_at:new Date().toISOString()});
+    currentEng.status="completed";
+    openCelebration(currentEng,ME,()=>openRate());
+  }catch(err){console.error(err);toast(err.message||"Couldn't complete the goal",4000);}
 }
 /* coach: complete a goal as SUCCESSFUL, set on_time/late, stop billing */
 async function coachCompleteGoal(){
-  if(!confirm("Mark this goal complete? This ends the engagement successfully and stops billing the trainee."))return;
+  const ok=await openConfirm({title:"Mark this goal complete?",body:"This ends the engagement successfully and stops billing the trainee. You'll then review each other.",confirmLabel:"Yes, goal met 🎉",icon:"🎯"});
+  if(!ok)return;
   const btn=$("#eng-fab");btn.disabled=true;const o=btn.textContent;btn.textContent="Completing…";
   try{
     // derive outcome: any past, still-unsubmitted workout => late; otherwise on_time
@@ -2216,8 +2325,9 @@ async function coachCompleteGoal(){
     await store.engagements.update(currentEng.id,{status:"completed",outcome,completed_at:new Date().toISOString()});
     try{ await store.engagements.update(currentEng.id,{billing_active:false}); }catch(_){/* column optional */}
     currentEng.status="completed"; currentEng.outcome=outcome;
-    toast(outcome==="on_time"?"Goal complete — on time ✓":"Goal complete — past deadline",3600);
-    openRate();
+    btn.disabled=false;btn.textContent=o;
+    // celebrate → review → timelapse
+    openCelebration(currentEng,currentEngOther,()=>openRate());
   }catch(err){console.error(err);toast(err.message||"Couldn't complete the goal",4000);btn.disabled=false;btn.textContent=o;}
 }
 
@@ -2500,6 +2610,97 @@ $("#rev-submit").addEventListener("click",async()=>{
 /* =========================================================================
    15. Mutual rating
    ========================================================================= */
+/* ---- generic confirm dialog ---- */
+let _confirmCb=null;
+function openConfirm({title,body,confirmLabel="Confirm",cancelLabel="Go back",danger=false,icon}){
+  $("#confirm-title").textContent=title;
+  $("#confirm-body").textContent=body;
+  $("#confirm-ok").textContent=confirmLabel;
+  $("#confirm-cancel").textContent=cancelLabel;
+  $("#confirm-ic").textContent=icon||(danger?"⚠":"✓");
+  $("#confirm-box").classList.toggle("danger",danger);
+  return new Promise(res=>{
+    _confirmCb=res;
+    $("#confirm-scrim").classList.add("on");$("#confirm-box").classList.add("on");
+  });
+}
+function closeConfirm(v){
+  $("#confirm-scrim").classList.remove("on");$("#confirm-box").classList.remove("on");
+  const cb=_confirmCb;_confirmCb=null; if(cb)cb(v);
+}
+$("#confirm-ok").addEventListener("click",()=>closeConfirm(true));
+$("#confirm-cancel").addEventListener("click",()=>closeConfirm(false));
+$("#confirm-scrim").addEventListener("click",()=>closeConfirm(false));
+
+/* ---- celebration ---- */
+const CFCOLORS=['#C8FF3D','#FFC24A','#B79CFF','#ffffff','#7ee0a0'];
+function celebrationStats(eng){
+  // duration in weeks from started_at→completed_at (or now)
+  const start=eng.started_at?new Date(eng.started_at):null;
+  const end=eng.completed_at?new Date(eng.completed_at):new Date();
+  let dur="—";
+  if(start){ const wk=Math.max(1,Math.round((end-start)/(7*24*3600*1000))); dur=wk+" wk"; }
+  const deadline = eng.outcome==="late" ? "Late" : eng.outcome==="on_time" ? "On time" : "—";
+  return {dur,deadline};
+}
+function openCelebration(eng,other,onContinue){
+  const {dur,deadline}=celebrationStats(eng);
+  $("#cele-sum").innerHTML=`${escapeHtml((other&&other.display_name)||"You")} completed <b style="color:var(--ink)">${escapeHtml(eng.goal_title||"the goal")}</b>`;
+  $("#cele-stats").innerHTML=`
+    <div><div class="v">${dur}</div><div class="k">Duration</div></div>
+    <div><div class="v">${deadline}</div><div class="k">Deadline</div></div>`;
+  $("#cele-continue").onclick=onContinue;
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  const stage=$("#s-celebrate"); stage.classList.add("active");
+  celebrationBurst();
+}
+function celebrationBurst(){
+  const cele=$("#cele");
+  cele.querySelectorAll('.cf').forEach(c=>c.remove());
+  for(let i=0;i<70;i++){
+    const c=document.createElement('span');c.className='cf';
+    c.style.left=(Math.random()*100)+'%';
+    c.style.background=CFCOLORS[i%CFCOLORS.length];
+    c.style.animationDuration=(2.2+Math.random()*1.6)+'s';
+    c.style.animationDelay=(Math.random()*.5)+'s';
+    c.style.transform='translateX('+((Math.random()*80)-40)+'px)';
+    cele.appendChild(c);
+  }
+}
+
+/* ---- timelapse of the trainee's check-in photos ---- */
+let tlTimer=null;
+async function openTimelapse(traineeId,{intro,onDone}={}){
+  $("#tl-intro").textContent=intro||"Weekly check-ins, played back.";
+  const wrap=$("#tl-wrap"),bar=$("#tl-bar");
+  wrap.innerHTML=`<div class="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px">Loading…</div>`;
+  bar.innerHTML="";
+  $("#tl-done").onclick=()=>{ clearInterval(tlTimer); (onDone||(()=>openEngagement(currentEng.id)))(); };
+  $("#tl-back").onclick=()=>{ clearInterval(tlTimer); (onDone||(()=>openEngagement(currentEng.id)))(); };
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-timelapse").classList.add("active");
+  let cis=[];
+  try{ cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1); }catch(e){console.error(e);}
+  if(!cis.length){ wrap.innerHTML=`<div class="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px;text-align:center;padding:0 30px">No check-in photos were logged for this goal.</div>`; return; }
+  wrap.innerHTML="";
+  const frames=[];
+  for(let i=0;i<cis.length;i++){
+    const ci=cis[i]; const [y,m,d]=ci.checkin_date.split("-").map(Number);
+    const url=await playable(ci.photo_path);
+    const fr=document.createElement("div");fr.className="tl-frame"+(i===0?" on":"");fr.setAttribute("data-i",i);
+    if(url)fr.style.backgroundImage=`url("${url}")`; else fr.style.background="#141a1f";
+    fr.innerHTML=`<div class="tl-meta"><span class="tl-date">${d}/${m}/${String(y).slice(2)}</span></div>`;
+    wrap.appendChild(fr);
+    bar.insertAdjacentHTML("beforeend",`<i data-i="${i}"${i===0?' class="on"':''}></i>`);
+    frames.push(fr);
+  }
+  let idx=0; const showTL=i=>{
+    wrap.querySelectorAll(".tl-frame").forEach(f=>f.classList.toggle("on",+f.getAttribute("data-i")===i));
+    bar.querySelectorAll("i").forEach(x=>x.classList.toggle("on",+x.getAttribute("data-i")<=i));
+  };
+  clearInterval(tlTimer);
+  if(frames.length>1){ tlTimer=setInterval(()=>{ idx=(idx+1)%frames.length; showTL(idx); },1400); }
+}
+
 let rateStars=0;
 function openRate(){
   rateStars=0;
@@ -2523,7 +2724,11 @@ $("#rate-submit").addEventListener("click",async()=>{
   const btn=$("#rate-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="…";
   try{
     await store.ratings.add({engagement_id:currentEng.id,rater_id:ME.id,ratee_id:iAmCoach?currentEng.trainee_id:currentEng.coach_id,stars:rateStars,text:$("#rate-text").value.trim()});
-    toast("Thanks — rating submitted ✓"); openEngagement(currentEng.id);
+    toast("Thanks — rating submitted ✓");
+    // then play back the journey; Done returns home
+    const traineeId=iAmCoach?currentEng.trainee_id:ME.id;
+    const backHome=()=>go(iAmCoach?"home":"trainee-home");
+    openTimelapse(traineeId,{intro:"Your journey together, played back.",onDone:backHome});
   }catch(err){console.error(err);toast(err.message||"Couldn't submit rating",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
