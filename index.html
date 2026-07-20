@@ -19,6 +19,8 @@
     /* chart series (dark) — vivid but legible on dark panels */
     --ch-1:#5AB0FF; --ch-2:#C8FF3D; --ch-3:#FFC24A; --ch-4:#B79CFF; --ch-weight:#B79CFF;
     --ch-1-ink:#06121f; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
+    /* tinted "accent" surface (lime-highlighted cards) */
+    --accent-surface:linear-gradient(120deg,#1a2410,#141a10); --accent-border:#2f3d18;
   }
   html[data-theme="light"]{
     --bg:#F4F6F8; --bg2:#EBEEF1; --panel:#FFFFFF; --panel2:#EEF1F4;
@@ -30,6 +32,7 @@
     --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
     --ch-1:#0072B2; --ch-2:#5B8C00; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#FFFFFF; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
+    --accent-surface:linear-gradient(120deg,#EDF6DC,#F3F8E8); --accent-border:#C4DE8F;
   }
   /* ---- COLORBLIND-SAFE (Wong palette) — applies over either theme ---- */
   html[data-cb="1"]{
@@ -78,7 +81,7 @@
   .role{position:relative;border-radius:20px;padding:20px;cursor:pointer;border:1px solid var(--line);
     background:var(--panel);display:flex;align-items:center;gap:16px;transition:transform .12s,border-color .15s,background .15s;}
   .role:active{transform:scale(.985);}
-  .role.coach{background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18;}
+  .role.coach{background:var(--accent-surface);border-color:var(--accent-border);}
   .role .ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0;background:var(--panel2);}
   .role.coach .ic{background:var(--lime);color:var(--lime-ink);}
   .role .tt{flex:1;}
@@ -179,7 +182,7 @@
   .sheet .sh-body{overflow-y:auto;padding:0 16px;flex:1;}
   .sheet .sh-body::-webkit-scrollbar{width:0;}
   .sh-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel);margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
-  .sh-item.sel{border-color:var(--lime);background:linear-gradient(120deg,#1a2410,#141a10);}
+  .sh-item.sel{border-color:var(--lime);background:var(--accent-surface);}
   .sh-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--lime-ink);font-size:13px;}
   .sh-item.sel .sh-check{background:var(--lime);border-color:var(--lime);}
   .sheet .sh-foot{padding:12px 18px 0;}
@@ -644,7 +647,7 @@
   <section class="screen" id="s-trainee-workout">
     <div class="top"><div class="back" data-go="trainee-home">←</div><div style="flex:1"><h1 id="tw-title">Workout</h1><div class="sub" id="tw-sub"></div></div></div>
     <div class="body">
-      <div id="tw-progress-card" class="card" style="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18;">
+      <div id="tw-progress-card" class="card" style="background:var(--accent-surface);border-color:var(--accent-border);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div><div class="eyebrow" style="color:var(--lime-dim)">Progress</div><div style="font-size:22px;font-weight:800;margin-top:6px;" id="tw-progress-txt">0 / 0 sets</div></div>
           <div style="text-align:right"><div class="eyebrow" style="color:var(--lime-dim)">Avg form</div><div style="font-size:26px;font-weight:800;margin-top:4px;" id="tw-avg">—</div></div>
@@ -1917,7 +1920,7 @@ async function renderEngagement(){
     btn.addEventListener("click",()=>openGoals());
     body.appendChild(btn);
   }else{
-    const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18";
+    const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:var(--accent-surface);border-color:var(--accent-border)";
     banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
         <div><div class="eyebrow" style="color:var(--lime-dim)">Goal</div><div style="font-size:18px;font-weight:800;margin-top:5px">${escapeHtml(currentEng.goal_title||"—")}</div></div>
         <span class="badge ${currentEng.status}">${currentEng.status}</span></div>`;
@@ -3103,7 +3106,7 @@ async function renderProfile(){
     if(pending){
       html+=`<div class="card" style="margin-top:14px;border-color:#3a3418"><div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-weight:700">Coach application</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Under review by an admin</div></div><span class="badge pending">pending</span></div></div>`;
     }else{
-      html+=`<div class="card ex-card" id="apply-card" style="margin-top:14px;background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18">
+      html+=`<div class="card ex-card" id="apply-card" style="margin-top:14px;background:var(--accent-surface);border-color:var(--accent-border)">
         <div class="list-row"><div class="ic" style="font-size:22px">✎</div><div class="lr-main"><h3>Apply for Coach profile</h3><div class="sub">${rejected?"Previous application declined — you can re-apply":"Build a library, take on trainees"}</div></div><div class="arw">→</div></div></div>`;
     }
   }
