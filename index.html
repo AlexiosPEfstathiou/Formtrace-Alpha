@@ -144,7 +144,16 @@
   @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}50%{box-shadow:0 0 22px 1px rgba(200,255,61,.55);}}
   html[data-theme="light"] .btn.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
   @keyframes glisten-pulse-lt{0%,100%{box-shadow:0 0 0 0 rgba(91,140,0,0);}50%{box-shadow:0 0 20px 1px rgba(91,140,0,.4);}}
-  @media(prefers-reduced-motion:reduce){.btn.glisten,.btn.glisten::after{animation:none;}}
+  @media(prefers-reduced-motion:reduce){.btn.glisten,.btn.glisten::after,.role.glisten,.role.glisten::after{animation:none;}}
+  /* glisten variant for role cards (home hub) */
+  .role.glisten{position:relative;overflow:hidden;isolation:isolate;
+    animation:glisten-pulse 2.6s ease-in-out infinite;}
+  .role.glisten::after{content:"";position:absolute;top:0;left:0;height:100%;width:55%;
+    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.10) 35%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.10) 65%,transparent 100%);
+    transform:skewX(-18deg);filter:blur(1px);pointer-events:none;z-index:1;
+    animation:glisten-sweep 2.6s ease-in-out infinite;}
+  .role.glisten > *{position:relative;z-index:2;}
+  html[data-theme="light"] .role.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
   .fab-row{position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(env(safe-area-inset-bottom) + 14px);
     background:linear-gradient(transparent,var(--bg) 32%);display:flex;gap:10px;z-index:5;}
 
@@ -1257,14 +1266,19 @@ async function refreshStreakBadge(){
 /* =========================================================================
    7. Home — role-aware hub
    ========================================================================= */
-function roleCard(go_,ic,title,sub,coach){
-  return `<div class="role ${coach?"coach":""}" data-go="${go_}"><div class="ic">${ic}</div><div class="tt"><b>${title}</b><span>${sub}</span></div><div class="arw">→</div></div>`;
+function roleCard(go_,ic,title,sub,coach,glisten){
+  return `<div class="role ${coach?"coach":""} ${glisten?"glisten":""}" data-go="${go_}"><div class="ic">${ic}</div><div class="tt"><b>${title}</b><span>${sub}</span></div><div class="arw">→</div></div>`;
 }
-function renderHome(){
+async function renderHome(){
   // Base role (trainee/coach) decides the main hub; admin is an ADDITIVE capability.
   const base = ME && ME.role==="coach" ? "coach" : "trainee";
   const name=ME?ME.display_name||"there":"there";
   $("#home-h").innerHTML=`Hi ${escapeHtml(name.split(" ")[0])}.<br><span class="g">What's the plan today?</span>`;
+  // For trainees, glisten the path to goal submission when nothing is ongoing.
+  let noActiveGoal=false;
+  if(base==="trainee" && ME){
+    try{ const engs=await store.engagements.list({trainee_id:ME.id}); noActiveGoal=!engs.some(e=>e.status==="active"); }catch(e){}
+  }
   let cards="";
   if(base==="coach"){
     $("#home-p").textContent="Build your library, browse open goals, and manage your engagements.";
@@ -1273,7 +1287,7 @@ function renderHome(){
     cards+=roleCard("trainee-home","◉","My engagements","Assign & review your trainees",false);
   }else{
     $("#home-p").textContent="Find a coach, complete your assigned sets, and get your form graded.";
-    cards+=roleCard("trainee-home","◉","My training","Assigned workouts & progress",true);
+    cards+=roleCard("trainee-home","◉","My training","Assigned workouts & progress",true,noActiveGoal);
     cards+=roleCard("listings","◎","Find a coach","Post a goal, get video offers",false);
   }
   if(ME && ME.is_admin){
@@ -1928,8 +1942,9 @@ async function renderEngagement(){
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
   if(traineeMerged){
-    const btn=document.createElement("button");btn.className="btn sm";btn.style.marginBottom="14px";
-    btn.innerHTML=`◎ My Goals`;
+    const noActiveGoal = !((traineeEngs||[]).some(e=>e.status==="active"));
+    const btn=document.createElement("button");btn.className="btn sm"+(noActiveGoal?" glisten":"");btn.style.marginBottom="14px";
+    btn.innerHTML=`<span>◎ My Goals</span>`;
     btn.addEventListener("click",()=>openGoals());
     body.appendChild(btn);
   }else{
