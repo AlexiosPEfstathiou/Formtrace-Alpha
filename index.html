@@ -425,6 +425,20 @@
   .tl-bar{display:flex;gap:4px;margin-top:12px;}
   .tl-bar i{flex:1;height:4px;border-radius:2px;background:var(--line2);}
   .tl-bar i.on{background:var(--lime);}
+  /* check-in camera */
+  #photocap{position:absolute;inset:0;z-index:90;background:#05070a;display:none;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
+  #photocap.on{display:flex;}
+  #photocap video,#photocap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#05070a;}
+  #photocap video.mirror{transform:scaleX(-1);}
+  .pc-top{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 12px) 14px 12px;background:linear-gradient(rgba(0,0,0,.55),transparent);}
+  .pc-x,.pc-flip{width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:16px;cursor:pointer;}
+  .pc-ttl{flex:1;text-align:center;color:#fff;font-weight:800;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
+  .pc-ctrls{position:absolute;bottom:0;left:0;right:0;z-index:3;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 22px calc(env(safe-area-inset-bottom) + 26px);}
+  .pc-ctrls.pc-review{padding-bottom:calc(env(safe-area-inset-bottom) + 22px);}
+  .pc-ctrls.pc-review .btn{flex:1;max-width:150px;}
+  .pc-shoot{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.4);cursor:pointer;box-shadow:0 0 0 2px rgba(0,0,0,.25);transition:transform .1s;}
+  .pc-shoot:active{transform:scale(.92);}
+  .pc-hint{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 108px);left:0;right:0;z-index:3;text-align:center;color:#fff;font-size:12.5px;padding:0 30px;text-shadow:0 1px 4px rgba(0,0,0,.6);}
 </style>
 </head>
 <body>
@@ -711,6 +725,7 @@
 
   <!-- ============ CELEBRATION ============ -->
   <section class="screen" id="s-celebrate">
+    <div class="top" style="position:absolute;top:0;left:0;right:0;z-index:6"><div class="back" id="cele-back">←</div><div style="flex:1"></div></div>
     <div class="cele" id="cele">
       <div style="position:relative;display:flex;align-items:center;justify-content:center">
         <svg class="ring" viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="58"/><circle class="fg" cx="66" cy="66" r="58"/></svg>
@@ -804,6 +819,25 @@
   </div>
 
   <input type="file" id="checkin-input" accept="image/*" capture="user" style="display:none">
+  <!-- ============ CHECK-IN CAMERA ============ -->
+  <div id="photocap">
+    <video id="pc-video" playsinline autoplay muted></video>
+    <canvas id="pc-canvas" style="display:none"></canvas>
+    <img id="pc-still" style="display:none" alt="">
+    <div class="pc-top">
+      <button class="pc-x" id="pc-close">✕</button>
+      <div class="pc-ttl" id="pc-ttl">Weekly check-in</div>
+      <button class="pc-flip" id="pc-flip">🔄</button>
+    </div>
+    <div class="pc-ctrls" id="pc-ctrls">
+      <button class="pc-shoot" id="pc-shoot" aria-label="Take photo"></button>
+    </div>
+    <div class="pc-ctrls pc-review" id="pc-review" style="display:none">
+      <button class="btn ghost" id="pc-retake">↺ Retake</button>
+      <button class="btn primary" id="pc-use">✓ Use photo</button>
+    </div>
+    <div class="pc-hint" id="pc-hint"></div>
+  </div>
   <div id="toast"></div>
 </div></div>
 
@@ -1893,6 +1927,8 @@ async function renderEngagement(){
   // FAB: coach completes only via trainee side; either side rates when complete
   const fabRow=$("#eng-fab-row"),fab=$("#eng-fab");
   fabRow.classList.remove("hidden");
+  // clear any previously-added secondary (reopen) button
+  const oldReopen=$("#eng-reopen"); if(oldReopen)oldReopen.remove();
   if(traineeMerged){
     // merged trainee view: completion/rating happens inside a specific goal
     fabRow.classList.add("hidden");
@@ -1900,9 +1936,18 @@ async function renderEngagement(){
     fab.textContent="✓ Goal complete"; fab.onclick=coachCompleteGoal;
   }else if(currentEng.status==="active" && !iAmCoach){
     fab.textContent="Mark goal complete"; fab.onclick=completeEngagement;
-  }else if(currentEng.status==="completed"){
+  }else if(currentEng.status==="completed" || currentEng.status==="ended"){
     const rated=await myRatingExists();
-    if(!rated){ fab.textContent=`Rate your ${iAmCoach?"trainee":"coach"}`; fab.onclick=()=>openRate(); }
+    if(!rated){
+      fab.textContent=`Rate your ${iAmCoach?"trainee":"coach"}`;
+      fab.onclick=()=>openRate();
+      // safeguard against misclicks: allow reopening the goal until it's rated
+      const reopen=document.createElement("button");
+      reopen.id="eng-reopen";reopen.className="btn ghost";reopen.style.marginTop="10px";
+      reopen.textContent="↩ Reopen goal";
+      reopen.onclick=reopenGoal;
+      fabRow.appendChild(reopen);
+    }
     else { fabRow.classList.add("hidden"); }
   }else fabRow.classList.add("hidden");
  }catch(err){
@@ -1997,21 +2042,27 @@ function renderDashboard(container, iAmCoach){
   wrap.appendChild(macroCard);
 
   // ---- weight line chart (SVG) ----
-  const wpts=buckets.map((b,i)=>({i,w:b.wSum})).filter(p=>p.w!=null);
+  const wpts=buckets.map((b,i)=>({i,w:b.wSum,label:b.label})).filter(p=>p.w!=null);
   const wCard=document.createElement("div");wCard.className="card";wCard.style.padding="16px 12px 10px";
   if(wpts.length>=1){
-    const wW=Math.max(320, buckets.length*46), wH=150, wpadB=24, wpadT=16, wpadL=30;
+    const wW=Math.max(320, buckets.length*46), wH=168, wpadB=30, wpadT=18, wpadL=34;
     const ws=wpts.map(p=>p.w); const wMin=Math.min(...ws), wMax=Math.max(...ws); const span=(wMax-wMin)||1;
-    const chH=wH-wpadB-wpadT, chW=wW-wpadL-8;
+    const chH=wH-wpadB-wpadT, chW=wW-wpadL-10;
     const X=i=>wpadL+(buckets.length<=1?chW/2:(i/(buckets.length-1))*chW);
     const Y=w=>wpadT+chH-((w-wMin)/span)*chH;
-    let path="",dots="";
-    wpts.forEach((p,k)=>{ const x=X(p.i),y=Y(p.w); path+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" "; dots+=`<circle cx="${x}" cy="${y}" r="3" fill="var(--violet)"/><text x="${x}" y="${y-7}" text-anchor="middle" font-size="8" fill="var(--muted)">${p.w}</text>`; });
-    // y gridlines (min/max)
-    const grid=`<line x1="${wpadL}" y1="${Y(wMax)}" x2="${wW-8}" y2="${Y(wMax)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="2" y="${Y(wMax)+3}" font-size="8" fill="var(--faint)">${wMax}</text>
-      <line x1="${wpadL}" y1="${Y(wMin)}" x2="${wW-8}" y2="${Y(wMin)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="2" y="${Y(wMin)+3}" font-size="8" fill="var(--faint)">${wMin}</text>`;
-    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div>
-      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${path}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg></div>`;
+    let path="",dots="",xlabels="";
+    wpts.forEach((p,k)=>{ const x=X(p.i),y=Y(p.w);
+      path+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" ";
+      dots+=`<circle cx="${x}" cy="${y}" r="3" fill="var(--violet)"/><text x="${x}" y="${y-7}" text-anchor="middle" font-size="8.5" font-weight="700" fill="var(--ink)">${p.w}</text>`;
+      // x-axis date under each measured point
+      xlabels+=`<text x="${x}" y="${wH-9}" text-anchor="middle" font-size="8.5" fill="var(--faint)">${p.label}</text>`;
+    });
+    // baseline + y gridlines (min/max)
+    const grid=`<line x1="${wpadL}" y1="${Y(wMax)}" x2="${wW-8}" y2="${Y(wMax)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="3" y="${Y(wMax)+3}" font-size="8" fill="var(--faint)">${wMax}</text>
+      <line x1="${wpadL}" y1="${Y(wMin)}" x2="${wW-8}" y2="${Y(wMin)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="3" y="${Y(wMin)+3}" font-size="8" fill="var(--faint)">${wMin}</text>
+      <line x1="${wpadL}" y1="${wpadT+chH}" x2="${wW-8}" y2="${wpadT+chH}" stroke="var(--line2)"/>`;
+    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg) · ${dashMode==="week"?"weekly avg":"by day"}</div>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${path}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
   }else{
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
   }
@@ -2209,30 +2260,85 @@ function openTraineeDay(iso){
   const dow=new Date(iso.split("-")[0],iso.split("-")[1]-1,iso.split("-")[2]).getDay();
   if(dow===6){
     const crow=document.createElement("div");crow.className="sh-item";crow.style.borderColor="var(--amber)";
-    crow.innerHTML=`<div style="width:24px;height:24px;border-radius:7px;background:var(--amber);display:flex;align-items:center;justify-content:center;color:#3a2c00;font-weight:800;flex-shrink:0">📸</div><div style="flex:1"><div style="font-size:15px;font-weight:700">Weekly check-in photo</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Take your Saturday progress photo</div></div><div style="color:var(--faint)">›</div>`;
+    crow.innerHTML=`<div style="width:24px;height:24px;border-radius:7px;background:var(--amber);display:flex;align-items:center;justify-content:center;color:#3a2c00;font-weight:800;flex-shrink:0">📸</div><div style="flex:1"><div style="font-size:15px;font-weight:700">Weekly check-in photo</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Open camera for your Saturday progress photo</div></div><div style="color:var(--faint)">›</div>`;
     crow.addEventListener("click",()=>{ startCheckin(iso); });
     body.appendChild(crow);
   }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
-/* Weekly check-in: pick/take a photo, upload to the videos bucket, record in checkins */
-let checkinDate=null;
+/* Weekly check-in: capture a progress photo with the in-app camera, upload, record in checkins */
+let checkinDate=null, pcStream=null, pcFacing="user", pcBlob=null;
 function startCheckin(iso){
   checkinDate=iso;
-  const inp=$("#checkin-input"); inp.value=""; inp.click();
+  closeSheet();
+  $("#photocap").classList.add("on");
+  $("#pc-still").style.display="none";$("#pc-video").style.display="block";
+  $("#pc-ctrls").style.display="flex";$("#pc-review").style.display="none";
+  $("#pc-ttl").textContent="Check-in · "+fmtDay(iso);
+  $("#pc-hint").textContent="";
+  pcBlob=null;
+  pcOpenCam();
 }
+async function pcOpenCam(){
+  try{
+    if(pcStream)pcStream.getTracks().forEach(t=>t.stop());
+    pcStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:pcFacing,width:{ideal:1080},height:{ideal:1440}},audio:false});
+    const v=$("#pc-video");v.srcObject=pcStream;v.classList.toggle("mirror",pcFacing==="user");
+    await v.play().catch(()=>{});
+  }catch(err){
+    console.error(err);
+    $("#pc-hint").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS. You can still pick a photo from your device.";
+    // graceful fallback to file picker
+    $("#pc-ctrls").style.display="none";
+    setTimeout(()=>{ $("#checkin-input").value="";$("#checkin-input").click(); },300);
+  }
+}
+function pcStopCam(){ if(pcStream){pcStream.getTracks().forEach(t=>t.stop());pcStream=null;} }
+$("#pc-close").addEventListener("click",()=>{ pcStopCam(); $("#photocap").classList.remove("on"); checkinDate=null; });
+$("#pc-flip").addEventListener("click",()=>{ pcFacing=pcFacing==="user"?"environment":"user"; pcOpenCam(); });
+$("#pc-shoot").addEventListener("click",()=>{
+  const v=$("#pc-video"); if(!v.videoWidth)return;
+  const c=$("#pc-canvas");c.width=v.videoWidth;c.height=v.videoHeight;
+  const ctx=c.getContext("2d");
+  if(pcFacing==="user"){ ctx.save();ctx.translate(c.width,0);ctx.scale(-1,1);ctx.drawImage(v,0,0);ctx.restore(); }
+  else ctx.drawImage(v,0,0);
+  c.toBlob(b=>{ pcBlob=b;
+    const url=URL.createObjectURL(b);
+    const img=$("#pc-still");img.src=url;img.style.display="block";$("#pc-video").style.display="none";
+    $("#pc-ctrls").style.display="none";$("#pc-review").style.display="flex";
+  },"image/jpeg",0.9);
+});
+$("#pc-retake").addEventListener("click",()=>{
+  pcBlob=null;$("#pc-still").style.display="none";$("#pc-video").style.display="block";
+  $("#pc-review").style.display="none";$("#pc-ctrls").style.display="flex";
+});
+$("#pc-use").addEventListener("click",async()=>{
+  const iso=checkinDate; if(!pcBlob||!iso)return;
+  const btn=$("#pc-use");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+  try{
+    await saveCheckinBlob(pcBlob,"jpg",iso);
+    pcStopCam();$("#photocap").classList.remove("on");checkinDate=null;
+    toast("Check-in saved ✓");
+    renderEngagement();
+  }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
+});
+async function saveCheckinBlob(blob,ext,iso){
+  const path=await store.video.upload(blob,ext);
+  const existing=(await store.checkins.list({trainee_id:ME.id,checkin_date:iso}))[0];
+  if(existing){ await store.checkins.update(existing.id,{photo_path:path}); }
+  else{ await store.checkins.add({trainee_id:ME.id,checkin_date:iso,photo_path:path}); }
+}
+/* fallback: device file picker (only used if camera unavailable) */
 $("#checkin-input").addEventListener("change",async e=>{
   const file=e.target.files&&e.target.files[0]; const iso=checkinDate; checkinDate=null;
+  $("#photocap").classList.remove("on");
   if(!file||!iso)return;
   toast("Uploading your check-in…",3000);
   try{
     const ext=(file.type||"").includes("png")?"png":(file.type||"").includes("webp")?"webp":"jpg";
-    const path=await store.video.upload(file,ext);
-    const existing=(await store.checkins.list({trainee_id:ME.id,checkin_date:iso}))[0];
-    if(existing){ await store.checkins.update(existing.id,{photo_path:path}); }
-    else{ await store.checkins.add({trainee_id:ME.id,checkin_date:iso,photo_path:path}); }
+    await saveCheckinBlob(file,ext,iso);
     toast("Check-in saved ✓");
-    closeSheet();
     renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
 });
@@ -2310,6 +2416,18 @@ async function completeEngagement(){
     currentEng.status="completed";
     openCelebration(currentEng,ME,()=>openRate());
   }catch(err){console.error(err);toast(err.message||"Couldn't complete the goal",4000);}
+}
+/* reopen a completed/ended goal — safeguard against a misclick, allowed until it's been rated */
+async function reopenGoal(){
+  const ok=await openConfirm({title:"Reopen this goal?",body:"This puts the engagement back to active so you can keep training. You can complete it again later.",confirmLabel:"Reopen goal",cancelLabel:"Never mind",icon:"↩"});
+  if(!ok)return;
+  try{
+    await store.engagements.update(currentEng.id,{status:"active",outcome:null,completed_at:null});
+    try{ await store.engagements.update(currentEng.id,{billing_active:true}); }catch(_){/* column optional */}
+    currentEng.status="active"; currentEng.outcome=null; currentEng.completed_at=null;
+    toast("Goal reopened ✓");
+    openEngagement(currentEng.id);
+  }catch(err){console.error(err);toast(err.message||"Couldn't reopen the goal",4000);}
 }
 /* coach: complete a goal as SUCCESSFUL, set on_time/late, stop billing */
 async function coachCompleteGoal(){
@@ -2650,6 +2768,7 @@ function openCelebration(eng,other,onContinue){
     <div><div class="v">${dur}</div><div class="k">Duration</div></div>
     <div><div class="v">${deadline}</div><div class="k">Deadline</div></div>`;
   $("#cele-continue").onclick=onContinue;
+  $("#cele-back").onclick=()=>openEngagement(eng.id);
   $$(".screen").forEach(s=>s.classList.remove("active"));
   const stage=$("#s-celebrate"); stage.classList.add("active");
   celebrationBurst();
