@@ -94,6 +94,14 @@
   .home-macro .hm-row input:focus{border-color:var(--lime-dim);}
   .home-macro .hm-save{flex-shrink:0;height:38px;padding:0 15px;border-radius:10px;border:1px solid var(--lime);background:var(--lime);color:var(--lime-ink);font-size:13px;font-weight:700;cursor:pointer;}
   .home-macro .hm-save:disabled{opacity:.5;cursor:default;}
+  /* Saturday weekly check-in prompt */
+  .home-checkin{margin-top:12px;display:flex;align-items:center;gap:12px;background:var(--accent-surface);border:1px solid var(--accent-border);border-radius:14px;padding:12px 14px;cursor:pointer;transition:transform .12s;}
+  .home-checkin:active{transform:scale(.99);}
+  .home-checkin .ci-ic{width:38px;height:38px;border-radius:11px;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .home-checkin .ci-main{flex:1;min-width:0;}
+  .home-checkin .ci-main .t{font-size:14px;font-weight:800;color:var(--ink);}
+  .home-checkin .ci-main .s{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .home-checkin .ci-arw{color:var(--lime-dim);font-size:18px;flex-shrink:0;}
   .roles{padding:0 22px calc(env(safe-area-inset-bottom) + 26px);display:flex;flex-direction:column;gap:12px;}
   .role{position:relative;border-radius:20px;padding:20px;cursor:pointer;border:1px solid var(--line);
     background:var(--panel);display:flex;align-items:center;gap:16px;transition:transform .12s,border-color .15s,background .15s;}
@@ -564,6 +572,7 @@
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
+      <div id="home-checkin" class="home-checkin" style="display:none"></div>
     </div>
     <div class="roles" id="home-roles"></div>
   </section>
@@ -1293,10 +1302,10 @@ async function renderHome(){
   const base = ME && ME.role==="coach" ? "coach" : "trainee";
   const name=ME?ME.display_name||"there":"there";
   const firstName=escapeHtml(name.split(" ")[0]);
-  const todayEl=$("#home-today"), macroEl=$("#home-macro");
+  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin");
   // default (coach) hero; trainee hero is customised below
   $("#home-h").innerHTML=`Hi ${firstName}.<br><span class="g">What's the plan today?</span>`;
-  todayEl.style.display="none"; macroEl.style.display="none";
+  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -1308,6 +1317,7 @@ async function renderHome(){
     $("#home-p").style.display="none";
     await renderHomeToday(engs, todayEl);
     await renderHomeMacro(macroEl);
+    await renderHomeCheckin(checkinEl);
   }else{
     $("#home-p").style.display="";
   }
@@ -1383,6 +1393,22 @@ async function saveHomeMacro(iso){
     toast("You're all set.");
     const el=$("#home-macro"); if(el){ el.style.display="none"; el.innerHTML=""; }
   }catch(err){console.error(err);toast(err.message||"Couldn't save log",4000);btn.disabled=false;btn.textContent=o;}
+}
+/* Trainee homepage: on Saturdays, prompt for the weekly check-in photo
+   (hidden if today isn't Saturday or this Saturday is already done). */
+async function renderHomeCheckin(el){
+  el.style.display="none"; el.innerHTML="";
+  const now=new Date();
+  if(now.getDay()!==6) return; // Saturday only
+  const iso=todayISO();
+  let done=false;
+  try{ done=!!(await store.checkins.list({trainee_id:ME.id,checkin_date:iso}))[0]; }catch(e){}
+  if(done) return;
+  el.innerHTML=`<div class="ci-ic">📷</div>
+    <div class="ci-main"><div class="t">Weekly check-in</div><div class="s">It's Saturday — snap this week's progress photo.</div></div>
+    <div class="ci-arw">›</div>`;
+  el.style.display="";
+  el.onclick=()=>startCheckin(iso);
 }
 /* Coach homepage: pending reviews + trainees awaiting assignment */
 async function renderCoachHome(el){
@@ -2600,7 +2626,8 @@ $("#pc-use").addEventListener("click",async()=>{
     await saveCheckinBlob(pcBlob,"jpg",iso);
     pcStopCam();$("#photocap").classList.remove("on");checkinDate=null;
     toast("Check-in saved ✓");
-    renderEngagement();
+    if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
+    else renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
@@ -2620,7 +2647,8 @@ $("#checkin-input").addEventListener("change",async e=>{
     const ext=(file.type||"").includes("png")?"png":(file.type||"").includes("webp")?"webp":"jpg";
     await saveCheckinBlob(file,ext,iso);
     toast("Check-in saved ✓");
-    renderEngagement();
+    if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
+    else renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
 });
 /* Macro logging sheet for a given date */
