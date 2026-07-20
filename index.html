@@ -2421,15 +2421,19 @@ $("#pc-close").addEventListener("click",()=>{ pcStopCam(); $("#photocap").classL
 $("#pc-flip").addEventListener("click",()=>{ pcFacing=pcFacing==="user"?"environment":"user"; pcOpenCam(); });
 $("#pc-shoot").addEventListener("click",()=>{
   const v=$("#pc-video"); if(!v.videoWidth)return;
-  const c=$("#pc-canvas");c.width=v.videoWidth;c.height=v.videoHeight;
+  // downscale to <=1080px on the long side to keep check-in photos light
+  const MAXDIM=1080;
+  const scale=Math.min(1, MAXDIM/Math.max(v.videoWidth,v.videoHeight));
+  const cw=Math.round(v.videoWidth*scale), ch=Math.round(v.videoHeight*scale);
+  const c=$("#pc-canvas");c.width=cw;c.height=ch;
   const ctx=c.getContext("2d");
-  if(pcFacing==="user"){ ctx.save();ctx.translate(c.width,0);ctx.scale(-1,1);ctx.drawImage(v,0,0);ctx.restore(); }
-  else ctx.drawImage(v,0,0);
+  if(pcFacing==="user"){ ctx.save();ctx.translate(cw,0);ctx.scale(-1,1);ctx.drawImage(v,0,0,cw,ch);ctx.restore(); }
+  else ctx.drawImage(v,0,0,cw,ch);
   c.toBlob(b=>{ pcBlob=b;
     const url=URL.createObjectURL(b);
     const img=$("#pc-still");img.src=url;img.style.display="block";$("#pc-video").style.display="none";
     $("#pc-ctrls").style.display="none";$("#pc-review").style.display="flex";
-  },"image/jpeg",0.9);
+  },"image/jpeg",0.82);
 });
 $("#pc-retake").addEventListener("click",()=>{
   pcBlob=null;$("#pc-still").style.display="none";$("#pc-video").style.display="block";
@@ -3252,13 +3256,19 @@ function rLoop(){
 }
 function pickMime(){const c=["video/mp4;codecs=h264","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];return c.find(t=>MediaRecorder.isTypeSupported(t))||"";}
 function startRec(){
-  const w=rvideo.videoWidth,h=rvideo.videoHeight;
+  const sw=rvideo.videoWidth,sh=rvideo.videoHeight;
+  // Downscale the recorded canvas to <=720px on the long side to shrink file size
+  // (analysis uses pose landmarks, not the video pixels, so grading is unaffected).
+  const MAXDIM=720;
+  const scale=Math.min(1, MAXDIM/Math.max(sw,sh));
+  const w=Math.round(sw*scale), h=Math.round(sh*scale);
   recCanvas=document.createElement("canvas");recCanvas.width=w;recCanvas.height=h;recCtx=recCanvas.getContext("2d");
   const mirror=rFacing==="user";
   const paint=()=>{recCtx.save();if(mirror){recCtx.translate(w,0);recCtx.scale(-1,1);}recCtx.drawImage(rvideo,0,0,w,h);recCtx.restore();recCtx.drawImage(roverlay,0,0,w,h);recPaintRAF=requestAnimationFrame(paint);};
   paint();
   const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capStart=performance.now();
-  rRecorder=new MediaRecorder(cs,mime?{mimeType:mime,videoBitsPerSecond:6_000_000}:undefined);
+  // ~1.6 Mbps is ample for a short pose-overlay clip and cuts upload size ~4x vs 6 Mbps
+  rRecorder=new MediaRecorder(cs,mime?{mimeType:mime,videoBitsPerSecond:1_600_000}:undefined);
   rRecorder.ondataavailable=e=>{if(e.data.size)rChunks.push(e.data);};rRecorder.onstop=onRecStop;rRecorder.start();
   rRecording=true;$("#rbtn").classList.add("rec");$("#r-flip").style.visibility="hidden";$("#r-ghost").style.visibility="hidden";
   rStart=Date.now();$("#rtimer").classList.add("on");$("#rtval").textContent="0:00";rTimerInt=setInterval(()=>$("#rtval").textContent=fmt((Date.now()-rStart)/1000),250);
