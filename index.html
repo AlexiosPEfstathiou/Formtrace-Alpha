@@ -364,10 +364,31 @@
   .cal-split .cal-multi{z-index:2;}
   .cal-split:active{transform:scale(.95);}
   .cal-split-diag{position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(to bottom left,transparent calc(50% - .5px),var(--line) calc(50% - .5px),var(--line) calc(50% + .5px),transparent calc(50% + .5px));}
+  /* gold "complete day" + connected streak line */
+  .cal-gold{background:linear-gradient(135deg,#F5C542,#E0A81E)!important;border-color:#F5C542!important;box-shadow:0 3px 12px rgba(245,197,66,.35);}
+  .cal-gold .dn{color:#3a2c00!important;font-weight:800;}
+  .cal-gold .cal-badge{color:#3a2c00;}
+  .cal-gold.gold-l{border-top-left-radius:0;border-bottom-left-radius:0;}
+  .cal-gold.gold-r{border-top-right-radius:0;border-bottom-right-radius:0;}
+  .cal-gold.gold-l::before{content:"";position:absolute;left:-7px;top:0;bottom:0;width:8px;background:linear-gradient(135deg,#F5C542,#E0A81E);z-index:0;}
+  .cal-gold.gold-r::after{content:"";position:absolute;right:-7px;top:0;bottom:0;width:8px;background:linear-gradient(135deg,#F5C542,#E0A81E);z-index:0;}
+  /* danger: a broken-boundary gold day flashes red */
+  .cal-danger{animation:caldanger 1s ease-in-out infinite;}
+  @keyframes caldanger{0%,100%{background:rgba(255,90,90,.25);border-color:rgba(255,90,90,.5);}50%{background:rgba(255,90,90,.7);border-color:var(--red);}}
+  /* persistent streak badge, top-left of phone */
+  #streak-badge{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:70;display:flex;align-items:center;gap:5px;
+    background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;font-weight:800;font-size:14px;padding:6px 12px 6px 10px;border-radius:20px;
+    box-shadow:0 4px 14px rgba(245,197,66,.4);font-variant-numeric:tabular-nums;pointer-events:none;}
+  #streak-badge .sflame{font-size:15px;line-height:1;}
+  #streak-badge.danger{background:linear-gradient(135deg,#ff7676,#e03b3b);color:#fff;animation:caldanger 1s ease-in-out infinite;}
+  #streak-badge.zero{background:var(--panel2);color:var(--faint);box-shadow:none;}
 </style>
 </head>
 <body>
 <div id="frame"><div id="phone">
+
+  <!-- persistent discipline-streak badge (trainee) -->
+  <div id="streak-badge" class="hidden"><span class="sflame">🔥</span><span id="streak-count">0</span></div>
 
   <!-- ============ APP LOADING ============ -->
   <div class="loading-screen" id="app-loading">
@@ -738,6 +759,54 @@ const isoOf=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
 const todayISO=()=>isoOf(new Date());
 function fmtDay(iso){ if(!iso)return "—"; const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}); }
 function weekNumber(startedAt){ if(!startedAt)return 1; const start=new Date(startedAt); const ms=Date.now()-start.getTime(); const wk=Math.floor(ms/(7*24*3600*1000))+1; return wk<1?1:wk; }
+/* ---- streak / day-completion helpers (trainee) ---- */
+function macrosLogged(l){ return !!(l && (l.protein_g!=null || l.carbs_g!=null || l.fat_g!=null)); }
+// A day is COMPLETE when macros are logged AND no workout that day is still 'assigned'.
+// (submitted counts — trainee did their part; rest days with macros count.)
+function dayComplete(iso){
+  const wl=engAssignedByDate[iso]||[];
+  const pendingWorkout=wl.some(a=>a.status==="assigned");
+  return macrosLogged(logsByDate[iso]) && !pendingWorkout;
+}
+// A day is a MISSED-workout day when it's in the past and has a workout still 'assigned'.
+function dayMissedWorkout(iso){
+  const today=todayISO();
+  if(iso>=today)return false;
+  const wl=engAssignedByDate[iso]||[];
+  return wl.some(a=>a.status==="assigned");
+}
+function addDaysISO(iso,delta){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+delta); return isoOf(dt); }
+/* Compute the current discipline streak and danger state.
+   - streak = consecutive COMPLETE days ending today (or yesterday if today not yet complete)
+   - a single missed-workout day => danger (streak paused, can be reinstated next day)
+   - two consecutive missed-workout days => streak broken (0) */
+function computeStreak(){
+  const today=todayISO();
+  // walk backwards from today; today may still be "in progress" (not complete, not yet missed)
+  let count=0, danger=false, cursor=today;
+  // if today isn't complete yet but also not a missed day, start from yesterday
+  if(!dayComplete(today) && !dayMissedWorkout(today)) cursor=addDaysISO(today,-1);
+  // detect danger: exactly one missed-workout day at the most recent boundary
+  // scan back up to a wide window
+  let guard=0, missedRun=0;
+  while(guard++<400){
+    if(dayComplete(cursor)){ if(missedRun>0)break; count++; cursor=addDaysISO(cursor,-1); continue; }
+    if(dayMissedWorkout(cursor)){ missedRun++; if(missedRun>=2){ // two consecutive misses => broken
+        return {count:0, danger:false, broken:true}; }
+      danger=true; cursor=addDaysISO(cursor,-1); continue; }
+    // neither complete nor missed (rest day w/o macros, or future gap) — stop
+    break;
+  }
+  return {count, danger, broken:false};
+}
+function updateStreakBadge(info){
+  const b=$("#streak-badge"); if(!b)return;
+  b.classList.remove("hidden","danger","zero");
+  $("#streak-count").textContent=info.count;
+  if(info.danger) b.classList.add("danger");
+  else if(info.count===0) b.classList.add("zero");
+}
+function hideStreakBadge(){ const b=$("#streak-badge"); if(b)b.classList.add("hidden"); }
 
 /* A tiny in-memory cache of signed URLs so we don't re-sign on every render. */
 const urlCache=new Map();
@@ -944,7 +1013,7 @@ $("#au-submit").addEventListener("click",async()=>{
   }catch(err){ console.error(err); toast(err.message||"Couldn't sign in",4000); }
   finally{ btn.disabled=false; btn.textContent=orig; }
 });
-$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); showAuth(); });
+$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); hideStreakBadge(); showAuth(); });
 
 function showAuth(){
   $("#app-loading").style.display="none";
@@ -958,7 +1027,20 @@ async function bootSignedIn(){
   if(!ME){ toast("Couldn't load your profile",4000); return; }
   $("#app-loading").style.display="none";
   currentView = roleOf()==="coach" ? "coach" : "trainee";
+  refreshStreakBadge();
   go("home");
+}
+/* Load the trainee's logs+assigned workouts and refresh the persistent streak badge. */
+async function refreshStreakBadge(){
+  if(!ME || roleOf()==="coach"){ hideStreakBadge(); return; }
+  try{
+    const engs=await store.engagements.list({trainee_id:ME.id});
+    const lists=await Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    engAssignedByDate={}; for(const a of lists.flat()){ const dt=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[dt]=engAssignedByDate[dt]||[]).push(a); }
+    logsByDate={}; const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l;
+    streakInfo=computeStreak();
+    updateStreakBadge(streakInfo);
+  }catch(e){ console.error("streak badge",e); hideStreakBadge(); }
 }
 
 /* =========================================================================
@@ -1482,7 +1564,7 @@ async function renderTraineeHome(){
 }
 
 let currentEng=null, currentEngOther=null;
-let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={};
+let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={}, streakInfo={count:0,danger:false,broken:false};
 let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
 let traineeEngs=[];           // the trainee's engagement rows (merged mode)
 let engById={};               // id -> engagement (for day actions in merged mode)
@@ -1567,6 +1649,9 @@ async function renderEngagement(){
   if(!iAmCoach){
     try{ const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l; }catch(e){console.error("logs load",e);}
   }
+  // discipline streak (trainee only)
+  streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
+  if(!iAmCoach) updateStreakBadge(streakInfo);
   body.innerHTML="";
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
@@ -1581,6 +1666,13 @@ async function renderEngagement(){
         <div><div class="eyebrow" style="color:var(--lime-dim)">Goal</div><div style="font-size:18px;font-weight:800;margin-top:5px">${escapeHtml(currentEng.goal_title||"—")}</div></div>
         <span class="badge ${currentEng.status}">${currentEng.status}</span></div>`;
     body.appendChild(banner);
+  }
+
+  // streak danger warning (trainee): one missed workout — reinstate by completing next day
+  if(!iAmCoach && streakInfo.danger && streakInfo.count>0){
+    const warn=document.createElement("div");warn.className="card";warn.style.cssText="background:rgba(255,90,90,.1);border-color:rgba(255,90,90,.5);margin-bottom:14px";
+    warn.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px">⚠️</div><div style="flex:1"><div style="font-weight:800;color:var(--red)">Streak at risk</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45">You missed a workout. Your ${streakInfo.count}-day streak is paused — complete tomorrow to reinstate it. Miss again and it resets to zero.</div></div></div>`;
+    body.appendChild(warn);
   }
 
   // calendar
@@ -1617,8 +1709,10 @@ async function renderEngagement(){
         else {cls="cal-done";badge="✓";}                    // submitted, pending (blue)
       }
     }
-    // unopened glisten: coach = submissions awaiting review; trainee = newly assigned/reviewed not opened
-    const glisten = !missed && (iAmCoach ? wl.some(a=>a.status==="submitted") : wl.some(a=>(a.status==="assigned"||a.status==="reviewed")&&!a.opened));
+    // shine only for TRAINEE attention: new (unopened) workout, reviewed-unviewed, or today-incomplete
+    const attnNew = !iAmCoach && wl.some(a=>(a.status==="assigned"||a.status==="reviewed")&&!a.opened);
+    const attnToday = !iAmCoach && iso===todayISO() && !dayComplete(iso) && !missed;
+    const glisten = !missed && (iAmCoach ? wl.some(a=>a.status==="submitted") : (attnNew||attnToday));
     const cell=document.createElement("div");
     if(iAmCoach){
       cell.className="cal-day cal-tap "+cls+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
@@ -1626,21 +1720,31 @@ async function renderEngagement(){
       cell.addEventListener("click",()=>openEngDay(iso));
     }else{
       // TRAINEE: split diagonally — top triangle = macros logged, bottom triangle = workout state
-      const logged=!!logsByDate[iso];
+      const logged=macrosLogged(logsByDate[iso]);
+      const complete=dayComplete(iso);
+      // danger = a single missed-workout day forming the current break boundary
+      const danger = missed && streakInfo.danger && iso>=addDaysISO(todayISO(),-1);
       const workoutColor = !wl.length ? "transparent"
         : missed ? "rgba(255,90,90,.5)"
         : cls==="cal-workout" ? "var(--lime)"
         : cls==="cal-reviewed" ? "rgba(255,194,74,.6)"
         : "rgba(90,176,255,.55)";
       const macroColor = logged ? "var(--violet)" : "transparent";
-      cell.className="cal-day cal-split cal-tap"+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
-      cell.innerHTML=`
-        <div class="tri tri-top" style="background:${macroColor}"></div>
-        <div class="tri tri-bot" style="background:${workoutColor}"></div>
-        <div class="cal-split-diag"></div>
-        <div class="dn">${d}</div>
-        ${badge?`<div class="cal-badge">${badge}</div>`:""}
-        ${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
+      // golden line connectors for consecutive complete days
+      let goldCls="";
+      if(complete){ goldCls=" cal-gold"; if(dayComplete(addDaysISO(iso,-1)))goldCls+=" gold-l"; if(dayComplete(addDaysISO(iso,1)))goldCls+=" gold-r"; }
+      cell.className="cal-day cal-split cal-tap"+goldCls+(danger?" cal-danger":"")+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
+      if(complete){
+        cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">★</div>`;
+      }else{
+        cell.innerHTML=`
+          <div class="tri tri-top" style="background:${macroColor}"></div>
+          <div class="tri tri-bot" style="background:${workoutColor}"></div>
+          <div class="cal-split-diag"></div>
+          <div class="dn">${d}</div>
+          ${badge?`<div class="cal-badge">${badge}</div>`:""}
+          ${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
+      }
       cell.addEventListener("click",()=>openTraineeDay(iso));
     }
     grid.appendChild(cell);
@@ -1658,6 +1762,7 @@ async function renderEngagement(){
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Reviewed by coach</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4)"></span>Missed — locked</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--violet)"></span>Macros logged (top)</div>
+      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Complete day ★ (streak)</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
 
@@ -1777,17 +1882,26 @@ function openMacroLog(iso){
   const mk=(id,label,val,unit)=>`<div class="field" style="margin-bottom:12px"><label>${label}${unit?` (${unit})`:""}</label><input id="${id}" type="number" inputmode="decimal" min="0" step="any" value="${val!=null?val:""}" placeholder="0"></div>`;
   const wrap=document.createElement("div");
   wrap.innerHTML=`${mk("ml-weight","Weight",l.weight_kg,"kg")}
-    ${mk("ml-kcal","Calories","kcal"in l?l.kcal:null,"kcal")}
     <div class="two">${mk("ml-p","Protein",l.protein_g,"g")}${mk("ml-c","Carbs",l.carbs_g,"g")}</div>
-    ${mk("ml-f","Fat",l.fat_g,"g")}`;
+    ${mk("ml-f","Fat",l.fat_g,"g")}
+    <div class="card" style="margin:2px 0 4px;display:flex;align-items:center;justify-content:space-between;padding:14px 16px">
+      <div class="eyebrow" style="color:var(--lime-dim)">Calories</div>
+      <div style="font-size:22px;font-weight:800;font-variant-numeric:tabular-nums" id="ml-kcal-out">0<span style="font-size:13px;color:var(--muted);font-weight:600"> kcal</span></div>
+    </div>
+    <div style="font-size:11px;color:var(--faint);text-align:center;margin-top:2px">Calculated: protein×4 + carbs×4 + fat×9</div>`;
   body.appendChild(wrap);
+  const recalc=()=>{ const n=id=>Number(($("#"+id)?.value||"").trim())||0; const k=Math.round(n("ml-p")*4+n("ml-c")*4+n("ml-f")*9); $("#ml-kcal-out").innerHTML=`${k}<span style="font-size:13px;color:var(--muted);font-weight:600"> kcal</span>`; };
+  ["ml-p","ml-c","ml-f"].forEach(id=>$("#"+id)?.addEventListener("input",recalc));
+  recalc();
   macroLogDate=iso;
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 async function saveMacroLog(){
   const iso=macroLogDate; if(!iso)return;
   const num=id=>{const v=($("#"+id)?.value||"").trim();return v===""?null:Number(v);};
-  const patch={weight_kg:num("ml-weight"),kcal:num("ml-kcal"),protein_g:num("ml-p"),carbs_g:num("ml-c"),fat_g:num("ml-f")};
+  const p=num("ml-p"),c=num("ml-c"),f=num("ml-f");
+  const kcal=(p==null&&c==null&&f==null)?null:Math.round((p||0)*4+(c||0)*4+(f||0)*9);
+  const patch={weight_kg:num("ml-weight"),kcal,protein_g:p,carbs_g:c,fat_g:f};
   const btn=$("#sheet-add");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
   try{
     const existing=(await store.logs.list({trainee_id:ME.id,log_date:iso}))[0];
