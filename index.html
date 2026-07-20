@@ -1703,8 +1703,45 @@ async function openEngDay(iso){
   }
 }
 function engDayAction(a,iAmCoach){
-  if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Scheduled — waiting for the trainee to submit"); }
+  if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else openCoachModify(a); }
   else { if(a.status==="assigned")openAssigned(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Submitted — waiting for coach review"); }
+}
+/* Coach: modify a not-yet-submitted (assigned) workout — backup for wrong-date assigns */
+function openCoachModify(a){
+  const snap=a.snapshot||{};
+  const cur=a.due_date||"";
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Modify · "+escapeHtml(snap.name||"Workout");
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin:2px 2px 14px;line-height:1.5">This workout hasn't been submitted yet, so you can still change it.</div>
+    <div class="field" style="margin-bottom:14px"><label>Move to date</label><input id="cm-date" type="date" value="${cur}"></div>`;
+  body.appendChild(wrap);
+  const saveDate=document.createElement("button");saveDate.className="btn primary sm";saveDate.style.marginBottom="10px";saveDate.textContent="Save new date";
+  saveDate.addEventListener("click",async()=>{
+    const nd=$("#cm-date").value; if(!nd){toast("Pick a date");return;}
+    saveDate.disabled=true;
+    try{ await store.assignedWorkouts.update(a.id,{due_date:nd}); toast("Moved ✓"); closeSheet(); renderEngagement(); }
+    catch(err){console.error(err);toast(err.message||"Couldn't move",4000);saveDate.disabled=false;}
+  });
+  body.appendChild(saveDate);
+  const replace=document.createElement("button");replace.className="btn sm";replace.style.marginBottom="10px";replace.textContent="Replace with another workout";
+  replace.addEventListener("click",async()=>{
+    // remove this one, then open the assign picker for the same date
+    const keepDate=a.due_date;
+    try{ await store.assignedWorkouts.remove(a.id); closeSheet(); await assignWorkoutFlow(keepDate); }
+    catch(err){console.error(err);toast(err.message||"Couldn't replace",4000);}
+  });
+  body.appendChild(replace);
+  const del=document.createElement("button");del.className="btn sm";del.style.color="var(--red)";del.textContent="Remove this workout";
+  del.addEventListener("click",async()=>{
+    if(!confirm("Remove this assigned workout?"))return;
+    del.disabled=true;
+    try{ await store.assignedWorkouts.remove(a.id); toast("Removed ✓"); closeSheet(); renderEngagement(); }
+    catch(err){console.error(err);toast(err.message||"Couldn't remove",4000);del.disabled=false;}
+  });
+  body.appendChild(del);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 /* Trainee taps a day: offer workout (if any) + macro logging */
 function openTraineeDay(iso){
@@ -1737,9 +1774,10 @@ function openMacroLog(iso){
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent="Log · "+fmtDay(iso);
   $("#sheet-add").style.display="";$("#sheet-add").textContent="Save log";$("#sheet-add").disabled=false;
-  const mk=(id,label,val,unit)=>`<div class="field" style="margin-bottom:12px"><label>${label}${unit?` (${unit})`:""}</label><input id="${id}" type="number" inputmode="numeric" min="0" value="${val!=null?val:""}" placeholder="0"></div>`;
+  const mk=(id,label,val,unit)=>`<div class="field" style="margin-bottom:12px"><label>${label}${unit?` (${unit})`:""}</label><input id="${id}" type="number" inputmode="decimal" min="0" step="any" value="${val!=null?val:""}" placeholder="0"></div>`;
   const wrap=document.createElement("div");
-  wrap.innerHTML=`${mk("ml-kcal","Calories","kcal"in l?l.kcal:null,"kcal")}
+  wrap.innerHTML=`${mk("ml-weight","Weight",l.weight_kg,"kg")}
+    ${mk("ml-kcal","Calories","kcal"in l?l.kcal:null,"kcal")}
     <div class="two">${mk("ml-p","Protein",l.protein_g,"g")}${mk("ml-c","Carbs",l.carbs_g,"g")}</div>
     ${mk("ml-f","Fat",l.fat_g,"g")}`;
   body.appendChild(wrap);
@@ -1749,7 +1787,7 @@ function openMacroLog(iso){
 async function saveMacroLog(){
   const iso=macroLogDate; if(!iso)return;
   const num=id=>{const v=($("#"+id)?.value||"").trim();return v===""?null:Number(v);};
-  const patch={kcal:num("ml-kcal"),protein_g:num("ml-p"),carbs_g:num("ml-c"),fat_g:num("ml-f")};
+  const patch={weight_kg:num("ml-weight"),kcal:num("ml-kcal"),protein_g:num("ml-p"),carbs_g:num("ml-c"),fat_g:num("ml-f")};
   const btn=$("#sheet-add");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
   try{
     const existing=(await store.logs.list({trainee_id:ME.id,log_date:iso}))[0];
