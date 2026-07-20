@@ -605,6 +605,7 @@
       </div>
       <div id="tw-list"></div>
       <button class="btn primary hidden" id="tw-submit" style="margin-top:8px">Submit to coach</button>
+      <button class="btn hidden" id="tw-submit-save" style="margin-top:10px">Submit &amp; save videos to device</button>
     </div>
   </section>
 
@@ -2561,9 +2562,11 @@ function renderAssignedWorkout(){
   wrap.querySelectorAll("[data-ref]").forEach(t=>t.addEventListener("click",e=>{ if(e.target.closest("video"))return; previewReference(+t.getAttribute("data-ref")); }));
   // submit button: enabled when all sets done and not yet submitted
   const allDone=done===total&&total>0;
-  const submitBtn=$("#tw-submit");
+  const submitBtn=$("#tw-submit"), submitSaveBtn=$("#tw-submit-save");
   submitBtn.classList.toggle("hidden",locked||!allDone);
-  submitBtn.onclick=submitToCoach;
+  submitSaveBtn.classList.toggle("hidden",locked||!allDone);
+  submitBtn.onclick=()=>submitToCoach(false);
+  submitSaveBtn.onclick=()=>submitToCoach(true);
   hydrateVideos(wrap);
 }
 async function previewReference(itemIndex){
@@ -2642,17 +2645,50 @@ function showResult(exName,it,setIndex,r){
   }
   $("#res-continue").onclick=()=>{R.classList.remove("on");renderAssignedWorkout();};
 }
-async function submitToCoach(){
-  const btn=$("#tw-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="Submitting…";
+async function submitToCoach(save=false){
+  const btn=save?$("#tw-submit-save"):$("#tw-submit");
+  const other=save?$("#tw-submit"):$("#tw-submit-save");
+  btn.disabled=true;other.disabled=true;const o=btn.textContent;btn.textContent=save?"Saving & submitting…":"Submitting…";
   try{
+    if(save){ await saveWorkoutVideos(); }
     const report={items:currentAssigned.snapshot.items.map((it,i)=>({name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
     await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
     await store.assignedWorkouts.update(currentAssigned.id,{status:"submitted"});
     try{ await store.assignedWorkouts.update(currentAssigned.id,{draft:null}); }catch(_){/* optional column */}
-    toast("Sent to your coach ✓",3200);
+    toast(save?"Saved to device & sent to coach ✓":"Sent to your coach ✓",3200);
     go("trainee-home");
   }catch(err){console.error(err);toast(err.message||"Couldn't submit",4000);}
-  finally{btn.disabled=false;btn.textContent=o;}
+  finally{btn.disabled=false;other.disabled=false;btn.textContent=o;}
+}
+/* Download each recorded set video (skeleton lines already baked in) to the device. */
+async function saveWorkoutVideos(){
+  const snap=currentAssigned.snapshot, items=snap.items||[];
+  const woName=(snap.name||"workout").replace(/[^\w-]+/g,"_");
+  let n=0;
+  for(let i=0;i<items.length;i++){
+    const exName=(items[i].name||("exercise"+(i+1))).replace(/[^\w-]+/g,"_");
+    const results=localResults[i]||[];
+    for(let s=0;s<results.length;s++){
+      const r=results[s]; if(!r||!r.video_path)continue;
+      try{
+        const url=await playable(r.video_path);
+        if(!url)continue;
+        const resp=await fetch(url); const blob=await resp.blob();
+        const ext=(blob.type||"").includes("mp4")?"mp4":"webm";
+        const fname=`${woName}_${exName}_set${s+1}.${ext}`;
+        triggerDownload(blob,fname);
+        n++;
+        await wait(250); // stagger so the browser doesn't block rapid downloads
+      }catch(e){ console.error("save video failed",e); }
+    }
+  }
+  if(!n) toast("No set videos to save",3000);
+}
+function triggerDownload(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1500);
 }
 
 /* =========================================================================
