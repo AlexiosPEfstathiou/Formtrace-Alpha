@@ -8,23 +8,48 @@
 <title>FormTrace Coach</title>
 <style>
   :root{
+    /* ---- DARK (default) ---- */
     --bg:#0B0E11; --bg2:#10151A; --panel:#151B21; --panel2:#1B232B;
     --line:#232C35; --line2:#2E3944;
     --ink:#EEF3F6; --muted:#8593A0; --faint:#5B6773;
     --lime:#C8FF3D; --lime-dim:#8Fb82c; --lime-ink:#0E1206;
     --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF; --violet:#B79CFF;
     --shadow:0 12px 40px rgba(0,0,0,.5);
+    --frame-outer:#0d1116; --frame-ring:#1c242c; --frame-bg:#05070A;
+    /* chart series (dark) — vivid but legible on dark panels */
+    --ch-1:#5AB0FF; --ch-2:#C8FF3D; --ch-3:#FFC24A; --ch-4:#B79CFF; --ch-weight:#B79CFF;
+    --ch-1-ink:#06121f; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
   }
+  html[data-theme="light"]{
+    --bg:#F4F6F8; --bg2:#EBEEF1; --panel:#FFFFFF; --panel2:#EEF1F4;
+    --line:#DDE3E8; --line2:#C6CFD6;
+    --ink:#131A20; --muted:#5A6672; --faint:#8C98A3;
+    --lime:#5B8C00; --lime-dim:#6f9e1f; --lime-ink:#FFFFFF;
+    --red:#D64545; --amber:#B7791F; --blue:#0072B2; --violet:#7A5CC4;
+    --shadow:0 12px 36px rgba(20,30,40,.18);
+    --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
+    --ch-1:#0072B2; --ch-2:#5B8C00; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
+    --ch-1-ink:#FFFFFF; --ch-2-ink:#FFFFFF; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
+  }
+  /* ---- COLORBLIND-SAFE (Wong palette) — applies over either theme ---- */
+  html[data-cb="1"]{
+    --blue:#0072B2; --amber:#E69F00; --red:#D55E00; --violet:#CC79A7; --lime:#009E73;
+    --ch-1:#0072B2; --ch-2:#E69F00; --ch-3:#D55E00; --ch-4:#CC79A7; --ch-weight:#CC79A7;
+    --ch-1-ink:#FFFFFF; --ch-2-ink:#1a1200; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
+  }
+  html[data-cb="1"][data-theme="light"]{ --lime:#0A7A5C; --lime-ink:#FFFFFF; --lime-dim:#0A7A5C; }
+  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-dim:#1f9e78; --lime-ink:#04120c; }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;background:#05070A;color:var(--ink);
-    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;}
+  html,body{height:100%;background:var(--frame-bg);color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;
+    transition:background .25s;}
 
   #frame{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
   #phone{position:relative;width:100%;height:100%;max-width:440px;max-height:940px;
-    background:var(--bg);overflow:hidden;display:flex;flex-direction:column;}
+    background:var(--bg);overflow:hidden;display:flex;flex-direction:column;transition:background .25s;}
   @media(min-width:480px){
-    #frame{background:radial-gradient(120% 120% at 50% 0%, #12181E 0%, #05070A 60%);}
-    #phone{border-radius:44px;box-shadow:var(--shadow),0 0 0 11px #0d1116,0 0 0 12px #1c242c;max-height:92vh;}
+    #frame{background:radial-gradient(120% 120% at 50% 0%, var(--bg2) 0%, var(--frame-bg) 60%);}
+    #phone{border-radius:44px;box-shadow:var(--shadow),0 0 0 11px var(--frame-outer),0 0 0 12px var(--frame-ring);max-height:92vh;}
   }
 
   .screen{position:absolute;inset:0;display:flex;flex-direction:column;
@@ -439,7 +464,29 @@
   .pc-shoot{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.4);cursor:pointer;box-shadow:0 0 0 2px rgba(0,0,0,.25);transition:transform .1s;}
   .pc-shoot:active{transform:scale(.92);}
   .pc-hint{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 108px);left:0;right:0;z-index:3;text-align:center;color:#fff;font-size:12.5px;padding:0 30px;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+  /* appearance: theme segmented control + colorblind switch */
+  .theme-seg button{font-size:12.5px;}
+  .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
+  .switch{position:relative;flex-shrink:0;width:46px;height:28px;}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+  .switch .track{position:absolute;inset:0;background:var(--panel2);border:1px solid var(--line2);border-radius:20px;transition:background .2s,border-color .2s;}
+  .switch .track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--faint);transition:transform .2s,background .2s;}
+  .switch input:checked + .track{background:var(--lime);border-color:var(--lime);}
+  .switch input:checked + .track::after{transform:translateX(18px);background:var(--lime-ink);}
 </style>
+<script>
+  // Apply saved theme + colorblind mode before first paint (no flash).
+  (function(){
+    try{
+      var t=localStorage.getItem("ft-theme")||"system";
+      var cb=localStorage.getItem("ft-cb")==="1";
+      var el=document.documentElement;
+      var dark = t==="dark" || (t==="system" && (!window.matchMedia || matchMedia("(prefers-color-scheme: dark)").matches));
+      if(dark) el.removeAttribute("data-theme"); else el.setAttribute("data-theme","light");
+      if(cb) el.setAttribute("data-cb","1"); else el.removeAttribute("data-cb");
+    }catch(e){}
+  })();
+</script>
 </head>
 <body>
 <div id="frame"><div id="phone">
@@ -2009,61 +2056,80 @@ function renderDashboard(container, iAmCoach){
     }
   }
 
-  // ---- macro stacked bar chart (SVG) ----
+  // theme-aware chart colors (read once from CSS vars)
+  const cs=getComputedStyle(document.documentElement);
+  const C={ p:(cs.getPropertyValue("--ch-1")||"#5AB0FF").trim(), c:(cs.getPropertyValue("--ch-2")||"#C8FF3D").trim(), f:(cs.getPropertyValue("--ch-3")||"#FFC24A").trim(),
+    pInk:(cs.getPropertyValue("--ch-1-ink")||"#fff").trim(), cInk:(cs.getPropertyValue("--ch-2-ink")||"#000").trim(), fInk:(cs.getPropertyValue("--ch-3-ink")||"#000").trim(),
+    weight:(cs.getPropertyValue("--ch-weight")||"#B79CFF").trim(),
+    ink:(cs.getPropertyValue("--ink")||"#eee").trim(), faint:(cs.getPropertyValue("--faint")||"#5B6773").trim(),
+    line:(cs.getPropertyValue("--line")||"#232C35").trim(), line2:(cs.getPropertyValue("--line2")||"#2E3944").trim(),
+    panel:(cs.getPropertyValue("--panel")||"#151B21").trim() };
+
+  // ---- macro stacked bar chart (SVG) with pattern fills (multi-channel: color + texture + labels) ----
   const macroCard=document.createElement("div");macroCard.className="card";macroCard.style.padding="16px 12px 10px";
-  const W=Math.max(320, buckets.length*46), H=210, padB=26, padT=22;
+  const W=Math.max(320, buckets.length*46), H=224, padB=26, padT=24, padL=30;
   const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f));
-  const bw=Math.min(34, (W-16)/buckets.length-8);
-  const gap=((W-16)/buckets.length);
-  let svg=`<div style="display:flex;gap:14px;margin:0 4px 12px;font-size:11px;color:var(--muted)">
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#5AB0FF"></span>Protein</span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C8FF3D"></span>Carbs</span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#FFC24A"></span>Fat</span>
-    </div>
-    <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">`;
+  const bw=Math.min(32, (W-padL-8)/buckets.length-8);
+  const gap=((W-padL-8)/buckets.length);
+  // patterns: protein solid, carbs diagonal stripes, fat dots — distinguishable without color
+  const defs=`<defs>
+    <pattern id="pat-carbs" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${C.c}"/><rect width="3" height="6" fill="rgba(0,0,0,.28)"/></pattern>
+    <pattern id="pat-fat" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="${C.f}"/><circle cx="3" cy="3" r="1.4" fill="rgba(0,0,0,.32)"/></pattern>
+  </defs>`;
   const chartH=H-padB-padT;
+  // rounded kcal gridlines (0, 25, 50, 75, 100% of maxG)
+  let gridSvg="";
+  for(let g=0;g<=4;g++){ const gy=padT+chartH-(g/4)*chartH; const gv=Math.round((g/4)*maxG);
+    gridSvg+=`<line x1="${padL}" y1="${gy}" x2="${W-6}" y2="${gy}" stroke="${C.line}" stroke-dasharray="${g===0?'0':'2 3'}"/><text x="${padL-5}" y="${gy+3}" text-anchor="end" font-size="8" fill="${C.faint}">${gv}</text>`; }
+  let svg=`<div style="display:flex;gap:14px;margin:0 4px 12px;font-size:11px;color:var(--muted);flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:${C.p}"></span>Protein</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:repeating-linear-gradient(45deg,${C.c},${C.c} 2px,rgba(0,0,0,.3) 2px,rgba(0,0,0,.3) 4px)"></span>Carbs</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:radial-gradient(${C.f} 40%,rgba(0,0,0,.35) 42%);background-size:6px 6px;border:1px solid ${C.f}"></span>Fat</span>
+    </div>
+    <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">${defs}${gridSvg}`;
   buckets.forEach((b,i)=>{
-    const x=8+i*gap+(gap-bw)/2;
+    const x=padL+i*gap+(gap-bw)/2;
     const tot=b.p+b.c+b.f;
     const hP=(b.p/maxG)*chartH, hC=(b.c/maxG)*chartH, hF=(b.f/maxG)*chartH;
     let y=padT+chartH;
-    // stack from bottom: protein, carbs, fat
-    const seg=(h,col,val)=>{ if(h<=0)return ""; y-=h; const s=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${col}" rx="2"/>`+
-      (h>14?`<text x="${x+bw/2}" y="${y+h/2+4}" text-anchor="middle" font-size="9" font-weight="700" fill="${col==="#C8FF3D"?"#0E1206":"#0b0e11"}">${val}</text>`:""); return s; };
-    svg+=seg(hP,"#5AB0FF",b.p);
-    svg+=seg(hC,"#C8FF3D",b.c);
-    svg+=seg(hF,"#FFC24A",b.f);
-    // kcal above
-    svg+=`<text x="${x+bw/2}" y="${padT+chartH-((tot/maxG)*chartH)-6}" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ink)">${b.kcal}</text>`;
-    // label
-    svg+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="9" fill="var(--faint)">${b.label}</text>`;
+    const seg=(h,fill,val,ink)=>{ if(h<=0)return ""; y-=h; const s=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${fill}" rx="2"/>`+
+      (h>13?`<text x="${x+bw/2}" y="${y+h/2+3.5}" text-anchor="middle" font-size="9" font-weight="800" fill="${ink}">${val}</text>`:""); return s; };
+    svg+=seg(hP,C.p,b.p,C.pInk);
+    svg+=seg(hC,"url(#pat-carbs)",b.c,C.cInk);
+    svg+=seg(hF,"url(#pat-fat)",b.f,C.fInk);
+    // kcal chip above
+    svg+=`<text x="${x+bw/2}" y="${padT+chartH-((tot/maxG)*chartH)-6}" text-anchor="middle" font-size="9" font-weight="800" fill="${C.ink}">${b.kcal}</text>`;
+    svg+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="8.5" fill="${C.faint}">${b.label}</text>`;
   });
   svg+=`</svg></div>`;
-  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Macros · ${dashMode==="week"?"weekly (daily avg)":"daily"} · kcal above each bar</div>`+svg;
+  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Macros (g) · ${dashMode==="week"?"weekly daily-avg":"daily"} · kcal shown above each bar</div>`+svg;
   wrap.appendChild(macroCard);
 
-  // ---- weight line chart (SVG) ----
+  // ---- weight line chart (SVG) with area fill + themed color + date axis ----
   const wpts=buckets.map((b,i)=>({i,w:b.wSum,label:b.label})).filter(p=>p.w!=null);
   const wCard=document.createElement("div");wCard.className="card";wCard.style.padding="16px 12px 10px";
   if(wpts.length>=1){
-    const wW=Math.max(320, buckets.length*46), wH=168, wpadB=30, wpadT=18, wpadL=34;
+    const wW=Math.max(320, buckets.length*46), wH=172, wpadB=30, wpadT=20, wpadL=36;
     const ws=wpts.map(p=>p.w); const wMin=Math.min(...ws), wMax=Math.max(...ws); const span=(wMax-wMin)||1;
     const chH=wH-wpadB-wpadT, chW=wW-wpadL-10;
     const X=i=>wpadL+(buckets.length<=1?chW/2:(i/(buckets.length-1))*chW);
     const Y=w=>wpadT+chH-((w-wMin)/span)*chH;
-    let path="",dots="",xlabels="";
+    let line="",area="",dots="",xlabels="";
     wpts.forEach((p,k)=>{ const x=X(p.i),y=Y(p.w);
-      path+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" ";
-      dots+=`<circle cx="${x}" cy="${y}" r="3" fill="var(--violet)"/><text x="${x}" y="${y-7}" text-anchor="middle" font-size="8.5" font-weight="700" fill="var(--ink)">${p.w}</text>`;
-      // x-axis date under each measured point
-      xlabels+=`<text x="${x}" y="${wH-9}" text-anchor="middle" font-size="8.5" fill="var(--faint)">${p.label}</text>`;
+      line+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" ";
+      dots+=`<circle cx="${x}" cy="${y}" r="3.2" fill="${C.weight}" stroke="${C.panel}" stroke-width="1.5"/><text x="${x}" y="${y-8}" text-anchor="middle" font-size="8.5" font-weight="800" fill="${C.ink}">${p.w}</text>`;
+      xlabels+=`<text x="${x}" y="${wH-9}" text-anchor="middle" font-size="8.5" fill="${C.faint}">${p.label}</text>`;
     });
-    // baseline + y gridlines (min/max)
-    const grid=`<line x1="${wpadL}" y1="${Y(wMax)}" x2="${wW-8}" y2="${Y(wMax)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="3" y="${Y(wMax)+3}" font-size="8" fill="var(--faint)">${wMax}</text>
-      <line x1="${wpadL}" y1="${Y(wMin)}" x2="${wW-8}" y2="${Y(wMin)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="3" y="${Y(wMin)+3}" font-size="8" fill="var(--faint)">${wMin}</text>
-      <line x1="${wpadL}" y1="${wpadT+chH}" x2="${wW-8}" y2="${wpadT+chH}" stroke="var(--line2)"/>`;
-    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg) · ${dashMode==="week"?"weekly avg":"by day"}</div>
-      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${path}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
+    const firstX=X(wpts[0].i), lastX=X(wpts[wpts.length-1].i), baseY=wpadT+chH;
+    area=`M${firstX} ${baseY} `+wpts.map(p=>"L"+X(p.i).toFixed(1)+" "+Y(p.w).toFixed(1)).join(" ")+` L${lastX} ${baseY} Z`;
+    // 3 gridlines (max / mid / min)
+    const wMid=((wMax+wMin)/2);
+    const grid=[wMax,wMid,wMin].map(v=>`<line x1="${wpadL}" y1="${Y(v)}" x2="${wW-8}" y2="${Y(v)}" stroke="${C.line}" stroke-dasharray="2 3"/><text x="3" y="${Y(v)+3}" font-size="8" fill="${C.faint}">${v.toFixed(1)}</text>`).join("")
+      +`<line x1="${wpadL}" y1="${baseY}" x2="${wW-8}" y2="${baseY}" stroke="${C.line2}"/>`;
+    const delta=(ws[ws.length-1]-ws[0]);
+    const deltaTxt=(delta>0?"+":"")+delta.toFixed(1)+" kg";
+    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px;display:flex;justify-content:space-between"><span>Weight (kg) · ${dashMode==="week"?"weekly avg":"by day"}</span><span style="color:${delta<=0?'var(--lime)':'var(--amber)'}">${wpts.length>1?deltaTxt:""}</span></div>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${area}" fill="${C.weight}" opacity="0.14"/><path d="${line}" fill="none" stroke="${C.weight}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
   }else{
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
   }
@@ -2937,6 +3003,23 @@ async function renderProfile(){
       <div class="field" style="margin:0"><label>Bio</label><textarea id="pf-bio">${escapeHtml(ME.bio||"")}</textarea></div>
       <button class="btn sm" id="pf-save" style="margin-top:14px">Save profile</button>
     </div>`;
+  // ---- Appearance: theme + colorblind-safe mode ----
+  const curTheme=(function(){try{return localStorage.getItem("ft-theme")||"system";}catch(e){return "system";}})();
+  const curCb=(function(){try{return localStorage.getItem("ft-cb")==="1";}catch(e){return false;}})();
+  html+=`<div class="section-h"><div class="eyebrow">Appearance</div></div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">Theme</div>
+      <div class="seg theme-seg" id="theme-seg" style="width:100%;margin:0 0 4px">
+        <button data-th="light" class="${curTheme==="light"?"on":""}">☀ Light</button>
+        <button data-th="dark" class="${curTheme==="dark"?"on":""}">🌙 Dark</button>
+        <button data-th="system" class="${curTheme==="system"?"on":""}">Auto</button>
+      </div>
+      <label class="cb-toggle" for="cb-switch">
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Colorblind-safe colors</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">High-contrast palette that stays distinct for red-green and blue-yellow color vision.</div></div>
+        <span class="switch"><input type="checkbox" id="cb-switch" ${curCb?"checked":""}><span class="track"></span></span>
+      </label>
+    </div>`;
   if(r==="trainee"){
     const apps=await store.coachApps.mine();
     const pending=apps.find(a=>a.status==="pending");
@@ -2971,8 +3054,29 @@ async function renderProfile(){
     try{ ME=await store.auth.updateProfile({display_name:$("#pf-name").value.trim(),city:$("#pf-city").value.trim(),bio:$("#pf-bio").value.trim()}); toast("Profile saved ✓"); }
     catch(err){console.error(err);toast("Couldn't save profile",4000);}
   });
+  // appearance controls
+  $("#theme-seg")?.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    const th=b.getAttribute("data-th"); setTheme(th);
+    $("#theme-seg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+  }));
+  $("#cb-switch")?.addEventListener("change",e=>setColorblind(e.target.checked));
   $("#apply-card")?.addEventListener("click",()=>go("coach-apply"));
 }
+/* theme + colorblind application (persisted to localStorage) */
+function applyThemeAttrs(){
+  let t="system",cb=false;
+  try{ t=localStorage.getItem("ft-theme")||"system"; cb=localStorage.getItem("ft-cb")==="1"; }catch(e){}
+  const el=document.documentElement;
+  const dark = t==="dark" || (t==="system" && (!window.matchMedia||matchMedia("(prefers-color-scheme: dark)").matches));
+  if(dark) el.removeAttribute("data-theme"); else el.setAttribute("data-theme","light");
+  if(cb) el.setAttribute("data-cb","1"); else el.removeAttribute("data-cb");
+}
+function setTheme(t){ try{localStorage.setItem("ft-theme",t);}catch(e){} applyThemeAttrs(); refreshChartsIfVisible(); }
+function setColorblind(on){ try{localStorage.setItem("ft-cb",on?"1":"0");}catch(e){} applyThemeAttrs(); refreshChartsIfVisible(); }
+// charts read CSS vars at build time, so re-render the engagement view if it's showing
+function refreshChartsIfVisible(){ if($("#s-engagement")?.classList.contains("active") && currentEng){ try{renderEngagement();}catch(e){} } }
+// keep 'system' choice in sync with OS changes
+try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{ applyThemeAttrs(); refreshChartsIfVisible(); }); }catch(e){}
 
 let applyBand=null;
 $$("#ca-price-pills .pill").forEach(p=>p.addEventListener("click",()=>{$$("#ca-price-pills .pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");applyBand=p.getAttribute("data-band");}));
