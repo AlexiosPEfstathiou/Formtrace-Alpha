@@ -1812,15 +1812,19 @@ async function renderMarket(){
   // this coach's sent offers (for the pitched-lock AND the outcomes section)
   const mySent=await store.offers.list({coach_id:ME.id});
   const pitchedIds=new Set(mySent.map(o=>o.listing_id));
+  const openIds=new Set(open.map(l=>l.id));
+  // Offers on still-open listings are represented by the "✓ Pitched" tag in Open goals below,
+  // so exclude them here to avoid showing the same offer twice.
+  const sentOutcomes=mySent.filter(o=>!openIds.has(o.listing_id));
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
-  // --- Your sent offers (statuses, incl. "Not selected") ---
-  if(mySent.length){
+  // --- Your sent offers (outcomes for offers whose listing is no longer open) ---
+  if(sentOutcomes.length){
     const wrap=document.createElement("div");wrap.style.marginBottom="8px";
     wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your sent offers</div>`;
     const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Expired"};
     const statusClass={pending:"pending",accepted:"accepted",rejected:"rejected",expired:"rejected"};
-    for(const o of mySent){
+    for(const o of sentOutcomes){
       const row=document.createElement("div");row.className="offer-row";row.style.cursor="default";
       row.innerHTML=`<div class="or-main">
           <div class="or-t">${escapeHtml(o.title)}</div>
