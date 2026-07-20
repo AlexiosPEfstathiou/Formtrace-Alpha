@@ -777,26 +777,37 @@ function dayMissedWorkout(iso){
 }
 function addDaysISO(iso,delta){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+delta); return isoOf(dt); }
 /* Compute the current discipline streak and danger state.
-   - streak = consecutive COMPLETE days ending today (or yesterday if today not yet complete)
-   - a single missed-workout day => danger (streak paused, can be reinstated next day)
-   - two consecutive missed-workout days => streak broken (0) */
+   Counts the run of consecutive COMPLETE days around the current anchor
+   (today, or the nearest complete day if today isn't done), extending BOTH
+   directions so future-dated complete days (e.g. logged ahead) still count.
+   - a single missed-workout day at the trailing boundary => danger (reinstatable)
+   - two consecutive missed-workout days => broken (reset to 0) */
 function computeStreak(){
   const today=todayISO();
-  // walk backwards from today; today may still be "in progress" (not complete, not yet missed)
-  let count=0, danger=false, cursor=today;
-  // if today isn't complete yet but also not a missed day, start from yesterday
-  if(!dayComplete(today) && !dayMissedWorkout(today)) cursor=addDaysISO(today,-1);
-  // detect danger: exactly one missed-workout day at the most recent boundary
-  // scan back up to a wide window
-  let guard=0, missedRun=0;
-  while(guard++<400){
-    if(dayComplete(cursor)){ if(missedRun>0)break; count++; cursor=addDaysISO(cursor,-1); continue; }
-    if(dayMissedWorkout(cursor)){ missedRun++; if(missedRun>=2){ // two consecutive misses => broken
-        return {count:0, danger:false, broken:true}; }
-      danger=true; cursor=addDaysISO(cursor,-1); continue; }
-    // neither complete nor missed (rest day w/o macros, or future gap) — stop
-    break;
+  // pick an anchor that is a complete day: prefer today, else yesterday, else tomorrow
+  let anchor=null;
+  for(const cand of [today, addDaysISO(today,-1), addDaysISO(today,1)]){
+    if(dayComplete(cand)){ anchor=cand; break; }
   }
+  // trailing-boundary danger/broken check (looking back from today)
+  let danger=false;
+  { let c=today, misses=0, g=0;
+    // if today itself isn't complete, inspect the immediate past for missed workouts
+    while(g++<7){
+      if(dayComplete(c)){ break; }
+      if(dayMissedWorkout(c)){ misses++; if(misses>=2) return {count:0,danger:false,broken:true}; c=addDaysISO(c,-1); continue; }
+      break;
+    }
+    if(misses===1) danger=true;
+  }
+  if(!anchor) return {count:0, danger, broken:false};
+  // count backwards from anchor (stop at first non-complete, or a missed-workout boundary handled above)
+  let count=0, cur=anchor;
+  let guard=0;
+  while(guard++<400 && dayComplete(cur)){ count++; cur=addDaysISO(cur,-1); }
+  // count forwards from the day after anchor
+  cur=addDaysISO(anchor,1); guard=0;
+  while(guard++<400 && dayComplete(cur)){ count++; cur=addDaysISO(cur,1); }
   return {count, danger, broken:false};
 }
 function updateStreakBadge(info){
