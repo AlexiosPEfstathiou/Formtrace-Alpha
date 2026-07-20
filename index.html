@@ -1783,25 +1783,81 @@ async function renderGoals(){
   const body=$("#goals-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
   const engs=await store.engagements.list({trainee_id:ME.id});
   $("#goals-sub").textContent=engs.length?`${engs.length} goal${engs.length>1?"s":""}`:"No goals yet";
+  // coach names
+  const coachIds=[...new Set(engs.map(e=>e.coach_id).filter(Boolean))];
+  const coachById={};
+  for(const p of await store.coaches()) coachById[p.id]=p;
+  for(const id of coachIds){ if(!coachById[id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",id).single(); if(data)coachById[id]=data; }catch(e){} } }
   body.innerHTML="";
-  if(!engs.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No goals yet.</p></div>`; return; }
   const label={active:"Ongoing",completed:"Completed",ended:"Cancelled"};
+  const hasActive=engs.some(e=>e.status==="active");
+
+  if(!engs.length){
+    body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">◎</div><p>No goals yet.</p></div>`;
+  }
   for(const e of engs){
+    const coach=coachById[e.coach_id]||{};
     const card=document.createElement("div");card.className="card";
     const statusTxt=label[e.status]||e.status;
+    const clickable = e.status==="completed"||e.status==="ended";
+    if(clickable) card.style.cssText="cursor:pointer";
     const outcomeTxt = e.status==="completed" ? (e.outcome==="on_time"?" · met deadline":e.outcome==="late"?" · past deadline":"") : "";
     card.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
         <div style="min-width:0;flex:1"><h3 style="font-size:16px;font-weight:700">${escapeHtml(e.goal_title||"Goal")}</h3>
-          <div style="font-size:12.5px;color:var(--muted);margin-top:4px">${statusTxt}${outcomeTxt}</div></div>
-        <span class="badge ${e.status}">${statusTxt}</span></div>`;
+          <div style="font-size:12.5px;color:var(--muted);margin-top:4px">${statusTxt}${outcomeTxt}${coach.display_name?` · ${escapeHtml(coach.display_name)}`:""}</div></div>
+        <span class="badge ${e.status}">${statusTxt}</span>${clickable?'<div style="color:var(--faint);align-self:center">›</div>':""}</div>`;
     if(e.status==="active"){
       const btn=document.createElement("button");btn.className="btn sm";btn.style.cssText="margin-top:14px;color:var(--red)";
       btn.textContent="Cancel this goal";
-      btn.addEventListener("click",()=>cancelGoal(e));
+      btn.addEventListener("click",ev=>{ ev.stopPropagation(); cancelGoal(e); });
       card.appendChild(btn);
+    }else if(clickable){
+      card.addEventListener("click",()=>openGoalRecap(e,coach));
     }
     body.appendChild(card);
   }
+
+  // If nothing is ongoing, offer a highlighted "Submit new Goal"
+  if(!hasActive){
+    const cta=document.createElement("button");
+    cta.className="btn primary";cta.style.cssText="margin-top:18px;width:100%";
+    cta.textContent="＋ Submit new Goal";
+    cta.addEventListener("click",()=>go("listing-new"));
+    body.appendChild(cta);
+    const hint=document.createElement("p");
+    hint.style.cssText="font-size:12px;color:var(--faint);text-align:center;margin-top:10px;line-height:1.5";
+    hint.textContent="Post a goal to the marketplace and receive video offers from coaches.";
+    body.appendChild(hint);
+  }
+}
+/* Quick recap sheet for a finished (completed/cancelled) goal */
+function openGoalRecap(e,coach){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Goal recap";
+  $("#sheet-add").style.display="none";
+  // duration in weeks
+  let weeks="—";
+  if(e.started_at){ const end=e.completed_at?new Date(e.completed_at):new Date(); const w=Math.max(1,Math.round((end-new Date(e.started_at))/(7*24*3600*1000))); weeks=w+" week"+(w>1?"s":""); }
+  const success = e.status==="completed";
+  const verdict = success ? "Successful" : "Failed";
+  const vColor = success ? "var(--lime)" : "var(--red)";
+  const dl = e.status==="completed" ? (e.outcome==="on_time"?"Met deadline":e.outcome==="late"?"Past deadline":"—") : "Cancelled before completion";
+  const row=(k,v,color)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)">
+      <span style="font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;font-weight:700">${k}</span>
+      <span style="font-size:14px;font-weight:700;text-align:right;color:${color||"var(--ink)"}">${v}</span></div>`;
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`
+    ${row("Goal",escapeHtml(e.goal_title||"—"))}
+    ${row("Duration",weeks)}
+    ${row("Coach",escapeHtml(coach.display_name||"—"))}
+    ${row("Outcome",verdict,vColor)}
+    <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5">${dl}${e.completed_at?` · ${new Date(e.completed_at).toLocaleDateString()}`:""}</div>`;
+  body.appendChild(wrap);
+  // open the full training history for this goal
+  const openBtn=document.createElement("button");openBtn.className="btn sm";openBtn.style.marginTop="16px";openBtn.textContent="View training calendar";
+  openBtn.addEventListener("click",()=>{ closeSheet(); openEngagement(e.id); });
+  body.appendChild(openBtn);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 async function cancelGoal(e){
   const ok=await openConfirm({title:`Cancel "${e.goal_title||"this goal"}"?`,body:"Your coach will no longer be able to assign workouts. Afterwards you'll be asked to review your coach.",confirmLabel:"Cancel goal",cancelLabel:"Keep going",danger:true});
@@ -2243,7 +2299,7 @@ function openCoachMissedDay(iso,wl){
 }
 function engDayAction(a,iAmCoach){
   if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else openCoachModify(a); }
-  else { if(a.status==="assigned")openAssigned(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Submitted — waiting for coach review"); }
+  else { if(a.status==="reviewed")openReview(a.id,true); else openAssigned(a.id); }
 }
 /* Coach: modify a not-yet-submitted (assigned) workout — backup for wrong-date assigns */
 function openCoachModify(a){
@@ -2609,8 +2665,8 @@ function renderAssignedWorkout(){
     for(let s=0;s<it.sets;s++){
       const r=results[s];
       if(r){
-        inner+=`<div class="setrow done"><div class="set-n">✓</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${r.reps} reps · target ${it.reps}</div></div>
+        inner+=`<div class="setrow done" ${r.video_path?`data-play="${i}-${s}" style="cursor:pointer"`:""}><div class="set-n">✓</div>
+          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">${r.reps} reps · target ${it.reps}</div></div>
           <div class="grade-badge">${r.ungraded?'<div class="grade-lab">logged</div>':`<div class="grade-num" style="color:${gradeColor(r.grade)}">${r.grade}</div><div class="grade-lab">/10</div>`}</div></div>`;
       }else{
         const isNext=(s===nextUndone)&&!locked;
@@ -2624,6 +2680,11 @@ function renderAssignedWorkout(){
   wrap.querySelectorAll("[data-i][data-s]").forEach(b=>b.addEventListener("click",()=>{
     if(b.classList.contains("locked")){toast("Finish the previous set first");return;}
     startTraineeSet(+b.getAttribute("data-i"),+b.getAttribute("data-s"));
+  }));
+  wrap.querySelectorAll("[data-play]").forEach(row=>row.addEventListener("click",e=>{
+    if(e.target.closest("video"))return;
+    const [ii,si]=row.getAttribute("data-play").split("-").map(Number);
+    const r=(localResults[ii]||[])[si]; if(r&&r.video_path) playSetVideo(r.video_path,`${items[ii].name} · Set ${si+1}`);
   }));
   wrap.querySelectorAll("[data-ref]").forEach(t=>t.addEventListener("click",e=>{ if(e.target.closest("video"))return; previewReference(+t.getAttribute("data-ref")); }));
   // submit button: enabled when all sets done and not yet submitted
@@ -2645,6 +2706,17 @@ async function previewReference(itemIndex){
   $("#rvideo").style.display="none";$("#roverlay").style.display="none";
   $("#r-stat").classList.add("hidden");$("#r-deck").style.display="none";$("#rreview").style.display="none";
   $("#r-title").innerHTML='Coach reference<small>correct form</small>';
+  $("#rplay").play();
+}
+/* Replay a previously recorded set video (skeleton lines already baked in). */
+async function playSetVideo(path,title){
+  const url=await playable(path);
+  if(!url){toast("Video unavailable");return;}
+  openRecorder({mode:"preview"});
+  $("#rplay").src=url;$("#rplay").style.display="block";
+  $("#rvideo").style.display="none";$("#roverlay").style.display="none";
+  $("#r-stat").classList.add("hidden");$("#r-deck").style.display="none";$("#rreview").style.display="none";
+  $("#r-title").innerHTML=`${escapeHtml(title||"Your set")}<small>your recorded form</small>`;
   $("#rplay").play();
 }
 function startTraineeSet(itemIndex,setIndex){
