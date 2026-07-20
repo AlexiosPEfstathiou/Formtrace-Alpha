@@ -2492,12 +2492,28 @@ async function openAssigned(id){
   const items=currentAssigned.snapshot.items||[];
   // mark opened so the trainee's "new" glisten stops (best-effort; column may not exist)
   if(!currentAssigned.opened){ try{ await store.assignedWorkouts.update(id,{opened:true}); currentAssigned.opened=true; }catch(e){} }
-  // restore results if a report already exists (reviewed), else fresh
-  if(currentAssigned.status!=="assigned" && currentAssigned._report){ localResults=currentAssigned._report; }
-  else {
-    localResults=items.map(it=>Array(it.sets).fill(null));
-  }
+  // restore results: reviewed/submitted → from the submission; in-progress → from the saved draft
+  localResults=items.map(it=>Array(it.sets).fill(null));
+  try{
+    if(currentAssigned.status==="assigned"){
+      // in-progress draft (recorded sets not yet submitted)
+      if(currentAssigned.draft && Array.isArray(currentAssigned.draft.results)){
+        localResults=reshapeResults(currentAssigned.draft.results,items);
+      }
+    }else{
+      // submitted/reviewed → rebuild from the stored submission report
+      const subs=await store.submissions.list({assigned_id:id});
+      const rep=subs[0]&&subs[0].report;
+      if(rep&&Array.isArray(rep.items)){
+        localResults=items.map((it,i)=>{ const arr=Array(it.sets).fill(null); const src=(rep.items[i]&&rep.items[i].results)||[]; for(let s=0;s<it.sets;s++)arr[s]=src[s]||null; return arr; });
+      }
+    }
+  }catch(e){ console.error("restore results",e); }
   go("trainee-workout");
+}
+/* make a stored results array fit the current items/sets shape */
+function reshapeResults(src,items){
+  return items.map((it,i)=>{ const arr=Array(it.sets).fill(null); const s=src[i]||[]; for(let k=0;k<it.sets;k++)arr[k]=s[k]||null; return arr; });
 }
 function renderAssignedWorkout(){
   const a=currentAssigned; if(!a)return;
@@ -2594,8 +2610,18 @@ async function runAnalysis(itemIndex,setIndex,capture){
   const result={reps:rc.reps,grade:grade??0,ungraded:grade===null,shape,rom,tempo,video_path};
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
+  saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
   A.classList.remove("on");ring.style.strokeDashoffset=264;
   showResult(it.name||"Set",it,setIndex,result);
+}
+/* Persist in-progress set results to the assigned_workouts row so exiting mid-workout
+   doesn't lose recorded videos. Best-effort: needs the optional 'draft' jsonb column. */
+async function saveWorkoutDraft(){
+  if(!currentAssigned)return;
+  try{
+    await store.assignedWorkouts.update(currentAssigned.id,{draft:{results:localResults,saved_at:new Date().toISOString()}});
+    currentAssigned.draft={results:localResults};
+  }catch(e){ console.error("draft save (add a 'draft' jsonb column to assigned_workouts)",e); }
 }
 function showResult(exName,it,setIndex,r){
   const R=$("#result");R.classList.add("on");
@@ -2622,6 +2648,7 @@ async function submitToCoach(){
     const report={items:currentAssigned.snapshot.items.map((it,i)=>({name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
     await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
     await store.assignedWorkouts.update(currentAssigned.id,{status:"submitted"});
+    try{ await store.assignedWorkouts.update(currentAssigned.id,{draft:null}); }catch(_){/* optional column */}
     toast("Sent to your coach ✓",3200);
     go("trainee-home");
   }catch(err){console.error(err);toast(err.message||"Couldn't submit",4000);}
