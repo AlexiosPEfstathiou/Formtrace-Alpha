@@ -1429,10 +1429,10 @@ async function renderTraineeHome(){
   wrap.innerHTML="";
   $("#tr-empty").classList.toggle("hidden",engs.length>0);
   if(!engs.length)return;
-  // Trainee with a single engagement: the calendar IS "My Training" — open it directly.
-  if(!iAmCoach && engs.length===1){
-    try{ await openEngagement(engs[0].id); }
-    catch(err){ console.error("openEngagement failed",err); toast(err.message||"Couldn't open your training",4000); }
+  // Trainee: ALL goals live on one shared schedule — never make them pick.
+  if(!iAmCoach){
+    try{ await openTraineeCalendar(engs); }
+    catch(err){ console.error("openTraineeCalendar failed",err); toast(err.message||"Couldn't open your training",4000); }
     return;
   }
   // fetch counterpart names
@@ -1454,7 +1454,21 @@ async function renderTraineeHome(){
 
 let currentEng=null, currentEngOther=null;
 let engCalYear=null, engCalMonth=null, engAssignedByDate={};
+let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
+let traineeEngs=[];           // the trainee's engagement rows (merged mode)
+let engById={};               // id -> engagement (for day actions in merged mode)
+async function openTraineeCalendar(engs){
+  traineeMerged=true; traineeEngs=engs||[];
+  engById={}; for(const e of traineeEngs) engById[e.id]=e;
+  currentEng=null; currentEngOther=null;
+  $("#eng-title").textContent="Training calendar";
+  $("#eng-sub").textContent=traineeEngs.length>1?`${traineeEngs.length} goals`:(traineeEngs[0]?.goal_title||"Your schedule");
+  $("#eng-back").onclick=()=>go("home");
+  await renderEngagement();
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
+}
 async function openEngagement(id){
+  traineeMerged=false;
   currentEng=await store.engagements.get(id);
   const iAmCoach=currentEng.coach_id===ME.id;
   const otherId=iAmCoach?currentEng.trainee_id:currentEng.coach_id;
@@ -1467,20 +1481,41 @@ async function openEngagement(id){
 }
 async function renderEngagement(){
  try{
-  const iAmCoach=currentEng.coach_id===ME.id;
+  const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const body=$("#engagement-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
-  const assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
+  // gather assigned workouts — merged (all trainee engagements) or single engagement
+  let assigned=[];
+  if(traineeMerged){
+    const lists=await Promise.all(traineeEngs.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    assigned=lists.flat();
+  }else{
+    assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
+  }
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
   body.innerHTML="";
 
-  // goal banner
-  const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18";
-  banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
-      <div><div class="eyebrow" style="color:var(--lime-dim)">Goal</div><div style="font-size:18px;font-weight:800;margin-top:5px">${escapeHtml(currentEng.goal_title||"—")}</div></div>
-      <span class="badge ${currentEng.status}">${currentEng.status}</span></div>`;
-  body.appendChild(banner);
+  // banner — single goal, or a multi-goal summary in merged mode
+  if(traineeMerged){
+    if(traineeEngs.length){
+      const wrap=document.createElement("div");wrap.style.marginBottom="4px";
+      wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your goals</div>`;
+      for(const e of traineeEngs){
+        const row=document.createElement("div");row.className="offer-row";row.style.cursor="pointer";
+        row.innerHTML=`<div class="or-main"><div class="or-t">${escapeHtml(e.goal_title||"Goal")}</div><div class="or-s">tap to open this goal</div></div><span class="badge ${e.status}">${e.status}</span>`;
+        row.addEventListener("click",()=>openEngagement(e.id));
+        wrap.appendChild(row);
+      }
+      body.appendChild(wrap);
+    }
+  }else{
+    const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:linear-gradient(120deg,#1a2410,#141a10);border-color:#2f3d18";
+    banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div class="eyebrow" style="color:var(--lime-dim)">Goal</div><div style="font-size:18px;font-weight:800;margin-top:5px">${escapeHtml(currentEng.goal_title||"—")}</div></div>
+        <span class="badge ${currentEng.status}">${currentEng.status}</span></div>`;
+    body.appendChild(banner);
+  }
 
   // calendar
   if(engCalYear==null){const t=new Date();engCalYear=t.getFullYear();engCalMonth=t.getMonth();}
@@ -1541,7 +1576,10 @@ async function renderEngagement(){
   // FAB: coach completes only via trainee side; either side rates when complete
   const fabRow=$("#eng-fab-row"),fab=$("#eng-fab");
   fabRow.classList.remove("hidden");
-  if(currentEng.status==="active" && !iAmCoach){
+  if(traineeMerged){
+    // merged trainee view: completion/rating happens inside a specific goal
+    fabRow.classList.add("hidden");
+  }else if(currentEng.status==="active" && !iAmCoach){
     fab.textContent="Mark goal complete"; fab.onclick=completeEngagement;
   }else if(currentEng.status==="completed"){
     const rated=await myRatingExists();
@@ -1555,7 +1593,7 @@ async function renderEngagement(){
  }
 }
 async function openEngDay(iso){
-  const iAmCoach=currentEng.coach_id===ME.id;
+  const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const wl=engAssignedByDate[iso]||[];
   if(iAmCoach){
     if(!wl.length){
