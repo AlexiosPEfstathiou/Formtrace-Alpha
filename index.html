@@ -200,7 +200,14 @@
   .tabbar.home-nav button > span:not(.i){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .tabbar.home-nav button.glisten{color:var(--lime);animation:glisten-pulse 2.6s ease-in-out infinite;}
   html[data-theme="light"] .tabbar.home-nav button.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
-  .with-tabs{padding-bottom:170px;}
+  .with-tabs{padding-bottom:190px;}
+  /* persistent app-level bottom navigation (sits above screens, below modals) */
+  #app-tabbar{z-index:9;}
+  .screen .body{padding-bottom:110px;}
+  .screen .body.with-tabs{padding-bottom:190px;}
+  /* per-screen SUB tab bars (coach library/workouts, listings goals/offers)
+     stack directly above the persistent app bar instead of overlapping it */
+  #s-coach .tabbar, #s-listings .tabbar{bottom:calc(env(safe-area-inset-bottom) + 62px);border-top:1px solid var(--line);}
 
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
@@ -591,7 +598,6 @@
       <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
     </div>
-    <div class="tabbar home-nav" id="home-tabbar"></div>
   </section>
 
   <!-- ============ COACH (tabbed: library / workouts) ============ -->
@@ -601,7 +607,7 @@
       <div style="flex:1"><h1 id="coach-title">Exercise library</h1><div class="sub" id="coach-sub">Loading…</div></div>
     </div>
     <div class="body with-tabs" id="coach-body"></div>
-    <div class="fab-row" id="coach-fab-row" style="bottom:70px;">
+    <div class="fab-row" id="coach-fab-row" style="bottom:122px;">
       <button class="btn primary" id="coach-fab">+ Add</button>
     </div>
     <div class="tabbar">
@@ -731,7 +737,7 @@
   <section class="screen" id="s-listings">
     <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Find a coach</h1><div class="sub" id="listings-sub">Post a goal, receive video offers</div></div></div>
     <div class="body with-tabs" id="listings-body"></div>
-    <div class="fab-row" style="bottom:70px;"><button class="btn primary" id="listings-fab">+ Post a goal</button></div>
+    <div class="fab-row" style="bottom:122px;"><button class="btn primary" id="listings-fab">+ Post a goal</button></div>
     <div class="tabbar">
       <button data-ltab="goals"><span class="i">◎</span>My goals</button>
       <button data-ltab="offers" class="on"><span class="i">✉</span>Offers</button>
@@ -958,6 +964,9 @@
     <div class="pc-hint" id="pc-hint"></div>
   </div>
   <div id="toast"></div>
+
+  <!-- persistent app navigation (shown on every signed-in screen) -->
+  <div class="tabbar home-nav" id="app-tabbar" style="display:none"></div>
 </div></div>
 
 
@@ -1226,8 +1235,49 @@ function go(name){
   if(name==="listings")R(renderListings);
   if(name==="profile")R(renderProfile);
   if(name==="admin")R(renderAdmin);
+  renderAppTabs(name);
 }
 document.addEventListener("click",e=>{const el=e.target.closest("[data-go]");if(el)go(el.getAttribute("data-go"));});
+
+/* Persistent bottom navigation shown on every signed-in screen.
+   The active tab reflects the current top-level destination; deep screens
+   (e.g. a workout, an editor) highlight the section they belong to. */
+const TAB_SECTION={ // screen -> which tab should light up
+  home:"home",
+  "trainee-home":"trainee-home", "trainee-workout":"trainee-home",
+  listings:"listings", "listing-new":"listings",
+  coach:"coach", "ex-edit":"coach", "wo-build":"coach",
+  market:"market",
+  profile:"profile", admin:"admin"
+};
+// Top-level destinations show the persistent bar; deep/editor screens hide it
+// so it never covers their own bottom action buttons.
+const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","admin"]);
+function renderAppTabs(current){
+  const bar=$("#app-tabbar"); if(!bar)return;
+  if(!ME || !TAB_TOPLEVEL.has(current)){ bar.style.display="none"; return; }
+  const base = ME.role==="coach" ? "coach" : "trainee";
+  const section = TAB_SECTION[current] || (base==="coach"?"home":"home");
+  const glisten = (base!=="coach") ? window._ftGlistenGoal : false;
+  const tab=(go_,ic,label,gl)=>`<button data-go="${go_}" class="${section===go_?"on":""}${gl?" glisten":""}"><span class="i">${ic}</span>${label}</button>`;
+  let tabs="";
+  if(base==="coach"){
+    tabs+=tab("home","⌂","Home");
+    tabs+=tab("coach","✎","Library");
+    tabs+=tab("market","◎","Open goals");
+    tabs+=tab("trainee-home","◉","Trainees");
+    if(ME.is_admin) tabs+=tab("admin","★","Review");
+    tabs+=tab("profile","☰","Profile");
+  }else{
+    tabs+=tab("home","⌂","Home");
+    tabs+=tab("trainee-home","◉","Training",glisten);
+    tabs+=tab("listings","◎","Find a coach",glisten);
+    if(ME.is_admin) tabs+=tab("admin","★","Review");
+    tabs+=tab("profile","☰","Profile");
+  }
+  bar.innerHTML=tabs;
+  bar.style.display="flex";
+}
 
 /* ---- Device back button keeps the user inside the app ----
    Any open overlay closes first; otherwise we step back through the in-app
@@ -1300,6 +1350,7 @@ function showAuth(){
   $("#s-auth").classList.add("active");
   setAuthMode("signin");
   resetNav("auth");
+  const bar=$("#app-tabbar"); if(bar) bar.style.display="none";
 }
 
 async function bootSignedIn(){
@@ -1382,25 +1433,10 @@ async function renderHome(){
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
   }
 
-  // Bottom tab bar (mobile-friendly) instead of stacked role buttons.
-  // Home tab stays on this hub; the rest route to their existing screens.
-  const tab=(go_,ic,label,active,glisten)=>`<button data-go="${go_}" class="${active?"on":""}${glisten?" glisten":""}"><span class="i">${ic}</span>${label}</button>`;
-  let tabs="";
-  if(base==="coach"){
-    tabs+=tab("home","⌂","Home",true,false);
-    tabs+=tab("coach","✎","Library",false,false);
-    tabs+=tab("market","◎","Open goals",false,false);
-    tabs+=tab("trainee-home","◉","Trainees",false,false);
-    if(ME && ME.is_admin) tabs+=tab("admin","★","Review",false,false);
-    tabs+=tab("profile","☰","Profile",false,false);
-  }else{
-    tabs+=tab("home","⌂","Home",true,false);
-    tabs+=tab("trainee-home","◉","Training",false,noActiveGoal);
-    tabs+=tab("listings","◎","Find a coach",false,noActiveGoal);
-    if(ME && ME.is_admin) tabs+=tab("admin","★","Review",false,false);
-    tabs+=tab("profile","☰","Profile",false,false);
-  }
-  $("#home-tabbar").innerHTML=tabs;
+  // Remember whether the goal-submission path should glisten, so the
+  // persistent app tab bar can reflect it, then (re)render that bar.
+  window._ftGlistenGoal = (base!=="coach") && noActiveGoal;
+  renderAppTabs("home");
 }
 /* Trainee homepage: today's assigned workout (or Rest day) */
 async function renderHomeToday(engs, el){
