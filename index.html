@@ -21,6 +21,8 @@
     --ch-1-ink:#06121f; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
     /* tinted "accent" surface (lime-highlighted cards) */
     --accent-surface:linear-gradient(120deg,#1a2410,#141a10); --accent-border:#2f3d18;
+    /* goal/offer status accents — active = green (dark), inactive = grey */
+    --goal-active:#C8FF3D; --goal-active-tint:rgba(200,255,61,.09); --goal-inactive:#5B6773; --goal-inactive-tint:rgba(91,103,115,.10);
   }
   html[data-theme="light"]{
     --bg:#F4F6F8; --bg2:#EBEEF1; --panel:#FFFFFF; --panel2:#EEF1F4;
@@ -33,6 +35,7 @@
     --ch-1:#0072B2; --ch-2:#5B8C00; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#FFFFFF; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
     --accent-surface:linear-gradient(120deg,#EDF6DC,#F3F8E8); --accent-border:#C4DE8F;
+    --goal-active:#0072B2; --goal-active-tint:rgba(0,114,178,.08); --goal-inactive:#8C98A3; --goal-inactive-tint:rgba(140,152,163,.12);
   }
   /* ---- COLORBLIND-SAFE (Wong palette) — applies over either theme ---- */
   html[data-cb="1"]{
@@ -41,7 +44,7 @@
     --ch-1-ink:#FFFFFF; --ch-2-ink:#1a1200; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
   }
   html[data-cb="1"][data-theme="light"]{ --lime:#0A7A5C; --lime-ink:#FFFFFF; --lime-dim:#0A7A5C; }
-  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-dim:#1f9e78; --lime-ink:#04120c; }
+  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-dim:#1f9e78; --lime-ink:#04120c; --goal-active:#2BD4A0; --goal-active-tint:rgba(43,212,160,.10); }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;background:var(--frame-bg);color:var(--ink);
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;
@@ -388,6 +391,12 @@
   .offer-row .or-chev{color:var(--faint);font-size:18px;flex-shrink:0;}
   .offer-row .or-ago{font-size:11px;color:var(--amber);font-weight:700;margin-top:3px;}
   .offer-row.unviewed{border-color:var(--lime-dim);}
+  /* goal status colour-coding: active (accepted) = green/blue, inactive = grey */
+  .offer-row.goal-active{border-left:4px solid var(--goal-active);background:linear-gradient(90deg,var(--goal-active-tint),var(--panel) 60%);}
+  .offer-row.goal-active .or-av{color:var(--goal-active);}
+  .offer-row.goal-inactive{border-left:4px solid var(--goal-inactive);background:linear-gradient(90deg,var(--goal-inactive-tint),var(--panel) 60%);}
+  .offer-row.goal-inactive .or-av{color:var(--goal-inactive);}
+  .offer-row.goal-inactive .or-t{color:var(--muted);}
   .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
   @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
   .offer-expanded{background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
@@ -1672,21 +1681,29 @@ async function renderListings(){
     body.innerHTML="";
     if(!offers.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">✉</div><p>No offers yet.<br>Post a goal to attract coaches.</p></div>`; return; }
     const coaches=Object.fromEntries((await store.coaches()).map(c=>[c.id,c]));
+    // which offers led to a currently-active goal (engagement)?
+    let activeOfferIds=new Set();
+    try{
+      const engs=await store.engagements.list({trainee_id:ME.id});
+      for(const e of engs){ if(e.status==="active"&&e.offer_id) activeOfferIds.add(e.offer_id); }
+    }catch(e){ console.error("offers active-goal lookup",e); }
     for(const o of offers){
       const c=coaches[o.coach_id]||{};
       const coachName=c.display_name||"Coach";
       const shortName=(()=>{const p=coachName.trim().split(/\s+/);return p.length>1?`${p[0]} ${p[1][0]}.`:p[0];})();
       const unviewed=!o.viewed_at;
+      const goalActive=activeOfferIds.has(o.id);
       const wrap=document.createElement("div");
-      renderOfferRow(wrap,o,c,shortName,unviewed,coachName);
+      renderOfferRow(wrap,o,c,shortName,unviewed,coachName,goalActive);
       body.appendChild(wrap);
     }
     hydrateVideos(body);
   }
 }
 /* Renders the collapsed offer row into `wrap`; wires expand/collapse + view-marking. */
-function renderOfferRow(wrap,o,c,shortName,unviewed,coachName){
-  wrap.innerHTML=`<div class="offer-row${unviewed?" unviewed":""}">
+function renderOfferRow(wrap,o,c,shortName,unviewed,coachName,goalActive){
+  const statusCls = goalActive ? " goal-active" : " goal-inactive";
+  wrap.innerHTML=`<div class="offer-row${unviewed?" unviewed":""}${statusCls}">
       <div class="or-av">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
       <div class="or-main">
         <div class="or-t">Offer from ${escapeHtml(shortName)} — ${escapeHtml(o.price_text||"—")}</div>
@@ -1699,10 +1716,10 @@ function renderOfferRow(wrap,o,c,shortName,unviewed,coachName){
     if(!o.viewed_at){
       try{ await store.offers.update(o.id,{viewed_at:new Date().toISOString()}); o.viewed_at=new Date().toISOString(); }catch(e){console.error(e);}
     }
-    expandOfferRow(wrap,o,c,shortName,coachName);
+    expandOfferRow(wrap,o,c,shortName,coachName,goalActive);
   });
 }
-function expandOfferRow(wrap,o,c,shortName,coachName){
+function expandOfferRow(wrap,o,c,shortName,coachName,goalActive){
   const exp=document.createElement("div");exp.className="offer-expanded";
   exp.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <div class="avatar">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
@@ -1722,7 +1739,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName){
     row.querySelector("[data-rej]").addEventListener("click",async()=>{ await store.offers.update(o.id,{status:"rejected"}); toast("Offer declined"); renderListings(); });
   }
   const collapse=document.createElement("button");collapse.className="btn ghost sm oe-collapse";collapse.textContent="Collapse ▲";
-  collapse.addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,false,coachName));
+  collapse.addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,false,coachName,goalActive));
   exp.appendChild(collapse);
   wrap.innerHTML="";wrap.appendChild(exp);
   hydrateVideos(exp);
