@@ -354,6 +354,16 @@
   .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--lime),0 0 12px rgba(200,255,61,.35);}
   .cal-glisten::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.7) 50%,transparent 68%);background-size:230% 100%;animation:calglisten 2.2s linear infinite;pointer-events:none;}
   @keyframes calglisten{0%{background-position:130% 0;}100%{background-position:-130% 0;}}
+  /* split day: two triangles (top=macros, bottom=workout) */
+  .cal-split{background:var(--panel);overflow:hidden;}
+  .cal-split .tri{position:absolute;inset:0;pointer-events:none;}
+  .cal-split .tri-top{clip-path:polygon(0 0,100% 0,0 100%);}     /* top-left triangle = macros */
+  .cal-split .tri-bot{clip-path:polygon(100% 0,100% 100%,0 100%);} /* bottom-right triangle = workout */
+  .cal-split .dn{position:relative;z-index:2;color:var(--ink);}
+  .cal-split .cal-badge{z-index:2;}
+  .cal-split .cal-multi{z-index:2;}
+  .cal-split:active{transform:scale(.95);}
+  .cal-split-diag{position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(to bottom left,transparent calc(50% - .5px),var(--line) calc(50% - .5px),var(--line) calc(50% + .5px),transparent calc(50% + .5px));}
 </style>
 </head>
 <body>
@@ -1174,10 +1184,12 @@ function openSheet(){
   hydrateVideos(body);
 }
 function updateSheetBtn(){ $("#sheet-add").textContent=sheetSel.size?`Add ${sheetSel.size} exercise${sheetSel.size>1?"s":""}`:"Add selected"; $("#sheet-add").disabled=!sheetSel.size; }
-function closeSheet(){ $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on"); }
+let macroLogDate=null;
+function closeSheet(){ $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on"); macroLogDate=null; }
 $("#sheet-close").addEventListener("click",closeSheet);
 $("#sheet-scrim").addEventListener("click",closeSheet);
 $("#sheet-add").addEventListener("click",()=>{
+  if(macroLogDate){ saveMacroLog(); return; }
   for(const id of sheetSel) builder.items.push({exercise_id:id,sets:3,reps:10});
   closeSheet(); renderBuilderItems();
 });
@@ -1470,7 +1482,7 @@ async function renderTraineeHome(){
 }
 
 let currentEng=null, currentEngOther=null;
-let engCalYear=null, engCalMonth=null, engAssignedByDate={};
+let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={};
 let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
 let traineeEngs=[];           // the trainee's engagement rows (merged mode)
 let engById={};               // id -> engagement (for day actions in merged mode)
@@ -1550,6 +1562,11 @@ async function renderEngagement(){
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
+  // trainee macro logs, indexed by date
+  logsByDate={};
+  if(!iAmCoach){
+    try{ const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l; }catch(e){console.error("logs load",e);}
+  }
   body.innerHTML="";
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
@@ -1603,9 +1620,29 @@ async function renderEngagement(){
     // unopened glisten: coach = submissions awaiting review; trainee = newly assigned/reviewed not opened
     const glisten = !missed && (iAmCoach ? wl.some(a=>a.status==="submitted") : wl.some(a=>(a.status==="assigned"||a.status==="reviewed")&&!a.opened));
     const cell=document.createElement("div");
-    cell.className="cal-day cal-tap "+cls+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
-    cell.innerHTML=`<div class="dn">${d}</div>${badge?`<div class="cal-badge">${badge}</div>`:(wl.length&&cls==="cal-workout"?'<div class="dot" style="background:var(--lime-ink)"></div>':(iAmCoach&&!wl.length?'<div class="cal-add-plus">+</div>':""))}${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
-    cell.addEventListener("click",()=>{ if(missed && !iAmCoach){ toast("Missed workout — this day is locked",3000); return; } openEngDay(iso); });
+    if(iAmCoach){
+      cell.className="cal-day cal-tap "+cls+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
+      cell.innerHTML=`<div class="dn">${d}</div>${badge?`<div class="cal-badge">${badge}</div>`:(wl.length&&cls==="cal-workout"?'<div class="dot" style="background:var(--lime-ink)"></div>':(iAmCoach&&!wl.length?'<div class="cal-add-plus">+</div>':""))}${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
+      cell.addEventListener("click",()=>openEngDay(iso));
+    }else{
+      // TRAINEE: split diagonally — top triangle = macros logged, bottom triangle = workout state
+      const logged=!!logsByDate[iso];
+      const workoutColor = !wl.length ? "transparent"
+        : missed ? "rgba(255,90,90,.5)"
+        : cls==="cal-workout" ? "var(--lime)"
+        : cls==="cal-reviewed" ? "rgba(255,194,74,.6)"
+        : "rgba(90,176,255,.55)";
+      const macroColor = logged ? "var(--violet)" : "transparent";
+      cell.className="cal-day cal-split cal-tap"+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
+      cell.innerHTML=`
+        <div class="tri tri-top" style="background:${macroColor}"></div>
+        <div class="tri tri-bot" style="background:${workoutColor}"></div>
+        <div class="cal-split-diag"></div>
+        <div class="dn">${d}</div>
+        ${badge?`<div class="cal-badge">${badge}</div>`:""}
+        ${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
+      cell.addEventListener("click",()=>openTraineeDay(iso));
+    }
     grid.appendChild(cell);
   }
 
@@ -1620,7 +1657,8 @@ async function renderEngagement(){
       <div class="leg-item"><span class="leg-sw" style="background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.4)"></span>Submitted</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Reviewed by coach</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4)"></span>Missed — locked</div>
-      <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Rest</div>`;
+      <div class="leg-item"><span class="leg-sw" style="background:var(--violet)"></span>Macros logged (top)</div>
+      <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
 
   $("#eng-cal-prev").onclick=()=>{engCalMonth--;if(engCalMonth<0){engCalMonth=11;engCalYear--;}renderEngagement();};
@@ -1667,6 +1705,64 @@ async function openEngDay(iso){
 function engDayAction(a,iAmCoach){
   if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Scheduled — waiting for the trainee to submit"); }
   else { if(a.status==="assigned")openAssigned(a.id); else if(a.status==="reviewed")openReview(a.id,true); else toast("Submitted — waiting for coach review"); }
+}
+/* Trainee taps a day: offer workout (if any) + macro logging */
+function openTraineeDay(iso){
+  const wl=engAssignedByDate[iso]||[];
+  const today=todayISO();
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
+  $("#sheet-add").style.display="none";
+  // workout row(s)
+  for(const a of wl){
+    const snap=a.snapshot||{};
+    const isMissed=a.status==="assigned" && a.due_date && a.due_date<today;
+    const row=document.createElement("div");row.className="sh-item";
+    const stcol=isMissed?"var(--red)":a.status==="reviewed"?"var(--amber)":a.status==="submitted"?"var(--blue)":"var(--lime-dim)";
+    row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(snap.name||"Workout")}</div><div style="font-size:11px;color:${stcol};margin-top:2px;font-weight:600">${isMissed?"missed — locked":a.status} · ${(snap.items||[]).length} exercises</div></div><div style="color:var(--faint)">›</div>`;
+    row.addEventListener("click",()=>{ if(isMissed){toast("Missed workout — locked",2600);return;} closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library"; engDayAction(a,false); });
+    body.appendChild(row);
+  }
+  // macro log row
+  const logged=logsByDate[iso];
+  const mrow=document.createElement("div");mrow.className="sh-item";mrow.style.borderColor=logged?"var(--violet)":"var(--line)";
+  mrow.innerHTML=`<div style="width:24px;height:24px;border-radius:7px;background:var(--violet);display:flex;align-items:center;justify-content:center;color:#0E1206;font-weight:800;flex-shrink:0">☰</div><div style="flex:1"><div style="font-size:15px;font-weight:700">${logged?"Edit macros":"Log macros"}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${logged?`${logged.kcal||0} kcal · P${logged.protein_g||0} C${logged.carbs_g||0} F${logged.fat_g||0}`:"Calories, protein, carbs, fat"}</div></div><div style="color:var(--faint)">›</div>`;
+  mrow.addEventListener("click",()=>{ closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library"; openMacroLog(iso); });
+  body.appendChild(mrow);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+/* Macro logging sheet for a given date */
+function openMacroLog(iso){
+  const l=logsByDate[iso]||{};
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Log · "+fmtDay(iso);
+  $("#sheet-add").style.display="";$("#sheet-add").textContent="Save log";$("#sheet-add").disabled=false;
+  const mk=(id,label,val,unit)=>`<div class="field" style="margin-bottom:12px"><label>${label}${unit?` (${unit})`:""}</label><input id="${id}" type="number" inputmode="numeric" min="0" value="${val!=null?val:""}" placeholder="0"></div>`;
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`${mk("ml-kcal","Calories","kcal"in l?l.kcal:null,"kcal")}
+    <div class="two">${mk("ml-p","Protein",l.protein_g,"g")}${mk("ml-c","Carbs",l.carbs_g,"g")}</div>
+    ${mk("ml-f","Fat",l.fat_g,"g")}`;
+  body.appendChild(wrap);
+  macroLogDate=iso;
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+async function saveMacroLog(){
+  const iso=macroLogDate; if(!iso)return;
+  const num=id=>{const v=($("#"+id)?.value||"").trim();return v===""?null:Number(v);};
+  const patch={kcal:num("ml-kcal"),protein_g:num("ml-p"),carbs_g:num("ml-c"),fat_g:num("ml-f")};
+  const btn=$("#sheet-add");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+  try{
+    const existing=(await store.logs.list({trainee_id:ME.id,log_date:iso}))[0];
+    let saved;
+    if(existing){ saved=await store.logs.update(existing.id,patch); }
+    else { saved=await store.logs.add({trainee_id:ME.id,log_date:iso,...patch}); }
+    logsByDate[iso]=saved;
+    macroLogDate=null;
+    closeSheet();$("#sheet-add").textContent="Add selected";$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
+    toast("Logged ✓");
+    renderEngagement();
+  }catch(err){console.error(err);toast(err.message||"Couldn't save log",4000);}
+  finally{btn.disabled=false;btn.textContent=o;}
 }
 function openEngDaySheet(iso,wl,iAmCoach){
   const body=$("#sheet-body");body.innerHTML="";
