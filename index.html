@@ -725,6 +725,7 @@
     <div class="sh-foot"><button class="btn primary" id="sheet-add">Add selected</button></div>
   </div>
 
+  <input type="file" id="checkin-input" accept="image/*" capture="user" style="display:none">
   <div id="toast"></div>
 </div></div>
 
@@ -1655,10 +1656,11 @@ async function renderEngagement(){
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
-  // trainee macro logs, indexed by date
+  // macro logs indexed by date — trainee reads own; coach reads this trainee's (RLS-permitted on active engagements)
   logsByDate={};
-  if(!iAmCoach){
-    try{ const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l; }catch(e){console.error("logs load",e);}
+  {
+    const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
+    try{ const logs=await store.logs.list({trainee_id:traineeId}); for(const l of logs) logsByDate[l.log_date]=l; }catch(e){console.error("logs load",e);}
   }
   // discipline streak (trainee only)
   streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
@@ -1777,6 +1779,9 @@ async function renderEngagement(){
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
 
+  // dashboard (both roles): macros stacked bars + weight line + check-in timelapse
+  renderDashboard(body, iAmCoach);
+
   $("#eng-cal-prev").onclick=()=>{engCalMonth--;if(engCalMonth<0){engCalMonth=11;engCalYear--;}renderEngagement();};
   $("#eng-cal-next").onclick=()=>{engCalMonth++;if(engCalMonth>11){engCalMonth=0;engCalYear++;}renderEngagement();};
 
@@ -1801,6 +1806,149 @@ async function renderEngagement(){
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
  }
 }
+/* ===================== DASHBOARD (macros + weight + check-ins) ===================== */
+let dashMode="day"; // 'day' | 'week'
+function renderDashboard(container, iAmCoach){
+ try{
+  const logs=Object.values(logsByDate).sort((a,b)=>a.log_date<b.log_date?-1:1);
+  const wrap=document.createElement("div");wrap.style.marginTop="22px";
+  const head=document.createElement("div");head.className="section-h";
+  head.innerHTML=`<div class="eyebrow">Dashboard</div>`;
+  const seg=document.createElement("div");seg.className="seg";seg.style.cssText="margin:0;width:auto";
+  seg.innerHTML=`<button data-dm="day" class="${dashMode==="day"?"on":""}">Day</button><button data-dm="week" class="${dashMode==="week"?"on":""}">Week</button>`;
+  head.appendChild(seg);
+  wrap.appendChild(head);
+
+  if(!logs.length){
+    const em=document.createElement("div");em.className="empty";em.style.padding="30px 20px";
+    em.innerHTML=`<p>${iAmCoach?"No macro or weight logs from this trainee yet.":"Log your macros to see your dashboard build up here."}</p>`;
+    wrap.appendChild(em);
+    container.appendChild(wrap);
+    seg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{dashMode=b.getAttribute("data-dm");renderEngagement();}));
+    return;
+  }
+
+  // ---- build buckets (day or week) ----
+  const buckets=[]; // {label, p,c,f, kcal, wSum,wN}
+  if(dashMode==="day"){
+    const recent=logs.slice(-14);
+    for(const l of recent){
+      const [y,m,d]=l.log_date.split("-").map(Number);
+      buckets.push({label:`${d}/${m}`, p:l.protein_g||0,c:l.carbs_g||0,f:l.fat_g||0,
+        kcal:l.kcal||Math.round((l.protein_g||0)*4+(l.carbs_g||0)*4+(l.fat_g||0)*9),
+        wSum:l.weight_kg!=null?Number(l.weight_kg):null, wN:l.weight_kg!=null?1:0});
+    }
+  }else{
+    const byWeek={};
+    for(const l of logs){
+      const [y,m,d]=l.log_date.split("-").map(Number); const dt=new Date(y,m-1,d);
+      const onejan=new Date(dt.getFullYear(),0,1); const wk=Math.ceil((((dt-onejan)/86400000)+onejan.getDay()+1)/7);
+      const key=dt.getFullYear()+"-W"+pad2(wk);
+      const b=byWeek[key]||(byWeek[key]={label:"W"+wk,p:0,c:0,f:0,kcal:0,wSum:0,wN:0,n:0});
+      b.p+=l.protein_g||0;b.c+=l.carbs_g||0;b.f+=l.fat_g||0;
+      b.kcal+=l.kcal||Math.round((l.protein_g||0)*4+(l.carbs_g||0)*4+(l.fat_g||0)*9);
+      if(l.weight_kg!=null){b.wSum+=Number(l.weight_kg);b.wN++;}
+      b.n++;
+    }
+    const keys=Object.keys(byWeek).sort().slice(-8);
+    for(const k of keys){ const b=byWeek[k];
+      // week bars show DAILY AVERAGE macros so scale matches day view
+      buckets.push({label:b.label, p:Math.round(b.p/b.n),c:Math.round(b.c/b.n),f:Math.round(b.f/b.n),
+        kcal:Math.round(b.kcal/b.n), wSum:b.wN?b.wSum/b.wN:null, wN:b.wN});
+    }
+  }
+
+  // ---- macro stacked bar chart (SVG) ----
+  const macroCard=document.createElement("div");macroCard.className="card";macroCard.style.padding="16px 12px 10px";
+  const W=Math.max(320, buckets.length*46), H=210, padB=26, padT=22;
+  const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f));
+  const bw=Math.min(34, (W-16)/buckets.length-8);
+  const gap=((W-16)/buckets.length);
+  let svg=`<div style="display:flex;gap:14px;margin:0 4px 12px;font-size:11px;color:var(--muted)">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#5AB0FF"></span>Protein</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C8FF3D"></span>Carbs</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#FFC24A"></span>Fat</span>
+    </div>
+    <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">`;
+  const chartH=H-padB-padT;
+  buckets.forEach((b,i)=>{
+    const x=8+i*gap+(gap-bw)/2;
+    const tot=b.p+b.c+b.f;
+    const hP=(b.p/maxG)*chartH, hC=(b.c/maxG)*chartH, hF=(b.f/maxG)*chartH;
+    let y=padT+chartH;
+    // stack from bottom: protein, carbs, fat
+    const seg=(h,col,val)=>{ if(h<=0)return ""; y-=h; const s=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${col}" rx="2"/>`+
+      (h>14?`<text x="${x+bw/2}" y="${y+h/2+4}" text-anchor="middle" font-size="9" font-weight="700" fill="${col==="#C8FF3D"?"#0E1206":"#0b0e11"}">${val}</text>`:""); return s; };
+    svg+=seg(hP,"#5AB0FF",b.p);
+    svg+=seg(hC,"#C8FF3D",b.c);
+    svg+=seg(hF,"#FFC24A",b.f);
+    // kcal above
+    svg+=`<text x="${x+bw/2}" y="${padT+chartH-((tot/maxG)*chartH)-6}" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ink)">${b.kcal}</text>`;
+    // label
+    svg+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="9" fill="var(--faint)">${b.label}</text>`;
+  });
+  svg+=`</svg></div>`;
+  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Macros · ${dashMode==="week"?"weekly (daily avg)":"daily"} · kcal above each bar</div>`+svg;
+  wrap.appendChild(macroCard);
+
+  // ---- weight line chart (SVG) ----
+  const wpts=buckets.map((b,i)=>({i,w:b.wSum})).filter(p=>p.w!=null);
+  const wCard=document.createElement("div");wCard.className="card";wCard.style.padding="16px 12px 10px";
+  if(wpts.length>=1){
+    const wW=Math.max(320, buckets.length*46), wH=150, wpadB=24, wpadT=16, wpadL=30;
+    const ws=wpts.map(p=>p.w); const wMin=Math.min(...ws), wMax=Math.max(...ws); const span=(wMax-wMin)||1;
+    const chH=wH-wpadB-wpadT, chW=wW-wpadL-8;
+    const X=i=>wpadL+(buckets.length<=1?chW/2:(i/(buckets.length-1))*chW);
+    const Y=w=>wpadT+chH-((w-wMin)/span)*chH;
+    let path="",dots="";
+    wpts.forEach((p,k)=>{ const x=X(p.i),y=Y(p.w); path+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" "; dots+=`<circle cx="${x}" cy="${y}" r="3" fill="var(--violet)"/><text x="${x}" y="${y-7}" text-anchor="middle" font-size="8" fill="var(--muted)">${p.w}</text>`; });
+    // y gridlines (min/max)
+    const grid=`<line x1="${wpadL}" y1="${Y(wMax)}" x2="${wW-8}" y2="${Y(wMax)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="2" y="${Y(wMax)+3}" font-size="8" fill="var(--faint)">${wMax}</text>
+      <line x1="${wpadL}" y1="${Y(wMin)}" x2="${wW-8}" y2="${Y(wMin)}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="2" y="${Y(wMin)+3}" font-size="8" fill="var(--faint)">${wMin}</text>`;
+    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${path}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg></div>`;
+  }else{
+    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
+  }
+  wrap.appendChild(wCard);
+
+  // ---- check-in photo timelapse ----
+  const ciCard=document.createElement("div");ciCard.className="card";ciCard.style.padding="16px 14px";
+  ciCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weekly check-ins</div><div id="dash-checkins" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
+  wrap.appendChild(ciCard);
+
+  container.appendChild(wrap);
+  seg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{dashMode=b.getAttribute("data-dm");renderEngagement();}));
+
+  // load check-in photos async
+  (async()=>{
+    try{
+      const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
+      const cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1);
+      const box=$("#dash-checkins"); if(!box)return;
+      if(!cis.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">${iAmCoach?"No check-in photos yet.":"Your Saturday check-in photos will appear here as a timelapse."}</div>`; return; }
+      box.innerHTML="";
+      for(const ci of cis){
+        const [y,m,d]=ci.checkin_date.split("-").map(Number);
+        const cell=document.createElement("div");cell.style.cssText="flex:0 0 auto;width:96px;text-align:center";
+        const img=document.createElement("div");img.style.cssText="width:96px;height:128px;border-radius:12px;overflow:hidden;background:#05070a;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center";
+        img.setAttribute("data-photo",ci.photo_path);
+        img.innerHTML=`<span class="ph" style="color:var(--faint);font-size:11px">…</span>`;
+        const cap=document.createElement("div");cap.style.cssText="font-size:10px;color:var(--muted);margin-top:5px";cap.textContent=`${d}/${m}`;
+        cell.appendChild(img);cell.appendChild(cap);
+        box.appendChild(cell);
+      }
+      // hydrate photos via signed URLs
+      for(const el of box.querySelectorAll("[data-photo]")){
+        const path=el.getAttribute("data-photo");
+        const url=await playable(path);
+        if(url) el.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+        else el.innerHTML=`<span class="ph" style="color:var(--faint);font-size:10px">n/a</span>`;
+      }
+    }catch(e){ console.error("checkins",e); const box=$("#dash-checkins"); if(box)box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load check-ins.</div>`; }
+  })();
+ }catch(err){ console.error("renderDashboard failed",err); }
+}
 async function openEngDay(iso){
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const wl=engAssignedByDate[iso]||[];
@@ -1809,6 +1957,10 @@ async function openEngDay(iso){
       if(currentEng.status!=="active"){toast("This engagement isn't active");return;}
       assignWorkoutFlow(iso); return;
     }
+    // missed day (past, still-assigned) → coach sheet with video reply + modify
+    const today=todayISO();
+    const isMissedDay = iso<today && wl.some(a=>a.status==="assigned");
+    if(isMissedDay){ openCoachMissedDay(iso,wl); return; }
     // one workout: act directly; multiple: show a day sheet
     if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
     openEngDaySheet(iso,wl,iAmCoach); return;
@@ -1817,6 +1969,54 @@ async function openEngDay(iso){
     if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
     openEngDaySheet(iso,wl,iAmCoach); return;
   }
+}
+/* Coach: a missed day — reply with a video/text note, or modify the workout */
+function openCoachMissedDay(iso,wl){
+  const a=wl[0];
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Missed · "+fmtDay(iso);
+  $("#sheet-add").style.display="none";
+  const info=document.createElement("div");info.style.cssText="font-size:12.5px;color:var(--muted);margin:2px 2px 14px;line-height:1.5";
+  info.textContent="This workout wasn't submitted in time. You can send the trainee a video note (e.g. reassign a make-up), or modify the workout.";
+  body.appendChild(info);
+  // existing notes for this day
+  const notesWrap=document.createElement("div");notesWrap.id="cmn-notes";body.appendChild(notesWrap);
+  (async()=>{
+    try{ const notes=await store.dayNotes.list({engagement_id:currentEng.id,note_date:iso});
+      for(const n of notes){ const nc=document.createElement("div");nc.className="card";nc.style.marginBottom="10px";
+        nc.innerHTML=`<div class="eyebrow" style="color:var(--lime-dim);margin-bottom:6px">Your note</div>${n.text?`<div style="font-size:13.5px;line-height:1.5;margin-bottom:${n.video_path?"10px":"0"}">${escapeHtml(n.text)}</div>`:""}`;
+        if(n.video_path){ const vc=document.createElement("div");vc.className="video-card";vc.style.maxHeight="220px";vc.setAttribute("data-video",n.video_path);nc.appendChild(vc); }
+        notesWrap.appendChild(nc);
+      }
+      hydrateVideos(notesWrap);
+    }catch(e){console.error("day notes",e);}
+  })();
+  // text + record video
+  const ta=document.createElement("textarea");ta.id="cmn-text";ta.placeholder="Message to your trainee (optional)";ta.style.cssText="width:100%;min-height:72px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:15px;padding:12px 14px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;margin-bottom:10px";
+  body.appendChild(ta);
+  let pendingNoteVideo=null;
+  const vidBtn=document.createElement("button");vidBtn.className="btn sm";vidBtn.style.marginBottom="10px";vidBtn.textContent="● Record video note";
+  vidBtn.addEventListener("click",()=>{
+    openRecorder({title:"Video note",subtitle:fmtDay(iso),review:true,useLabel:"✓ Use this video",
+      onComplete:async cap=>{ if(!cap.blob)return; toast("Uploading…",2000);
+        try{ const ext=(cap.blob.type||"").includes("mp4")?"mp4":"webm"; pendingNoteVideo=await store.video.upload(cap.blob,ext); vidBtn.textContent="✓ Video attached — re-record"; toast("Video attached ✓"); }
+        catch(e){console.error(e);toast("Couldn't upload video",4000);} }});
+  });
+  body.appendChild(vidBtn);
+  const send=document.createElement("button");send.className="btn primary sm";send.style.marginBottom="10px";send.textContent="Send note";
+  send.addEventListener("click",async()=>{
+    const text=ta.value.trim();
+    if(!text && !pendingNoteVideo){toast("Add a message or a video");return;}
+    send.disabled=true;
+    try{ await store.dayNotes.add({engagement_id:currentEng.id,coach_id:ME.id,note_date:iso,text:text||null,video_path:pendingNoteVideo||null});
+      toast("Note sent ✓"); closeSheet(); }
+    catch(err){console.error(err);toast(err.message||"Couldn't send",4000);send.disabled=false;}
+  });
+  body.appendChild(send);
+  const mod=document.createElement("button");mod.className="btn sm";mod.textContent="Modify the workout instead";
+  mod.addEventListener("click",()=>{ closeSheet(); openCoachModify(a); });
+  body.appendChild(mod);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 function engDayAction(a,iAmCoach){
   if(iAmCoach){ if(a.status==="submitted")openReview(a.id); else if(a.status==="reviewed")openReview(a.id,true); else openCoachModify(a); }
@@ -1866,6 +2066,24 @@ function openTraineeDay(iso){
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
   $("#sheet-add").style.display="none";
+  // coach day-notes for this date (video replies, e.g. on missed days)
+  const notesWrap=document.createElement("div");notesWrap.id="td-notes";body.appendChild(notesWrap);
+  (async()=>{
+    try{
+      const engIds = traineeMerged ? traineeEngs.map(e=>e.id) : (currentEng?[currentEng.id]:[]);
+      let any=false;
+      for(const eid of engIds){
+        const notes=await store.dayNotes.list({engagement_id:eid,note_date:iso});
+        for(const n of notes){ any=true;
+          const nc=document.createElement("div");nc.className="card";nc.style.cssText="margin-bottom:10px;border-color:var(--lime-dim)";
+          nc.innerHTML=`<div class="eyebrow" style="color:var(--lime-dim);margin-bottom:6px">📣 Note from your coach</div>${n.text?`<div style="font-size:13.5px;line-height:1.5;margin-bottom:${n.video_path?"10px":"0"}">${escapeHtml(n.text)}</div>`:""}`;
+          if(n.video_path){ const vc=document.createElement("div");vc.className="video-card";vc.style.maxHeight="240px";vc.setAttribute("data-video",n.video_path);nc.appendChild(vc); }
+          notesWrap.appendChild(nc);
+        }
+      }
+      if(any) hydrateVideos(notesWrap);
+    }catch(e){console.error("trainee day notes",e);}
+  })();
   // workout row(s)
   for(const a of wl){
     const snap=a.snapshot||{};
@@ -1882,8 +2100,37 @@ function openTraineeDay(iso){
   mrow.innerHTML=`<div style="width:24px;height:24px;border-radius:7px;background:var(--violet);display:flex;align-items:center;justify-content:center;color:#0E1206;font-weight:800;flex-shrink:0">☰</div><div style="flex:1"><div style="font-size:15px;font-weight:700">${logged?"Edit macros":"Log macros"}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${logged?`${logged.kcal||0} kcal · P${logged.protein_g||0} C${logged.carbs_g||0} F${logged.fat_g||0}`:"Calories, protein, carbs, fat"}</div></div><div style="color:var(--faint)">›</div>`;
   mrow.addEventListener("click",()=>{ closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library"; openMacroLog(iso); });
   body.appendChild(mrow);
+  // weekly check-in (Saturdays) — take/replace a progress photo
+  const dow=new Date(iso.split("-")[0],iso.split("-")[1]-1,iso.split("-")[2]).getDay();
+  if(dow===6){
+    const crow=document.createElement("div");crow.className="sh-item";crow.style.borderColor="var(--amber)";
+    crow.innerHTML=`<div style="width:24px;height:24px;border-radius:7px;background:var(--amber);display:flex;align-items:center;justify-content:center;color:#3a2c00;font-weight:800;flex-shrink:0">📸</div><div style="flex:1"><div style="font-size:15px;font-weight:700">Weekly check-in photo</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Take your Saturday progress photo</div></div><div style="color:var(--faint)">›</div>`;
+    crow.addEventListener("click",()=>{ startCheckin(iso); });
+    body.appendChild(crow);
+  }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
+/* Weekly check-in: pick/take a photo, upload to the videos bucket, record in checkins */
+let checkinDate=null;
+function startCheckin(iso){
+  checkinDate=iso;
+  const inp=$("#checkin-input"); inp.value=""; inp.click();
+}
+$("#checkin-input").addEventListener("change",async e=>{
+  const file=e.target.files&&e.target.files[0]; const iso=checkinDate; checkinDate=null;
+  if(!file||!iso)return;
+  toast("Uploading your check-in…",3000);
+  try{
+    const ext=(file.type||"").includes("png")?"png":(file.type||"").includes("webp")?"webp":"jpg";
+    const path=await store.video.upload(file,ext);
+    const existing=(await store.checkins.list({trainee_id:ME.id,checkin_date:iso}))[0];
+    if(existing){ await store.checkins.update(existing.id,{photo_path:path}); }
+    else{ await store.checkins.add({trainee_id:ME.id,checkin_date:iso,photo_path:path}); }
+    toast("Check-in saved ✓");
+    closeSheet();
+    renderEngagement();
+  }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
+});
 /* Macro logging sheet for a given date */
 function openMacroLog(iso){
   const l=logsByDate[iso]||{};

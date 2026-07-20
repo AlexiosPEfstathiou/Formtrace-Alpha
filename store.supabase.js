@@ -165,6 +165,8 @@
 
     // trainee logging
     logs: table("logs"),
+    dayNotes: table("day_notes"),
+    checkins: table("checkins"),
 
     // convenience: browse coaches for the marketplace
     async coaches() {
