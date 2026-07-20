@@ -73,8 +73,9 @@
   .top .sub{font-size:12px;color:var(--muted);font-weight:500;}
   .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);font-weight:700;}
 
-  #s-home{justify-content:space-between;}
+  #s-home{justify-content:flex-start;}
   .hero{padding:calc(env(safe-area-inset-top) + 60px) 26px 0;}
+  .hero.with-tabs{flex:1;overflow-y:auto;padding-bottom:110px;}
   .logo{font-size:15px;letter-spacing:.28em;font-weight:800;}
   .logo b{color:var(--lime);}
   .hero h2{font-size:40px;line-height:1.02;font-weight:800;letter-spacing:-.03em;margin-top:26px;}
@@ -192,6 +193,13 @@
     font-size:13px;font-weight:700;letter-spacing:.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
   .tabbar button .i{font-size:16px;}
   .tabbar button.on{background:var(--panel2);color:var(--lime);}
+  /* home hub bottom nav: up to 5 stacked icon+label tabs */
+  .tabbar.home-nav{gap:4px;padding-left:8px;padding-right:8px;}
+  .tabbar.home-nav button{flex-direction:column;gap:3px;height:auto;padding:8px 2px;min-width:0;font-size:10.5px;letter-spacing:0;line-height:1.15;text-align:center;}
+  .tabbar.home-nav button .i{font-size:19px;}
+  .tabbar.home-nav button > span:not(.i){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .tabbar.home-nav button.glisten{color:var(--lime);animation:glisten-pulse 2.6s ease-in-out infinite;}
+  html[data-theme="light"] .tabbar.home-nav button.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
   .with-tabs{padding-bottom:170px;}
 
   .field{margin-bottom:16px;}
@@ -575,7 +583,7 @@
 
   <!-- ============ HOME (role-aware hub) ============ -->
   <section class="screen" id="s-home">
-    <div class="hero">
+    <div class="hero with-tabs">
       <div class="logo">FORM<b>TRACE</b> · COACH</div>
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
@@ -583,7 +591,7 @@
       <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
     </div>
-    <div class="roles" id="home-roles"></div>
+    <div class="tabbar home-nav" id="home-tabbar"></div>
   </section>
 
   <!-- ============ COACH (tabbed: library / workouts) ============ -->
@@ -1196,12 +1204,19 @@ let currentView="trainee";  // which "hat" the user is currently using on home
 function roleOf(){ if(!ME)return null; return ME.role; }   // base role; admin is ME.is_admin
 function isAdmin(){ return !!(ME && ME.is_admin); }
 
+let navStack=[];        // in-app screen history for the device back button
+let _navSuppress=false;  // true when go() is triggered by a popstate (don't re-push)
 function go(name){
   if(name==="ex-edit-new"){ openExEditor(null); name="ex-edit"; }
   if(name==="wo-build-new"){ openBuilder(null); name="wo-build"; }
   if(name==="listing-new"){ openListingNew(); name="listing-new"; }
   $$(".screen").forEach(s=>s.classList.remove("active"));
   const el=$("#s-"+name); if(el)el.classList.add("active");
+  // Track navigation so the phone back button moves within the app instead of leaving it.
+  if(!_navSuppress){
+    const top=navStack[navStack.length-1];
+    if(top!==name){ navStack.push(name); try{ history.pushState({ftScreen:name,depth:navStack.length},""); }catch(e){} }
+  }
   const R=fn=>{ try{ const p=fn(); if(p&&p.catch)p.catch(err=>{console.error(name+" render failed",err);toast((err&&err.message)||"Something went wrong loading this screen",4500);}); }catch(err){console.error(name+" render threw",err);toast((err&&err.message)||"Something went wrong",4500);} };
   if(name==="home")R(renderHome);
   if(name==="coach")R(renderCoach);
@@ -1213,6 +1228,35 @@ function go(name){
   if(name==="admin")R(renderAdmin);
 }
 document.addEventListener("click",e=>{const el=e.target.closest("[data-go]");if(el)go(el.getAttribute("data-go"));});
+
+/* ---- Device back button keeps the user inside the app ----
+   Any open overlay closes first; otherwise we step back through the in-app
+   screen stack. At the root we re-seed a state so the page never unloads. */
+function closeTopOverlay(){
+  if($("#rec")?.classList.contains("on")){ closeRecorder(); return true; }
+  if($("#photocap")?.classList.contains("on")){ try{pcStopCam();}catch(e){} $("#photocap").classList.remove("on"); checkinDate=null; return true; }
+  if($("#confirm-box")?.classList.contains("on")){ closeConfirm(false); return true; }
+  if($("#sheet-lib")?.classList.contains("on")){ closeSheet(); return true; }
+  return false;
+}
+window.addEventListener("popstate",()=>{
+  // First: if an overlay is open, a back press just closes it and we stay put.
+  if(closeTopOverlay()){ history.pushState({ftScreen:navStack[navStack.length-1]||"home",depth:navStack.length},""); return; }
+  // Otherwise step back one screen in the app.
+  if(navStack.length>1){
+    navStack.pop();
+    const prev=navStack[navStack.length-1];
+    _navSuppress=true; go(prev); _navSuppress=false;
+  }else{
+    // At the root screen — re-seed so the browser doesn't leave the site.
+    history.pushState({ftScreen:navStack[0]||"home",depth:1},"");
+  }
+});
+/* Reset the nav stack to a known root (called on sign-in / sign-out). */
+function resetNav(root){
+  navStack=[root];
+  try{ history.replaceState({ftScreen:root,depth:1},""); }catch(e){}
+}
 
 /* =========================================================================
    6. Auth gate
@@ -1255,6 +1299,7 @@ function showAuth(){
   $$(".screen").forEach(s=>s.classList.remove("active"));
   $("#s-auth").classList.add("active");
   setAuthMode("signin");
+  resetNav("auth");
 }
 
 async function bootSignedIn(){
@@ -1263,6 +1308,7 @@ async function bootSignedIn(){
   $("#app-loading").style.display="none";
   currentView = roleOf()==="coach" ? "coach" : "trainee";
   refreshStreakBadge();
+  resetNav("home");
   go("home");
   checkPendingReview();
 }
@@ -1329,28 +1375,32 @@ async function renderHome(){
     await renderHomeMacro(macroEl);
     await renderHomeCheckin(checkinEl);
   }else{
-    $("#home-p").style.display="";
-  }
-
-  let cards="";
-  if(base==="coach"){
     // Coach welcome + summary
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
     await renderCoachHome(todayEl);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
-    cards+=roleCard("coach","✎","Library &amp; workouts","References, plans and grading",true);
-    cards+=roleCard("market","◎","Open goals","Trainees looking for a coach",false);
-    cards+=roleCard("trainee-home","◉","My engagements","Assign & review your trainees",false);
+  }
+
+  // Bottom tab bar (mobile-friendly) instead of stacked role buttons.
+  // Home tab stays on this hub; the rest route to their existing screens.
+  const tab=(go_,ic,label,active,glisten)=>`<button data-go="${go_}" class="${active?"on":""}${glisten?" glisten":""}"><span class="i">${ic}</span>${label}</button>`;
+  let tabs="";
+  if(base==="coach"){
+    tabs+=tab("home","⌂","Home",true,false);
+    tabs+=tab("coach","✎","Library",false,false);
+    tabs+=tab("market","◎","Open goals",false,false);
+    tabs+=tab("trainee-home","◉","Trainees",false,false);
+    if(ME && ME.is_admin) tabs+=tab("admin","★","Review",false,false);
+    tabs+=tab("profile","☰","Profile",false,false);
   }else{
-    cards+=roleCard("trainee-home","◉","My training","Assigned workouts & progress",true,noActiveGoal);
-    cards+=roleCard("listings","◎","Find a coach","Post a goal, get video offers",false);
+    tabs+=tab("home","⌂","Home",true,false);
+    tabs+=tab("trainee-home","◉","Training",false,noActiveGoal);
+    tabs+=tab("listings","◎","Find a coach",false,noActiveGoal);
+    if(ME && ME.is_admin) tabs+=tab("admin","★","Review",false,false);
+    tabs+=tab("profile","☰","Profile",false,false);
   }
-  if(ME && ME.is_admin){
-    cards+=roleCard("admin","★","Coach applications","Review & approve coaches",false);
-  }
-  cards+=roleCard("profile","☰","Profile","Account, role & reputation",false);
-  $("#home-roles").innerHTML=cards;
+  $("#home-tabbar").innerHTML=tabs;
 }
 /* Trainee homepage: today's assigned workout (or Rest day) */
 async function renderHomeToday(engs, el){
