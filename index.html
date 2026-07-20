@@ -133,11 +133,11 @@
   .btn.sm{height:44px;font-size:14px;border-radius:12px;}
   .btn:disabled{opacity:.4;cursor:default;}
   .fab-row{position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(env(safe-area-inset-bottom) + 14px);
-    background:linear-gradient(#0b0e1100,#0B0E11 32%);display:flex;gap:10px;z-index:5;}
+    background:linear-gradient(transparent,var(--bg) 32%);display:flex;gap:10px;z-index:5;}
 
   /* coach tab bar */
   .tabbar{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;
-    padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);gap:8px;background:#0b0e11;border-top:1px solid var(--line);}
+    padding:8px 12px calc(env(safe-area-inset-bottom) + 8px);gap:8px;background:var(--bg);border-top:1px solid var(--line);}
   .tabbar button{flex:1;height:46px;border-radius:12px;border:none;background:transparent;color:var(--muted);
     font-size:13px;font-weight:700;letter-spacing:.02em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
   .tabbar button .i{font-size:16px;}
