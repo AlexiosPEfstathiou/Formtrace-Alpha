@@ -132,6 +132,19 @@
   .btn.ghost{background:transparent;}
   .btn.sm{height:44px;font-size:14px;border-radius:12px;}
   .btn:disabled{opacity:.4;cursor:default;}
+  /* "glisten" — attention shine for the Submit-new-Goal CTA */
+  .btn.glisten{position:relative;overflow:hidden;isolation:isolate;
+    animation:glisten-pulse 2.6s ease-in-out infinite;}
+  .btn.glisten::after{content:"";position:absolute;top:0;left:0;height:100%;width:60%;
+    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.15) 35%,rgba(255,255,255,.75) 50%,rgba(255,255,255,.15) 65%,transparent 100%);
+    transform:skewX(-18deg);filter:blur(1px);pointer-events:none;z-index:1;
+    animation:glisten-sweep 2.6s ease-in-out infinite;}
+  .btn.glisten > *{position:relative;z-index:2;}
+  @keyframes glisten-sweep{0%{left:-70%;}55%{left:130%;}100%{left:130%;}}
+  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}50%{box-shadow:0 0 22px 1px rgba(200,255,61,.55);}}
+  html[data-theme="light"] .btn.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
+  @keyframes glisten-pulse-lt{0%,100%{box-shadow:0 0 0 0 rgba(91,140,0,0);}50%{box-shadow:0 0 20px 1px rgba(91,140,0,.4);}}
+  @media(prefers-reduced-motion:reduce){.btn.glisten,.btn.glisten::after{animation:none;}}
   .fab-row{position:absolute;left:0;right:0;bottom:0;padding:14px 18px calc(env(safe-area-inset-bottom) + 14px);
     background:linear-gradient(transparent,var(--bg) 32%);display:flex;gap:10px;z-index:5;}
 
@@ -1823,8 +1836,8 @@ async function renderGoals(){
   // If nothing is ongoing, offer a highlighted "Submit new Goal"
   if(!hasActive){
     const cta=document.createElement("button");
-    cta.className="btn primary";cta.style.cssText="margin-top:18px;width:100%";
-    cta.textContent="＋ Submit new Goal";
+    cta.className="btn primary glisten";cta.style.cssText="margin-top:18px;width:100%";
+    cta.innerHTML=`<span>＋ Submit new Goal</span>`;
     cta.addEventListener("click",()=>go("listing-new"));
     body.appendChild(cta);
     const hint=document.createElement("p");
