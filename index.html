@@ -106,6 +106,30 @@
   .home-checkin .ci-main .t{font-size:14px;font-weight:800;color:var(--ink);}
   .home-checkin .ci-main .s{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
   .home-checkin .ci-arw{color:var(--lime-dim);font-size:18px;flex-shrink:0;}
+  /* trainee homepage: unviewed form-review chips */
+  .home-reviews{margin-top:18px;}
+  .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}
+  .home-reviews .rv-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;}
+  .rv-chip{display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--accent-surface);border:1px solid var(--accent-border);border-radius:13px;padding:10px 14px 10px 11px;cursor:pointer;text-align:left;}
+  .rv-chip:active{transform:scale(.98);}
+  .rv-chip .rv-ic{width:30px;height:30px;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+  .rv-chip .rv-tx{display:flex;flex-direction:column;line-height:1.25;}
+  .rv-chip .rv-tx b{font-size:13px;color:var(--ink);}
+  .rv-chip .rv-tx span{font-size:11.5px;color:var(--muted);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+  /* coach homepage: active-trainee list */
+  .home-coach{margin-top:18px;}
+  .home-coach .ct-title{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:10px;}
+  .home-coach .ct-list{display:flex;flex-direction:column;gap:8px;}
+  .ct-row{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 13px;cursor:pointer;}
+  .ct-row:active{transform:scale(.995);}
+  .ct-av{width:38px;height:38px;border-radius:11px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--ink);flex-shrink:0;}
+  .ct-main{flex:1;min-width:0;}
+  .ct-main .ct-nm{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ct-main .ct-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .ct-main .ct-sub.ct-stale{color:var(--amber);font-weight:700;}
+  .ct-streak{font-size:13px;font-weight:800;color:var(--ink);flex-shrink:0;font-variant-numeric:tabular-nums;}
+  .ct-rev{flex-shrink:0;background:var(--lime);color:var(--lime-ink);border:none;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;}
+  .ct-chev{color:var(--faint);font-size:17px;flex-shrink:0;}
   .roles{padding:0 22px calc(env(safe-area-inset-bottom) + 26px);display:flex;flex-direction:column;gap:12px;}
   .role{position:relative;border-radius:20px;padding:20px;cursor:pointer;border:1px solid var(--line);
     background:var(--panel);display:flex;align-items:center;gap:16px;transition:transform .12s,border-color .15s,background .15s;}
@@ -208,6 +232,15 @@
   /* per-screen SUB tab bars (coach library/workouts, listings goals/offers)
      stack directly above the persistent app bar instead of overlapping it */
   #s-coach .tabbar, #s-listings .tabbar{bottom:calc(env(safe-area-inset-bottom) + 62px);border-top:1px solid var(--line);}
+  /* coach "Past engagements" folder */
+  .past-folder{margin-top:8px;}
+  .past-toggle{width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;}
+  .past-toggle span:first-child{flex:1;text-align:left;}
+  .past-toggle .pf-count{background:var(--panel2);border-radius:20px;padding:2px 9px;font-size:12px;color:var(--faint);}
+  .past-toggle .pf-chev{font-size:18px;color:var(--faint);transition:transform .2s;}
+  .past-toggle.open .pf-chev{transform:rotate(90deg);}
+  .past-body{margin-top:10px;display:flex;flex-direction:column;gap:10px;}
+  .past-body .ex-card{opacity:.82;}
 
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
@@ -595,6 +628,8 @@
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <div id="home-today" class="home-today" style="display:none"></div>
+      <div id="home-reviews" class="home-reviews" style="display:none"></div>
+      <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
     </div>
@@ -1409,26 +1444,28 @@ async function renderHome(){
   const base = ME && ME.role==="coach" ? "coach" : "trainee";
   const name=ME?ME.display_name||"there":"there";
   const firstName=escapeHtml(name.split(" ")[0]);
-  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin");
+  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin"), reviewsEl=$("#home-reviews"), coachEl=$("#home-coach");
   // default (coach) hero; trainee hero is customised below
   $("#home-h").innerHTML=`Hi ${firstName}.<br><span class="g">What's the plan today?</span>`;
-  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none";
+  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
     let engs=[];
     try{ engs=await store.engagements.list({trainee_id:ME.id}); }catch(e){}
     noActiveGoal=await shouldGlistenGoal(engs);
-    // Welcome + today's program + yesterday's macro nudge
+    // Welcome + today's program + unviewed reviews + yesterday's macro nudge
     $("#home-h").innerHTML=`Welcome back <span class="g">${firstName}</span>.`;
     $("#home-p").style.display="none";
     await renderHomeToday(engs, todayEl);
+    await renderHomeReviews(engs, reviewsEl);
     await renderHomeMacro(macroEl);
     await renderHomeCheckin(checkinEl);
   }else{
-    // Coach welcome + summary
+    // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
     await renderCoachHome(todayEl);
+    await renderCoachTrainees(coachEl);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
   }
@@ -1489,6 +1526,93 @@ async function saveHomeMacro(iso){
     toast("You're all set.");
     const el=$("#home-macro"); if(el){ el.style.display="none"; el.innerHTML=""; }
   }catch(err){console.error(err);toast(err.message||"Couldn't save log",4000);btn.disabled=false;btn.textContent=o;}
+}
+/* Trainee homepage: quick-access icons for each coach-reviewed workout
+   the trainee hasn't opened yet. */
+async function renderHomeReviews(engs, el){
+  el.style.display="none"; el.innerHTML="";
+  const active=(engs||[]).filter(e=>e.status==="active");
+  if(!active.length) return;
+  let unviewed=[];
+  try{
+    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    for(const aw of lists.flat()){
+      if(aw.status==="reviewed" && !aw.opened){ unviewed.push(aw); }
+    }
+  }catch(e){ console.error("home reviews",e); return; }
+  if(!unviewed.length) return;
+  unviewed.sort((a,b)=>(a.due_date||a.created_at)<(b.due_date||b.created_at)?1:-1);
+  const chips=unviewed.map(aw=>{
+    const nm=(aw.snapshot&&aw.snapshot.name)||"Workout";
+    return `<button class="rv-chip" data-rev="${aw.id}"><span class="rv-ic">▶</span><span class="rv-tx"><b>New review</b><span>${escapeHtml(nm)}</span></span></button>`;
+  }).join("");
+  el.innerHTML=`<div class="rv-title">${unviewed.length} new form review${unviewed.length>1?"s":""} from your coach</div><div class="rv-row">${chips}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-rev]").forEach(b=>b.addEventListener("click",()=>openReview(b.getAttribute("data-rev"),true)));
+}
+/* Coach homepage: active trainees with streak + days since last workout,
+   plus a quick-access review icon; each row opens that trainee's dashboard. */
+async function renderCoachTrainees(el){
+  el.style.display="none"; el.innerHTML="";
+  let rows=[];
+  try{
+    const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
+    if(!engs.length) return;
+    // trainee profiles
+    const profs={};
+    for(const e of engs){ if(!profs[e.trainee_id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",e.trainee_id).single(); if(data)profs[e.trainee_id]=data; }catch(_){}} }
+    const today=todayISO();
+    for(const e of engs){
+      const aw=await store.assignedWorkouts.list({engagement_id:e.id});
+      const logs=await store.logs.list({trainee_id:e.trainee_id});
+      // days since last COMPLETED (submitted/reviewed) workout
+      const doneDates=aw.filter(a=>a.status==="submitted"||a.status==="reviewed")
+        .map(a=>a.due_date||isoOf(new Date(a.created_at||Date.now()))).sort();
+      const lastDone=doneDates.length?doneDates[doneDates.length-1]:null;
+      const daysSince=lastDone?Math.round((new Date(today)-new Date(lastDone))/(24*3600*1000)):null;
+      const pendingReview=aw.filter(a=>a.status==="submitted").length;
+      const streak=streakForLogs(logs);
+      rows.push({e,prof:profs[e.trainee_id]||{},daysSince,pendingReview,streak});
+    }
+  }catch(err){ console.error("coach trainees",err); return; }
+  if(!rows.length) return;
+  // most attention-needed first: pending reviews, then longest gap
+  rows.sort((a,b)=>(b.pendingReview-a.pendingReview) || ((b.daysSince??-1)-(a.daysSince??-1)));
+  const card=rows.map(r=>{
+    const nm=r.prof.display_name||"Trainee";
+    const init=r.prof.avatar_initials||initials(nm);
+    const gapTxt = r.daysSince==null ? "No workouts yet"
+      : r.daysSince===0 ? "Trained today"
+      : `${r.daysSince}d since last workout`;
+    const gapCls = (r.daysSince!=null && r.daysSince>=4) ? "ct-stale" : "";
+    const streakTxt = r.streak>0?`🔥 ${r.streak}`:"·";
+    const rev = r.pendingReview>0 ? `<button class="ct-rev" data-rev-eng="${r.e.id}" title="${r.pendingReview} to review">▶ ${r.pendingReview}</button>` : "";
+    return `<div class="ct-row" data-eng="${r.e.id}">
+        <div class="ct-av">${escapeHtml(init)}</div>
+        <div class="ct-main"><div class="ct-nm">${escapeHtml(nm)}</div><div class="ct-sub ${gapCls}">${gapTxt}</div></div>
+        <div class="ct-streak">${streakTxt}</div>
+        ${rev}
+        <div class="ct-chev">›</div>
+      </div>`;
+  }).join("");
+  el.innerHTML=`<div class="ct-title">Your active trainees</div><div class="ct-list">${card}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-eng]").forEach(row=>row.addEventListener("click",e=>{
+    if(e.target.closest("[data-rev-eng]"))return;
+    openEngagement(row.getAttribute("data-eng"));
+  }));
+  el.querySelectorAll("[data-rev-eng]").forEach(b=>b.addEventListener("click",()=>openEngagement(b.getAttribute("data-rev-eng"))));
+}
+/* Lightweight streak count from a trainee's logs (macros logged on consecutive
+   days up to today). Mirrors computeStreak's "full days logged" idea. */
+function streakForLogs(logs){
+  const byDate={}; for(const l of logs) byDate[l.log_date]=l;
+  const done=iso=>{ const l=byDate[iso]; return !!(l && (l.protein_g!=null||l.carbs_g!=null||l.fat_g!=null)); };
+  let anchor=todayISO();
+  if(!done(anchor)){ const y=addDaysISO(anchor,-1); if(done(y)) anchor=y; else return 0; }
+  let n=0, cur=anchor;
+  while(done(cur)){ n++; cur=addDaysISO(cur,-1); }
+  return n;
 }
 /* Trainee homepage: on Saturdays, prompt for the weekly check-in photo
    (hidden if today isn't Saturday or this Saturday is already done). */
@@ -2044,23 +2168,46 @@ async function renderTraineeHome(){
   const profs={}; for(const p of await store.coaches()) profs[p.id]=p; // coaches
   // trainees may not be in coaches(); fetch individually via _sb
   for(const id of ids){ if(!profs[id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",id).single(); if(data)profs[id]=data; }catch(e){} } }
-  for(const e of engs){
-    const other=profs[iAmCoach?e.trainee_id:e.coach_id]||{};
+
+  // Coach view: active engagements first, past (completed/ended) tucked into a folder.
+  const active=engs.filter(e=>e.status==="active");
+  const past=engs.filter(e=>e.status!=="active");
+  $("#tr-sub").textContent=active.length?`${active.length} active${past.length?` · ${past.length} past`:""}`:(past.length?`${past.length} past`:"No active trainees yet");
+
+  const engCard=(e)=>{
+    const other=profs[e.trainee_id]||{};
+    const wk=weekNumber(e.started_at);
     const div=document.createElement("div");div.className="card ex-card";
-    if(iAmCoach){
-      const wk=weekNumber(e.started_at);
-      div.innerHTML=`<div class="list-row">
-          <div class="avatar">${escapeHtml(other.avatar_initials||initials(other.display_name))}</div>
-          <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")} — Week ${wk}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}</div></div>
-          <span class="badge ${e.status}">${e.status}</span></div>`;
-    }else{
-      div.innerHTML=`<div class="list-row">
-          <div class="avatar">${escapeHtml(other.avatar_initials||initials(other.display_name))}</div>
-          <div class="lr-main"><h3>${escapeHtml(e.goal_title||"Engagement")}</h3><div class="sub">${escapeHtml(other.display_name||"—")}</div></div>
-          <span class="badge ${e.status}">${e.status}</span></div>`;
-    }
+    div.innerHTML=`<div class="list-row">
+        <div class="avatar">${escapeHtml(other.avatar_initials||initials(other.display_name))}</div>
+        <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}</div></div>
+        <span class="badge ${e.status}">${e.status}</span></div>`;
     div.addEventListener("click",()=>openEngagement(e.id));
-    wrap.appendChild(div);
+    return div;
+  };
+
+  if(!active.length && !past.length){ return; }
+  for(const e of active){ wrap.appendChild(engCard(e)); }
+  if(active.length && !past.length){ return; }
+  if(!active.length){
+    // nothing active — show a gentle note above the past folder
+    const note=document.createElement("div");note.className="empty";note.style.cssText="padding:20px 10px 6px";
+    note.innerHTML=`<p style="font-size:13.5px">No active engagements right now.</p>`;
+    wrap.appendChild(note);
+  }
+  if(past.length){
+    const folder=document.createElement("div");folder.className="past-folder";
+    folder.innerHTML=`<button class="past-toggle" id="past-toggle"><span>📁 Past engagements</span><span class="pf-count">${past.length}</span><span class="pf-chev">›</span></button>
+      <div class="past-body" id="past-body" style="display:none"></div>`;
+    wrap.appendChild(folder);
+    const pbody=folder.querySelector("#past-body");
+    for(const e of past){ pbody.appendChild(engCard(e)); }
+    const tgl=folder.querySelector("#past-toggle");
+    tgl.addEventListener("click",()=>{
+      const open=pbody.style.display!=="none";
+      pbody.style.display=open?"none":"block";
+      tgl.classList.toggle("open",!open);
+    });
   }
 }
 
@@ -2428,28 +2575,28 @@ function renderDashboard(container, iAmCoach){
     weight:(cs.getPropertyValue("--ch-weight")||"#B79CFF").trim(),
     ink:(cs.getPropertyValue("--ink")||"#eee").trim(), faint:(cs.getPropertyValue("--faint")||"#5B6773").trim(),
     line:(cs.getPropertyValue("--line")||"#232C35").trim(), line2:(cs.getPropertyValue("--line2")||"#2E3944").trim(),
-    panel:(cs.getPropertyValue("--panel")||"#151B21").trim() };
+    panel:(cs.getPropertyValue("--panel")||"#151B21").trim(), panel2:(cs.getPropertyValue("--panel2")||"#1B232B").trim() };
 
   // ---- macro stacked bar chart (SVG) with pattern fills (multi-channel: color + texture + labels) ----
-  const macroCard=document.createElement("div");macroCard.className="card";macroCard.style.padding="16px 12px 10px";
-  const W=Math.max(320, buckets.length*46), H=224, padB=26, padT=24, padL=30;
+  const macroCard=document.createElement("div");macroCard.className="card";macroCard.style.padding="18px 14px 12px";
+  const W=Math.max(320, buckets.length*52), H=250, padB=30, padT=34, padL=34;
   const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f));
-  const bw=Math.min(32, (W-padL-8)/buckets.length-8);
+  const bw=Math.min(30, (W-padL-8)/buckets.length-12);
   const gap=((W-padL-8)/buckets.length);
   // patterns: protein solid, carbs diagonal stripes, fat dots — distinguishable without color
   const defs=`<defs>
-    <pattern id="pat-carbs" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${C.c}"/><rect width="3" height="6" fill="rgba(0,0,0,.28)"/></pattern>
-    <pattern id="pat-fat" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="${C.f}"/><circle cx="3" cy="3" r="1.4" fill="rgba(0,0,0,.32)"/></pattern>
+    <pattern id="pat-carbs" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${C.c}"/><rect width="3" height="6" fill="rgba(0,0,0,.22)"/></pattern>
+    <pattern id="pat-fat" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="${C.f}"/><circle cx="3.5" cy="3.5" r="1.5" fill="rgba(0,0,0,.26)"/></pattern>
   </defs>`;
   const chartH=H-padB-padT;
-  // rounded kcal gridlines (0, 25, 50, 75, 100% of maxG)
+  // soft kcal gridlines (0/25/50/75/100% of max), value labels sit just left of the plot
   let gridSvg="";
   for(let g=0;g<=4;g++){ const gy=padT+chartH-(g/4)*chartH; const gv=Math.round((g/4)*maxG);
-    gridSvg+=`<line x1="${padL}" y1="${gy}" x2="${W-6}" y2="${gy}" stroke="${C.line}" stroke-dasharray="${g===0?'0':'2 3'}"/><text x="${padL-5}" y="${gy+3}" text-anchor="end" font-size="8" fill="${C.faint}">${gv}</text>`; }
-  let svg=`<div style="display:flex;gap:14px;margin:0 4px 12px;font-size:11px;color:var(--muted);flex-wrap:wrap">
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:${C.p}"></span>Protein</span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:repeating-linear-gradient(45deg,${C.c},${C.c} 2px,rgba(0,0,0,.3) 2px,rgba(0,0,0,.3) 4px)"></span>Carbs</span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:2px;background:radial-gradient(${C.f} 40%,rgba(0,0,0,.35) 42%);background-size:6px 6px;border:1px solid ${C.f}"></span>Fat</span>
+    gridSvg+=`<line x1="${padL}" y1="${gy}" x2="${W-8}" y2="${gy}" stroke="${C.line}" stroke-width="${g===0?1:1}" ${g===0?"":'stroke-dasharray="1 4"'} opacity="${g===0?0.9:0.55}"/><text x="${padL-6}" y="${gy+3}" text-anchor="end" font-size="8.5" fill="${C.faint}">${gv}</text>`; }
+  let svg=`<div style="display:flex;gap:16px;margin:0 2px 14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:${C.p}"></span>Protein</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:repeating-linear-gradient(45deg,${C.c},${C.c} 2px,rgba(0,0,0,.24) 2px,rgba(0,0,0,.24) 4px)"></span>Carbs</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:radial-gradient(${C.f} 40%,rgba(0,0,0,.28) 42%);background-size:7px 7px;border:1px solid ${C.f}"></span>Fat</span>
     </div>
     <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">${defs}${gridSvg}`;
   buckets.forEach((b,i)=>{
@@ -2457,44 +2604,57 @@ function renderDashboard(container, iAmCoach){
     const tot=b.p+b.c+b.f;
     const hP=(b.p/maxG)*chartH, hC=(b.c/maxG)*chartH, hF=(b.f/maxG)*chartH;
     let y=padT+chartH;
-    const seg=(h,fill,val,ink)=>{ if(h<=0)return ""; y-=h; const s=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${fill}" rx="2"/>`+
-      (h>13?`<text x="${x+bw/2}" y="${y+h/2+3.5}" text-anchor="middle" font-size="9" font-weight="800" fill="${ink}">${val}</text>`:""); return s; };
-    svg+=seg(hP,C.p,b.p,C.pInk);
-    svg+=seg(hC,"url(#pat-carbs)",b.c,C.cInk);
-    svg+=seg(hF,"url(#pat-fat)",b.f,C.fInk);
-    // kcal chip above
-    svg+=`<text x="${x+bw/2}" y="${padT+chartH-((tot/maxG)*chartH)-6}" text-anchor="middle" font-size="9" font-weight="800" fill="${C.ink}">${b.kcal}</text>`;
-    svg+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="8.5" fill="${C.faint}">${b.label}</text>`;
+    // rounded top only on the uppermost non-zero segment
+    const segs=[["P",hP,C.p,b.p,C.pInk],["C",hC,"url(#pat-carbs)",b.c,C.cInk],["F",hF,"url(#pat-fat)",b.f,C.fInk]];
+    const topIdx=(hF>0)?2:(hC>0)?1:(hP>0)?0:-1;
+    segs.forEach(([k,h,fill,val,ink],si)=>{
+      if(h<=0)return; y-=h;
+      const round=si===topIdx?3:0;
+      svg+=`<path d="M${x} ${(y+h).toFixed(1)} L${x} ${(y+round).toFixed(1)} Q${x} ${y} ${x+round} ${y} L${x+bw-round} ${y} Q${x+bw} ${y} ${x+bw} ${(y+round).toFixed(1)} L${x+bw} ${(y+h).toFixed(1)} Z" fill="${fill}"/>`;
+      // only label a segment when it's tall enough to hold text cleanly
+      if(h>=16) svg+=`<text x="${x+bw/2}" y="${y+h/2+3.5}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${ink}">${val}</text>`;
+    });
+    // kcal total in a soft pill above the bar
+    if(tot>0){ const ty=padT+chartH-((tot/maxG)*chartH)-13;
+      svg+=`<text x="${x+bw/2}" y="${ty+9}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${C.ink}">${b.kcal}</text>`; }
+    svg+=`<text x="${x+bw/2}" y="${H-9}" text-anchor="middle" font-size="9" fill="${C.faint}">${b.label}</text>`;
   });
   svg+=`</svg></div>`;
-  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Macros (g) · ${dashMode==="week"?"weekly daily-avg":"daily"} · kcal shown above each bar</div>`+svg;
+  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Macros (g)</div><div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">${dashMode==="week"?"Weekly daily-average":"Daily"} · total kcal above each bar</div>`+svg;
   wrap.appendChild(macroCard);
 
   // ---- weight line chart (SVG) with area fill + themed color + date axis ----
   const wpts=buckets.map((b,i)=>({i,w:b.wSum,label:b.label})).filter(p=>p.w!=null);
-  const wCard=document.createElement("div");wCard.className="card";wCard.style.padding="16px 12px 10px";
+  const wCard=document.createElement("div");wCard.className="card";wCard.style.padding="18px 14px 12px";
   if(wpts.length>=1){
-    const wW=Math.max(320, buckets.length*46), wH=172, wpadB=30, wpadT=20, wpadL=36;
-    const ws=wpts.map(p=>p.w); const wMin=Math.min(...ws), wMax=Math.max(...ws); const span=(wMax-wMin)||1;
-    const chH=wH-wpadB-wpadT, chW=wW-wpadL-10;
+    const wW=Math.max(320, buckets.length*52), wH=190, wpadB=32, wpadT=30, wpadL=38;
+    const ws=wpts.map(p=>p.w); const wMin=Math.min(...ws), wMax=Math.max(...ws);
+    // pad the value range by ~8% so points don't kiss the top/bottom edges
+    const rawSpan=(wMax-wMin)||1; const padV=rawSpan*0.18;
+    const loV=wMin-padV, hiV=wMax+padV; const span=(hiV-loV)||1;
+    const chH=wH-wpadB-wpadT, chW=wW-wpadL-12;
     const X=i=>wpadL+(buckets.length<=1?chW/2:(i/(buckets.length-1))*chW);
-    const Y=w=>wpadT+chH-((w-wMin)/span)*chH;
-    let line="",area="",dots="",xlabels="";
+    const Y=w=>wpadT+chH-((w-loV)/span)*chH;
+    let line="",dots="",xlabels="";
     wpts.forEach((p,k)=>{ const x=X(p.i),y=Y(p.w);
       line+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" ";
-      dots+=`<circle cx="${x}" cy="${y}" r="3.2" fill="${C.weight}" stroke="${C.panel}" stroke-width="1.5"/><text x="${x}" y="${y-8}" text-anchor="middle" font-size="8.5" font-weight="800" fill="${C.ink}">${p.w}</text>`;
-      xlabels+=`<text x="${x}" y="${wH-9}" text-anchor="middle" font-size="8.5" fill="${C.faint}">${p.label}</text>`;
+      // value in a small pill above each point so it never collides with the line
+      const lw=(""+p.w).length*5.4+8;
+      dots+=`<rect x="${(x-lw/2).toFixed(1)}" y="${(y-19).toFixed(1)}" width="${lw.toFixed(1)}" height="14" rx="7" fill="${C.panel2||C.panel}" opacity="0.9"/>`
+        +`<text x="${x}" y="${(y-9).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="800" fill="${C.ink}">${p.w}</text>`
+        +`<circle cx="${x}" cy="${y}" r="3.4" fill="${C.weight}" stroke="${C.panel}" stroke-width="2"/>`;
+      xlabels+=`<text x="${x}" y="${wH-10}" text-anchor="middle" font-size="9" fill="${C.faint}">${p.label}</text>`;
     });
     const firstX=X(wpts[0].i), lastX=X(wpts[wpts.length-1].i), baseY=wpadT+chH;
-    area=`M${firstX} ${baseY} `+wpts.map(p=>"L"+X(p.i).toFixed(1)+" "+Y(p.w).toFixed(1)).join(" ")+` L${lastX} ${baseY} Z`;
-    // 3 gridlines (max / mid / min)
+    const area=`M${firstX} ${baseY} `+wpts.map(p=>"L"+X(p.i).toFixed(1)+" "+Y(p.w).toFixed(1)).join(" ")+` L${lastX} ${baseY} Z`;
+    // gridlines at the real min / mid / max values (labels reflect true data)
     const wMid=((wMax+wMin)/2);
-    const grid=[wMax,wMid,wMin].map(v=>`<line x1="${wpadL}" y1="${Y(v)}" x2="${wW-8}" y2="${Y(v)}" stroke="${C.line}" stroke-dasharray="2 3"/><text x="3" y="${Y(v)+3}" font-size="8" fill="${C.faint}">${v.toFixed(1)}</text>`).join("")
-      +`<line x1="${wpadL}" y1="${baseY}" x2="${wW-8}" y2="${baseY}" stroke="${C.line2}"/>`;
+    const grid=[wMax,wMid,wMin].map(v=>`<line x1="${wpadL}" y1="${Y(v)}" x2="${wW-8}" y2="${Y(v)}" stroke="${C.line}" stroke-dasharray="1 4" opacity="0.55"/><text x="4" y="${Y(v)+3}" font-size="8.5" fill="${C.faint}">${v.toFixed(1)}</text>`).join("");
     const delta=(ws[ws.length-1]-ws[0]);
     const deltaTxt=(delta>0?"+":"")+delta.toFixed(1)+" kg";
-    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px;display:flex;justify-content:space-between"><span>Weight (kg) · ${dashMode==="week"?"weekly avg":"by day"}</span><span style="color:${delta<=0?'var(--lime)':'var(--amber)'}">${wpts.length>1?deltaTxt:""}</span></div>
-      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${area}" fill="${C.weight}" opacity="0.14"/><path d="${line}" fill="none" stroke="${C.weight}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
+    wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:baseline"><span>Weight (kg)</span><span style="font-size:12px;font-weight:800;letter-spacing:0;text-transform:none;color:${delta<=0?'var(--lime)':'var(--amber)'}">${wpts.length>1?deltaTxt:""}</span></div>
+      <div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">${dashMode==="week"?"Weekly average":"By day"}</div>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${area}" fill="${C.weight}" opacity="0.12"/><path d="${line}" fill="none" stroke="${C.weight}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
   }else{
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
   }
