@@ -1433,21 +1433,26 @@ async function refreshStreakBadge(){
     const lists=await Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
     engAssignedByDate={}; for(const a of lists.flat()){ const dt=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[dt]=engAssignedByDate[dt]||[]).push(a); }
     logsByDate={}; const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l;
+    // The COUNT is owned by the database (single source of truth shared with
+    // coaches). We recompute the danger/broken styling locally since that's a
+    // UI nuance, but the number itself comes from the server.
     streakInfo=computeStreak();
+    const serverCount=await serverStreak();
+    if(serverCount!=null) streakInfo.count=serverCount;
     updateStreakBadge(streakInfo);
-    persistStreak(streakInfo.count);
   }catch(e){ console.error("streak badge",e); hideStreakBadge(); }
 }
-/* Persist the trainee's authoritative streak to their profile so coaches read
-   the SAME number (they can't recompute it — it spans all the trainee's goals,
-   some of which another coach owns and RLS hides). Only writes on change. */
-async function persistStreak(count){
+/* Ask the database to recompute + return the caller's authoritative streak.
+   Handles the daily rollover (today advances with no data change) and keeps
+   the trainee's badge identical to what every coach reads from the DB. */
+async function serverStreak(){
   try{
-    if(!ME || roleOf()==="coach") return;
-    if(ME.streak_count===count) return;
-    await store._sb.from("profiles").update({streak_count:count}).eq("id",ME.id);
-    ME.streak_count=count;
-  }catch(e){ console.error("persistStreak",e); }
+    const { data, error } = await store._sb.rpc("refresh_my_streak");
+    if(error){ console.error("refresh_my_streak",error); return null; }
+    const v = (typeof data==="number") ? data : (Array.isArray(data)?data[0]:null);
+    if(v!=null && ME) ME.streak_count=v;
+    return v;
+  }catch(e){ console.error("serverStreak",e); return null; }
 }
 
 /* =========================================================================
@@ -2369,7 +2374,7 @@ async function renderEngagement(){
   }
   // discipline streak (trainee only)
   streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
-  if(!iAmCoach){ updateStreakBadge(streakInfo); persistStreak(streakInfo.count); }
+  if(!iAmCoach){ updateStreakBadge(streakInfo); serverStreak().then(v=>{ if(v!=null){ streakInfo.count=v; updateStreakBadge(streakInfo); } }); }
   body.innerHTML="";
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
