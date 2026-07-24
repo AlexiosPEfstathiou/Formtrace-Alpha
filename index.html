@@ -91,6 +91,30 @@
   .home-today .prog.coach-sum b{color:var(--ink);font-weight:800;}
   .home-today .prog.coach-sum .sep{color:var(--faint);margin:0 2px;}
   .home-today .prog.coach-sum .dot{display:none;}
+  /* trainee "today's program" rich card */
+  .home-today .ht-head{margin-bottom:10px;}
+  .home-today .ht-eyebrow{font-size:12.5px;font-weight:700;color:var(--muted);}
+  .ht-card{background:var(--accent-surface);border:1px solid var(--accent-border);border-radius:16px;padding:14px 15px;margin-bottom:10px;cursor:pointer;transition:transform .12s;}
+  .ht-card:active{transform:scale(.99);}
+  .ht-card-top{display:flex;align-items:center;gap:10px;}
+  .ht-wname{flex:1;min-width:0;font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;}
+  .ht-chip{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:20px;background:var(--panel2);color:var(--muted);}
+  .ht-chip.reviewed{background:rgba(200,255,61,.16);color:var(--lime);}
+  .ht-chip.submitted{background:rgba(90,176,255,.16);color:var(--blue);}
+  .ht-go{flex-shrink:0;width:40px;height:40px;border-radius:12px;border:none;background:var(--lime);color:var(--lime-ink);font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .ht-go:active{transform:scale(.94);}
+  .ht-meta{font-size:12px;color:var(--muted);margin-top:5px;}
+  .ht-exlist{margin-top:11px;display:flex;flex-direction:column;gap:1px;}
+  .ht-ex{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--line);}
+  .ht-ex:first-child{border-top:none;}
+  .ht-ex-nm{font-size:14px;color:var(--ink);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ht-ex-sets{font-size:12.5px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;}
+  /* trainee weight-trend sparkline */
+  .ht-weight{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px 8px;}
+  .htw-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px;}
+  .htw-lab{font-size:12px;font-weight:700;color:var(--muted);}
+  .htw-delta{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .htw-foot{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:2px;}
   .home-macro{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px;max-width:none;}
   .home-macro .hm-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:9px;}
   .home-macro .hm-row{display:flex;align-items:center;gap:6px;}
@@ -1500,19 +1524,87 @@ async function renderHome(){
 /* Trainee homepage: today's assigned workout (or Rest day) */
 async function renderHomeToday(engs, el){
   const active=(engs||[]).filter(e=>e.status==="active");
-  let names=[];
+  const iso=todayISO();
+  // today's assigned workouts (full snapshot) across all active goals
+  let todays=[];
   try{
-    const iso=todayISO();
     const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
     for(const a of lists.flat()){
       const due=a.due_date||isoOf(new Date(a.created_at||Date.now()));
-      if(due===iso){ const nm=(a.snapshot&&a.snapshot.name)||"Workout"; names.push(nm); }
+      if(due===iso) todays.push(a);
     }
   }catch(e){ console.error("home today",e); }
-  const isRest=names.length===0;
-  const progTxt = isRest ? "Rest day" : names.join(" · ");
-  el.innerHTML=`<span>Today's program</span><div class="prog ${isRest?"rest":""}"><span class="dot"></span>${escapeHtml(progTxt)}</div>`;
+
+  // recent weight trend (last up-to-8 entries) for a small sparkline
+  let sparkSvg="";
+  try{
+    const logs=await store.logs.list({trainee_id:ME.id});
+    const wpts=logs.filter(l=>l.weight_kg!=null)
+      .sort((a,b)=>a.log_date<b.log_date?-1:1)
+      .slice(-8)
+      .map(l=>({d:l.log_date,w:Number(l.weight_kg)}));
+    sparkSvg=weightSparkline(wpts);
+  }catch(e){ console.error("home weight spark",e); }
+
+  const isRest=todays.length===0;
+  let html=`<div class="ht-head"><span class="ht-eyebrow">Today's program</span>`;
+  if(isRest){
+    html+=`</div><div class="prog rest"><span class="dot"></span>Rest day</div>`;
+  }else{
+    html+=`</div>`;
+    for(const a of todays){
+      const snap=a.snapshot||{}; const items=snap.items||[];
+      const nm=snap.name||"Workout";
+      const totalSets=items.reduce((s,it)=>s+(it.sets||0),0);
+      const statusChip = a.status==="reviewed" ? `<span class="ht-chip reviewed">reviewed</span>`
+        : a.status==="submitted" ? `<span class="ht-chip submitted">submitted</span>`
+        : ``;
+      const exLines=items.map(it=>`<div class="ht-ex"><span class="ht-ex-nm">${escapeHtml(it.name||"Exercise")}</span><span class="ht-ex-sets">${it.sets||0}×${it.reps||0}</span></div>`).join("");
+      const ctaLabel = a.status==="assigned" ? "▶" : "›";
+      html+=`<div class="ht-card" data-open="${a.id}">
+          <div class="ht-card-top">
+            <div class="ht-wname">${escapeHtml(nm)}${statusChip}</div>
+            <button class="ht-go" data-open="${a.id}" aria-label="Open workout">${ctaLabel}</button>
+          </div>
+          <div class="ht-meta">${items.length} exercise${items.length!==1?"s":""} · ${totalSets} set${totalSets!==1?"s":""}</div>
+          <div class="ht-exlist">${exLines}</div>
+        </div>`;
+    }
+  }
+  // weight trend mini-card
+  if(sparkSvg){
+    html+=`<div class="ht-weight">${sparkSvg}</div>`;
+  }
+  el.innerHTML=html;
   el.style.display="";
+  el.querySelectorAll("[data-open]").forEach(node=>node.addEventListener("click",e=>{
+    e.stopPropagation();
+    openAssigned(node.getAttribute("data-open"));
+  }));
+}
+/* Small inline weight sparkline (last few entries) for the trainee homepage.
+   Straight segments only — no interpolation implied. Returns "" if <2 points. */
+function weightSparkline(wpts){
+  if(!wpts || wpts.length<2) return "";
+  const cs=getComputedStyle(document.documentElement);
+  const col=(cs.getPropertyValue("--ch-weight")||"#B79CFF").trim();
+  const ink=(cs.getPropertyValue("--ink")||"#eee").trim();
+  const faint=(cs.getPropertyValue("--faint")||"#5B6773").trim();
+  const W=300, H=54, padX=6, padY=10;
+  const ws=wpts.map(p=>p.w); const lo=Math.min(...ws), hi=Math.max(...ws); const span=(hi-lo)||1;
+  const X=i=>padX+(i/(wpts.length-1))*(W-padX*2);
+  const Y=w=>padY+(1-(w-lo)/span)*(H-padY*2);
+  let line=""; wpts.forEach((p,i)=>{ line+=(i===0?"M":"L")+X(i).toFixed(1)+" "+Y(p.w).toFixed(1)+" "; });
+  const lastX=X(wpts.length-1), lastY=Y(wpts[wpts.length-1].w);
+  const first=wpts[0].w, last=wpts[wpts.length-1].w, delta=last-first;
+  const deltaTxt=(delta>0?"+":"")+delta.toFixed(1)+" kg";
+  const deltaCol = delta<=0 ? "var(--lime)" : "var(--amber)";
+  return `<div class="htw-head"><span class="htw-lab">Weight trend</span><span class="htw-delta" style="color:${deltaCol}">${deltaTxt}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px">
+      <path d="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3.4" fill="${col}"/>
+    </svg>
+    <div class="htw-foot"><span>${wpts.length} entries</span><span>latest <b style="color:${ink}">${last}</b> kg</span></div>`;
 }
 /* Trainee homepage: compact quick-log strip for yesterday's macros.
    Hidden entirely once yesterday is logged (until the next day). */
