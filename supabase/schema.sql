@@ -15,6 +15,7 @@ create table if not exists public.profiles (
   bio          text,
   city         text,
   avatar_initials text,
+  streak_count integer not null default 0,
   created_at   timestamptz not null default now()
 );
 

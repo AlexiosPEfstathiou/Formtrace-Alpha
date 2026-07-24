@@ -1435,7 +1435,19 @@ async function refreshStreakBadge(){
     logsByDate={}; const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l;
     streakInfo=computeStreak();
     updateStreakBadge(streakInfo);
+    persistStreak(streakInfo.count);
   }catch(e){ console.error("streak badge",e); hideStreakBadge(); }
+}
+/* Persist the trainee's authoritative streak to their profile so coaches read
+   the SAME number (they can't recompute it — it spans all the trainee's goals,
+   some of which another coach owns and RLS hides). Only writes on change. */
+async function persistStreak(count){
+  try{
+    if(!ME || roleOf()==="coach") return;
+    if(ME.streak_count===count) return;
+    await store._sb.from("profiles").update({streak_count:count}).eq("id",ME.id);
+    ME.streak_count=count;
+  }catch(e){ console.error("persistStreak",e); }
 }
 
 /* =========================================================================
@@ -1569,17 +1581,15 @@ async function renderCoachTrainees(el){
     const today=todayISO();
     for(const e of engs){
       const aw=await store.assignedWorkouts.list({engagement_id:e.id});
-      const logs=await store.logs.list({trainee_id:e.trainee_id});
-      // days since last COMPLETED (submitted/reviewed) workout
+      // days since last COMPLETED (submitted/reviewed) workout in THIS engagement
       const doneDates=aw.filter(a=>a.status==="submitted"||a.status==="reviewed")
         .map(a=>a.due_date||isoOf(new Date(a.created_at||Date.now()))).sort();
       const lastDone=doneDates.length?doneDates[doneDates.length-1]:null;
       const daysSince=lastDone?Math.round((new Date(today)-new Date(lastDone))/(24*3600*1000)):null;
       const pendingReview=aw.filter(a=>a.status==="submitted").length;
-      // streak: use the SAME definition the trainee sees (macros logged + no still-assigned workout)
-      const logsMap={}; for(const l of logs) logsMap[l.log_date]=l;
-      const awMap={}; for(const a of aw){ const dt=a.due_date||isoOf(new Date(a.created_at||Date.now())); (awMap[dt]=awMap[dt]||[]).push(a); }
-      const streak=computeStreak(logsMap,awMap).count;
+      // streak is the trainee's authoritative value (persisted by them; spans all
+      // their goals which the coach can't fully see) — read it, never recompute.
+      const streak=(profs[e.trainee_id]||{}).streak_count||0;
       rows.push({e,prof:profs[e.trainee_id]||{},daysSince,pendingReview,streak});
     }
   }catch(err){ console.error("coach trainees",err); return; }
@@ -2359,7 +2369,7 @@ async function renderEngagement(){
   }
   // discipline streak (trainee only)
   streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
-  if(!iAmCoach) updateStreakBadge(streakInfo);
+  if(!iAmCoach){ updateStreakBadge(streakInfo); persistStreak(streakInfo.count); }
   body.innerHTML="";
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
