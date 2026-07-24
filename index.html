@@ -1039,16 +1039,18 @@ function weekNumber(startedAt){ if(!startedAt)return 1; const start=new Date(sta
 function macrosLogged(l){ return !!(l && (l.protein_g!=null || l.carbs_g!=null || l.fat_g!=null)); }
 // A day is COMPLETE when macros are logged AND no workout that day is still 'assigned'.
 // (submitted counts — trainee did their part; rest days with macros count.)
-function dayComplete(iso){
-  const wl=engAssignedByDate[iso]||[];
+function dayComplete(iso, logsMap, awMap){
+  logsMap=logsMap||logsByDate; awMap=awMap||engAssignedByDate;
+  const wl=awMap[iso]||[];
   const pendingWorkout=wl.some(a=>a.status==="assigned");
-  return macrosLogged(logsByDate[iso]) && !pendingWorkout;
+  return macrosLogged(logsMap[iso]) && !pendingWorkout;
 }
 // A day is a MISSED-workout day when it's in the past and has a workout still 'assigned'.
-function dayMissedWorkout(iso){
+function dayMissedWorkout(iso, awMap){
+  awMap=awMap||engAssignedByDate;
   const today=todayISO();
   if(iso>=today)return false;
-  const wl=engAssignedByDate[iso]||[];
+  const wl=awMap[iso]||[];
   return wl.some(a=>a.status==="assigned");
 }
 function addDaysISO(iso,delta){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+delta); return isoOf(dt); }
@@ -1057,21 +1059,24 @@ function addDaysISO(iso,delta){ const [y,m,d]=iso.split("-").map(Number); const 
    (today, or the nearest complete day if today isn't done), extending BOTH
    directions so future-dated complete days (e.g. logged ahead) still count.
    - a single missed-workout day at the trailing boundary => danger (reinstatable)
-   - two consecutive missed-workout days => broken (reset to 0) */
-function computeStreak(){
+   - two consecutive missed-workout days => broken (reset to 0)
+   Accepts optional maps so the coach view can compute a trainee's streak with
+   the SAME definition the trainee sees, without touching global state. */
+function computeStreak(logsMap, awMap){
+  logsMap=logsMap||logsByDate; awMap=awMap||engAssignedByDate;
   const today=todayISO();
   // pick an anchor that is a complete day: prefer today, else yesterday, else tomorrow
   let anchor=null;
   for(const cand of [today, addDaysISO(today,-1), addDaysISO(today,1)]){
-    if(dayComplete(cand)){ anchor=cand; break; }
+    if(dayComplete(cand,logsMap,awMap)){ anchor=cand; break; }
   }
   // trailing-boundary danger/broken check (looking back from today)
   let danger=false;
   { let c=today, misses=0, g=0;
     // if today itself isn't complete, inspect the immediate past for missed workouts
     while(g++<7){
-      if(dayComplete(c)){ break; }
-      if(dayMissedWorkout(c)){ misses++; if(misses>=2) return {count:0,danger:false,broken:true}; c=addDaysISO(c,-1); continue; }
+      if(dayComplete(c,logsMap,awMap)){ break; }
+      if(dayMissedWorkout(c,awMap)){ misses++; if(misses>=2) return {count:0,danger:false,broken:true}; c=addDaysISO(c,-1); continue; }
       break;
     }
     if(misses===1) danger=true;
@@ -1080,10 +1085,10 @@ function computeStreak(){
   // count backwards from anchor (stop at first non-complete, or a missed-workout boundary handled above)
   let count=0, cur=anchor;
   let guard=0;
-  while(guard++<400 && dayComplete(cur)){ count++; cur=addDaysISO(cur,-1); }
+  while(guard++<400 && dayComplete(cur,logsMap,awMap)){ count++; cur=addDaysISO(cur,-1); }
   // count forwards from the day after anchor
   cur=addDaysISO(anchor,1); guard=0;
-  while(guard++<400 && dayComplete(cur)){ count++; cur=addDaysISO(cur,1); }
+  while(guard++<400 && dayComplete(cur,logsMap,awMap)){ count++; cur=addDaysISO(cur,1); }
   return {count, danger, broken:false};
 }
 function updateStreakBadge(info){
@@ -1571,7 +1576,10 @@ async function renderCoachTrainees(el){
       const lastDone=doneDates.length?doneDates[doneDates.length-1]:null;
       const daysSince=lastDone?Math.round((new Date(today)-new Date(lastDone))/(24*3600*1000)):null;
       const pendingReview=aw.filter(a=>a.status==="submitted").length;
-      const streak=streakForLogs(logs);
+      // streak: use the SAME definition the trainee sees (macros logged + no still-assigned workout)
+      const logsMap={}; for(const l of logs) logsMap[l.log_date]=l;
+      const awMap={}; for(const a of aw){ const dt=a.due_date||isoOf(new Date(a.created_at||Date.now())); (awMap[dt]=awMap[dt]||[]).push(a); }
+      const streak=computeStreak(logsMap,awMap).count;
       rows.push({e,prof:profs[e.trainee_id]||{},daysSince,pendingReview,streak});
     }
   }catch(err){ console.error("coach trainees",err); return; }
@@ -1602,17 +1610,6 @@ async function renderCoachTrainees(el){
     openEngagement(row.getAttribute("data-eng"));
   }));
   el.querySelectorAll("[data-rev-eng]").forEach(b=>b.addEventListener("click",()=>openEngagement(b.getAttribute("data-rev-eng"))));
-}
-/* Lightweight streak count from a trainee's logs (macros logged on consecutive
-   days up to today). Mirrors computeStreak's "full days logged" idea. */
-function streakForLogs(logs){
-  const byDate={}; for(const l of logs) byDate[l.log_date]=l;
-  const done=iso=>{ const l=byDate[iso]; return !!(l && (l.protein_g!=null||l.carbs_g!=null||l.fat_g!=null)); };
-  let anchor=todayISO();
-  if(!done(anchor)){ const y=addDaysISO(anchor,-1); if(done(y)) anchor=y; else return 0; }
-  let n=0, cur=anchor;
-  while(done(cur)){ n++; cur=addDaysISO(cur,-1); }
-  return n;
 }
 /* Trainee homepage: on Saturdays, prompt for the weekly check-in photo
    (hidden if today isn't Saturday or this Saturday is already done). */
