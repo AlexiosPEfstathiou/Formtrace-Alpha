@@ -21,6 +21,12 @@ create table if not exists public.legacy_auto_grades (
   archived_at   timestamptz not null default now()
 );
 
+-- Admin-only archive. RLS ON with NO policies = no client can read it through
+-- the REST API (the anon key is public), while the SQL editor and service role
+-- still see everything because they bypass RLS. Without this the archived
+-- reports would be world-readable.
+alter table public.legacy_auto_grades enable row level security;
+
 -- archive once (safe to re-run; will not duplicate)
 insert into public.legacy_auto_grades (submission_id, report)
 select s.id, s.report
