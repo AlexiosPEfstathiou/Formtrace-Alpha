@@ -24,8 +24,14 @@ create table if not exists public.measurements (
   unique (trainee_id, measured_on)
 );
 
--- if the table already existed from an earlier attempt, add the new column
-alter table public.measurements add column if not exists neck_cm numeric;
+-- Safe to re-run: if the table was created from an earlier five-column version
+-- of this file, this adds the missing neck column instead of failing.
+alter table public.measurements add column if not exists neck_cm   numeric;
+alter table public.measurements add column if not exists chest_cm  numeric;
+alter table public.measurements add column if not exists biceps_cm numeric;
+alter table public.measurements add column if not exists waist_cm  numeric;
+alter table public.measurements add column if not exists hips_cm   numeric;
+alter table public.measurements add column if not exists thighs_cm numeric;
 
 alter table public.measurements enable row level security;
 
