@@ -168,6 +168,7 @@
     dayNotes: table("day_notes"),
     checkins: table("checkins"),
     setLabels: table("set_labels"),
+    measurements: table("measurements"),
 
     // convenience: browse coaches for the marketplace
     async coaches() {

@@ -627,6 +627,16 @@
   /* timelapse play button on the dashboard check-in card */
   .tl-play{background:var(--lime);color:var(--lime-ink);border:none;border-radius:9px;padding:6px 11px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:none;cursor:pointer;flex-shrink:0;}
   .tl-play:active{transform:scale(.96);}
+  /* body-measurement small multiples on the dashboard */
+  .ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .ms-mini{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:11px 12px 9px;}
+  .ms-mini:nth-child(5){grid-column:1 / -1;}
+  .ms-lab{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .ms-val{font-size:22px;font-weight:800;color:var(--ink);line-height:1.1;margin-top:3px;font-variant-numeric:tabular-nums;}
+  .ms-val span{font-size:11px;font-weight:700;color:var(--faint);margin-left:3px;}
+  .ms-delta{font-size:11.5px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;}
+  .ms-empty{font-size:20px;color:var(--faint);margin-top:6px;}
+  .ms-single{font-size:10.5px;color:var(--faint);height:34px;display:flex;align-items:center;}
   /* appearance: theme segmented control + colorblind switch */
   .theme-seg button{font-size:12.5px;}
   .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
@@ -688,6 +698,7 @@
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
+      <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
   </section>
 
@@ -1559,10 +1570,10 @@ async function renderHome(){
   const base = ME && ME.role==="coach" ? "coach" : "trainee";
   const name=ME?ME.display_name||"there":"there";
   const firstName=escapeHtml(name.split(" ")[0]);
-  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin"), reviewsEl=$("#home-reviews"), coachEl=$("#home-coach");
+  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin"), reviewsEl=$("#home-reviews"), coachEl=$("#home-coach"), measureEl=$("#home-measure");
   // default (coach) hero; trainee hero is customised below
   $("#home-h").innerHTML=`Hi ${firstName}.<br><span class="g">What's the plan today?</span>`;
-  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none";
+  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none"; measureEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -1576,6 +1587,7 @@ async function renderHome(){
     await renderHomeReviews(engs, reviewsEl);
     await renderHomeMacro(macroEl);
     await renderHomeCheckin(checkinEl);
+    await renderHomeMeasure(measureEl);
   }else{
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
@@ -1802,6 +1814,123 @@ async function renderHomeCheckin(el){
     <div class="ci-arw">›</div>`;
   el.style.display="";
   el.onclick=()=>startCheckin(iso);
+}
+/* ---- quarterly body measurements ---- */
+const MEASURES=[
+  {k:"waist_cm",  label:"Waist"},
+  {k:"chest_cm",  label:"Chest"},
+  {k:"biceps_cm", label:"Biceps"},
+  {k:"thighs_cm", label:"Thighs"},
+  {k:"hips_cm",   label:"Hips"}
+];
+function quarterStartISO(d=new Date()){ const q=Math.floor(d.getMonth()/3); return isoOf(new Date(d.getFullYear(),q*3,1)); }
+function quarterLabel(iso){ const [y,m]=iso.split("-").map(Number); return "Q"+(Math.floor((m-1)/3)+1)+" "+y; }
+/* Prompt once per calendar quarter until measurements for it are recorded. */
+async function renderHomeMeasure(el){
+  el.style.display="none"; el.innerHTML="";
+  const qs=quarterStartISO();
+  let done=false;
+  try{
+    const rows=await store.measurements.list({trainee_id:ME.id});
+    done=rows.some(r=>r.measured_on>=qs);
+  }catch(e){ console.error("measurements load (run migrations_measurements.sql)",e); return; }
+  if(done) return;
+  el.innerHTML=`<div class="ci-ic">📐</div>
+    <div class="ci-main"><div class="t">${quarterLabel(qs)} measurements</div><div class="s">New quarter — log your waist, chest, biceps, thighs and hips.</div></div>
+    <div class="ci-arw">›</div>`;
+  el.style.display="";
+  el.onclick=()=>openMeasureSheet();
+}
+/* Entry sheet for a set of body measurements (centimetres). */
+function openMeasureSheet(iso){
+  const dateISO=iso||todayISO();
+  measureDate=dateISO;   // tells the shared sheet button which action to run
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Body measurements";
+  $("#sheet-add").style.display="";
+  $("#sheet-add").textContent="Save measurements";
+  $("#sheet-add").disabled=false;
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">All in centimetres. Leave any blank if you didn't measure it.</div>`;
+  MEASURES.forEach(m=>{
+    const row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)";
+    row.innerHTML=`<label for="ms-${m.k}" style="flex:1;font-size:14px;font-weight:600;color:var(--ink)">${m.label}</label>
+      <input id="ms-${m.k}" type="number" inputmode="decimal" min="0" step="any" placeholder="cm"
+        style="width:110px;height:44px;background:var(--panel2);border:1px solid var(--line2);border-radius:11px;color:var(--ink);font-size:16px;text-align:center;outline:none">`;
+    wrap.appendChild(row);
+  });
+  body.appendChild(wrap);
+  // prefill if this date already has a row
+  (async()=>{
+    try{
+      const existing=(await store.measurements.list({trainee_id:ME.id,measured_on:dateISO}))[0];
+      if(existing) MEASURES.forEach(m=>{ if(existing[m.k]!=null) $("#ms-"+m.k).value=existing[m.k]; });
+    }catch(e){}
+  })();
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+async function saveMeasurements(dateISO){
+  const patch={};
+  let any=false;
+  MEASURES.forEach(m=>{
+    const s=($("#ms-"+m.k)?.value||"").trim();
+    if(s===""){ patch[m.k]=null; return; }
+    const v=Number(s);
+    if(Number.isFinite(v)&&v>0){ patch[m.k]=v; any=true; } else patch[m.k]=null;
+  });
+  if(!any){ toast("Enter at least one measurement"); return; }
+  const btn=$("#sheet-add");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+  try{
+    const existing=(await store.measurements.list({trainee_id:ME.id,measured_on:dateISO}))[0];
+    if(existing) await store.measurements.update(existing.id,patch);
+    else await store.measurements.add({trainee_id:ME.id,measured_on:dateISO,...patch});
+    closeSheet();
+    toast("Measurements saved ✓");
+    if($("#s-home")?.classList.contains("active")) renderHomeMeasure($("#home-measure"));
+    else if($("#s-engagement")?.classList.contains("active")) renderEngagement();
+  }catch(err){
+    console.error(err);
+    toast(err.message||"Couldn't save measurements",4000);
+    btn.disabled=false;btn.textContent=o;
+  }
+}
+/* One mini card per circumference: sparkline + latest value + change since the
+   first entry. Small multiples beat five overlapping lines on a phone, and each
+   metric keeps its own scale so a 2cm waist change stays visible next to a
+   100cm chest. Straight segments only — no interpolation implied. */
+function measureMini(label,pts){
+  const cs=getComputedStyle(document.documentElement);
+  const col=(cs.getPropertyValue("--ch-weight")||"#B79CFF").trim();
+  const el=document.createElement("div");el.className="ms-mini";
+  if(!pts.length){
+    el.innerHTML=`<div class="ms-lab">${escapeHtml(label)}</div><div class="ms-empty">—</div>`;
+    return el;
+  }
+  const last=pts[pts.length-1].v;
+  const delta=pts.length>1?(last-pts[0].v):null;
+  const dTxt=delta==null?"first entry":((delta>0?"+":"")+delta.toFixed(1)+" cm");
+  // shrinking is green for waist/hips, growing is green elsewhere? That is a
+  // judgement about the trainee's goal we do not know, so stay neutral.
+  const dCol=delta==null?"var(--faint)":(Math.abs(delta)<0.05?"var(--muted)":"var(--ink)");
+  let svg="";
+  if(pts.length>1){
+    const W=140,H=34,pad=3;
+    const vs=pts.map(p=>p.v);const lo=Math.min(...vs),hi=Math.max(...vs);const span=(hi-lo)||1;
+    const X=i=>pad+(i/(pts.length-1))*(W-pad*2);
+    const Y=v=>pad+(1-(v-lo)/span)*(H-pad*2);
+    let d="";pts.forEach((p,i)=>{ d+=(i===0?"M":"L")+X(i).toFixed(1)+" "+Y(p.v).toFixed(1)+" "; });
+    svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px">
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${X(pts.length-1).toFixed(1)}" cy="${Y(last).toFixed(1)}" r="2.6" fill="${col}"/></svg>`;
+  }else{
+    svg=`<div class="ms-single">single entry</div>`;
+  }
+  el.innerHTML=`<div class="ms-lab">${escapeHtml(label)}</div>
+    <div class="ms-val">${last}<span>cm</span></div>
+    ${svg}
+    <div class="ms-delta" style="color:${dCol}">${dTxt}</div>`;
+  return el;
 }
 /* Coach homepage: pending reviews + trainees awaiting assignment */
 async function renderCoachHome(el){
@@ -2041,10 +2170,12 @@ function openSheet(){
 }
 function updateSheetBtn(){ $("#sheet-add").textContent=sheetSel.size?`Add ${sheetSel.size} exercise${sheetSel.size>1?"s":""}`:"Add selected"; $("#sheet-add").disabled=!sheetSel.size; }
 let macroLogDate=null;
-function closeSheet(){ $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on"); macroLogDate=null; }
+let measureDate=null;
+function closeSheet(){ $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on"); macroLogDate=null; measureDate=null; }
 $("#sheet-close").addEventListener("click",closeSheet);
 $("#sheet-scrim").addEventListener("click",closeSheet);
 $("#sheet-add").addEventListener("click",()=>{
+  if(measureDate){ saveMeasurements(measureDate); return; }
   if(macroLogDate){ saveMacroLog(); return; }
   for(const id of sheetSel) builder.items.push({exercise_id:id,sets:3,reps:10});
   closeSheet(); renderBuilderItems();
@@ -2838,8 +2969,36 @@ function renderDashboard(container, iAmCoach){
   ciCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Weekly check-ins</span><button id="dash-tl-play" class="tl-play" style="display:none">▶ Play timelapse</button></div><div id="dash-checkins" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
   wrap.appendChild(ciCard);
 
+  // ---- body measurements over time ----
+  const msCard=document.createElement("div");msCard.className="card";msCard.style.padding="16px 14px";
+  msCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Body measurements (cm)</span>${iAmCoach?"":`<button id="dash-ms-add" class="tl-play">＋ Log</button>`}</div>
+    <div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">Quarterly · change since first entry</div>
+    <div id="dash-measures"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
+  wrap.appendChild(msCard);
+
   container.appendChild(wrap);
   seg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{dashMode=b.getAttribute("data-dm");renderEngagement();}));
+
+  // load body measurements async
+  (async()=>{
+    const box=$("#dash-measures"); if(!box)return;
+    const addBtn=$("#dash-ms-add"); if(addBtn) addBtn.onclick=()=>openMeasureSheet();
+    try{
+      const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
+      const rows=(await store.measurements.list({trainee_id:traineeId})).sort((a,b)=>a.measured_on<b.measured_on?-1:1);
+      if(!rows.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">${iAmCoach?"No measurements logged yet.":"Nothing logged yet — tap ＋ Log to add this quarter's."}</div>`; return; }
+      box.innerHTML="";
+      const grid=document.createElement("div");grid.className="ms-grid";
+      for(const m of MEASURES){
+        const pts=rows.filter(r=>r[m.k]!=null).map(r=>({d:r.measured_on,v:Number(r[m.k])}));
+        grid.appendChild(measureMini(m.label,pts));
+      }
+      box.appendChild(grid);
+    }catch(e){
+      console.error("measurements",e);
+      box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load measurements.</div>`;
+    }
+  })();
 
   // load check-in photos async
   (async()=>{
