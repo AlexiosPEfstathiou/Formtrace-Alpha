@@ -154,6 +154,21 @@
   .ct-streak{font-size:13px;font-weight:800;color:var(--ink);flex-shrink:0;font-variant-numeric:tabular-nums;}
   .ct-rev{flex-shrink:0;background:var(--lime);color:var(--lime-ink);border:none;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;}
   .ct-chev{color:var(--faint);font-size:17px;flex-shrink:0;}
+  /* coach homepage: trainee activity feed */
+  .home-news{margin-top:18px;}
+  .home-news .nw-title{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:10px;}
+  .home-news .nw-list{display:flex;flex-direction:column;gap:6px;}
+  .nw-row{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;}
+  .nw-row:active{transform:scale(.995);}
+  .nw-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--panel2);}
+  .nw-ic.nw-missed{background:rgba(255,90,90,.16);}
+  .nw-ic.nw-done{background:rgba(200,255,61,.16);}
+  .nw-ic.nw-photo{background:rgba(90,176,255,.16);}
+  .nw-ic.nw-macro{background:rgba(183,156,255,.16);}
+  .nw-main{flex:1;min-width:0;}
+  .nw-t{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .nw-d{font-size:11px;color:var(--faint);margin-top:1px;}
+  .nw-chev{color:var(--faint);font-size:16px;flex-shrink:0;}
   .roles{padding:0 22px calc(env(safe-area-inset-bottom) + 26px);display:flex;flex-direction:column;gap:12px;}
   .role{position:relative;border-radius:20px;padding:20px;cursor:pointer;border:1px solid var(--line);
     background:var(--panel);display:flex;align-items:center;gap:16px;transition:transform .12s,border-color .15s,background .15s;}
@@ -630,7 +645,6 @@
   /* body-measurement small multiples on the dashboard */
   .ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .ms-mini{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:11px 12px 9px;}
-  .ms-mini:nth-child(5){grid-column:1 / -1;}
   .ms-lab{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
   .ms-val{font-size:22px;font-weight:800;color:var(--ink);line-height:1.1;margin-top:3px;font-variant-numeric:tabular-nums;}
   .ms-val span{font-size:11px;font-weight:700;color:var(--faint);margin-left:3px;}
@@ -709,6 +723,7 @@
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
+      <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-measure" class="home-checkin" style="display:none"></div>
@@ -1663,10 +1678,10 @@ async function renderHome(){
   const base = ME && ME.role==="coach" ? "coach" : "trainee";
   const name=ME?ME.display_name||"there":"there";
   const firstName=escapeHtml(name.split(" ")[0]);
-  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin"), reviewsEl=$("#home-reviews"), coachEl=$("#home-coach"), measureEl=$("#home-measure");
+  const todayEl=$("#home-today"), macroEl=$("#home-macro"), checkinEl=$("#home-checkin"), reviewsEl=$("#home-reviews"), coachEl=$("#home-coach"), measureEl=$("#home-measure"), newsEl=$("#home-news");
   // default (coach) hero; trainee hero is customised below
   $("#home-h").innerHTML=`Hi ${firstName}.<br><span class="g">What's the plan today?</span>`;
-  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none"; measureEl.style.display="none";
+  todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none"; measureEl.style.display="none"; newsEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -1685,7 +1700,7 @@ async function renderHome(){
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
     await renderCoachHome(todayEl);
-    await renderCoachTrainees(coachEl);
+    await renderCoachTrainees(coachEl,newsEl);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
   }
@@ -1838,42 +1853,67 @@ async function renderHomeReviews(engs, el){
   el.style.display="";
   el.querySelectorAll("[data-rev]").forEach(b=>b.addEventListener("click",()=>openReview(b.getAttribute("data-rev"),true)));
 }
-/* Coach homepage: active trainees with streak + days since last workout,
-   plus a quick-access review icon; each row opens that trainee's dashboard. */
-async function renderCoachTrainees(el){
+/* Coach homepage: active trainees with streak + days since last ASSIGNED
+   workout, plus a quick-access review icon. Also builds the activity feed
+   from the same data pass so we don't query twice. */
+async function renderCoachTrainees(el,newsEl){
   el.style.display="none"; el.innerHTML="";
-  let rows=[];
+  if(newsEl){ newsEl.style.display="none"; newsEl.innerHTML=""; }
+  let rows=[], events=[];
   try{
     const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
     if(!engs.length) return;
     // trainee profiles
     const profs={};
     for(const e of engs){ if(!profs[e.trainee_id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",e.trainee_id).single(); if(data)profs[e.trainee_id]=data; }catch(_){}} }
-    const today=todayISO();
+    const today=todayISO(), since=addDaysISO(today,-7);
     for(const e of engs){
-      const aw=await store.assignedWorkouts.list({engagement_id:e.id});
-      // days since last COMPLETED (submitted/reviewed) workout in THIS engagement
-      const doneDates=aw.filter(a=>a.status==="submitted"||a.status==="reviewed")
-        .map(a=>a.due_date||isoOf(new Date(a.created_at||Date.now()))).sort();
-      const lastDone=doneDates.length?doneDates[doneDates.length-1]:null;
-      const daysSince=lastDone?Math.round((new Date(today)-new Date(lastDone))/(24*3600*1000)):null;
+      // one pass per trainee feeds BOTH the list and the news feed
+      const [aw,logs,cis]=await Promise.all([
+        store.assignedWorkouts.list({engagement_id:e.id}),
+        store.logs.list({trainee_id:e.trainee_id}).catch(()=>[]),
+        store.checkins.list({trainee_id:e.trainee_id}).catch(()=>[])
+      ]);
+      const dateOf=a=>a.due_date||isoOf(new Date(a.created_at||Date.now()));
+      // days since the coach last ASSIGNED anything (their own accountability)
+      const allDates=aw.map(dateOf).sort();
+      const lastAssigned=allDates.length?allDates[allDates.length-1]:null;
+      const dAssigned=lastAssigned?Math.round((new Date(today)-new Date(lastAssigned))/(24*3600*1000)):null;
       const pendingReview=aw.filter(a=>a.status==="submitted").length;
-      // streak is the trainee's authoritative value (persisted by them; spans all
-      // their goals which the coach can't fully see) — read it, never recompute.
       const streak=(profs[e.trainee_id]||{}).streak_count||0;
-      rows.push({e,prof:profs[e.trainee_id]||{},daysSince,pendingReview,streak});
+      const nm=(profs[e.trainee_id]||{}).display_name||"Trainee";
+      rows.push({e,prof:profs[e.trainee_id]||{},lastAssigned,dAssigned,pendingReview,streak});
+
+      // ---- news events, last 7 days ----
+      for(const a of aw){
+        const d=dateOf(a);
+        if(d<since||d>today)continue;
+        if(a.status==="assigned"&&d<today) events.push({d,eng:e.id,nm,iso:d,kind:"missed",ic:"⚠",txt:`${nm} missed a workout`});
+        else if(a.status==="submitted") events.push({d,eng:e.id,nm,iso:d,kind:"done",ic:"✓",txt:`${nm} completed a workout`});
+      }
+      for(const l of logs){
+        if(l.log_date<since||l.log_date>today)continue;
+        if(macrosLogged(l)) events.push({d:l.log_date,eng:e.id,nm,iso:l.log_date,kind:"macro",ic:"🍽",txt:`${nm} logged macros`});
+      }
+      for(const c of cis){
+        if(c.checkin_date<since||c.checkin_date>today)continue;
+        events.push({d:c.checkin_date,eng:e.id,nm,iso:c.checkin_date,kind:"photo",ic:"📷",txt:`${nm} posted a check-in photo`});
+      }
     }
   }catch(err){ console.error("coach trainees",err); return; }
+  renderCoachNews(newsEl,events);
   if(!rows.length) return;
-  // most attention-needed first: pending reviews, then longest gap
-  rows.sort((a,b)=>(b.pendingReview-a.pendingReview) || ((b.daysSince??-1)-(a.daysSince??-1)));
+  // most attention-needed first: pending reviews, then longest since assigned
+  rows.sort((a,b)=>(b.pendingReview-a.pendingReview) || ((b.dAssigned??-99)-(a.dAssigned??-99)));
   const card=rows.map(r=>{
     const nm=r.prof.display_name||"Trainee";
     const init=r.prof.avatar_initials||initials(nm);
-    const gapTxt = r.daysSince==null ? "No workouts yet"
-      : r.daysSince===0 ? "Trained today"
-      : `${r.daysSince}d since last workout`;
-    const gapCls = (r.daysSince!=null && r.daysSince>=4) ? "ct-stale" : "";
+    const d=r.dAssigned;
+    const gapTxt = d==null ? "No workouts assigned"
+      : d<0 ? `Next ${fmtDay(r.lastAssigned)}`
+      : d===0 ? "Assigned for today"
+      : `${d}d since last assigned`;
+    const gapCls = (d!=null && d>=4) ? "ct-stale" : "";
     const streakTxt = r.streak>0?`🔥 ${r.streak}`:"·";
     const rev = r.pendingReview>0 ? `<button class="ct-rev" data-rev-eng="${r.e.id}" title="${r.pendingReview} to review">▶ ${r.pendingReview}</button>` : "";
     return `<div class="ct-row" data-eng="${r.e.id}">
@@ -1891,6 +1931,35 @@ async function renderCoachTrainees(el){
     openEngagement(row.getAttribute("data-eng"));
   }));
   el.querySelectorAll("[data-rev-eng]").forEach(b=>b.addEventListener("click",()=>openEngagement(b.getAttribute("data-rev-eng"))));
+}
+/* Coach homepage: a short activity feed across all active trainees, newest
+   first. Each row opens that trainee's training day. */
+function renderCoachNews(el,events){
+  if(!el)return;
+  el.style.display="none"; el.innerHTML="";
+  if(!events||!events.length)return;
+  // newest first, most urgent kind wins on the same day
+  const order={missed:0,done:1,photo:2,macro:3};
+  events.sort((a,b)=> (a.d<b.d?1:a.d>b.d?-1:0) || ((order[a.kind]??9)-(order[b.kind]??9)) );
+  const shown=events.slice(0,10);
+  const rowsHtml=shown.map((v,i)=>`<div class="nw-row" data-nw="${i}">
+      <div class="nw-ic nw-${v.kind}">${v.ic}</div>
+      <div class="nw-main"><div class="nw-t">${escapeHtml(v.txt)}</div><div class="nw-d">${escapeHtml(fmtDay(v.d))}</div></div>
+      <div class="nw-chev">›</div>
+    </div>`).join("");
+  el.innerHTML=`<div class="nw-title">Trainee activity</div><div class="nw-list">${rowsHtml}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-nw]").forEach(row=>row.addEventListener("click",()=>{
+    const v=shown[+row.getAttribute("data-nw")]; if(!v)return;
+    feedOpenDay(v.eng,v.iso);
+  }));
+}
+/* Jump straight to a trainee's specific training day from the feed. */
+async function feedOpenDay(engId,iso){
+  try{
+    await openEngagement(engId);
+    if(iso) await openEngDay(iso);
+  }catch(e){ console.error("feed open day",e); toast("Couldn't open that day",3000); }
 }
 /* Trainee homepage: on Saturdays, prompt for the weekly check-in photo
    (hidden if today isn't Saturday or this Saturday is already done). */
@@ -1910,11 +1979,12 @@ async function renderHomeCheckin(el){
 }
 /* ---- quarterly body measurements ---- */
 const MEASURES=[
-  {k:"waist_cm",  label:"Waist"},
+  {k:"neck_cm",   label:"Neck"},
   {k:"chest_cm",  label:"Chest"},
   {k:"biceps_cm", label:"Biceps"},
-  {k:"thighs_cm", label:"Thighs"},
-  {k:"hips_cm",   label:"Hips"}
+  {k:"waist_cm",  label:"Waist"},
+  {k:"hips_cm",   label:"Hips"},
+  {k:"thighs_cm", label:"Thighs"}
 ];
 function quarterStartISO(d=new Date()){ const q=Math.floor(d.getMonth()/3); return isoOf(new Date(d.getFullYear(),q*3,1)); }
 function quarterLabel(iso){ const [y,m]=iso.split("-").map(Number); return "Q"+(Math.floor((m-1)/3)+1)+" "+y; }
@@ -1929,7 +1999,7 @@ async function renderHomeMeasure(el){
   }catch(e){ console.error("measurements load (run migrations_measurements.sql)",e); return; }
   if(done) return;
   el.innerHTML=`<div class="ci-ic">📐</div>
-    <div class="ci-main"><div class="t">${quarterLabel(qs)} measurements</div><div class="s">New quarter — log your waist, chest, biceps, thighs and hips.</div></div>
+    <div class="ci-main"><div class="t">${quarterLabel(qs)} measurements</div><div class="s">New quarter — log your neck, chest, biceps, waist, hips and thighs.</div></div>
     <div class="ci-arw">›</div>`;
   el.style.display="";
   el.onclick=()=>openMeasureSheet();
