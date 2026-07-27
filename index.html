@@ -1323,7 +1323,10 @@ function isAdmin(){ return !!(ME && ME.is_admin); }
 
 let navStack=[];        // in-app screen history for the device back button
 let _navSuppress=false;  // true when go() is triggered by a popstate (don't re-push)
+let tlTimer=null;        // timelapse playback interval (declared early: go() clears it)
 function go(name){
+  // the timelapse is shown outside go(), so stop its playback on any navigation
+  if(tlTimer){ clearInterval(tlTimer); tlTimer=null; }
   if(name==="ex-edit-new"){ openExEditor(null); name="ex-edit"; }
   if(name==="wo-build-new"){ openBuilder(null); name="wo-build"; }
   if(name==="listing-new"){ openListingNew(); name="listing-new"; }
@@ -2828,8 +2831,7 @@ function renderDashboard(container, iAmCoach){
       if(playBtn && cis.length>=2){
         playBtn.style.display="";
         playBtn.onclick=()=>openTimelapse(traineeId,{
-          intro:`${cis.length} check-ins, played back in order.`,
-          onDone:()=>openEngagement(currentEng.id)
+          intro:`${cis.length} check-ins, played back in order.`
         });
       }
       box.innerHTML="";
@@ -3634,7 +3636,6 @@ function celebrationBurst(){
    it read as video rather than a stuttering gallery — at 4fps there is no time
    to fetch a signed URL or decode a JPEG mid-playback. */
 const TL_FRAME_MS=250;
-let tlTimer=null;
 function tlPreload(url){
   return new Promise(res=>{
     if(!url)return res(null);
@@ -3644,13 +3645,26 @@ function tlPreload(url){
     img.src=url;
   });
 }
+/* Leave the timelapse safely. In merged-calendar mode currentEng is null, so a
+   naive openEngagement(currentEng.id) threw and made Back/Done appear dead.
+   Try the caller's onDone, then fall back to a route that always exists. */
+function tlExit(onDone){
+  if(tlTimer){ clearInterval(tlTimer); tlTimer=null; }
+  if(onDone){
+    try{ onDone(); return; }
+    catch(e){ console.error("timelapse onDone failed",e); }
+  }
+  try{
+    if(!traineeMerged && currentEng && currentEng.id){ openEngagement(currentEng.id); return; }
+  }catch(e){ console.error("timelapse exit",e); }
+  go("trainee-home");
+}
 async function openTimelapse(traineeId,{intro,onDone}={}){
   const wrap=$("#tl-wrap"),bar=$("#tl-bar"),lenEl=$("#tl-len"),replay=$("#tl-replay");
   $("#tl-intro").textContent=intro||"Weekly check-ins, played back.";
   bar.innerHTML=""; lenEl.textContent=""; replay.style.display="none";
-  const finish=()=>{ clearInterval(tlTimer); (onDone||(()=>openEngagement(currentEng.id)))(); };
-  $("#tl-done").onclick=finish;
-  $("#tl-back").onclick=finish;
+  $("#tl-done").onclick=()=>tlExit(onDone);
+  $("#tl-back").onclick=()=>tlExit(onDone);
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-timelapse").classList.add("active");
 
   const msg=t=>{ wrap.innerHTML=`<div class="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px;text-align:center;padding:0 30px">${t}</div>`; };
