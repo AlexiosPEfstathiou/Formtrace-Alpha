@@ -637,6 +637,19 @@
   .ms-delta{font-size:11.5px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;}
   .ms-empty{font-size:20px;color:var(--faint);margin-top:6px;}
   .ms-single{font-size:10.5px;color:var(--faint);height:34px;display:flex;align-items:center;}
+  /* touchless capture: tool row + shared 3-2-1 countdown */
+  .captools{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 118px);z-index:4;display:flex;gap:8px;justify-content:center;padding:0 18px;}
+  .captool{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px);}
+  .captool:active{transform:scale(.96);}
+  .captool.on{background:var(--lime);border-color:var(--lime);color:var(--lime-ink);}
+  #countdown{position:absolute;inset:0;z-index:95;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
+  #countdown.on{display:flex;}
+  #countdown .cd-n{font-size:132px;line-height:1;font-weight:800;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.6);font-variant-numeric:tabular-nums;}
+  #countdown .cd-n.pop{animation:cdpop .5s cubic-bezier(.2,.9,.2,1);}
+  @keyframes cdpop{0%{transform:scale(.55);opacity:.2;}60%{transform:scale(1.06);opacity:1;}100%{transform:scale(1);}}
+  #countdown .cd-s{font-size:14px;color:rgba(255,255,255,.85);font-weight:600;text-align:center;padding:0 30px;}
+  #countdown .cd-x{margin-top:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;}
+  @media(prefers-reduced-motion:reduce){#countdown .cd-n.pop{animation:none;}}
   /* appearance: theme segmented control + colorblind switch */
   .theme-seg button{font-size:12.5px;}
   .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
@@ -998,6 +1011,10 @@
       <button id="rbtn" disabled></button>
       <button class="rside" id="r-ghost"><span class="i">◉</span>Lines</button>
     </div>
+    <div class="captools" id="r-tools">
+      <button class="captool" id="r-timer">⏱ 3s timer</button>
+      <button class="captool" id="r-hand">✋ Touchless</button>
+    </div>
     <div id="rreview">
       <div class="row"><button class="btn primary" id="r-use">✓ Use this trace</button></div>
       <div class="row"><button class="btn sm" id="r-retake" style="flex:1">↺ Retake</button><button class="btn sm" id="r-preview" style="flex:1">▶ Replay</button></div>
@@ -1082,6 +1099,10 @@
     <div class="pc-ctrls" id="pc-ctrls">
       <button class="pc-shoot" id="pc-shoot" aria-label="Take photo"></button>
     </div>
+    <div class="captools" id="pc-tools">
+      <button class="captool" id="pc-timer">⏱ 3s timer</button>
+      <button class="captool" id="pc-hand">✋ Touchless</button>
+    </div>
     <div class="pc-ctrls pc-review" id="pc-review" style="display:none">
       <button class="btn ghost" id="pc-retake">↺ Retake</button>
       <button class="btn primary" id="pc-use">✓ Use photo</button>
@@ -1089,6 +1110,9 @@
     <div class="pc-hint" id="pc-hint"></div>
   </div>
   <div id="toast"></div>
+
+  <!-- shared 3-2-1 countdown (above the recorder AND the check-in camera) -->
+  <div id="countdown"><div class="cd-n" id="cd-n">3</div><div class="cd-s" id="cd-s"></div><button class="cd-x" id="cd-cancel">Cancel</button></div>
 
   <!-- persistent app navigation (shown on every signed-in screen) -->
   <div class="tabbar home-nav" id="app-tabbar" style="display:none"></div>
@@ -1101,7 +1125,7 @@
 <script src="store.supabase.js"></script>
 
 <script type="module">
-import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+import { PoseLandmarker, GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 /* =========================================================================
    0. helpers
@@ -1233,6 +1257,75 @@ async function resetPoseEngine(){
   try{ await ensureModel(); console.warn("pose engine rebuilt"); }
   catch(e){ console.error("pose engine rebuild failed",e); }
 }
+
+/* =========================================================================
+   2b. Touchless capture — 3-2-1 timer + optional hand-signal trigger
+   ========================================================================= */
+const GESTURE_TRIGGER="Open_Palm";  // hold an open palm up to the camera
+const GESTURE_MIN=0.55;             // confidence floor
+const GESTURE_HOLD=5;               // consecutive hits before firing
+const GESTURE_EVERY=3;              // only look every Nth frame (keeps phones cool)
+let gestureRec=null, gestureTs=0, gestureHold=0, gestureLoading=false;
+function gestureEnabled(){ try{ return localStorage.getItem("ft-gesture")==="1"; }catch(e){ return false; } }
+function setGestureEnabled(on){
+  try{ localStorage.setItem("ft-gesture",on?"1":"0"); }catch(e){}
+  gestureHold=0;
+  if(on) ensureGesture();   // download the model in the background
+}
+/* The gesture model is a second, separate download — only fetch it once the
+   user actually turns touchless capture on. */
+async function ensureGesture(){
+  if(gestureRec||gestureLoading)return gestureRec;
+  gestureLoading=true;
+  try{
+    const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    gestureRec=await GestureRecognizer.createFromOptions(fileset,{
+      baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",delegate:"GPU"},
+      runningMode:"VIDEO",numHands:1});
+  }catch(e){ console.error("gesture model load failed",e); toast("Couldn't load hand detection",3600); }
+  finally{ gestureLoading=false; }
+  return gestureRec;
+}
+/* One detection pass. Same monotonic-timestamp discipline as the pose loop, and
+   never allowed to throw into the caller's animation frame. */
+function gestureTick(videoEl,onTrigger){
+  if(!gestureRec||!videoEl||videoEl.readyState<2)return;
+  gestureTs=Math.max(gestureTs+1, Math.round(performance.now()));
+  let g=null;
+  try{
+    const res=gestureRec.recognizeForVideo(videoEl,gestureTs);
+    g=res&&res.gestures&&res.gestures[0]&&res.gestures[0][0];
+  }catch(e){ gestureHold=0; return; }
+  if(g&&g.categoryName===GESTURE_TRIGGER&&g.score>=GESTURE_MIN){
+    gestureHold++;
+    if(gestureHold>=GESTURE_HOLD){ gestureHold=0; onTrigger(); }
+  }else{
+    gestureHold=0;
+  }
+}
+/* Shared 3-2-1 overlay. onFire runs when it reaches zero. */
+let cdTimer=null;
+function startCountdown(n,onFire,hint){
+  cancelCountdown();
+  const el=$("#countdown"), num=$("#cd-n"), sub=$("#cd-s");
+  if(!el){ onFire(); return; }
+  let k=n;
+  sub.textContent=hint||"";
+  num.textContent=k;
+  el.classList.add("on");
+  const bump=()=>{ num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop"); };
+  bump();
+  cdTimer=setInterval(()=>{
+    k--;
+    if(k<=0){ cancelCountdown(); try{ onFire(); }catch(e){ console.error("countdown fire",e); } return; }
+    num.textContent=k; bump();
+  },1000);
+}
+function cancelCountdown(){
+  if(cdTimer){ clearInterval(cdTimer); cdTimer=null; }
+  $("#countdown")?.classList.remove("on");
+}
+function countingDown(){ return !!cdTimer; }
 
 /* =========================================================================
    3. Skeleton renderer (FormTrace vocabulary)
@@ -3223,6 +3316,9 @@ async function pcOpenCam(){
     pcStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:pcFacing,width:{ideal:1080},height:{ideal:1440}},audio:false});
     const v=$("#pc-video");v.srcObject=pcStream;v.classList.toggle("mirror",pcFacing==="user");
     await v.play().catch(()=>{});
+    $("#pc-tools").style.display="flex"; syncCaptureTools();
+    if(gestureEnabled()) ensureGesture().then(syncCaptureTools);
+    if(!pcRAF) pcLoop();
   }catch(err){
     console.error(err);
     $("#pc-hint").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS. You can still pick a photo from your device.";
@@ -3231,7 +3327,32 @@ async function pcOpenCam(){
     setTimeout(()=>{ $("#checkin-input").value="";$("#checkin-input").click(); },300);
   }
 }
-function pcStopCam(){ if(pcStream){pcStream.getTracks().forEach(t=>t.stop());pcStream=null;} }
+function pcStopCam(){ if(pcStream){pcStream.getTracks().forEach(t=>t.stop());pcStream=null;} if(pcRAF){cancelAnimationFrame(pcRAF);pcRAF=null;} cancelCountdown(); }
+/* Touchless loop for the check-in camera. The photo screen has no pose loop of
+   its own, so this runs only while the camera is open and touchless is on. */
+let pcRAF=null, pcGFrame=0;
+function pcLoop(){
+  try{
+    const v=$("#pc-video");
+    const live = $("#photocap").classList.contains("on") && $("#pc-review").style.display==="none";
+    if(live && gestureEnabled() && gestureRec && v && v.readyState>=2 && !countingDown()){
+      pcGFrame=(pcGFrame+1)%GESTURE_EVERY;
+      if(pcGFrame===0) gestureTick(v,()=>startCountdown(3,()=>$("#pc-shoot").click(),"Photo in…"));
+    }
+  }catch(e){ console.error("pcLoop",e); }
+  finally{ pcRAF=requestAnimationFrame(pcLoop); }
+}
+$("#pc-timer").addEventListener("click",()=>{
+  if(countingDown()){ cancelCountdown(); return; }
+  startCountdown(3,()=>$("#pc-shoot").click(),"Photo in…");
+});
+$("#pc-hand").addEventListener("click",async()=>{
+  const on=!gestureEnabled();
+  setGestureEnabled(on);
+  syncCaptureTools();
+  if(on){ toast("Hold an open palm up to start",3600); await ensureGesture(); syncCaptureTools(); }
+  else{ cancelCountdown(); toast("Touchless off",1600); }
+});
 $("#pc-close").addEventListener("click",()=>{ pcStopCam(); $("#photocap").classList.remove("on"); checkinDate=null; });
 $("#pc-flip").addEventListener("click",()=>{ pcFacing=pcFacing==="user"?"environment":"user"; pcOpenCam(); });
 $("#pc-shoot").addEventListener("click",()=>{
@@ -3249,12 +3370,14 @@ $("#pc-shoot").addEventListener("click",()=>{
     const img=$("#pc-still");img.src=url;img.style.display="block";$("#pc-video").style.display="none";
     $("#pc-ctrls").style.display="none";$("#pc-review").style.display="flex";
     $("#pc-guide").classList.add("off");
+    $("#pc-tools").style.display="none";
   },"image/jpeg",0.82);
 });
 $("#pc-retake").addEventListener("click",()=>{
   pcBlob=null;$("#pc-still").style.display="none";$("#pc-video").style.display="block";
   $("#pc-review").style.display="none";$("#pc-ctrls").style.display="flex";
   $("#pc-guide").classList.remove("off");
+  $("#pc-tools").style.display="flex"; syncCaptureTools();
 });
 $("#pc-use").addEventListener("click",async()=>{
   const iso=checkinDate; if(!pcBlob||!iso)return;
@@ -4227,7 +4350,9 @@ async function openRecorder(opts){
   $("#rec").classList.add("on");
   rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";
   $("#r-deck").style.display="flex";$("#rreview").style.display="none";$("#r-stat").classList.remove("hidden");$("#r-spin").classList.remove("hidden");
+  $("#r-tools").style.display="none";   // shown only once the live camera is up
   $("#rbtn").disabled=true;$("#rbtn").classList.remove("rec");$("#rtimer").classList.remove("on");
+  cancelCountdown();
   if(recOpts.mode==="preview")return;
   $("#r-use").textContent=recOpts.useLabel||"✓ Use this trace";
   $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
@@ -4236,11 +4361,13 @@ async function openRecorder(opts){
     $("#r-statmsg").textContent="Starting camera…";
     await startCam();
     $("#r-stat").classList.add("hidden");$("#rbtn").disabled=false;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";
+    $("#r-tools").style.display="flex"; syncCaptureTools();
+    if(gestureEnabled()) ensureGesture().then(syncCaptureTools);
     rLoop();
   }catch(err){console.error(err);$("#r-spin").classList.add("hidden");
     $("#r-statmsg").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS (or localhost). Open this over https and retry.";}
 }
-function closeRecorder(){cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");}
+function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");}
 async function startCam(){
   if(rStream)rStream.getTracks().forEach(t=>t.stop());
   rStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:rFacing,width:{ideal:1280},height:{ideal:720}},audio:false});
@@ -4276,6 +4403,12 @@ function rLoop(){
           rctx.restore();
           if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
         }
+      }
+      // Touchless start. Only BEFORE recording, so a stray hand mid-set can
+      // never interrupt a take. Throttled to every Nth frame.
+      if(gestureEnabled()&&gestureRec&&!rRecording&&!countingDown()&&!$("#rbtn").disabled){
+        rGFrame=(rGFrame+1)%GESTURE_EVERY;
+        if(rGFrame===0) gestureTick(rvideo,()=>startCountdown(3,()=>{ if(!rRecording)startRec(); },"Recording starts in…"));
       }
     }
   }catch(err){
@@ -4318,16 +4451,41 @@ function onRecStop(){
   lastCapture={frames:capFrames.slice(),fps,blob:rBlob};
   if(recOpts.review){
     rvideo.style.display="none";roverlay.style.display="none";rplay.src=rURL;rplay.style.display="block";
-    $("#r-deck").style.display="none";$("#rreview").style.display="flex";cancelAnimationFrame(rRAF);
+    $("#r-deck").style.display="none";$("#rreview").style.display="flex";$("#r-tools").style.display="none";cancelAnimationFrame(rRAF);
   }else{
     const cb=recOpts.onComplete;closeRecorder();cb&&cb(lastCapture);
   }
 }
 $("#rbtn").addEventListener("click",()=>rRecording?stopRec(false):startRec());
+/* touchless capture controls (recorder) */
+let rGFrame=0;
+$("#r-timer").addEventListener("click",()=>{
+  if(rRecording){ toast("Already recording"); return; }
+  if(countingDown()){ cancelCountdown(); return; }
+  startCountdown(3,()=>{ if(!rRecording)startRec(); },"Recording starts in…");
+});
+$("#r-hand").addEventListener("click",async()=>{
+  const on=!gestureEnabled();
+  setGestureEnabled(on);
+  syncCaptureTools();
+  if(on){ toast("Hold an open palm up to start",3600); await ensureGesture(); syncCaptureTools(); }
+  else{ cancelCountdown(); toast("Touchless off",1600); }
+});
+/* Reflect the touchless setting on both capture screens. */
+function syncCaptureTools(){
+  const on=gestureEnabled();
+  const label=on?(gestureRec?"✋ Touchless on":"✋ Loading…"):"✋ Touchless";
+  ["#r-hand","#pc-hand"].forEach(sel=>{
+    const b=$(sel); if(!b)return;
+    b.classList.toggle("on",on);
+    b.textContent=label;
+  });
+}
+$("#cd-cancel").addEventListener("click",()=>{ cancelCountdown(); gestureHold=0; });
 $("#r-close").addEventListener("click",closeRecorder);
 $("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"environment":"user";try{await startCam();}catch(e){toast("Couldn't switch camera");}});
 $("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);});
-$("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";rLastT=-1;rLoop();});
+$("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
 $("#r-preview").addEventListener("click",()=>{rplay.currentTime=0;rplay.play();});
 $("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;closeRecorder();cb&&cb(lastCapture);});
 
