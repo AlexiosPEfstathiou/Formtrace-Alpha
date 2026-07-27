@@ -352,6 +352,28 @@
   #result .rh .eyebrow{margin-bottom:6px;}
   #result .rh h2{font-size:24px;font-weight:800;letter-spacing:-.01em;}
   .result-grid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;}
+  /* rep-count confirmation (form is graded by the coach, not here) */
+  .rep-hero{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .rep-hero .rep-n{font-size:74px;line-height:1;font-weight:800;letter-spacing:-.04em;color:var(--lime);font-variant-numeric:tabular-nums;}
+  .rep-hero .rep-target{font-size:13px;color:var(--muted);}
+  .rep-check{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;}
+  .rep-check .rc-q{font-size:14px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:13px;}
+  .rc-btns{display:flex;gap:10px;}
+  .rc-btn{flex:1;height:48px;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);}
+  .rc-btn:active{transform:scale(.98);}
+  .rc-btn.ok{border-color:var(--lime);background:var(--lime);color:var(--lime-ink);}
+  .rc-fix label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px;}
+  .rc-fix-row{display:flex;gap:10px;}
+  .rc-fix-row input{flex:1;min-width:0;height:48px;background:var(--panel2);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:17px;text-align:center;outline:none;}
+  .rc-fix-row input:focus{border-color:var(--lime-dim);}
+  .rc-save{flex-shrink:0;height:48px;padding:0 20px;border-radius:13px;border:1px solid var(--lime);background:var(--lime);color:var(--lime-ink);font-size:15px;font-weight:700;cursor:pointer;}
+  .rc-done{text-align:center;font-size:14px;font-weight:700;color:var(--lime);}
+  .res-note{text-align:center;font-size:12.5px;color:var(--faint);line-height:1.5;padding:0 10px;}
+  /* coach's 1-10 form grade selector on the review screen */
+  .gsel{display:flex;gap:5px;}
+  .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
+  .gs-chip:active{transform:scale(.95);}
+  .gs-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
   .dial-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
   .dial{position:relative;width:200px;height:200px;}
   .dial .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
@@ -793,7 +815,7 @@
       <div id="tw-progress-card" class="card" style="background:var(--accent-surface);border-color:var(--accent-border);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div><div class="eyebrow" style="color:var(--lime-dim)">Progress</div><div style="font-size:22px;font-weight:800;margin-top:6px;" id="tw-progress-txt">0 / 0 sets</div></div>
-          <div style="text-align:right"><div class="eyebrow" style="color:var(--lime-dim)">Avg form</div><div style="font-size:26px;font-weight:800;margin-top:4px;" id="tw-avg">—</div></div>
+          <div style="text-align:right"><div class="eyebrow" style="color:var(--lime-dim)">Reps logged</div><div style="font-size:26px;font-weight:800;margin-top:4px;" id="tw-avg">—</div></div>
         </div>
       </div>
       <div id="tw-list"></div>
@@ -984,26 +1006,26 @@
   <div id="result">
     <div class="rh"><div class="eyebrow" id="res-eyebrow">Set complete</div><h2 id="res-title">Back squat · Set 1</h2></div>
     <div class="result-grid">
-      <div class="dial-wrap">
-        <div class="dial">
-          <svg viewBox="0 0 100 100" style="width:100%;height:100%">
-            <circle cx="50" cy="50" r="43" fill="none" stroke="#1B232B" stroke-width="7"/>
-            <circle id="res-ring" cx="50" cy="50" r="43" fill="none" stroke="#C8FF3D" stroke-width="7" stroke-linecap="round" stroke-dasharray="270" stroke-dashoffset="270" transform="rotate(-90 50 50)"/>
-          </svg>
-          <div class="val"><div class="n" id="res-grade">—</div><div class="d">/ 10 form</div></div>
+      <div class="rep-hero">
+        <div class="rep-n" id="res-reps">0</div>
+        <div class="rep-target" id="res-target">reps counted</div>
+      </div>
+      <div class="rep-check" id="rep-check">
+        <div class="rc-q">Did we count your reps correctly?</div>
+        <div class="rc-btns">
+          <button class="rc-btn ok" id="rep-ok">✓ Correct</button>
+          <button class="rc-btn no" id="rep-no">✗ Incorrect</button>
         </div>
-        <div class="verdict" id="res-verdict"></div>
+        <div class="rc-fix" id="rep-fix" style="display:none">
+          <label for="rep-actual">How many did you actually do?</label>
+          <div class="rc-fix-row">
+            <input id="rep-actual" type="number" inputmode="numeric" min="0" max="200" step="1" placeholder="reps">
+            <button class="rc-save" id="rep-save">Save</button>
+          </div>
+        </div>
+        <div class="rc-done" id="rep-done" style="display:none"></div>
       </div>
-      <div class="stat-row">
-        <div class="stat"><div class="k">Reps done</div><div class="v" id="res-reps">0<small id="res-target"></small></div></div>
-        <div class="stat"><div class="k">Set</div><div class="v" id="res-setno">1</div></div>
-      </div>
-      <div class="breakdown">
-        <div class="eyebrow">Where the score came from</div>
-        <div class="bd-row"><div class="bl">Motion match</div><div class="bd-bar"><div class="bd-fill" id="bd-shape"></div></div><div class="bv" id="bd-shape-v">—</div></div>
-        <div class="bd-row"><div class="bl">Range / depth</div><div class="bd-bar"><div class="bd-fill" id="bd-rom"></div></div><div class="bv" id="bd-rom-v">—</div></div>
-        <div class="bd-row"><div class="bl">Tempo</div><div class="bd-bar"><div class="bd-fill" id="bd-tempo"></div></div><div class="bv" id="bd-tempo-v">—</div></div>
-      </div>
+      <div class="res-note">Your coach grades your form when they review this workout.</div>
     </div>
     <button class="btn primary" id="res-continue" style="margin-top:16px">Continue</button>
   </div>
@@ -3284,11 +3306,11 @@ function renderAssignedWorkout(){
   const a=currentAssigned; if(!a)return;
   const snap=a.snapshot, items=snap.items||[];
   $("#tw-title").textContent=snap.name||"Workout";
-  let total=0,done=0,gs=0,gn=0;
-  items.forEach((it,i)=>{total+=it.sets;(localResults[i]||[]).forEach(r=>{if(r){done++;if(!r.ungraded){gs+=r.grade;gn++;}}});});
+  let total=0,done=0,repTotal=0;
+  items.forEach((it,i)=>{total+=it.sets;(localResults[i]||[]).forEach(r=>{if(r){done++;repTotal+=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:(r.reps||0);}});});
   $("#tw-sub").textContent=`${items.length} exercises · ${total} sets`;
   $("#tw-progress-txt").textContent=`${done} / ${total} sets`;
-  $("#tw-avg").textContent=gn?(gs/gn).toFixed(1):"—";$("#tw-avg").style.color=gn?gradeColor(Math.round(gs/gn)):"var(--ink)";
+  $("#tw-avg").textContent=done?repTotal:"—";$("#tw-avg").style.color="var(--ink)";
   const isMissed = a.status==="assigned" && a.due_date && a.due_date<todayISO();
   const locked = a.status!=="assigned" || isMissed;
   const wrap=$("#tw-list");wrap.innerHTML="";
@@ -3307,9 +3329,15 @@ function renderAssignedWorkout(){
     for(let s=0;s<it.sets;s++){
       const r=results[s];
       if(r){
+        const shown=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:r.reps;
+        const badge = r.reps_label==="incorrect"
+          ? `<div class="grade-num" style="color:var(--amber);font-size:19px">${shown}</div><div class="grade-lab">corrected</div>`
+          : r.reps_label==="correct"
+          ? `<div class="grade-num" style="color:var(--lime);font-size:19px">${shown}</div><div class="grade-lab">reps ✓</div>`
+          : `<div class="grade-num" style="font-size:19px">${shown}</div><div class="grade-lab">reps</div>`;
         inner+=`<div class="setrow done" ${r.video_path?`data-play="${i}-${s}" style="cursor:pointer"`:""}><div class="set-n">✓</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">${r.reps} reps · target ${it.reps}</div></div>
-          <div class="grade-badge">${r.ungraded?'<div class="grade-lab">logged</div>':`<div class="grade-num" style="color:${gradeColor(r.grade)}">${r.grade}</div><div class="grade-lab">/10</div>`}</div></div>`;
+          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">target ${it.reps} reps</div></div>
+          <div class="grade-badge">${badge}</div></div>`;
       }else{
         const isNext=(s===nextUndone)&&!locked;
         inner+=`<div class="setrow"><div class="set-n">${s+1}</div>
@@ -3363,7 +3391,6 @@ async function playSetVideo(path,title){
 }
 function startTraineeSet(itemIndex,setIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
-  if(!hasRef({landmarks:it.landmarks}))toast("No coach reference — reps will be counted but form can't be graded.",3600);
   openRecorder({
     title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:true,useLabel:"✓ Use this take",
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
@@ -3371,18 +3398,12 @@ function startTraineeSet(itemIndex,setIndex){
 }
 async function runAnalysis(itemIndex,setIndex,capture){
   const it=currentAssigned.snapshot.items[itemIndex];
-  const refFrames = it.landmarks && it.landmarks.frames ? it.landmarks.frames : null;
   const A=$("#analyze");A.classList.add("on");const ring=$("#an-ring");
-  const steps=[["Counting repetitions","Tracking the dominant joint"],["Aligning your motion","Matching against the reference"],["Grading form","Scoring range, shape & tempo"]];
+  // Form is graded by the COACH on review, not here. This pass only counts reps.
+  const steps=[["Counting repetitions","Tracking the dominant joint"],["Checking the count","Smoothing the motion signal"]];
   const setStep=i=>{$("#an-msg").textContent=steps[i][0];$("#an-sub").textContent=steps[i][1];ring.style.strokeDashoffset=264-(264*(i+1)/steps.length);};
-  setStep(0);await wait(650);setStep(1);await wait(650);setStep(2);await wait(500);
+  setStep(0);await wait(600);setStep(1);await wait(500);
   const rc=countReps(capture.frames);
-  let grade=null,shape=70,rom=70,tempo=70;
-  const ref = refFrames && refFrames.length>4;
-  if(ref&&capture.frames.length>4){
-    const gf=gradeForm(capture.frames,refFrames);grade=gf.grade;shape=gf.shape;rom=gf.rom;
-    tempo=tempoScore(capture.frames,rc.reps||1,refFrames,(it.landmarks.reps)||1);
-  }
   // upload the trainee's set video so the coach can watch it on review
   let video_path=null;
   if(capture.blob){
@@ -3390,12 +3411,12 @@ async function runAnalysis(itemIndex,setIndex,capture){
     try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); }
     catch(e){ console.error("set video upload failed",e); toast("Video didn't upload — set still saved",3600); }
   }
-  const result={reps:rc.reps,grade:grade??0,ungraded:grade===null,shape,rom,tempo,video_path};
+  const result={reps:rc.reps,reps_label:null,reps_corrected:null,video_path};
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
   saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
   A.classList.remove("on");ring.style.strokeDashoffset=264;
-  showResult(it.name||"Set",it,setIndex,result);
+  showResult(it.name||"Set",it,setIndex,result,itemIndex);
 }
 /* Persist in-progress set results to the assigned_workouts row so exiting mid-workout
    doesn't lose recorded videos. Best-effort: needs the optional 'draft' jsonb column. */
@@ -3406,23 +3427,35 @@ async function saveWorkoutDraft(){
     currentAssigned.draft={results:localResults};
   }catch(e){ console.error("draft save (add a 'draft' jsonb column to assigned_workouts)",e); }
 }
-function showResult(exName,it,setIndex,r){
+function showResult(exName,it,setIndex,r,itemIndex){
   const R=$("#result");R.classList.add("on");
   $("#res-title").textContent=`${exName} · Set ${setIndex+1}`;
-  $("#res-setno").textContent=setIndex+1;
-  $("#res-reps").innerHTML=`${r.reps}<small> / ${it.reps}</small>`;
-  const ring=$("#res-ring"),g=r.ungraded?0:r.grade,col=r.ungraded?"#5B6773":gradeColor(g);
-  $("#res-grade").textContent=r.ungraded?"—":g;$("#res-grade").style.color=col;ring.style.stroke=col;
-  $("#res-verdict").textContent=r.ungraded?"No reference — reps counted only":gradeWord(g);$("#res-verdict").style.color=col;
-  $("#res-eyebrow").textContent=r.ungraded?"Set logged":"Set complete";
-  ring.style.transition="none";ring.style.strokeDashoffset=270;
-  requestAnimationFrame(()=>{ring.style.transition="stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)";ring.style.strokeDashoffset=270-(270*g/10);});
-  const bars=[["#bd-shape","#bd-shape-v",r.shape],["#bd-rom","#bd-rom-v",r.rom],["#bd-tempo","#bd-tempo-v",r.tempo]];
-  for(const [bar,val,pct] of bars){
-    const el=$(bar);el.style.width="0%";el.style.transition="none";el.style.background=r.ungraded?"#3a4650":gradeColor(Math.round(pct/10));
-    $(val).textContent=r.ungraded?"—":Math.round(pct);
-    requestAnimationFrame(()=>{el.style.transition="width .8s ease .2s";el.style.width=(r.ungraded?0:pct)+"%";});
-  }
+  $("#res-eyebrow").textContent="Set complete";
+  $("#res-reps").textContent=r.reps;
+  $("#res-target").textContent=`reps counted · target ${it.reps}`;
+  // rep-count confirmation. The label is what makes this set usable as
+  // training data later, so record it against the in-progress result.
+  const check=$("#rep-check"), fix=$("#rep-fix"), doneEl=$("#rep-done");
+  const btns=$(".rc-btns");
+  const setLabel=(label,corrected)=>{
+    r.reps_label=label;
+    r.reps_corrected=(corrected==null?null:corrected);
+    saveWorkoutDraft();
+  };
+  const showDone=txt=>{ btns.style.display="none"; fix.style.display="none"; doneEl.style.display=""; doneEl.textContent=txt; };
+  const reset=()=>{ btns.style.display=""; fix.style.display="none"; doneEl.style.display="none"; $("#rep-actual").value=""; };
+  reset();
+  if(r.reps_label==="correct") showDone(`Confirmed at ${r.reps} reps ✓`);
+  else if(r.reps_label==="incorrect") showDone(`Corrected to ${r.reps_corrected} reps ✓`);
+
+  $("#rep-ok").onclick=()=>{ setLabel("correct",null); showDone(`Confirmed at ${r.reps} reps ✓`); };
+  $("#rep-no").onclick=()=>{ btns.style.display="none"; fix.style.display=""; $("#rep-actual").focus(); };
+  $("#rep-save").onclick=()=>{
+    const v=parseInt(($("#rep-actual").value||"").trim(),10);
+    if(!Number.isFinite(v)||v<0){ toast("Enter the number of reps you did"); return; }
+    setLabel("incorrect",v);
+    showDone(`Corrected to ${v} reps ✓`);
+  };
   $("#res-continue").onclick=()=>{R.classList.remove("on");renderAssignedWorkout();};
 }
 async function submitToCoach(save=false){
@@ -3432,13 +3465,46 @@ async function submitToCoach(save=false){
   try{
     if(save){ await saveWorkoutVideos(); }
     const report={items:currentAssigned.snapshot.items.map((it,i)=>({name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
-    await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
+    const sub=await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
+    await writeSetLabels(sub);
     await store.assignedWorkouts.update(currentAssigned.id,{status:"submitted"});
     try{ await store.assignedWorkouts.update(currentAssigned.id,{draft:null}); }catch(_){/* optional column */}
     toast(save?"Saved to device & sent to coach ✓":"Sent to your coach ✓",3200);
     go("trainee-home");
   }catch(err){console.error(err);toast(err.message||"Couldn't submit",4000);}
   finally{btn.disabled=false;other.disabled=false;btn.textContent=o;}
+}
+/* One row per recorded set: the trainee's rep-count label plus the videos, so a
+   coach grade can be attached on review and the whole thing exported later as
+   training data. Best-effort — a failure here must not block the submission. */
+async function writeSetLabels(sub){
+  if(!currentAssigned)return;
+  const items=currentAssigned.snapshot.items||[];
+  const coachId=(currentEng&&currentEng.coach_id)||null;
+  const rows=[];
+  items.forEach((it,i)=>{
+    (localResults[i]||[]).forEach((r,s)=>{
+      if(!r)return;
+      rows.push({
+        submission_id:sub&&sub.id?sub.id:null,
+        assigned_id:currentAssigned.id,
+        trainee_id:ME.id,
+        coach_id:coachId,
+        item_index:i,
+        set_index:s,
+        exercise_name:it.name||null,
+        trainee_video_path:r.video_path||null,
+        coach_ref_video_path:it.ref_video_path||null,
+        reps_counted:r.reps??null,
+        reps_label:r.reps_label||null,
+        reps_corrected:(r.reps_corrected==null?null:r.reps_corrected)
+      });
+    });
+  });
+  for(const row of rows){
+    try{ await store.setLabels.add(row); }
+    catch(e){ console.error("set label insert failed (run migrations_grading.sql)",e); }
+  }
 }
 /* Download each recorded set video (skeleton lines already baked in) to the device. */
 async function saveWorkoutVideos(){
@@ -3482,7 +3548,39 @@ async function openReview(assignedId,readonly=false){
   if(!currentSubmission){toast("No submission found");return;}
   const rep=currentSubmission.report||{};
   const existing=readonly?(await store.reviews.list({submission_id:currentSubmission.id}))[0]:null;
-  reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId};
+  // per-set label rows carry the trainee's rep verdict and the coach's grade
+  let labelBy={};
+  try{
+    const labels=await store.setLabels.list({assigned_id:assignedId});
+    for(const l of labels) labelBy[l.item_index+"-"+l.set_index]=l;
+  }catch(e){ console.error("set labels load (run migrations_grading.sql)",e); }
+  // Workouts submitted before set_labels existed have no rows. Create them here
+  // so a coach can still grade older submissions.
+  if(!readonly){
+    const missing=[];
+    (rep.items||[]).forEach((item,ii)=>{
+      (item.results||[]).forEach((r,si)=>{
+        if(!r||labelBy[ii+"-"+si])return;
+        missing.push({
+          submission_id:currentSubmission.id,
+          assigned_id:assignedId,
+          trainee_id:currentSubmission.trainee_id,
+          coach_id:ME.id,
+          item_index:ii,set_index:si,
+          exercise_name:item.name||null,
+          trainee_video_path:r.video_path||null,
+          reps_counted:(r.reps==null?null:r.reps)
+        });
+      });
+    });
+    for(const row of missing){
+      try{
+        const created=await store.setLabels.add(row);
+        if(created&&created.id) labelBy[created.item_index+"-"+created.set_index]=created;
+      }catch(e){ console.error("backfill set label failed",e); }
+    }
+  }
+  reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId, labelBy};
   $("#rev-sub").textContent=currentEngOther.display_name?`From ${currentEngOther.display_name}`:"";
   $("#rev-back").onclick=()=>renderEngagement()||go("engagement");
   const body=$("#review-body");body.innerHTML="";
@@ -3490,10 +3588,15 @@ async function openReview(assignedId,readonly=false){
     (item.results||[]).forEach((r,si)=>{
       if(!r)return;
       const key=ii+"-"+si;
+      const lab=labelBy[key]||{};
+      const corrected=(lab.reps_label==="incorrect"&&lab.reps_corrected!=null);
+      const shownReps=corrected?lab.reps_corrected:(lab.reps_counted??r.reps);
+      const repNote=corrected?` · <span style="color:var(--amber)">trainee corrected from ${lab.reps_counted}</span>`
+        : lab.reps_label==="correct"?` · <span style="color:var(--lime-dim)">count confirmed</span>`:"";
       const div=document.createElement("div");div.className="review-set";
       div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>
-        <div class="grade-badge">${r.ungraded?'<span class="grade-lab">logged</span>':`<span class="grade-num" style="color:${gradeColor(r.grade)}">${r.grade}</span><span class="grade-lab">/10</span>`}</div></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${r.reps} reps · target ${item.reps} · motion ${r.shape||"—"} · range ${r.rom||"—"}</div>`;
+        ${lab.form_grade?`<div class="grade-badge"><span class="grade-num" style="color:${gradeColor(lab.form_grade)}">${lab.form_grade}</span><span class="grade-lab">/10</span></div>`:`<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"grade below"}</span></div>`}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${shownReps} reps · target ${item.reps}${repNote}</div>`;
       // trainee's submitted video for this set
       if(r.video_path){
         const vc=document.createElement("div");vc.className="video-card";vc.style.cssText="margin-bottom:10px;max-height:220px";
@@ -3504,12 +3607,30 @@ async function openReview(assignedId,readonly=false){
         div.appendChild(nv);
       }
       if(!readonly){
+        // coach's form grade for this set — this is now the ONLY form score
+        const gWrap=document.createElement("div");gWrap.style.cssText="margin-bottom:12px";
+        gWrap.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:7px">Form grade</div>`;
+        const gsel=document.createElement("div");gsel.className="gsel";
+        for(let n=1;n<=10;n++){
+          const b=document.createElement("button");b.className="gs-chip";b.textContent=n;
+          if(lab.form_grade===n)b.classList.add("on");
+          b.addEventListener("click",()=>{
+            gsel.querySelectorAll(".gs-chip").forEach(x=>x.classList.remove("on"));
+            b.classList.add("on");
+            b.style.borderColor=gradeColor(n);
+            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,grade:n,item_index:ii,set_index:si};
+          });
+          gsel.appendChild(b);
+        }
+        gWrap.appendChild(gsel);
+        div.appendChild(gWrap);
+        if(lab.form_grade) reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,grade:lab.form_grade,item_index:ii,set_index:si};
         const pills=document.createElement("div");pills.className="pill-row";
-        ["Nailed it","Good","Watch depth","Slow down","Fix form"].forEach(lab=>{
-          const p=document.createElement("span");p.className="pill";p.textContent=lab;
-          if((reviewState.per_set[key]||{}).label===lab)p.classList.add("on");
+        ["Nailed it","Good","Watch depth","Slow down","Fix form"].forEach(labelTxt=>{
+          const p=document.createElement("span");p.className="pill";p.textContent=labelTxt;
+          if((reviewState.per_set[key]||{}).label===labelTxt)p.classList.add("on");
           p.addEventListener("click",()=>{ pills.querySelectorAll(".pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");
-            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,label:lab}; });
+            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,label:labelTxt}; });
           pills.appendChild(p);
         });
         div.appendChild(pills);
@@ -3561,12 +3682,39 @@ $("#rev-submit").addEventListener("click",async()=>{
   const btn=$("#rev-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
   try{
     const per_set=Object.values(reviewState.per_set);
+    const totalSets=Object.keys(reviewState.labelBy||{}).length;
+    if(totalSets && per_set.filter(p=>p.grade!=null).length===0){
+      const ok=await openConfirm({title:"Send without grading?",body:"You haven't graded any sets. Grades are what the trainee sees for form, and what we keep as labelled data.",confirmLabel:"Send anyway",cancelLabel:"Go back and grade"});
+      if(!ok){ btn.disabled=false;btn.textContent=o; return; }
+    }
     await store.reviews.add({submission_id:currentSubmission.id,coach_id:ME.id,overall:($("#rev-overall")?.value||"").trim(),per_set});
+    await saveCoachGrades();
     await store.assignedWorkouts.update(reviewState.assignedId,{status:"reviewed"});
     toast("Review sent ✓"); openEngagement(currentEng.id);
   }catch(err){console.error(err);toast(err.message||"Couldn't send review",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
+/* Persist the coach's per-set form grade (and any feedback video) onto the
+   set_labels rows. Keyed off the label rows themselves so it works whichever
+   controls the coach happened to touch. */
+async function saveCoachGrades(){
+  const labelBy=reviewState.labelBy||{};
+  for(const key of Object.keys(labelBy)){
+    const row=labelBy[key]; if(!row||!row.id)continue;
+    const ps=reviewState.per_set[key]||{};
+    const patch={};
+    if(ps.grade!=null){
+      patch.form_grade=ps.grade;
+      patch.form_grade_source="coach";
+      patch.graded_at=new Date().toISOString();
+      patch.coach_id=ME.id;
+    }
+    if(ps.video_path) patch.coach_feedback_video_path=ps.video_path;
+    if(!Object.keys(patch).length)continue;
+    try{ await store.setLabels.update(row.id,patch); }
+    catch(e){ console.error("coach grade save failed",e); }
+  }
+}
 
 /* =========================================================================
    15. Mutual rating
