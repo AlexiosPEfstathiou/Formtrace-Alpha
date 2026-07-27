@@ -158,6 +158,14 @@
   .home-news{margin-top:18px;}
   .home-news .nw-title{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:10px;}
   .home-news .nw-list{display:flex;flex-direction:column;gap:6px;}
+  .home-news .nw-s{font-size:11.5px;color:var(--lime-dim);margin-top:2px;font-variant-numeric:tabular-nums;}
+  /* trainee: earlier days missing macros */
+  .home-macrogaps{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 13px;}
+  .home-macrogaps .mg-title{font-size:12.5px;font-weight:700;color:var(--amber);}
+  .home-macrogaps .mg-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .home-macrogaps .mg-row{display:flex;gap:7px;overflow-x:auto;margin-top:10px;padding-bottom:2px;}
+  .mg-chip{flex-shrink:0;background:var(--panel2);border:1px solid var(--line2);color:var(--ink);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .mg-chip:active{transform:scale(.96);}
   .nw-row{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;}
   .nw-row:active{transform:scale(.995);}
   .nw-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--panel2);}
@@ -729,6 +737,7 @@
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
+      <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
@@ -1688,6 +1697,7 @@ async function renderHome(){
   // default (coach) hero; trainee hero is customised below
   $("#home-h").innerHTML=`Hi ${firstName}.<br><span class="g">What's the plan today?</span>`;
   todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none"; measureEl.style.display="none"; newsEl.style.display="none";
+  const gapsEl=$("#home-macrogaps"); if(gapsEl) gapsEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -1700,6 +1710,7 @@ async function renderHome(){
     await renderHomeToday(engs, todayEl);
     await renderHomeReviews(engs, reviewsEl);
     await renderHomeMacro(macroEl);
+    await renderHomeMacroGaps($("#home-macrogaps"));
     await renderHomeCheckin(checkinEl);
     await renderHomeMeasure(measureEl);
   }else{
@@ -1801,6 +1812,30 @@ function weightSparkline(wpts){
     </svg>
     <div class="htw-foot"><span>${wpts.length} entries</span><span>latest <b style="color:${ink}">${last}</b> kg</span></div>`;
 }
+/* Trainee homepage: days in the last week with no macros logged, so they can
+   go back and fill them in. Excludes today (not "forgotten" yet) and yesterday
+   (the quick-log strip above already covers that one). */
+async function renderHomeMacroGaps(el){
+  el.style.display="none"; el.innerHTML="";
+  const today=todayISO();
+  let byDate={};
+  try{
+    const logs=await store.logs.list({trainee_id:ME.id});
+    for(const l of logs) byDate[l.log_date]=l;
+  }catch(e){ console.error("macro gaps",e); return; }
+  const missing=[];
+  for(let k=2;k<=7;k++){
+    const iso=addDaysISO(today,-k);
+    if(!macrosLogged(byDate[iso])) missing.push(iso);
+  }
+  if(!missing.length) return;
+  const chips=missing.map(iso=>`<button class="mg-chip" data-mg="${iso}">${escapeHtml(fmtDay(iso))}</button>`).join("");
+  el.innerHTML=`<div class="mg-title">${missing.length} earlier day${missing.length>1?"s":""} without macros</div>
+    <div class="mg-sub">Tap a day to fill it in.</div>
+    <div class="mg-row">${chips}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-mg]").forEach(b=>b.addEventListener("click",()=>openMacroLog(b.getAttribute("data-mg"))));
+}
 /* Trainee homepage: compact quick-log strip for yesterday's macros.
    Hidden entirely once yesterday is logged (until the next day). */
 async function renderHomeMacro(el){
@@ -1897,9 +1932,16 @@ async function renderCoachTrainees(el,newsEl){
         if(a.status==="assigned"&&d<today) events.push({d,eng:e.id,nm,iso:d,kind:"missed",ic:"⚠",txt:`${nm} missed a workout`});
         else if(a.status==="submitted") events.push({d,eng:e.id,nm,iso:d,kind:"done",ic:"✓",txt:`${nm} completed a workout`});
       }
-      for(const l of logs){
-        if(l.log_date<since||l.log_date>today)continue;
-        if(macrosLogged(l)) events.push({d:l.log_date,eng:e.id,nm,iso:l.log_date,kind:"macro",ic:"🍽",txt:`${nm} logged macros`});
+      // ---- macros: ONE weekly report per trainee, never one row per day ----
+      const ws=weekStartISO();
+      const wk=logs.filter(l=>l.log_date>=ws&&l.log_date<=today&&macrosLogged(l));
+      if(wk.length){
+        const avg=k=>Math.round(wk.reduce((s,l)=>s+(Number(l[k])||0),0)/wk.length);
+        const lastDay=wk.map(l=>l.log_date).sort().pop();
+        const daysSoFar=Math.round((new Date(today)-new Date(ws))/(24*3600*1000))+1;
+        events.push({d:lastDay,eng:e.id,nm,iso:lastDay,kind:"macro",ic:"🍽",
+          txt:`${nm} logged macros ${wk.length}/${daysSoFar} days this week`,
+          sub:`daily avg ${avg("protein_g")}g P · ${avg("carbs_g")}g C · ${avg("fat_g")}g F · ${avg("kcal")} kcal`});
       }
       for(const c of cis){
         if(c.checkin_date<since||c.checkin_date>today)continue;
@@ -1944,13 +1986,16 @@ function renderCoachNews(el,events){
   if(!el)return;
   el.style.display="none"; el.innerHTML="";
   if(!events||!events.length)return;
-  // newest first, most urgent kind wins on the same day
+  // strictly newest first, oldest last. Same-day ties fall back to urgency.
   const order={missed:0,done:1,photo:2,macro:3};
-  events.sort((a,b)=> (a.d<b.d?1:a.d>b.d?-1:0) || ((order[a.kind]??9)-(order[b.kind]??9)) );
+  events.sort((a,b)=>{
+    if(a.d!==b.d) return a.d<b.d?1:-1;          // later date first
+    return (order[a.kind]??9)-(order[b.kind]??9);
+  });
   const shown=events.slice(0,10);
   const rowsHtml=shown.map((v,i)=>`<div class="nw-row" data-nw="${i}">
       <div class="nw-ic nw-${v.kind}">${v.ic}</div>
-      <div class="nw-main"><div class="nw-t">${escapeHtml(v.txt)}</div><div class="nw-d">${escapeHtml(fmtDay(v.d))}</div></div>
+      <div class="nw-main"><div class="nw-t">${escapeHtml(v.txt)}</div>${v.sub?`<div class="nw-s">${escapeHtml(v.sub)}</div>`:""}<div class="nw-d">${escapeHtml(fmtDay(v.d))}</div></div>
       <div class="nw-chev">›</div>
     </div>`).join("");
   el.innerHTML=`<div class="nw-title">Trainee activity</div><div class="nw-list">${rowsHtml}</div>`;
@@ -1993,6 +2038,8 @@ const MEASURES=[
   {k:"thighs_cm", label:"Thighs"}
 ];
 function quarterStartISO(d=new Date()){ const q=Math.floor(d.getMonth()/3); return isoOf(new Date(d.getFullYear(),q*3,1)); }
+/* Monday-start week containing d. */
+function weekStartISO(d=new Date()){ const dt=new Date(d); const dow=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-dow); return isoOf(dt); }
 function quarterLabel(iso){ const [y,m]=iso.split("-").map(Number); return "Q"+(Math.floor((m-1)/3)+1)+" "+y; }
 /* Prompt once per calendar quarter until measurements for it are recorded. */
 async function renderHomeMeasure(el){
