@@ -470,7 +470,11 @@
   .seg{display:flex;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:4px;gap:4px;margin-bottom:16px;}
   .seg button{flex:1;height:38px;border-radius:9px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;}
   .seg button.on{background:var(--panel2);color:var(--lime);}
-  .signout{font-size:13px;color:var(--red);font-weight:600;cursor:pointer;}
+  .signout{font-size:13px;color:var(--red);font-weight:600;cursor:pointer;position:relative;z-index:71;}
+  /* the streak badge is pinned top-right at z-index 70 and would sit on top of
+     the Profile header's Sign out link (trainees only, since coaches have no
+     badge). Hide it while Profile is showing — it belongs to training, not here. */
+  #streak-badge.on-profile{display:none;}
   .kv{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:14px;}
   .kv:first-child{border-top:none;}
   .kv .k{color:var(--muted);}
@@ -1473,6 +1477,8 @@ function go(name){
   if(name==="listing-new"){ openListingNew(); name="listing-new"; }
   $$(".screen").forEach(s=>s.classList.remove("active"));
   const el=$("#s-"+name); if(el)el.classList.add("active");
+  // keep the pinned streak badge off the Profile header (it covers Sign out)
+  $("#streak-badge")?.classList.toggle("on-profile",name==="profile");
   // Track navigation so the phone back button moves within the app instead of leaving it.
   if(!_navSuppress){
     const top=navStack[navStack.length-1];
