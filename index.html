@@ -573,7 +573,7 @@
   @keyframes cfall{0%{opacity:1;transform:translateY(0) rotate(0);}100%{opacity:1;transform:translateY(760px) rotate(720deg);}}
   /* timelapse */
   .tl-wrap{position:relative;border-radius:16px;overflow:hidden;height:340px;background:#0a0e12;border:1px solid var(--line);}
-  .tl-frame{position:absolute;inset:0;opacity:0;transition:opacity .5s;background-size:cover;background-position:center;}
+  .tl-frame{position:absolute;inset:0;opacity:0;transition:opacity 60ms linear;background-size:cover;background-position:center;}
   .tl-frame.on{opacity:1;}
   .tl-meta{position:absolute;left:0;right:0;bottom:0;z-index:2;width:100%;padding:14px;box-sizing:border-box;background:linear-gradient(transparent,rgba(0,0,0,.75));display:flex;justify-content:space-between;align-items:flex-end;}
   .tl-date{font-size:13px;color:#fff;font-weight:700;}
@@ -939,7 +939,11 @@
       <p style="font-size:13px;color:var(--muted);margin:2px 2px 12px;line-height:1.5" id="tl-intro">Your weekly check-ins, played back.</p>
       <div class="tl-wrap" id="tl-wrap"><div class="tl-empty" id="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px;text-align:center;padding:0 30px">No check-in photos to play back.</div></div>
       <div class="tl-bar" id="tl-bar"></div>
-      <button class="btn primary" style="margin-top:18px" id="tl-done">Done</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px">
+        <span style="font-size:11.5px;color:var(--faint)" id="tl-len"></span>
+        <button class="tl-play" id="tl-replay" style="display:none">↺ Replay</button>
+      </div>
+      <button class="btn primary" style="margin-top:14px" id="tl-done">Done</button>
     </div>
   </section>
 
@@ -1018,18 +1022,21 @@
     <video id="pc-video" playsinline autoplay muted></video>
     <canvas id="pc-canvas" style="display:none"></canvas>
     <img id="pc-still" style="display:none" alt="">
-    <!-- framing guide: align to the outline so check-ins line up in the timelapse.
-         This is a DOM overlay, NOT drawn onto the canvas, so saved photos stay clean. -->
+    <!-- framing guide: head, hanging arms and feet ONLY. Deliberately no torso,
+         waist or leg outline — those would imply a body size/height the trainee
+         has to match. These are position cues that work for any physique.
+         DOM overlay, never drawn onto the canvas, so saved photos stay clean. -->
     <div class="pc-guide" id="pc-guide">
       <svg viewBox="0 0 200 440" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <g class="pcg-fig">
-          <circle cx="100" cy="44" r="24"/>
-          <path d="M91 66 L62 82 L54 150 L52 212 L66 212 L70 150 L72 120 L74 165 L66 205 L78 300 L82 400 L94 400 L92 300 L100 215 L108 300 L106 400 L118 400 L122 300 L134 205 L126 165 L128 120 L130 150 L134 212 L148 212 L146 150 L138 82 L109 66 Z"/>
-        </g>
         <g class="pcg-aid">
-          <line x1="100" y1="8" x2="100" y2="432"/>
-          <line x1="46" y1="82" x2="154" y2="82"/>
-          <line x1="52" y1="205" x2="148" y2="205"/>
+          <line x1="100" y1="14" x2="100" y2="426"/>
+        </g>
+        <g class="pcg-fig">
+          <ellipse cx="100" cy="48" rx="21" ry="26"/>
+          <rect x="54" y="150" width="16" height="110" rx="8"/>
+          <rect x="130" y="150" width="16" height="110" rx="8"/>
+          <rect x="80" y="386" width="16" height="32" rx="8"/>
+          <rect x="104" y="386" width="16" height="32" rx="8"/>
         </g>
       </svg>
     </div>
@@ -3017,7 +3024,7 @@ function startCheckin(iso){
   $("#pc-still").style.display="none";$("#pc-video").style.display="block";
   $("#pc-ctrls").style.display="flex";$("#pc-review").style.display="none";
   $("#pc-ttl").textContent="Check-in · "+fmtDay(iso);
-  $("#pc-hint").textContent="Stand back and line up with the outline — same spot each week keeps your timelapse steady.";
+  $("#pc-hint").textContent="Head in the oval, feet on the marks, arms hanging by your sides.";
   $("#pc-guide").classList.remove("off");
   pcBlob=null;
   pcOpenCam();
@@ -3621,37 +3628,88 @@ function celebrationBurst(){
   }
 }
 
-/* ---- timelapse of the trainee's check-in photos ---- */
+/* ---- timelapse of the trainee's check-in photos ----
+   Plays as a short video collage: every frame is fully decoded BEFORE playback
+   starts, then frames hard-cut at a fixed 0.25s each. Preloading is what makes
+   it read as video rather than a stuttering gallery — at 4fps there is no time
+   to fetch a signed URL or decode a JPEG mid-playback. */
+const TL_FRAME_MS=250;
 let tlTimer=null;
+function tlPreload(url){
+  return new Promise(res=>{
+    if(!url)return res(null);
+    const img=new Image();
+    img.onload=()=>{ (img.decode?img.decode().catch(()=>{}):Promise.resolve()).then(()=>res(img)); };
+    img.onerror=()=>res(null);
+    img.src=url;
+  });
+}
 async function openTimelapse(traineeId,{intro,onDone}={}){
+  const wrap=$("#tl-wrap"),bar=$("#tl-bar"),lenEl=$("#tl-len"),replay=$("#tl-replay");
   $("#tl-intro").textContent=intro||"Weekly check-ins, played back.";
-  const wrap=$("#tl-wrap"),bar=$("#tl-bar");
-  wrap.innerHTML=`<div class="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px">Loading…</div>`;
-  bar.innerHTML="";
-  $("#tl-done").onclick=()=>{ clearInterval(tlTimer); (onDone||(()=>openEngagement(currentEng.id)))(); };
-  $("#tl-back").onclick=()=>{ clearInterval(tlTimer); (onDone||(()=>openEngagement(currentEng.id)))(); };
+  bar.innerHTML=""; lenEl.textContent=""; replay.style.display="none";
+  const finish=()=>{ clearInterval(tlTimer); (onDone||(()=>openEngagement(currentEng.id)))(); };
+  $("#tl-done").onclick=finish;
+  $("#tl-back").onclick=finish;
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-timelapse").classList.add("active");
+
+  const msg=t=>{ wrap.innerHTML=`<div class="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px;text-align:center;padding:0 30px">${t}</div>`; };
+  msg("Loading check-ins…");
+
   let cis=[];
   try{ cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1); }catch(e){console.error(e);}
-  if(!cis.length){ wrap.innerHTML=`<div class="tl-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--faint);font-size:13px;text-align:center;padding:0 30px">No check-in photos were logged for this goal.</div>`; return; }
+  if(!cis.length){ msg("No check-in photos were logged for this goal."); return; }
+
+  // step one - resolve every signed URL in parallel
+  msg("Preparing your timelapse…");
+  const urls=await Promise.all(cis.map(ci=>playable(ci.photo_path).catch(()=>null)));
+
+  // step two - decode every frame up front, with progress
+  let done=0;
+  const imgs=await Promise.all(urls.map(u=>tlPreload(u).then(img=>{
+    done++; msg(`Preparing your timelapse… ${done}/${urls.length}`);
+    return img;
+  })));
+
+  // keep only frames that actually loaded
+  const usable=cis.map((ci,i)=>({ci,url:urls[i],img:imgs[i]})).filter(f=>f.img);
+  if(!usable.length){ msg("Couldn't load the check-in photos."); return; }
+
+  // step three - build the stacked frames
   wrap.innerHTML="";
   const frames=[];
-  for(let i=0;i<cis.length;i++){
-    const ci=cis[i]; const [y,m,d]=ci.checkin_date.split("-").map(Number);
-    const url=await playable(ci.photo_path);
-    const fr=document.createElement("div");fr.className="tl-frame"+(i===0?" on":"");fr.setAttribute("data-i",i);
-    if(url)fr.style.backgroundImage=`url("${url}")`; else fr.style.background="#141a1f";
-    fr.innerHTML=`<div class="tl-meta"><span class="tl-date">${d}/${m}/${String(y).slice(2)}</span></div>`;
+  usable.forEach((f,i)=>{
+    const [y,m,d]=f.ci.checkin_date.split("-").map(Number);
+    const fr=document.createElement("div");
+    fr.className="tl-frame"+(i===0?" on":"");
+    fr.setAttribute("data-i",i);
+    fr.style.backgroundImage=`url("${f.url}")`;
+    fr.innerHTML=`<div class="tl-meta"><span class="tl-date">${d}/${m}/${String(y).slice(2)}</span><span class="tl-wt">${i+1}/${usable.length}</span></div>`;
     wrap.appendChild(fr);
     bar.insertAdjacentHTML("beforeend",`<i data-i="${i}"${i===0?' class="on"':''}></i>`);
     frames.push(fr);
-  }
-  let idx=0; const showTL=i=>{
-    wrap.querySelectorAll(".tl-frame").forEach(f=>f.classList.toggle("on",+f.getAttribute("data-i")===i));
+  });
+
+  const totalS=(usable.length*TL_FRAME_MS/1000);
+  lenEl.textContent=`${usable.length} check-ins · ${totalS.toFixed(2)}s · 0.25s per photo`;
+
+  const showTL=i=>{
+    frames.forEach(f=>f.classList.toggle("on",+f.getAttribute("data-i")===i));
     bar.querySelectorAll("i").forEach(x=>x.classList.toggle("on",+x.getAttribute("data-i")<=i));
   };
-  clearInterval(tlTimer);
-  if(frames.length>1){ tlTimer=setInterval(()=>{ idx=(idx+1)%frames.length; showTL(idx); },1400); }
+  const play=()=>{
+    clearInterval(tlTimer);
+    replay.style.display="none";
+    let idx=0; showTL(0);
+    if(frames.length<2){ replay.style.display=""; return; }
+    tlTimer=setInterval(()=>{
+      idx++;
+      if(idx>=frames.length){ clearInterval(tlTimer); replay.style.display=""; return; }
+      showTL(idx);
+    },TL_FRAME_MS);
+  };
+  replay.onclick=play;
+  play();
 }
 
 let rateStars=0;
