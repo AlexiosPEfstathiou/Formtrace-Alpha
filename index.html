@@ -595,6 +595,16 @@
   .pc-shoot{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.4);cursor:pointer;box-shadow:0 0 0 2px rgba(0,0,0,.25);transition:transform .1s;}
   .pc-shoot:active{transform:scale(.92);}
   .pc-hint{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 108px);left:0;right:0;z-index:3;text-align:center;color:#fff;font-size:12.5px;padding:0 30px;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+  /* check-in framing guide (silhouette the trainee aligns to) */
+  .pc-guide{position:absolute;inset:0;z-index:2;pointer-events:none;display:flex;align-items:center;justify-content:center;padding:10% 12%;box-sizing:border-box;}
+  .pc-guide svg{width:100%;height:100%;}
+  .pc-guide.off{display:none;}
+  .pcg-fig{fill:rgba(200,255,61,.06);stroke:rgba(200,255,61,.85);stroke-width:2.2;stroke-dasharray:7 6;stroke-linejoin:round;
+    filter:drop-shadow(0 0 3px rgba(0,0,0,.85));}
+  .pcg-aid{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:3 7;}
+  /* timelapse play button on the dashboard check-in card */
+  .tl-play{background:var(--lime);color:var(--lime-ink);border:none;border-radius:9px;padding:6px 11px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:none;cursor:pointer;flex-shrink:0;}
+  .tl-play:active{transform:scale(.96);}
   /* appearance: theme segmented control + colorblind switch */
   .theme-seg button{font-size:12.5px;}
   .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
@@ -1008,9 +1018,25 @@
     <video id="pc-video" playsinline autoplay muted></video>
     <canvas id="pc-canvas" style="display:none"></canvas>
     <img id="pc-still" style="display:none" alt="">
+    <!-- framing guide: align to the outline so check-ins line up in the timelapse.
+         This is a DOM overlay, NOT drawn onto the canvas, so saved photos stay clean. -->
+    <div class="pc-guide" id="pc-guide">
+      <svg viewBox="0 0 200 440" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <g class="pcg-fig">
+          <circle cx="100" cy="44" r="24"/>
+          <path d="M91 66 L62 82 L54 150 L52 212 L66 212 L70 150 L72 120 L74 165 L66 205 L78 300 L82 400 L94 400 L92 300 L100 215 L108 300 L106 400 L118 400 L122 300 L134 205 L126 165 L128 120 L130 150 L134 212 L148 212 L146 150 L138 82 L109 66 Z"/>
+        </g>
+        <g class="pcg-aid">
+          <line x1="100" y1="8" x2="100" y2="432"/>
+          <line x1="46" y1="82" x2="154" y2="82"/>
+          <line x1="52" y1="205" x2="148" y2="205"/>
+        </g>
+      </svg>
+    </div>
     <div class="pc-top">
       <button class="pc-x" id="pc-close">✕</button>
       <div class="pc-ttl" id="pc-ttl">Weekly check-in</div>
+      <button class="pc-flip" id="pc-guide-toggle" title="Show/hide guide">◫</button>
       <button class="pc-flip" id="pc-flip">🔄</button>
     </div>
     <div class="pc-ctrls" id="pc-ctrls">
@@ -1148,6 +1174,8 @@ async function hydrateVideos(root){
    2. Pose engine
    ========================================================================= */
 let landmarker=null;
+let poseTs=0;      // strictly-increasing timestamp fed to MediaPipe VIDEO mode
+let poseFails=0;   // consecutive detect failures -> rebuild the engine
 async function ensureModel(onmsg){
   if(landmarker)return;
   onmsg&&onmsg("Loading pose engine…");
@@ -1155,6 +1183,15 @@ async function ensureModel(onmsg){
   landmarker=await PoseLandmarker.createFromOptions(fileset,{
     baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},
     runningMode:"VIDEO",numPoses:1});
+}
+/* Rebuild the pose engine after repeated detect failures (e.g. GPU context
+   loss over a long session). Without this the overlay could stay dead until
+   a full page reload. */
+async function resetPoseEngine(){
+  try{ if(landmarker&&landmarker.close) landmarker.close(); }catch(e){ console.error("pose close",e); }
+  landmarker=null; poseFails=0;
+  try{ await ensureModel(); console.warn("pose engine rebuilt"); }
+  catch(e){ console.error("pose engine rebuild failed",e); }
 }
 
 /* =========================================================================
@@ -2766,7 +2803,7 @@ function renderDashboard(container, iAmCoach){
 
   // ---- check-in photo timelapse ----
   const ciCard=document.createElement("div");ciCard.className="card";ciCard.style.padding="16px 14px";
-  ciCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weekly check-ins</div><div id="dash-checkins" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
+  ciCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Weekly check-ins</span><button id="dash-tl-play" class="tl-play" style="display:none">▶ Play timelapse</button></div><div id="dash-checkins" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
   wrap.appendChild(ciCard);
 
   container.appendChild(wrap);
@@ -2779,6 +2816,15 @@ function renderDashboard(container, iAmCoach){
       const cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1);
       const box=$("#dash-checkins"); if(!box)return;
       if(!cis.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">${iAmCoach?"No check-in photos yet.":"Your Saturday check-in photos will appear here as a timelapse."}</div>`; return; }
+      // a timelapse only makes sense with at least two frames
+      const playBtn=$("#dash-tl-play");
+      if(playBtn && cis.length>=2){
+        playBtn.style.display="";
+        playBtn.onclick=()=>openTimelapse(traineeId,{
+          intro:`${cis.length} check-ins, played back in order.`,
+          onDone:()=>openEngagement(currentEng.id)
+        });
+      }
       box.innerHTML="";
       for(const ci of cis){
         const [y,m,d]=ci.checkin_date.split("-").map(Number);
@@ -2971,10 +3017,16 @@ function startCheckin(iso){
   $("#pc-still").style.display="none";$("#pc-video").style.display="block";
   $("#pc-ctrls").style.display="flex";$("#pc-review").style.display="none";
   $("#pc-ttl").textContent="Check-in · "+fmtDay(iso);
-  $("#pc-hint").textContent="";
+  $("#pc-hint").textContent="Stand back and line up with the outline — same spot each week keeps your timelapse steady.";
+  $("#pc-guide").classList.remove("off");
   pcBlob=null;
   pcOpenCam();
 }
+// guide can be hidden if it gets in the way
+$("#pc-guide-toggle").addEventListener("click",()=>{
+  const g=$("#pc-guide"); const off=g.classList.toggle("off");
+  toast(off?"Guide hidden":"Guide shown",1200);
+});
 async function pcOpenCam(){
   try{
     if(pcStream)pcStream.getTracks().forEach(t=>t.stop());
@@ -3006,11 +3058,13 @@ $("#pc-shoot").addEventListener("click",()=>{
     const url=URL.createObjectURL(b);
     const img=$("#pc-still");img.src=url;img.style.display="block";$("#pc-video").style.display="none";
     $("#pc-ctrls").style.display="none";$("#pc-review").style.display="flex";
+    $("#pc-guide").classList.add("off");
   },"image/jpeg",0.82);
 });
 $("#pc-retake").addEventListener("click",()=>{
   pcBlob=null;$("#pc-still").style.display="none";$("#pc-video").style.display="block";
   $("#pc-review").style.display="none";$("#pc-ctrls").style.display="flex";
+  $("#pc-guide").classList.remove("off");
 });
 $("#pc-use").addEventListener("click",async()=>{
   const iso=checkinDate; if(!pcBlob||!iso)return;
@@ -3815,19 +3869,42 @@ async function startCam(){
   await rvideo.play();await new Promise(r=>{if(rvideo.readyState>=2)return r();rvideo.onloadeddata=()=>r();});sizeCanvas();
 }
 function rLoop(){
-  if(rvideo.readyState>=2&&landmarker){
-    sizeCanvas();const now=performance.now();
-    if(rvideo.currentTime!==rLastT){
-      rLastT=rvideo.currentTime;
-      const res=landmarker.detectForVideo(rvideo,now);
-      rctx.save();rctx.clearRect(0,0,roverlay.width,roverlay.height);
-      const mirror=rFacing==="user"; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}
-      if(rShow&&res.landmarks){for(const lm of res.landmarks)drawFigure(rctx,lm,roverlay.width,roverlay.height);}
-      rctx.restore();
-      if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
+  try{
+    if(rvideo.readyState>=2&&landmarker){
+      sizeCanvas();
+      if(rvideo.currentTime!==rLastT){
+        rLastT=rvideo.currentTime;
+        // MediaPipe VIDEO mode needs a STRICTLY increasing timestamp. Browsers
+        // coarsen performance.now(), so two frames can share a millisecond —
+        // detectForVideo then throws, which used to escape this function before
+        // it re-scheduled itself, permanently killing the overlay (lines just
+        // stopped appearing mid-session). Force monotonic + never let a single
+        // failure kill the loop.
+        poseTs=Math.max(poseTs+1, Math.round(performance.now()));
+        let res=null;
+        try{
+          res=landmarker.detectForVideo(rvideo,poseTs);
+          poseFails=0;
+        }catch(err){
+          poseFails++;
+          if(poseFails===1||poseFails%30===0) console.error("pose detect failed x"+poseFails,err);
+          if(poseFails>=15){ poseFails=0; resetPoseEngine(); }
+        }
+        if(res){
+          rctx.save();rctx.clearRect(0,0,roverlay.width,roverlay.height);
+          const mirror=rFacing==="user"; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}
+          if(rShow&&res.landmarks){for(const lm of res.landmarks)drawFigure(rctx,lm,roverlay.width,roverlay.height);}
+          rctx.restore();
+          if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
+        }
+      }
     }
+  }catch(err){
+    console.error("rLoop",err);
+  }finally{
+    // ALWAYS re-schedule: the loop must survive any single-frame failure.
+    rRAF=requestAnimationFrame(rLoop);
   }
-  rRAF=requestAnimationFrame(rLoop);
 }
 function pickMime(){const c=["video/mp4;codecs=h264","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];return c.find(t=>MediaRecorder.isTypeSupported(t))||"";}
 function startRec(){
