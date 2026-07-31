@@ -2414,6 +2414,10 @@ $("#wo-delete").addEventListener("click",async()=>{ if(!builder||builder.isNew)r
 let sheetSel=new Set();
 function openSheet(){
   sheetSel=new Set();
+  // belt and braces: make sure the footer is visible even if a previous sheet
+  // hid it and was dismissed without going through closeSheet()
+  $("#sheet-add").style.display="";
+  $("#sheet-lib").querySelector("h3").textContent="Add from library";
   const body=$("#sheet-body");body.innerHTML="";
   if(!libCache.length){body.innerHTML=`<div class="empty" style="padding:30px"><p>No exercises in your library yet. Add some from the Library tab first.</p></div>`;}
   for(const ex of libCache){
@@ -2431,7 +2435,17 @@ function openSheet(){
 function updateSheetBtn(){ $("#sheet-add").textContent=sheetSel.size?`Add ${sheetSel.size} exercise${sheetSel.size>1?"s":""}`:"Add selected"; $("#sheet-add").disabled=!sheetSel.size; }
 let macroLogDate=null;
 let measureDate=null;
-function closeSheet(){ $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on"); macroLogDate=null; measureDate=null; }
+/* The shared sheet is reused by several screens, and the read-only ones (goal
+   recap, calendar day sheets) hide its action button inline. That hidden state
+   used to persist, so opening the library picker afterwards showed no Add
+   button. Reset it here so a hidden footer can never outlive its own sheet. */
+function closeSheet(){
+  $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on");
+  macroLogDate=null; measureDate=null;
+  const add=$("#sheet-add");
+  if(add){ add.style.display=""; add.disabled=false; add.textContent="Add selected"; }
+  $("#sheet-lib").querySelector("h3").textContent="Add from library";
+}
 $("#sheet-close").addEventListener("click",closeSheet);
 $("#sheet-scrim").addEventListener("click",closeSheet);
 $("#sheet-add").addEventListener("click",()=>{
