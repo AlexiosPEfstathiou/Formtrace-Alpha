@@ -1510,7 +1510,17 @@ function go(name){
   if(name==="admin")R(renderAdmin);
   renderAppTabs(name);
 }
-document.addEventListener("click",e=>{const el=e.target.closest("[data-go]");if(el)go(el.getAttribute("data-go"));});
+document.addEventListener("click",async e=>{
+  const el=e.target.closest("[data-go]");if(!el)return;
+  // Leaving the exercise editor with a captured-but-unsaved reference would
+  // silently discard it — the old flow said "Reference saved" and lost it.
+  if(pendingRef && $("#s-ex-edit")?.classList.contains("active")){
+    const ok=await openConfirm({title:"Discard the reference?",body:"You recorded a reference but haven't saved it to your library yet. Leaving now discards the recording.",confirmLabel:"Discard it",cancelLabel:"Stay and save",danger:true});
+    if(!ok)return;
+    pendingRef=null;
+  }
+  go(el.getAttribute("data-go"));
+});
 
 /* Persistent bottom navigation shown on every signed-in screen.
    The active tab reflects the current top-level destination; deep screens
@@ -2256,8 +2266,15 @@ async function updateRefCard(ex){
   const has = pendingRef ? true : hasRef(ex);
   const frames = pendingRef ? pendingRef.frames.length : (has?ex.landmarks.frames.length:0);
   const reps = pendingRef ? pendingRef.reps : (has?ex.landmarks.reps:0);
-  $("#ref-state").textContent=has?"Correct form captured":"No reference yet";
-  $("#ref-hint").textContent=has?`${frames} frames · ${reps||"?"} rep detected`:"Record one clean rep with correct form. This is what trainees are graded against.";
+  $("#ref-state").textContent = pendingRef ? "Captured — not saved yet" : (has?"Correct form captured":"No reference yet");
+  $("#ref-state").style.color = pendingRef ? "var(--amber)" : "";
+  $("#ref-hint").textContent = pendingRef
+    ? `${frames} frames · ${reps||"?"} rep detected · tap Save to library to keep it`
+    : (has?`${frames} frames · ${reps||"?"} rep detected`
+         :"Record one clean rep with correct form. This is the reference trainees see.");
+  // an unsaved capture makes the Save button the obvious next action
+  const saveBtn=$("#ex-save");
+  if(saveBtn){ saveBtn.classList.toggle("glisten",!!pendingRef); }
   const th=$("#ref-thumb");
   if(pendingRef&&pendingRef.blob){ th.innerHTML=`<video muted playsinline></video>`; th.querySelector("video").src=URL.createObjectURL(pendingRef.blob); }
   else if(ex&&ex.ref_video_path){ th.setAttribute("data-video",ex.ref_video_path); th.removeAttribute("data-hydrated"); hydrateVideos($("#s-ex-edit")); }
@@ -2307,11 +2324,14 @@ $("#ex-save").addEventListener("click",async()=>{
 });
 $("#ex-delete").addEventListener("click",async()=>{ if(!editingExId)return; await store.exercises.remove(editingExId); toast("Exercise removed"); go("coach"); });
 $("#btn-record-ref").addEventListener("click",()=>{
-  openRecorder({title:"Reference",subtitle:"record correct form",review:true,onComplete:cap=>{
+  openRecorder({title:"Reference",subtitle:"record correct form",review:true,useLabel:"✓ Use this trace",onComplete:cap=>{
+    // count on the full capture (more accurate) but STORE a subsampled track —
+    // raw frames were posting hundreds of KB of JSON per exercise.
     const reps=countReps(cap.frames).reps;
-    pendingRef={frames:cap.frames,fps:cap.fps,reps,blob:cap.blob};
+    pendingRef={frames:subsample(cap.frames,140),fps:cap.fps,reps,blob:cap.blob};
     updateRefCard(null);
-    toast(reps?`Reference saved · ${reps} rep detected`:"Reference saved");
+    toast(reps?`Reference captured · ${reps} rep${reps>1?"s":""} detected — now tap Save to library`
+              :"Reference captured — now tap Save to library",5000);
   }});
 });
 
