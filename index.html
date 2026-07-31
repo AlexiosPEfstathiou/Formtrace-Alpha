@@ -4031,7 +4031,23 @@ async function openReview(assignedId,readonly=false){
   }
   reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId, labelBy};
   $("#rev-sub").textContent=currentEngOther.display_name?`From ${currentEngOther.display_name}`:"";
-  $("#rev-back").onclick=()=>renderEngagement()||go("engagement");
+  /* renderEngagement() is async so it always returns a truthy Promise — the old
+     `renderEngagement()||go("engagement")` therefore never navigated, which
+     locked coaches into the review. Leave explicitly, warning first if there
+     is unsaved grading. The workout stays 'submitted', so it remains in the
+     queue and can be picked up later. */
+  $("#rev-back").onclick=async()=>{
+    if(!readonly){
+      const touched=Object.values(reviewState.per_set||{}).some(p=>p&&(p.grade!=null||p.comment||p.label||p.video_path));
+      const overall=($("#rev-overall")?.value||"").trim();
+      if(touched||overall){
+        const ok=await openConfirm({title:"Leave this review?",body:"Your grades and notes here aren't saved yet. This workout stays in your review queue, so you can come back to it.",confirmLabel:"Leave without saving",cancelLabel:"Stay here",danger:true});
+        if(!ok)return;
+      }
+    }
+    if(currentEng&&currentEng.id) openEngagement(currentEng.id);
+    else go("trainee-home");
+  };
   const body=$("#review-body");body.innerHTML="";
   (rep.items||[]).forEach((item,ii)=>{
     (item.results||[]).forEach((r,si)=>{
@@ -4333,7 +4349,12 @@ function openRate(){
   $("#rate-role").textContent=iAmCoach?"Trainee":"Coach";
   $("#rate-text").value="";
   $$("#rate-stars span").forEach(s=>s.classList.remove("on"));
-  $("#rate-back").onclick=()=>openEngagement(currentEng.id);
+  $("#rate-back").onclick=()=>{
+    // openRate can be reached at login via checkPendingReview, when currentEng
+    // is null — an unguarded currentEng.id would throw and trap the user here.
+    if(currentEng&&currentEng.id) openEngagement(currentEng.id);
+    else go("trainee-home");
+  };
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-rate").classList.add("active");
 }
 $$("#rate-stars span").forEach(s=>s.addEventListener("click",()=>{
