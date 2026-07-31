@@ -2582,7 +2582,7 @@ function openListingNew(){
 }
 $$("#lst-focus-pills .pill").forEach(p=>p.addEventListener("click",()=>{$$("#lst-focus-pills .pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");listingFocus=p.getAttribute("data-focus");}));
 $("#lst-video-slot").addEventListener("click",()=>{
-  openRecorder({title:"Your goal",subtitle:"describe where you are",review:true,onComplete:cap=>{
+  openRecorder({title:"Your goal",subtitle:"describe where you are",review:true,audio:true,onComplete:cap=>{
     pendingListingVideo=cap;
     const slot=$("#lst-video-slot"); slot.classList.add("filled");
     slot.innerHTML=`<div class="vic">✓</div><div class="vt">Goal video recorded</div><div class="vs">Tap to re-record</div>`;
@@ -2662,7 +2662,7 @@ async function openOffer(listingId){
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-offer").classList.add("active");
 }
 $("#of-video-slot").addEventListener("click",()=>{
-  openRecorder({title:"Your pitch",subtitle:"why you're the right coach",review:true,onComplete:cap=>{
+  openRecorder({title:"Your pitch",subtitle:"why you're the right coach",review:true,audio:true,onComplete:cap=>{
     pendingOfferVideo=cap;
     const slot=$("#of-video-slot");slot.classList.add("filled");
     slot.innerHTML=`<div class="vic">✓</div><div class="vt">Pitch recorded</div><div class="vs">Tap to re-record</div>`;
@@ -4676,7 +4676,20 @@ async function openRecorder(opts){
 function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");}
 async function startCam(){
   if(rStream)rStream.getTracks().forEach(t=>t.stop());
-  rStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:rFacing,width:{ideal:1280},height:{ideal:720}},audio:false});
+  const vc={facingMode:rFacing,width:{ideal:1280},height:{ideal:720}};
+  // Pitch videos are spoken to camera, so they ask for the mic. Set videos and
+  // references stay silent. If the mic is refused we still record the video
+  // rather than failing the whole capture.
+  const wantAudio=!!(recOpts&&recOpts.audio);
+  try{
+    rStream=await navigator.mediaDevices.getUserMedia({video:vc,
+      audio:wantAudio?{echoCancellation:true,noiseSuppression:true,autoGainControl:true}:false});
+  }catch(err){
+    if(!wantAudio)throw err;
+    console.error("mic unavailable, falling back to video only",err);
+    rStream=await navigator.mediaDevices.getUserMedia({video:vc,audio:false});
+    toast("No microphone access — recording without sound",4200);
+  }
   rvideo.srcObject=rStream;rvideo.style.transform=rFacing==="user"?"scaleX(-1)":"none";
   await rvideo.play();await new Promise(r=>{if(rvideo.readyState>=2)return r();rvideo.onloadeddata=()=>r();});sizeCanvas();
 }
@@ -4737,8 +4750,12 @@ function startRec(){
   const paint=()=>{recCtx.save();if(mirror){recCtx.translate(w,0);recCtx.scale(-1,1);}recCtx.drawImage(rvideo,0,0,w,h);recCtx.restore();recCtx.drawImage(roverlay,0,0,w,h);recPaintRAF=requestAnimationFrame(paint);};
   paint();
   const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capStart=performance.now();
+  // A canvas stream has NO audio track, so the mic has to be merged in
+  // explicitly — otherwise pitch videos record silently even with mic access.
+  const aud=rStream?rStream.getAudioTracks():[];
+  const src=aud.length?new MediaStream([...cs.getVideoTracks(),...aud]):cs;
   // ~1.6 Mbps is ample for a short pose-overlay clip and cuts upload size ~4x vs 6 Mbps
-  rRecorder=new MediaRecorder(cs,mime?{mimeType:mime,videoBitsPerSecond:1_600_000}:undefined);
+  rRecorder=new MediaRecorder(src,mime?{mimeType:mime,videoBitsPerSecond:1_600_000,audioBitsPerSecond:96_000}:undefined);
   rRecorder.ondataavailable=e=>{if(e.data.size)rChunks.push(e.data);};rRecorder.onstop=onRecStop;rRecorder.start();
   rRecording=true;$("#rbtn").classList.add("rec");$("#r-flip").style.visibility="hidden";$("#r-ghost").style.visibility="hidden";
   rStart=Date.now();$("#rtimer").classList.add("on");$("#rtval").textContent="0:00";rTimerInt=setInterval(()=>$("#rtval").textContent=fmt((Date.now()-rStart)/1000),250);
