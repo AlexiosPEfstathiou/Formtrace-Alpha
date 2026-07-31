@@ -274,6 +274,24 @@
   .with-tabs{padding-bottom:190px;}
   /* persistent app-level bottom navigation (sits above screens, below modals) */
   #app-tabbar{z-index:9;}
+  /* Several screens are shown without going through go(), so renderAppTabs
+     never runs for them and a stale tab bar would sit on top of their bottom
+     controls (it covered "Send offer" entirely). #app-tabbar follows every
+     .screen in the DOM, so this handles all of them declaratively — including
+     any added later. !important beats the inline display:flex set in JS. */
+  #s-auth.active ~ #app-tabbar,
+  #s-ex-edit.active ~ #app-tabbar,
+  #s-wo-build.active ~ #app-tabbar,
+  #s-offer.active ~ #app-tabbar,
+  #s-listing-new.active ~ #app-tabbar,
+  #s-coach-apply.active ~ #app-tabbar,
+  #s-goals.active ~ #app-tabbar,
+  #s-engagement.active ~ #app-tabbar,
+  #s-review.active ~ #app-tabbar,
+  #s-timelapse.active ~ #app-tabbar,
+  #s-rate.active ~ #app-tabbar,
+  #s-celebrate.active ~ #app-tabbar,
+  #s-trainee-workout.active ~ #app-tabbar{display:none !important;}
   .screen .body{padding-bottom:110px;}
   .screen .body.with-tabs{padding-bottom:190px;}
   /* per-screen SUB tab bars (coach library/workouts, listings goals/offers)
