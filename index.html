@@ -702,6 +702,36 @@
   #countdown .cd-s{font-size:14px;color:rgba(255,255,255,.85);font-weight:600;text-align:center;padding:0 30px;}
   #countdown .cd-x{margin-top:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;}
   @media(prefers-reduced-motion:reduce){#countdown .cd-n.pop{animation:none;}}
+  /* streak celebration overlay */
+  #streak-badge{cursor:pointer;}
+  #streakburst{position:absolute;inset:0;z-index:92;display:none;align-items:center;justify-content:center;
+    background:radial-gradient(120% 90% at 50% 30%, rgba(255,140,30,.22), rgba(0,0,0,.82) 70%);backdrop-filter:blur(3px);}
+  #streakburst.on{display:flex;}
+  #streakburst .sb-inner{position:relative;z-index:2;text-align:center;padding:0 24px;max-width:100%;}
+  .sb-cal{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:22px;}
+  .sb-day{position:relative;width:40px;height:52px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    opacity:0;animation:sbIgnite .55s ease forwards;}
+  .sb-day .sb-dow{font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;}
+  .sb-day .sb-n{font-size:15px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;}
+  .sb-day .sb-flame{position:absolute;top:-11px;font-size:15px;opacity:0;animation:sbFlame .5s ease forwards;animation-delay:inherit;}
+  @keyframes sbIgnite{
+    0%{opacity:0;transform:translateY(8px) scale(.85);}
+    60%{opacity:1;transform:translateY(0) scale(1.06);background:rgba(255,150,40,.35);border-color:rgba(255,180,80,.7);}
+    100%{opacity:1;transform:none;background:rgba(255,120,20,.22);border-color:rgba(255,170,70,.55);box-shadow:0 0 14px rgba(255,140,30,.45);}
+  }
+  @keyframes sbFlame{0%{opacity:0;transform:translateY(6px) scale(.6);}100%{opacity:1;transform:none;}}
+  .sb-title{font-size:34px;font-weight:800;letter-spacing:-.02em;color:#fff;text-shadow:0 2px 22px rgba(255,140,30,.6);
+    opacity:0;animation:sbPop .6s cubic-bezier(.2,.9,.2,1) forwards;}
+  .sb-sub{font-size:13.5px;color:rgba(255,255,255,.75);margin-top:8px;opacity:0;animation:sbPop .6s ease forwards;}
+  @keyframes sbPop{0%{opacity:0;transform:scale(.8);}100%{opacity:1;transform:none;}}
+  .sb-confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
+  .sb-confetti i{position:absolute;top:-14px;width:8px;height:14px;border-radius:2px;opacity:.95;animation:sbFall linear forwards;}
+  @keyframes sbFall{to{transform:translateY(115vh) rotate(720deg);opacity:.9;}}
+  @media(prefers-reduced-motion:reduce){
+    .sb-day,.sb-day .sb-flame,.sb-title,.sb-sub{animation:none;opacity:1;}
+    .sb-confetti{display:none;}
+  }
   /* appearance: theme segmented control + colorblind switch */
   .theme-seg button{font-size:12.5px;}
   /* social profile: name preview, avatar picker */
@@ -1182,6 +1212,17 @@
   <!-- shared 3-2-1 countdown (above the recorder AND the check-in camera) -->
   <div id="countdown"><div class="cd-n" id="cd-n">3</div><div class="cd-s" id="cd-s"></div><button class="cd-x" id="cd-cancel">Cancel</button></div>
 
+  <!-- streak celebration: tap the flame badge -->
+  <div id="streakburst">
+    <div class="sb-confetti" id="sb-confetti"></div>
+    <div class="sb-inner">
+      <div class="sb-cal" id="sb-cal"></div>
+      <div class="sb-title" id="sb-title">You're on fire!</div>
+      <div class="sb-sub" id="sb-sub"></div>
+      <button class="btn primary" id="sb-close" style="margin-top:22px">Nice</button>
+    </div>
+  </div>
+
   <!-- persistent app navigation (shown on every signed-in screen) -->
   <div class="tabbar home-nav" id="app-tabbar" style="display:none"></div>
 </div></div>
@@ -1281,6 +1322,56 @@ function updateStreakBadge(info){
   else if(info.count===0) b.classList.add("zero");
 }
 function hideStreakBadge(){ const b=$("#streak-badge"); if(b)b.classList.add("hidden"); }
+/* The actual dates making up the current streak, mirroring computeStreak's
+   anchor-then-walk-both-directions logic so the calendar matches the number. */
+function streakDates(){
+  const today=todayISO();
+  let anchor=null;
+  for(const c of [today,addDaysISO(today,-1),addDaysISO(today,1)]){ if(dayComplete(c)){anchor=c;break;} }
+  if(!anchor)return [];
+  const out=[]; let cur=anchor,g=0;
+  while(g++<400&&dayComplete(cur)){ out.unshift(cur); cur=addDaysISO(cur,-1); }
+  cur=addDaysISO(anchor,1); g=0;
+  while(g++<400&&dayComplete(cur)){ out.push(cur); cur=addDaysISO(cur,1); }
+  return out;
+}
+function sbConfetti(){
+  const box=$("#sb-confetti"); if(!box)return;
+  box.innerHTML="";
+  const cols=["#FFC24A","#FF7A2F","#C8FF3D","#FF5A5A","#FFFFFF"];
+  for(let i=0;i<70;i++){
+    const c=document.createElement("i");
+    c.style.left=(Math.random()*100)+"%";
+    c.style.background=cols[i%cols.length];
+    c.style.animationDuration=(1.6+Math.random()*1.6)+"s";
+    c.style.animationDelay=(Math.random()*0.9)+"s";
+    c.style.transform="rotate("+(Math.random()*360)+"deg)";
+    box.appendChild(c);
+  }
+}
+function openStreakBurst(){
+  const dates=streakDates();
+  const n=(streakInfo&&streakInfo.count)||dates.length;
+  if(!n||!dates.length){ toast("Log a day to start your streak",2800); return; }
+  const shown=dates.slice(-14);   // keep it on one screen
+  $("#sb-cal").innerHTML=shown.map((iso,i)=>{
+    const [y,m,d]=iso.split("-").map(Number);
+    const dow=new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short"}).slice(0,2);
+    return `<div class="sb-day" style="animation-delay:${i*85}ms"><span class="sb-dow">${escapeHtml(dow)}</span><span class="sb-n">${d}</span><span class="sb-flame" style="animation-delay:${i*85+260}ms">🔥</span></div>`;
+  }).join("");
+  const total=Math.max(n,dates.length);
+  $("#sb-sub").textContent=`${total} day${total===1?"":"s"} in a row`+(dates.length>shown.length?" · showing the last 14":"");
+  // title/subtitle animate after the last day ignites
+  const settle=shown.length*85+300;
+  const t=$("#sb-title"), s=$("#sb-sub");
+  t.style.animationDelay=settle+"ms"; s.style.animationDelay=(settle+120)+"ms";
+  $("#streakburst").classList.add("on");
+  setTimeout(sbConfetti,settle);
+}
+function closeStreakBurst(){ $("#streakburst").classList.remove("on"); $("#sb-confetti").innerHTML=""; }
+$("#streak-badge")?.addEventListener("click",openStreakBurst);
+$("#sb-close")?.addEventListener("click",closeStreakBurst);
+$("#streakburst")?.addEventListener("click",e=>{ if(e.target.id==="streakburst")closeStreakBurst(); });
 
 /* A tiny in-memory cache of signed URLs so we don't re-sign on every render. */
 const urlCache=new Map();
@@ -2009,6 +2100,14 @@ async function renderCoachTrainees(el,newsEl){
         if(d<since||d>today)continue;
         if(a.status==="assigned"&&d<today) events.push({d,eng:e.id,nm,iso:d,kind:"missed",ic:"⚠",txt:`${nm} missed a workout`});
         else if(a.status==="submitted") events.push({d,eng:e.id,nm,iso:d,kind:"done",ic:"✓",txt:`${nm} completed a workout`});
+      }
+      // ---- postpone requests awaiting the coach ----
+      for(const a of aw){
+        if(a.postpone_status!=="pending"||!a.postpone_to)continue;
+        const asked=a.postpone_at?isoOf(new Date(a.postpone_at)):dateOf(a);
+        events.push({d:asked,eng:e.id,nm,iso:dateOf(a),kind:"missed",ic:"⏳",
+          txt:`${nm} asked to move a workout to ${fmtDay(a.postpone_to)}`,
+          sub:a.postpone_note?`"${a.postpone_note}"`:"Tap to approve or decline"});
       }
       // ---- macros: ONE weekly report per trainee, never one row per day ----
       const ws=weekStartISO();
@@ -3435,6 +3534,30 @@ function openCoachModify(a){
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent="Modify · "+escapeHtml(snap.name||"Workout");
   $("#sheet-add").style.display="none";
+  // trainee's postpone request lands here for approval
+  if(a.postpone_status==="pending" && a.postpone_to){
+    const pp=document.createElement("div");
+    pp.style.cssText="background:var(--accent-surface);border:1px solid var(--accent-border);border-radius:14px;padding:13px 14px;margin-bottom:14px";
+    pp.innerHTML=`<div style="font-size:13px;font-weight:800;color:var(--ink)">Postpone requested</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45">Move from ${escapeHtml(fmtDay(a.due_date||""))} to <b style="color:var(--ink)">${escapeHtml(fmtDay(a.postpone_to))}</b>${a.postpone_note?` · "${escapeHtml(a.postpone_note)}"`:""}</div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn sm" id="pp-approve" style="margin:0;background:var(--lime);color:var(--lime-ink);border-color:var(--lime)">Approve</button>
+        <button class="btn sm" id="pp-reject" style="margin:0;color:var(--red)">Decline</button>
+      </div>`;
+    body.appendChild(pp);
+    pp.querySelector("#pp-approve").addEventListener("click",async()=>{
+      try{
+        await store.assignedWorkouts.update(a.id,{due_date:a.postpone_to,postpone_status:"approved"});
+        toast("Moved to "+fmtDay(a.postpone_to)+" ✓",3000); closeSheet(); renderEngagement();
+      }catch(e){ console.error(e); toast("Couldn't approve",4000); }
+    });
+    pp.querySelector("#pp-reject").addEventListener("click",async()=>{
+      try{
+        await store.assignedWorkouts.update(a.id,{postpone_status:"rejected"});
+        toast("Request declined"); closeSheet(); renderEngagement();
+      }catch(e){ console.error(e); toast("Couldn't decline",4000); }
+    });
+  }
   const wrap=document.createElement("div");
   wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin:2px 2px 14px;line-height:1.5">This workout hasn't been submitted yet, so you can still change it.</div>
     <div class="field" style="margin-bottom:14px"><label>Move to date</label><input id="cm-date" type="date" value="${cur}"></div>`;
@@ -3871,7 +3994,69 @@ function renderAssignedWorkout(){
   submitSaveBtn.classList.toggle("hidden",locked||!allDone);
   submitBtn.onclick=()=>submitToCoach(false);
   submitSaveBtn.onclick=()=>submitToCoach(true);
+  renderPostponeRow(wrap);
   hydrateVideos(wrap);
+}
+/* Trainee: ask the coach to move an unstarted workout to another day. */
+function renderPostponeRow(wrap){
+  const a=currentAssigned; if(!a)return;
+  if(a.status!=="assigned")return;          // only pending workouts
+  const box=document.createElement("div");
+  box.className="card"; box.style.cssText="margin-top:14px;padding:14px 15px";
+  const st=a.postpone_status;
+  if(st==="pending"){
+    box.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--amber)">Postpone requested</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">You asked to move this to ${escapeHtml(fmtDay(a.postpone_to))}. Waiting for your coach.</div>
+      <button class="btn sm" id="pp-cancel" style="margin-top:12px">Cancel request</button>`;
+  }else if(st==="rejected"){
+    box.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--red)">Postpone declined</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Your coach kept this on its original day.</div>
+      <button class="btn sm" id="pp-ask" style="margin-top:12px">Ask again</button>`;
+  }else{
+    box.innerHTML=`<div style="font-size:13px;font-weight:700">Can't train today?</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Ask your coach to move this workout to another day.</div>
+      <button class="btn sm" id="pp-ask" style="margin-top:12px">Request a different day</button>`;
+  }
+  wrap.appendChild(box);
+  $("#pp-ask")?.addEventListener("click",openPostponeSheet);
+  $("#pp-cancel")?.addEventListener("click",async()=>{
+    try{
+      await store.assignedWorkouts.update(currentAssigned.id,{postpone_status:null,postpone_to:null,postpone_note:null});
+      currentAssigned.postpone_status=null;currentAssigned.postpone_to=null;
+      toast("Request withdrawn"); renderAssignedWorkout();
+    }catch(e){ console.error(e); toast("Couldn't withdraw the request",4000); }
+  });
+}
+function openPostponeSheet(){
+  const a=currentAssigned; if(!a)return;
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Request a different day";
+  $("#sheet-add").style.display="none";   // this sheet has its own button
+  const cur=a.due_date||todayISO();
+  const wrapEl=document.createElement("div");
+  wrapEl.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      Currently set for ${escapeHtml(fmtDay(cur))}. Your coach has to approve the change.</div>
+    <div class="field"><label for="pp-date">Move to</label>
+      <input id="pp-date" type="date" min="${todayISO()}" value="${escapeHtml(addDaysISO(todayISO(),1))}"></div>
+    <div class="field"><label for="pp-note">Reason (optional)</label>
+      <input id="pp-note" placeholder="e.g. away for work"></div>
+    <button class="btn primary" id="pp-send" style="margin-top:4px">Send request</button>`;
+  body.appendChild(wrapEl);
+  $("#pp-send").addEventListener("click",async()=>{
+    const d=($("#pp-date").value||"").trim();
+    if(!d){ toast("Pick a day"); return; }
+    if(d===a.due_date){ toast("That's already the scheduled day"); return; }
+    const btn=$("#pp-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
+    try{
+      await store.assignedWorkouts.update(a.id,{postpone_to:d,postpone_status:"pending",postpone_note:($("#pp-note").value||"").trim()||null,postpone_at:new Date().toISOString()});
+      currentAssigned.postpone_to=d;currentAssigned.postpone_status="pending";
+      closeSheet(); toast("Request sent to your coach ✓",3200); renderAssignedWorkout();
+    }catch(err){
+      console.error(err); toast(err.message||"Couldn't send the request (run migrations_postpone.sql)",4600);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 async function previewReference(itemIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
