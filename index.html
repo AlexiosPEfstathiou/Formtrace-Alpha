@@ -1281,7 +1281,20 @@ async function hydrateVideos(root){
     el.setAttribute("data-hydrated","1");
     const url=await playable(path);
     if(url){ el.innerHTML=`<video src="${url}" muted playsinline preload="metadata"></video><div class="play-big">▶</div>`;
-      el.addEventListener("click",()=>{ const v=el.querySelector("video"); if(!v)return; if(v.paused){v.muted=false;v.play();el.querySelector(".play-big")?.remove();}else{v.pause();} }); }
+      el.addEventListener("click",e=>{
+        const v=el.querySelector("video"); if(!v)return;
+        // Once native controls are showing, let them own the gesture so
+        // dragging the scrub bar or volume doesn't pause the video.
+        if(v.controls && e.target===v) return;
+        if(v.paused){
+          v.muted=false;
+          // seek + volume, but not on tiny library thumbnails where the
+          // native control bar would be bigger than the video
+          if(el.clientWidth>=140) v.controls=true;
+          v.play();
+          el.querySelector(".play-big")?.remove();
+        }else{ v.pause(); }
+      }); }
     else el.innerHTML=`<span class="ph" style="color:var(--faint)">video unavailable</span>`;
   }
 }
@@ -4044,6 +4057,28 @@ async function openReview(assignedId,readonly=false){
     }
   }
   reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId, labelBy};
+  /* Reachable straight from the trainee's training list, where the engagement
+     context was never loaded. currentEngOther is null there, and reading
+     .display_name off it threw — so the screen silently never opened. Load the
+     context on demand so the header and the back button both work. */
+  if(!currentEng||!currentEngOther){
+    try{
+      const a=currentAssigned||await store.assignedWorkouts.get(assignedId);
+      if(a&&a.engagement_id){
+        currentEng=await store.engagements.get(a.engagement_id);
+        const otherId=(currentEng.coach_id===ME.id)?currentEng.trainee_id:currentEng.coach_id;
+        try{ const {data}=await store._sb.from("profiles").select("*").eq("id",otherId).single(); currentEngOther=data||{}; }
+        catch(_){ currentEngOther={}; }
+      }
+    }catch(e){ console.error("review context load failed",e); }
+  }
+  if(!currentEngOther) currentEngOther={};
+  /* Once a workout is 'reviewed', `opened` means "the trainee has seen the
+     review" (it was set true earlier when they opened it to record). The coach
+     resets it to false on submit, so viewing here is what clears the badge. */
+  if(readonly && roleOf()!=="coach"){
+    try{ await store.assignedWorkouts.update(assignedId,{opened:true}); }catch(e){ console.error("mark review seen",e); }
+  }
   $("#rev-sub").textContent=currentEngOther.display_name?`From ${currentEngOther.display_name}`:"";
   /* renderEngagement() is async so it always returns a truthy Promise — the old
      `renderEngagement()||go("engagement")` therefore never navigated, which
@@ -4168,7 +4203,10 @@ $("#rev-submit").addEventListener("click",async()=>{
     }
     await store.reviews.add({submission_id:currentSubmission.id,coach_id:ME.id,overall:($("#rev-overall")?.value||"").trim(),per_set});
     await saveCoachGrades();
-    await store.assignedWorkouts.update(reviewState.assignedId,{status:"reviewed"});
+    // opened:false marks the review as UNSEEN by the trainee — it was set true
+    // when they opened the workout to record, so without this reset their
+    // homepage "new review" badge could never appear.
+    await store.assignedWorkouts.update(reviewState.assignedId,{status:"reviewed",opened:false});
     toast("Review sent ✓"); openEngagement(currentEng.id);
   }catch(err){console.error(err);toast(err.message||"Couldn't send review",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
