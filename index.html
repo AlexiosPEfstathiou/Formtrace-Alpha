@@ -1297,6 +1297,21 @@ async function hydrateVideos(root){
     el.setAttribute("data-hydrated","1");
     const url=await playable(path);
     if(url){ el.innerHTML=`<video src="${url}" muted playsinline preload="metadata"></video><div class="play-big">▶</div>`;
+      /* Cards are styled 9/16 with object-fit:cover, which crops a landscape
+         take down to a zoomed centre strip. Read the real dimensions once
+         metadata arrives and let the container adopt them. Small thumbnails
+         keep the square crop — letterboxing a 58px tile looks worse. */
+      const vid=el.querySelector("video");
+      const isPlayer=el.classList.contains("video-card");
+      if(vid&&isPlayer){
+        vid.addEventListener("loadedmetadata",()=>{
+          const w=vid.videoWidth,h=vid.videoHeight;
+          if(!w||!h)return;
+          el.style.aspectRatio=`${w} / ${h}`;
+          el.classList.add(w>h?"vid-landscape":"vid-portrait");
+          vid.style.objectFit="contain";
+        },{once:true});
+      }
       el.addEventListener("click",e=>{
         const v=el.querySelector("video"); if(!v)return;
         // Once native controls are showing, let them own the gesture so
