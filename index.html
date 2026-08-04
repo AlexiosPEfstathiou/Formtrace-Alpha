@@ -410,6 +410,14 @@
   .rc-save{flex-shrink:0;height:48px;padding:0 20px;border-radius:13px;border:1px solid var(--lime);background:var(--lime);color:var(--lime-ink);font-size:15px;font-weight:700;cursor:pointer;}
   .rc-done{text-align:center;font-size:14px;font-weight:700;color:var(--lime);}
   .res-note{text-align:center;font-size:12.5px;color:var(--faint);line-height:1.5;padding:0 10px;}
+  /* weight used for a set */
+  .wt-field{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;}
+  .wt-field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:9px;}
+  .wt-row{display:flex;align-items:center;gap:10px;}
+  .wt-row input{flex:1;min-width:0;height:46px;background:var(--panel2);border:1px solid var(--line2);border-radius:12px;color:var(--ink);font-size:17px;text-align:center;outline:none;}
+  .wt-row input:focus{border-color:var(--lime-dim);}
+  .wt-unit{font-size:14px;font-weight:700;color:var(--muted);flex-shrink:0;}
+  .wt-last{font-size:11.5px;color:var(--lime-dim);margin-top:8px;min-height:14px;}
   /* coach's 1-10 form grade selector on the review screen */
   .gsel{display:flex;gap:5px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
@@ -1104,6 +1112,14 @@
           </div>
         </div>
         <div class="rc-done" id="rep-done" style="display:none"></div>
+      </div>
+      <div class="wt-field" id="wt-field">
+        <label for="set-weight">Weight used — leave blank for bodyweight</label>
+        <div class="wt-row">
+          <input id="set-weight" type="number" inputmode="decimal" min="0" step="any" placeholder="kg">
+          <span class="wt-unit">kg</span>
+        </div>
+        <div class="wt-last" id="wt-last"></div>
       </div>
       <div class="res-note">Your coach grades your form when they review this workout.</div>
     </div>
@@ -3812,7 +3828,7 @@ function renderAssignedWorkout(){
           ? `<div class="grade-num" style="color:var(--lime);font-size:19px">${shown}</div><div class="grade-lab">reps ✓</div>`
           : `<div class="grade-num" style="font-size:19px">${shown}</div><div class="grade-lab">reps</div>`;
         inner+=`<div class="setrow done" ${r.video_path?`data-play="${i}-${s}" style="cursor:pointer"`:""}><div class="set-n">✓</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">target ${it.reps} reps</div></div>
+          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">target ${it.reps} reps${r.weight_kg!=null?` · ${r.weight_kg} kg`:""}</div></div>
           <div class="grade-badge">${badge}</div></div>`;
       }else{
         const isNext=(s===nextUndone)&&!locked;
@@ -3887,7 +3903,7 @@ async function runAnalysis(itemIndex,setIndex,capture){
     try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); }
     catch(e){ console.error("set video upload failed",e); toast("Video didn't upload — set still saved",3600); }
   }
-  const result={reps:rc.reps,reps_label:null,reps_corrected:null,video_path};
+  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path};
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
   saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
@@ -3933,6 +3949,38 @@ function showResult(exName,it,setIndex,r,itemIndex){
     showDone(`Corrected to ${v} reps ✓`);
   };
   $("#res-continue").onclick=()=>{R.classList.remove("on");renderAssignedWorkout();};
+  // ---- weight used for this set (optional; dumbbells etc.) ----
+  const wIn=$("#set-weight"), wLast=$("#wt-last");
+  wIn.value = (r.weight_kg==null?"":r.weight_kg);
+  wLast.textContent="";
+  wIn.oninput=()=>{
+    const s=(wIn.value||"").trim();
+    const v=Number(s);
+    r.weight_kg = (s===""||!Number.isFinite(v)||v<0) ? null : v;
+    saveWorkoutDraft();
+  };
+  // show what they lifted for this exercise last time, so they can progress
+  lastWeightFor(it.name).then(prev=>{
+    if(!prev)return;
+    wLast.textContent=`Last time: ${prev.weight} kg${prev.on?" · "+fmtDay(prev.on):""}`;
+  }).catch(()=>{});
+}
+/* Most recent weight this trainee used for an exercise on an EARLIER workout.
+   Reads set_labels, which is indexed on (trainee_id, exercise_name, created_at). */
+async function lastWeightFor(exerciseName,excludeAssignedId){
+  if(!exerciseName||!ME)return null;
+  const skip=excludeAssignedId||(currentAssigned&&currentAssigned.id)||null;
+  try{
+    const rows=await store.setLabels.list({trainee_id:ME.id,exercise_name:exerciseName});
+    let best=null;
+    for(const row of rows){
+      if(row.weight_kg==null)continue;
+      if(skip && row.assigned_id===skip)continue;
+      if(!best || (row.created_at||"")>(best.created_at||"")) best=row;
+    }
+    if(!best)return null;
+    return {weight:best.weight_kg, on:(best.created_at?isoOf(new Date(best.created_at)):null)};
+  }catch(e){ console.error("lastWeightFor",e); return null; }
 }
 async function submitToCoach(save=false){
   const btn=save?$("#tw-submit-save"):$("#tw-submit");
@@ -3973,7 +4021,8 @@ async function writeSetLabels(sub){
         coach_ref_video_path:it.ref_video_path||null,
         reps_counted:r.reps??null,
         reps_label:r.reps_label||null,
-        reps_corrected:(r.reps_corrected==null?null:r.reps_corrected)
+        reps_corrected:(r.reps_corrected==null?null:r.reps_corrected),
+        weight_kg:(r.weight_kg==null?null:r.weight_kg)
       });
     });
   });
@@ -4073,6 +4122,17 @@ async function openReview(assignedId,readonly=false){
     }catch(e){ console.error("review context load failed",e); }
   }
   if(!currentEngOther) currentEngOther={};
+  /* Previous load per exercise: the most recent weight this trainee used on a
+     DIFFERENT assigned workout, so the coach can see progression at a glance. */
+  const prevWeight={};
+  try{
+    const hist=await store.setLabels.list({trainee_id:currentSubmission.trainee_id});
+    for(const row of hist){
+      if(row.weight_kg==null||row.assigned_id===assignedId)continue;
+      const k=row.exercise_name||"";
+      if(!prevWeight[k] || (row.created_at||"")>(prevWeight[k].created_at||"")) prevWeight[k]=row;
+    }
+  }catch(e){ console.error("previous weights",e); }
   /* Once a workout is 'reviewed', `opened` means "the trainee has seen the
      review" (it was set true earlier when they opened it to record). The coach
      resets it to false on submit, so viewing here is what clears the badge. */
@@ -4107,10 +4167,24 @@ async function openReview(assignedId,readonly=false){
       const shownReps=corrected?lab.reps_corrected:(lab.reps_counted??r.reps);
       const repNote=corrected?` · <span style="color:var(--amber)">trainee corrected from ${lab.reps_counted}</span>`
         : lab.reps_label==="correct"?` · <span style="color:var(--lime-dim)">count confirmed</span>`:"";
+      // load used, plus the last time this exercise was done on another day
+      const w=(lab.weight_kg!=null)?lab.weight_kg:(r.weight_kg!=null?r.weight_kg:null);
+      const pv=prevWeight[item.name];
+      let wLine="";
+      if(w!=null||pv){
+        const now=w!=null?`<b style="color:var(--ink)">${w} kg</b>`:`<span style="color:var(--faint)">bodyweight</span>`;
+        let cmp="";
+        if(pv){
+          const d=(w!=null)?(w-pv.weight_kg):null;
+          const arrow=(d==null||Math.abs(d)<0.001)?"":(d>0?`<span style="color:var(--lime)">▲ +${(+d.toFixed(2))}</span> `:`<span style="color:var(--amber)">▼ ${(+d.toFixed(2))}</span> `);
+          cmp=` · ${arrow}<span style="color:var(--faint)">last ${pv.weight_kg} kg${pv.created_at?" on "+escapeHtml(fmtDay(isoOf(new Date(pv.created_at)))):""}</span>`;
+        }
+        wLine=`<div style="font-size:12px;margin-bottom:10px">${now}${cmp}</div>`;
+      }
       const div=document.createElement("div");div.className="review-set";
       div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>
         ${lab.form_grade?`<div class="grade-badge"><span class="grade-num" style="color:${gradeColor(lab.form_grade)}">${lab.form_grade}</span><span class="grade-lab">/10</span></div>`:`<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"grade below"}</span></div>`}</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${shownReps} reps · target ${item.reps}${repNote}</div>`;
+        <div style="font-size:12px;color:var(--muted);margin-bottom:${wLine?"6px":"10px"}">${shownReps} reps · target ${item.reps}${repNote}</div>${wLine}`;
       // trainee's submitted video for this set
       if(r.video_path){
         const vc=document.createElement("div");vc.className="video-card";vc.style.cssText="margin-bottom:10px;max-height:220px";
