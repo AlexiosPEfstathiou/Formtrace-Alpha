@@ -1395,20 +1395,41 @@ async function hydrateVideos(root){
       const vid=el.querySelector("video");
       const isPlayer=el.classList.contains("video-card");
       if(vid&&isPlayer){
-        vid.addEventListener("loadedmetadata",()=>{
+        const applyOrientation=()=>{
           const w=vid.videoWidth,h=vid.videoHeight;
-          if(!w||!h)return;
+          if(!w||!h)return false;
           el.style.aspectRatio=`${w} / ${h}`;
+          el.classList.remove("vid-landscape","vid-portrait");
           el.classList.add(w>h?"vid-landscape":"vid-portrait");
           /* Callers cap these cards at 220-240px tall, which for a portrait
              clip leaves them ~130px wide — too narrow to actually use a seek
              bar. Give portrait players room; landscape needs no cap. */
           el.style.maxHeight = (w>h) ? "" : "360px";
           vid.style.objectFit="contain";
-        },{once:true});
+          return true;
+        };
+        /* The src is set by innerHTML above, so for a cached video the browser
+           may already have the dimensions before we can attach a listener —
+           loadedmetadata would then never fire and a landscape clip would keep
+           the default 9/16 box. Apply straight away if the data is there, and
+           listen on several events as a net for the slow path. */
+        if(!applyOrientation()){
+          vid.addEventListener("loadedmetadata",applyOrientation,{once:true});
+          vid.addEventListener("loadeddata",applyOrientation,{once:true});
+          vid.addEventListener("canplay",applyOrientation,{once:true});
+          vid.addEventListener("play",applyOrientation,{once:true});
+        }
       }
       el.addEventListener("click",e=>{
         const v=el.querySelector("video"); if(!v)return;
+        /* Thumbnails are far too small to host a control bar, so send them to
+           the full-screen player (which has native controls) instead of
+           playing them inline at 52px with no way to seek. */
+        if(!isPlayer){
+          e.stopPropagation();
+          playSetVideo(path,"");
+          return;
+        }
         // Once native controls are showing, let them own the gesture so
         // dragging the scrub bar or volume doesn't pause the video.
         if(v.controls && e.target===v) return;
