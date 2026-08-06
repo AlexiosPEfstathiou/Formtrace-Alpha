@@ -1400,6 +1400,10 @@ async function hydrateVideos(root){
           if(!w||!h)return;
           el.style.aspectRatio=`${w} / ${h}`;
           el.classList.add(w>h?"vid-landscape":"vid-portrait");
+          /* Callers cap these cards at 220-240px tall, which for a portrait
+             clip leaves them ~130px wide — too narrow to actually use a seek
+             bar. Give portrait players room; landscape needs no cap. */
+          el.style.maxHeight = (w>h) ? "" : "360px";
           vid.style.objectFit="contain";
         },{once:true});
       }
@@ -1410,9 +1414,10 @@ async function hydrateVideos(root){
         if(v.controls && e.target===v) return;
         if(v.paused){
           v.muted=false;
-          // seek + volume, but not on tiny library thumbnails where the
-          // native control bar would be bigger than the video
-          if(el.clientWidth>=140) v.controls=true;
+          // Real players always get seek + volume. This used to test
+          // clientWidth>=140, but a 9/16 card capped at 220px tall is only
+          // ~124px wide, so review videos silently lost their controls.
+          if(isPlayer) v.controls=true;
           v.play();
           el.querySelector(".play-big")?.remove();
         }else{ v.pause(); }
