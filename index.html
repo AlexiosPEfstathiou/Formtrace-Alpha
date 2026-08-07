@@ -2269,17 +2269,29 @@ async function renderCoachTrainees(el,newsEl){
   try{
     const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
     if(!engs.length) return;
-    // trainee profiles
-    const profs={};
-    for(const e of engs){ if(!profs[e.trainee_id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",e.trainee_id).single(); if(data)profs[e.trainee_id]=data; }catch(_){}} }
     const today=todayISO(), since=addDaysISO(today,-7);
+    /* Batched: this used to run one sequential profile lookup plus three
+       queries PER trainee (4N+1). Now it's four queries total regardless of
+       how many trainees a coach has, grouped in JS below. */
+    const engIds=engs.map(e=>e.id);
+    const traineeIds=[...new Set(engs.map(e=>e.trainee_id))];
+    const sb=store._sb;
+    const [profRes,awRes,logRes,ciRes]=await Promise.all([
+      sb.from("profiles").select("*").in("id",traineeIds),
+      sb.from("assigned_workouts").select("*").in("engagement_id",engIds),
+      // `since` is always on or before the week start, so one filter serves
+      // both the 7-day feed window and the weekly macro report
+      sb.from("logs").select("*").in("trainee_id",traineeIds).gte("log_date",since),
+      sb.from("checkins").select("*").in("trainee_id",traineeIds).gte("checkin_date",since)
+    ]);
+    const profs={};
+    for(const p of (profRes.data||[])) profs[p.id]=p;
+    const awBy={}, logBy={}, ciBy={};
+    for(const a of (awRes.data||[])) (awBy[a.engagement_id]=awBy[a.engagement_id]||[]).push(a);
+    for(const l of (logRes.data||[])) (logBy[l.trainee_id]=logBy[l.trainee_id]||[]).push(l);
+    for(const c of (ciRes.data||[])) (ciBy[c.trainee_id]=ciBy[c.trainee_id]||[]).push(c);
     for(const e of engs){
-      // one pass per trainee feeds BOTH the list and the news feed
-      const [aw,logs,cis]=await Promise.all([
-        store.assignedWorkouts.list({engagement_id:e.id}),
-        store.logs.list({trainee_id:e.trainee_id}).catch(()=>[]),
-        store.checkins.list({trainee_id:e.trainee_id}).catch(()=>[])
-      ]);
+      const aw=awBy[e.id]||[], logs=logBy[e.trainee_id]||[], cis=ciBy[e.trainee_id]||[];
       const dateOf=a=>a.due_date||isoOf(new Date(a.created_at||Date.now()));
       // days since the coach last ASSIGNED anything (their own accountability)
       const allDates=aw.map(dateOf).sort();
