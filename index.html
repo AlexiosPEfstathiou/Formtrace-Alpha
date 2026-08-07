@@ -3993,16 +3993,22 @@ async function loadPrevSeries(a){
       const s=series[k].status;
       if(s==="submitted"||s==="reviewed"){ prev=series[k]; break; }
     }
-    prevSeries={ordinal,total:series.length,prev:null,notes:{},reps:{},grades:{},on:null};
+    prevSeries={ordinal,total:series.length,prev:null,notes:{},reps:{},grades:{},on:null,prevName:null};
     if(!prev)return;
     prevSeries.prev=prev; prevSeries.on=dateOf(prev);
+    // the name it had THEN, not what the plan is called now
+    prevSeries.prevName=(prev.snapshot&&prev.snapshot.name)||null;
     const sub=(await store.submissions.list({assigned_id:prev.id}))[0];
     if(sub&&sub.report&&Array.isArray(sub.report.items)){
       sub.report.items.forEach(it=>{
         (it.results||[]).forEach((r,si)=>{
           if(!r)return;
           const n=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:r.reps;
-          if(n!=null) prevSeries.reps[(it.name||"")+"#"+si]=n;
+          if(n==null)return;
+          // key by BOTH id and name: id survives an exercise rename, name is
+          // the fallback for reports written before ids were stored
+          if(it.exercise_id) prevSeries.reps["id:"+it.exercise_id+"#"+si]=n;
+          prevSeries.reps[(it.name||"")+"#"+si]=n;
         });
       });
       const rev=sub.id?(await store.reviews.list({submission_id:sub.id}))[0]:null;
@@ -4049,7 +4055,7 @@ function renderAssignedWorkout(){
     // it can still be acted on. Neutral heading: the note may be praise.
     const prevNote=prevSeries&&prevSeries.notes[it.name];
     if(prevNote){
-      inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
+      inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(prevSeries.prevName||snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
     }
     const nextUndone=results.findIndex(x=>!x);
     for(let s=0;s<it.sets;s++){
@@ -4231,7 +4237,10 @@ function showResult(exName,it,setIndex,r,itemIndex){
   // comparison against the same set last time round
   const cmpEl=$("#res-cmp");
   if(cmpEl){
-    const last=prevSeries&&prevSeries.reps[(it.name||"")+"#"+setIndex];
+    const last=prevSeries&&(
+      (it.exercise_id&&prevSeries.reps["id:"+it.exercise_id+"#"+setIndex]) ??
+      prevSeries.reps[(it.name||"")+"#"+setIndex]
+    );
     if(last!=null){
       const d=r.reps-last;
       const arrow=d>0?`<span style="color:var(--lime)">▲ ${d} more</span>`:d<0?`<span style="color:var(--amber)">▼ ${Math.abs(d)} fewer</span>`:`<span style="color:var(--muted)">same</span>`;
@@ -4302,7 +4311,7 @@ async function submitToCoach(save=false){
   btn.disabled=true;other.disabled=true;const o=btn.textContent;btn.textContent=save?"Saving & submitting…":"Submitting…";
   try{
     if(save){ await saveWorkoutVideos(); }
-    const report={items:currentAssigned.snapshot.items.map((it,i)=>({name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
+    const report={items:currentAssigned.snapshot.items.map((it,i)=>({exercise_id:it.exercise_id||null,name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
     const sub=await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
     await writeSetLabels(sub);
     await store.assignedWorkouts.update(currentAssigned.id,{status:"submitted"});
