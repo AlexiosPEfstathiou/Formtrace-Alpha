@@ -1372,13 +1372,22 @@ function fmtDay(iso){ if(!iso)return "—"; const [y,m,d]=iso.split("-").map(Num
 function weekNumber(startedAt){ if(!startedAt)return 1; const start=new Date(startedAt); const ms=Date.now()-start.getTime(); const wk=Math.floor(ms/(7*24*3600*1000))+1; return wk<1?1:wk; }
 /* ---- streak / day-completion helpers (trainee) ---- */
 function macrosLogged(l){ return !!(l && (l.protein_g!=null || l.carbs_g!=null || l.fat_g!=null)); }
-// A day is COMPLETE when macros are logged AND no workout that day is still 'assigned'.
-// (submitted counts — trainee did their part; rest days with macros count.)
-function dayComplete(iso, logsMap, awMap){
-  logsMap=logsMap||logsByDate; awMap=awMap||engAssignedByDate;
+/* Streak definition — must stay identical to _day_state / compute_streak in
+   migrations_streak_redefine.sql, or the calendar's danger styling will
+   disagree with the badge the server computes.
+     'done'   workout(s) due and all submitted/reviewed
+     'rest'   nothing due that day
+     'missed' something due and still 'assigned'
+   Macros do NOT affect the streak: this badge reads as a training streak,
+   and requiring a food log on a rest day surprised everyone who saw it. */
+function dayState(iso, awMap){
+  awMap=awMap||engAssignedByDate;
   const wl=awMap[iso]||[];
-  const pendingWorkout=wl.some(a=>a.status==="assigned");
-  return macrosLogged(logsMap[iso]) && !pendingWorkout;
+  if(!wl.length) return "rest";
+  return wl.some(a=>a.status==="assigned") ? "missed" : "done";
+}
+function dayComplete(iso, logsMap, awMap){
+  return dayState(iso, awMap)!=="missed";
 }
 // A day is a MISSED-workout day when it's in the past and has a workout still 'assigned'.
 function dayMissedWorkout(iso, awMap){
@@ -1417,13 +1426,19 @@ function computeStreak(logsMap, awMap){
     if(misses===1) danger=true;
   }
   if(!anchor) return {count:0, danger, broken:false};
-  // count backwards from anchor (stop at first non-complete, or a missed-workout boundary handled above)
-  let count=0, cur=anchor;
-  let guard=0;
-  while(guard++<400 && dayComplete(cur,logsMap,awMap)){ count++; cur=addDaysISO(cur,-1); }
-  // count forwards from the day after anchor
+  /* Count backwards, breaking on a missed day or a seventh consecutive rest
+     day. The rest cap is what stops a trainee with nothing assigned from
+     accruing an unbroken streak forever. */
+  let count=0, cur=anchor, rest=0, guard=0;
+  while(guard++<400){
+    const st=dayState(cur,awMap);
+    if(st==="missed") break;
+    if(st==="rest"){ rest++; if(rest>=7) break; } else rest=0;
+    count++; cur=addDaysISO(cur,-1);
+  }
+  // forwards only for days already trained ahead; empty future dates don't count
   cur=addDaysISO(anchor,1); guard=0;
-  while(guard++<400 && dayComplete(cur,logsMap,awMap)){ count++; cur=addDaysISO(cur,1); }
+  while(guard++<400 && dayState(cur,awMap)==="done"){ count++; cur=addDaysISO(cur,1); }
   return {count, danger, broken:false};
 }
 function updateStreakBadge(info){
@@ -1439,12 +1454,17 @@ function hideStreakBadge(){ const b=$("#streak-badge"); if(b)b.classList.add("hi
 function streakDates(){
   const today=todayISO();
   let anchor=null;
-  for(const c of [today,addDaysISO(today,-1),addDaysISO(today,1)]){ if(dayComplete(c)){anchor=c;break;} }
+  for(const c of [today,addDaysISO(today,-1)]){ if(dayState(c)!=="missed"){anchor=c;break;} }
   if(!anchor)return [];
-  const out=[]; let cur=anchor,g=0;
-  while(g++<400&&dayComplete(cur)){ out.unshift(cur); cur=addDaysISO(cur,-1); }
+  const out=[]; let cur=anchor, rest=0, g=0;
+  while(g++<400){
+    const st=dayState(cur);
+    if(st==="missed") break;
+    if(st==="rest"){ rest++; if(rest>=7) break; } else rest=0;
+    out.unshift(cur); cur=addDaysISO(cur,-1);
+  }
   cur=addDaysISO(anchor,1); g=0;
-  while(g++<400&&dayComplete(cur)){ out.push(cur); cur=addDaysISO(cur,1); }
+  while(g++<400 && dayState(cur)==="done"){ out.push(cur); cur=addDaysISO(cur,1); }
   return out;
 }
 function sbConfetti(){
@@ -4051,7 +4071,16 @@ async function saveMacroLog(){
     macroLogDate=null;
     closeSheet();$("#sheet-add").textContent="Add selected";$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
     toast("Logged ✓");
-    renderEngagement();
+    /* Refresh whatever screen we're actually on. This used to call
+       renderEngagement() unconditionally, which from the homepage rendered
+       the calendar with currentEng still null and threw on coach_id. */
+    if($("#s-engagement")?.classList.contains("active")){
+      renderEngagement();
+    }else if($("#s-home")?.classList.contains("active")){
+      renderHomeMacro($("#home-macro"));
+      renderHomeMacroGaps($("#home-macrogaps"));
+      refreshStreakBadge();
+    }
   }catch(err){console.error(err);toast(err.message||"Couldn't save log",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 }
