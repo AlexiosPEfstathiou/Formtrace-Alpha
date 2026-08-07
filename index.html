@@ -445,6 +445,8 @@
     line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
   .vid-rot:active{transform:scale(.92);}
   .vid-rot:disabled{opacity:.5;}
+  /* on the full-screen player, sit clear of the native control bar */
+  #r-rot{width:40px;height:40px;font-size:19px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 78px);z-index:7;}
   /* coach's 1-10 form grade selector on the review screen */
   .gsel{display:flex;gap:5px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
@@ -1169,6 +1171,7 @@
       <canvas id="roverlay"></canvas>
       <video id="rplay" playsinline controls></video>
       <div class="r-note" id="r-note"></div>
+      <button class="vid-rot" id="r-rot" style="display:none" aria-label="Rotate video">⟳</button>
       <div id="r-dims"></div>
       <div class="rtop">
         <button class="close" id="r-close">✕</button>
@@ -2581,12 +2584,20 @@ async function renderCoachTrainees(el,newsEl){
       const dateOf=a=>a.due_date||isoOf(new Date(a.created_at||Date.now()));
       // days since the coach last ASSIGNED anything (their own accountability)
       const allDates=aw.map(dateOf).sort();
-      const lastAssigned=allDates.length?allDates[allDates.length-1]:null;
+      /* Two different questions, previously answered by one number:
+         - how long since the coach last assigned anything (accountability)
+         - when is this trainee's NEXT session (the soonest date from today on)
+         Taking the max date answered "next" with the FURTHEST future workout,
+         so a trainee with sessions today, Sat and Mon was reported as Monday. */
+      const past=allDates.filter(d=>d<=today);
+      const upcoming=allDates.filter(d=>d>=today);
+      const lastAssigned=past.length?past[past.length-1]:(allDates[0]||null);
+      const nextDate=upcoming.length?upcoming[0]:null;
       const dAssigned=lastAssigned?Math.round((new Date(today)-new Date(lastAssigned))/(24*3600*1000)):null;
       const pendingReview=aw.filter(a=>a.status==="submitted").length;
       const streak=(profs[e.trainee_id]||{}).streak_count||0;
       const nm=(profs[e.trainee_id]||{}).display_name||"Trainee";
-      rows.push({e,prof:profs[e.trainee_id]||{},lastAssigned,dAssigned,pendingReview,streak});
+      rows.push({e,prof:profs[e.trainee_id]||{},lastAssigned,nextDate,dAssigned,pendingReview,streak});
 
       // ---- news events, last 7 days ----
       for(const a of aw){
@@ -2628,11 +2639,14 @@ async function renderCoachTrainees(el,newsEl){
     const nm=r.prof.display_name||"Trainee";
     const init=r.prof.avatar_initials||initials(nm);
     const d=r.dAssigned;
-    const gapTxt = d==null ? "No workouts assigned"
-      : d<0 ? `Next ${fmtDay(r.lastAssigned)}`
+    /* Prefer the soonest upcoming session — that's what a coach wants to see.
+       Fall back to accountability only when nothing is scheduled ahead. */
+    const gapTxt = r.nextDate
+      ? (r.nextDate===todayISO() ? "Assigned for today" : `Next ${fmtDay(r.nextDate)}`)
+      : d==null ? "No workouts assigned"
       : d===0 ? "Assigned for today"
       : `${d}d since last assigned`;
-    const gapCls = (d!=null && d>=4) ? "ct-stale" : "";
+    const gapCls = (!r.nextDate && d!=null && d>=4) ? "ct-stale" : "";
     const streakTxt = r.streak>0?`🔥 ${r.streak}`:"·";
     const rev = r.pendingReview>0 ? `<button class="ct-rev" data-rev-eng="${r.e.id}" title="${r.pendingReview} to review">▶ ${r.pendingReview}</button>` : "";
     return `<div class="ct-row" data-eng="${r.e.id}">
@@ -4720,6 +4734,7 @@ async function previewReference(itemIndex){
   $("#rvideo").style.display="none";$("#roverlay").style.display="none";
   $("#r-stat").classList.add("hidden");$("#r-deck").style.display="none";$("#rreview").style.display="none";
   $("#r-title").innerHTML='Coach reference<small>correct form</small>';
+  await setupPlayerRotate(it.ref_video_path);
   $("#rplay").play();
 }
 /* Replay a previously recorded set video (skeleton lines already baked in). */
@@ -4731,8 +4746,50 @@ async function playSetVideo(path,title){
   $("#rvideo").style.display="none";$("#roverlay").style.display="none";
   $("#r-stat").classList.add("hidden");$("#r-deck").style.display="none";$("#rreview").style.display="none";
   $("#r-title").innerHTML=`${escapeHtml(title||"Your set")}<small>your recorded form</small>`;
+  await setupPlayerRotate(path);
   $("#rplay").play();
 }
+/* Rotation for the FULL-SCREEN player. The library opens clips here (a 52px
+   thumbnail can't host the control), so without this a coach could never
+   correct a sideways reference — and the override is what trainees see. */
+let rPlayPath=null, rPlayRot=0;
+function applyPlayerRotation(){
+  const v=$("#rplay"); if(!v)return;
+  if(!rPlayRot){ v.style.transform=""; return; }
+  if(rPlayRot===180){ v.style.transform="rotate(180deg)"; return; }
+  const st=v.parentElement;
+  const w=st?st.clientWidth:0, h=st?st.clientHeight:0;
+  // a quarter turn swaps the axes, so shrink to fit the narrower one
+  const s=(w&&h)?Math.min(w/h,h/w):1;
+  v.style.transform=`rotate(${rPlayRot}deg) scale(${s})`;
+}
+async function setupPlayerRotate(path){
+  const btn=$("#r-rot"); if(!btn)return;
+  rPlayPath=path||null; rPlayRot=0;
+  applyPlayerRotation();
+  if(!path){ btn.style.display="none"; return; }
+  btn.style.display="flex";
+  try{
+    const map=await store.videoRotations([path]);
+    rPlayRot=map[path]||0;
+    applyPlayerRotation();
+  }catch(e){ console.error("player rotation",e); }
+}
+$("#r-rot")?.addEventListener("click",async e=>{
+  e.stopPropagation();
+  if(!rPlayPath){ toast("This clip can't be rotated here",2600); return; }
+  const btn=$("#r-rot"); btn.disabled=true;
+  const next=(rPlayRot+90)%360;
+  try{
+    await store.setVideoRotation(rPlayPath,next);
+    rPlayRot=next; applyPlayerRotation();
+    urlCache.delete(rPlayPath);   // so other screens re-read on next render
+    toast(next?`Rotated ${next}° — saved for everyone`:"Rotation cleared",2600);
+  }catch(err){
+    console.error("setVideoRotation",err);
+    toast(err.message||"Couldn't save the rotation",4000);
+  }finally{ btn.disabled=false; }
+});
 function startTraineeSet(itemIndex,setIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
   openRecorder({
@@ -5818,6 +5875,10 @@ async function openRecorder(opts){
   $("#r-tools").style.display="none";   // shown only once the live camera is up
   $("#rbtn").disabled=true;$("#rbtn").classList.remove("rec");$("#rtimer").classList.remove("on");
   cancelCountdown();
+  /* The rotate control belongs to preview playback only — reset it here so a
+     stale path from the last clip can't be rotated from a recording screen. */
+  const rr=$("#r-rot"); if(rr) rr.style.display="none";
+  rPlayPath=null; rPlayRot=0; rplay.style.transform="";
   /* The recorder is shared by six flows. Anything a caller can set must be
      reset here, or it leaks into the next flow — a coach note from a set
      recording was persisting into the trainee's pitch recording. Callers
