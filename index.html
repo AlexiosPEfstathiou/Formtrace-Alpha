@@ -418,6 +418,15 @@
   .wt-row input:focus{border-color:var(--lime-dim);}
   .wt-unit{font-size:14px;font-weight:700;color:var(--muted);flex-shrink:0;}
   .wt-last{font-size:11.5px;color:var(--lime-dim);margin-top:8px;min-height:14px;}
+  /* comparison against the previous run of the same workout */
+  .rep-cmp{font-size:12.5px;margin-top:6px;font-weight:700;}
+  .prev-note{background:rgba(255,194,74,.10);border:1px solid rgba(255,194,74,.32);border-radius:12px;padding:10px 12px;margin:2px 0 10px;}
+  .prev-note .pn-h{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--amber);margin-bottom:4px;}
+  .prev-note .pn-b{font-size:12.5px;line-height:1.5;color:var(--ink);}
+  .r-note{position:absolute;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 168px);z-index:4;display:none;
+    background:rgba(0,0,0,.62);border-radius:10px;padding:9px 11px;color:#fff;font-size:12px;line-height:1.45;
+    backdrop-filter:blur(3px);max-height:44px;overflow:hidden;}
+  .r-note.on{display:block;}
   /* coach's 1-10 form grade selector on the review screen */
   .gsel{display:flex;gap:5px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
@@ -1089,6 +1098,7 @@
       <video id="rvideo" playsinline autoplay muted></video>
       <canvas id="roverlay"></canvas>
       <video id="rplay" playsinline controls></video>
+      <div class="r-note" id="r-note"></div>
       <div class="rtop">
         <button class="close" id="r-close">✕</button>
         <div class="ttl" id="r-title">Reference<small id="r-subtitle">correct form</small></div>
@@ -1127,6 +1137,7 @@
       <div class="rep-hero">
         <div class="rep-n" id="res-reps">0</div>
         <div class="rep-target" id="res-target">reps counted</div>
+        <div class="rep-cmp" id="res-cmp" style="display:none"></div>
       </div>
       <div class="rep-check" id="rep-check">
         <div class="rc-q">Did we count your reps correctly?</div>
@@ -3952,11 +3963,63 @@ async function openAssigned(id){
       }
     }
   }catch(e){ console.error("restore results",e); }
+  await loadPrevSeries(currentAssigned);
   go("trainee-workout");
 }
 /* make a stored results array fit the current items/sets shape */
 function reshapeResults(src,items){
   return items.map((it,i)=>{ const arr=Array(it.sets).fill(null); const s=src[i]||[]; for(let k=0;k<it.sets;k++)arr[k]=s[k]||null; return arr; });
+}
+/* ---- comparison against the previous run of the same workout ----
+   Keyed on workout_id so renaming the plan doesn't restart the count.
+   Holds the ordinal ("2nd Abs workout"), the coach's note per exercise from
+   last time, and last time's rep counts keyed by exercise+set index. */
+let prevSeries=null;
+async function loadPrevSeries(a){
+  prevSeries=null;
+  if(!a||!a.engagement_id)return;
+  try{
+    const key=a.workout_id||((a.snapshot&&a.snapshot.name)||"");
+    const all=await store.assignedWorkouts.list({engagement_id:a.engagement_id});
+    const dateOf=x=>x.due_date||isoOf(new Date(x.created_at||Date.now()));
+    const series=all
+      .filter(x=>(x.workout_id||((x.snapshot&&x.snapshot.name)||""))===key)
+      .sort((p,q)=>dateOf(p)<dateOf(q)?-1:1);
+    const idx=series.findIndex(x=>x.id===a.id);
+    const ordinal=(idx<0?series.length:idx+1);
+    // the most recent earlier instance that was actually done
+    let prev=null;
+    for(let k=(idx<0?series.length:idx)-1;k>=0;k--){
+      const s=series[k].status;
+      if(s==="submitted"||s==="reviewed"){ prev=series[k]; break; }
+    }
+    prevSeries={ordinal,total:series.length,prev:null,notes:{},reps:{},grades:{},on:null};
+    if(!prev)return;
+    prevSeries.prev=prev; prevSeries.on=dateOf(prev);
+    const sub=(await store.submissions.list({assigned_id:prev.id}))[0];
+    if(sub&&sub.report&&Array.isArray(sub.report.items)){
+      sub.report.items.forEach(it=>{
+        (it.results||[]).forEach((r,si)=>{
+          if(!r)return;
+          const n=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:r.reps;
+          if(n!=null) prevSeries.reps[(it.name||"")+"#"+si]=n;
+        });
+      });
+      const rev=sub.id?(await store.reviews.list({submission_id:sub.id}))[0]:null;
+      if(rev&&Array.isArray(rev.per_set)){
+        for(const p of rev.per_set){
+          if(!p||!p.exercise)continue;
+          if(p.comment&&!prevSeries.notes[p.exercise]) prevSeries.notes[p.exercise]=p.comment;
+          if(p.grade!=null&&p.set!=null) prevSeries.grades[p.exercise+"#"+(p.set-1)]=p.grade;
+        }
+      }
+    }
+  }catch(e){ console.error("loadPrevSeries",e); }
+}
+function ordinalWord(n){
+  if(!n)return "";
+  const s=["th","st","nd","rd"], v=n%100;
+  return n+(s[(v-20)%10]||s[v]||s[0]);
 }
 function renderAssignedWorkout(){
   const a=currentAssigned; if(!a)return;
@@ -3964,7 +4027,8 @@ function renderAssignedWorkout(){
   $("#tw-title").textContent=snap.name||"Workout";
   let total=0,done=0,repTotal=0;
   items.forEach((it,i)=>{total+=it.sets;(localResults[i]||[]).forEach(r=>{if(r){done++;repTotal+=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:(r.reps||0);}});});
-  $("#tw-sub").textContent=`${items.length} exercises · ${total} sets`;
+  const ord=(prevSeries&&prevSeries.ordinal>1)?`${ordinalWord(prevSeries.ordinal)} time · `:"";
+  $("#tw-sub").textContent=`${ord}${items.length} exercises · ${total} sets`;
   $("#tw-progress-txt").textContent=`${done} / ${total} sets`;
   $("#tw-avg").textContent=done?repTotal:"—";$("#tw-avg").style.color="var(--ink)";
   const isMissed = a.status==="assigned" && a.due_date && a.due_date<todayISO();
@@ -3981,6 +4045,12 @@ function renderAssignedWorkout(){
         <div class="ex-thumb" ${ref?'data-ref="'+i+'"':""} style="${ref?'cursor:pointer':''}">${ref&&it.ref_video_path?`<div data-video="${it.ref_video_path}" style="width:100%;height:100%"></div><div class="play">▶</div>`:'<span class="ph">◉</span>'}</div>
         <div class="ex-info"><h3>${escapeHtml(it.name)}</h3>
           <div class="ex-meta"><div><b>${it.sets}</b> sets</div><div><b>${it.reps}</b> reps</div><div><b>${doneCount}</b> done</div></div></div></div>`;
+    // Coach's note from the previous run of this workout, BEFORE any set, so
+    // it can still be acted on. Neutral heading: the note may be praise.
+    const prevNote=prevSeries&&prevSeries.notes[it.name];
+    if(prevNote){
+      inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
+    }
     const nextUndone=results.findIndex(x=>!x);
     for(let s=0;s<it.sets;s++){
       const r=results[s];
@@ -4109,6 +4179,13 @@ async function playSetVideo(path,title){
 }
 function startTraineeSet(itemIndex,setIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
+  // keep last time's cue on screen while they set up and perform
+  const note=(prevSeries&&prevSeries.notes[it.name])||"";
+  const rn=$("#r-note");
+  if(rn){
+    if(note){ rn.textContent=note; rn.classList.add("on"); }
+    else { rn.textContent=""; rn.classList.remove("on"); }
+  }
   openRecorder({
     title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:true,useLabel:"✓ Use this take",
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
@@ -4151,6 +4228,17 @@ function showResult(exName,it,setIndex,r,itemIndex){
   $("#res-eyebrow").textContent="Set complete";
   $("#res-reps").textContent=r.reps;
   $("#res-target").textContent=`reps counted · target ${it.reps}`;
+  // comparison against the same set last time round
+  const cmpEl=$("#res-cmp");
+  if(cmpEl){
+    const last=prevSeries&&prevSeries.reps[(it.name||"")+"#"+setIndex];
+    if(last!=null){
+      const d=r.reps-last;
+      const arrow=d>0?`<span style="color:var(--lime)">▲ ${d} more</span>`:d<0?`<span style="color:var(--amber)">▼ ${Math.abs(d)} fewer</span>`:`<span style="color:var(--muted)">same</span>`;
+      cmpEl.innerHTML=`${arrow}<span style="color:var(--faint)"> · ${last} last time${prevSeries.on?" · "+escapeHtml(fmtDay(prevSeries.on)):""}</span>`;
+      cmpEl.style.display="";
+    }else{ cmpEl.style.display="none"; cmpEl.innerHTML=""; }
+  }
   // rep-count confirmation. The label is what makes this set usable as
   // training data later, so record it against the in-progress result.
   const check=$("#rep-check"), fix=$("#rep-fix"), doneEl=$("#rep-done");
@@ -5094,7 +5182,7 @@ async function openRecorder(opts){
   $("#r-tools").style.display="none";   // shown only once the live camera is up
   $("#rbtn").disabled=true;$("#rbtn").classList.remove("rec");$("#rtimer").classList.remove("on");
   cancelCountdown();
-  if(recOpts.mode==="preview")return;
+  if(recOpts.mode==="preview"){ $("#r-note")?.classList.remove("on"); return; }
   $("#r-use").textContent=recOpts.useLabel||"✓ Use this trace";
   $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
   try{
