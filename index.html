@@ -3680,15 +3680,18 @@ function openCoachModify(a){
     body.appendChild(pp);
     pp.querySelector("#pp-approve").addEventListener("click",async()=>{
       try{
-        await store.assignedWorkouts.update(a.id,{due_date:a.postpone_to,postpone_status:"approved"});
+        // scheduling goes through the DB so the decision can't be forged
+        const { error }=await store._sb.rpc("decide_postpone",{p_assigned:a.id,p_approve:true});
+        if(error) throw error;
         toast("Moved to "+fmtDay(a.postpone_to)+" ✓",3000); closeSheet(); renderEngagement();
-      }catch(e){ console.error(e); toast("Couldn't approve",4000); }
+      }catch(e){ console.error(e); toast(e.message||"Couldn't approve",4000); }
     });
     pp.querySelector("#pp-reject").addEventListener("click",async()=>{
       try{
-        await store.assignedWorkouts.update(a.id,{postpone_status:"rejected"});
+        const { error }=await store._sb.rpc("decide_postpone",{p_assigned:a.id,p_approve:false});
+        if(error) throw error;
         toast("Request declined"); closeSheet(); renderEngagement();
-      }catch(e){ console.error(e); toast("Couldn't decline",4000); }
+      }catch(e){ console.error(e); toast(e.message||"Couldn't decline",4000); }
     });
   }
   const wrap=document.createElement("div");
@@ -3699,7 +3702,7 @@ function openCoachModify(a){
   saveDate.addEventListener("click",async()=>{
     const nd=$("#cm-date").value; if(!nd){toast("Pick a date");return;}
     saveDate.disabled=true;
-    try{ await store.assignedWorkouts.update(a.id,{due_date:nd}); toast("Moved ✓"); closeSheet(); renderEngagement(); }
+    try{ const { error }=await store._sb.rpc("set_due_date",{p_assigned:a.id,p_date:nd}); if(error) throw error; toast("Moved ✓"); closeSheet(); renderEngagement(); }
     catch(err){console.error(err);toast(err.message||"Couldn't move",4000);saveDate.disabled=false;}
   });
   body.appendChild(saveDate);
@@ -4219,7 +4222,8 @@ function renderPostponeRow(wrap){
   $("#pp-ask")?.addEventListener("click",openPostponeSheet);
   $("#pp-cancel")?.addEventListener("click",async()=>{
     try{
-      await store.assignedWorkouts.update(currentAssigned.id,{postpone_status:null,postpone_to:null,postpone_note:null});
+      const { error }=await store._sb.rpc("cancel_postpone",{p_assigned:currentAssigned.id});
+      if(error) throw error;
       currentAssigned.postpone_status=null;currentAssigned.postpone_to=null;
       toast("Request withdrawn"); renderAssignedWorkout();
     }catch(e){ console.error(e); toast("Couldn't withdraw the request",4000); }
@@ -4246,7 +4250,8 @@ function openPostponeSheet(){
     if(d===a.due_date){ toast("That's already the scheduled day"); return; }
     const btn=$("#pp-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
     try{
-      await store.assignedWorkouts.update(a.id,{postpone_to:d,postpone_status:"pending",postpone_note:($("#pp-note").value||"").trim()||null,postpone_at:new Date().toISOString()});
+      const { error }=await store._sb.rpc("request_postpone",{p_assigned:a.id,p_date:d,p_note:($("#pp-note").value||"").trim()||null});
+      if(error) throw error;
       currentAssigned.postpone_to=d;currentAssigned.postpone_status="pending";
       closeSheet(); toast("Request sent to your coach ✓",3200); renderAssignedWorkout();
     }catch(err){
