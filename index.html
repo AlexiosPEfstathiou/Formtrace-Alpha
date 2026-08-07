@@ -3764,13 +3764,15 @@ function renderDashboard(container, iAmCoach){
   const gap=((W-padL-8)/buckets.length);
   /* Texture carries the meaning as much as colour does. Default: protein solid,
      carbs diagonal stripes, fat dots. In colourblind mode the assignment is
-     deliberately different — protein dotted orange, fat striped yellow, carbs
-     plain green — using Wong stops that stay separable without hue. */
+     deliberately different — protein dotted red-orange, fat striped yellow,
+     carbs plain green. The dot/stripe textures are what keep protein and fat
+     apart, since a red-orange and a warm yellow sit closer in hue than the
+     Wong pair they replaced. */
   const CB=document.documentElement.getAttribute("data-cb")==="1";
   const M = CB
-    ? { p:{col:"#E69F00", fill:"url(#pat-dot-p)",  ink:"#1a1200"},
+    ? { p:{col:"#D55E00", fill:"url(#pat-dot-p)",  ink:"#FFFFFF"},
         c:{col:"#009E73", fill:"#009E73",          ink:"#FFFFFF"},
-        f:{col:"#F0E442", fill:"url(#pat-str-f)",  ink:"#1a1a00"} }
+        f:{col:"#FFD52E", fill:"url(#pat-str-f)",  ink:"#2b2000"} }
     : { p:{col:C.p, fill:C.p,               ink:C.pInk},
         c:{col:C.c, fill:"url(#pat-carbs)", ink:C.cInk},
         f:{col:C.f, fill:"url(#pat-fat)",   ink:C.fInk} };
