@@ -188,6 +188,28 @@
     checkins: table("checkins"),
     setLabels: table("set_labels"),
     measurements: table("measurements"),
+    videoOrientation: table("video_orientation"),
+
+    // Rotation overrides for a batch of storage paths -> { path: degrees }.
+    // Keyed on the path so one row fixes a clip everywhere it appears.
+    async videoRotations(paths) {
+      const list = (paths || []).filter(Boolean);
+      if (!list.length) return {};
+      const { data, error } = await sb.from("video_orientation")
+        .select("path,rotation").in("path", list);
+      if (error) throw error;
+      const out = {};
+      for (const r of (data || [])) if (r.rotation) out[r.path] = r.rotation;
+      return out;
+    },
+    async setVideoRotation(path, rotation) {
+      const u = await auth.currentUser();
+      if (!u) throw new Error("Not signed in");
+      return must(await sb.from("video_orientation")
+        .upsert({ path, rotation, updated_by: u.id, updated_at: new Date().toISOString() },
+                { onConflict: "path" })
+        .select().single());
+    },
 
     // convenience: browse coaches for the marketplace. Explicit columns, not
     // *, so private fields are never hauled into the client by habit.

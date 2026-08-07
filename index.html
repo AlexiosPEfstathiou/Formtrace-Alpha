@@ -439,6 +439,12 @@
   #r-dims{position:absolute;left:14px;top:calc(env(safe-area-inset-top) + 66px);z-index:6;display:none;
     background:rgba(0,0,0,.6);color:#8FE04A;font-size:10px;font-family:ui-monospace,monospace;padding:3px 7px;border-radius:6px;}
   #r-dims.on{display:block;}
+  /* rotate control on a video player — corrects a clip filmed sideways */
+  .vid-rot{position:absolute;right:8px;bottom:8px;z-index:5;width:32px;height:32px;border-radius:50%;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:16px;
+    line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
+  .vid-rot:active{transform:scale(.92);}
+  .vid-rot:disabled{opacity:.5;}
   /* coach's 1-10 form grade selector on the review screen */
   .gsel{display:flex;gap:5px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
@@ -1681,7 +1687,17 @@ async function playable(path){
 }
 /* Fill a container that has data-video="<path>" with a playable <video>. */
 async function hydrateVideos(root){
-  for(const el of (root||document).querySelectorAll("[data-video]:not([data-hydrated])")){
+  const scope=root||document;
+  /* Rotation overrides, fetched once for everything on screen rather than
+     per video. Keyed on the storage path, so a clip corrected in review is
+     also corrected on the dashboard, in the feed, anywhere. */
+  let rots={};
+  try{
+    const paths=[...scope.querySelectorAll("[data-video]:not([data-hydrated])")]
+      .map(n=>n.getAttribute("data-video")).filter(Boolean);
+    if(paths.length&&store.videoRotations) rots=await store.videoRotations(paths);
+  }catch(e){ console.error("video rotations (run migrations_video_rotation.sql)",e); }
+  for(const el of scope.querySelectorAll("[data-video]:not([data-hydrated])")){
     const path=el.getAttribute("data-video");
     el.setAttribute("data-hydrated","1");
     const url=await playable(path);
@@ -1692,18 +1708,36 @@ async function hydrateVideos(root){
          keep the square crop — letterboxing a 58px tile looks worse. */
       const vid=el.querySelector("video");
       const isPlayer=el.classList.contains("video-card");
+      let rot=rots[path]||0;
       if(vid&&isPlayer){
+        /* A quarter-turn swaps the displayed axes. The container adopts the
+           swapped aspect, and the video is sized to the container's OTHER
+           axis before rotating — expressed as ratios so it stays responsive
+           without measuring pixels. */
+        const applyRotation=(w,h)=>{
+          const quarter = rot===90||rot===270;
+          el.style.aspectRatio = quarter ? `${h} / ${w}` : `${w} / ${h}`;
+          el.classList.remove("vid-landscape","vid-portrait");
+          const shownLand = quarter ? (h>w) : (w>h);
+          el.classList.add(shownLand?"vid-landscape":"vid-portrait");
+          el.style.maxHeight = shownLand ? "" : "360px";
+          if(quarter){
+            el.style.position="relative"; el.style.overflow="hidden";
+            vid.style.position="absolute"; vid.style.top="50%"; vid.style.left="50%";
+            vid.style.width=(w/h*100)+"%";
+            vid.style.height=(h/w*100)+"%";
+            vid.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`;
+          }else{
+            vid.style.position=""; vid.style.top=""; vid.style.left="";
+            vid.style.width=""; vid.style.height="";
+            vid.style.transform = rot===180 ? "rotate(180deg)" : "";
+          }
+          vid.style.objectFit="contain";
+        };
         const applyOrientation=()=>{
           const w=vid.videoWidth,h=vid.videoHeight;
           if(!w||!h)return false;
-          el.style.aspectRatio=`${w} / ${h}`;
-          el.classList.remove("vid-landscape","vid-portrait");
-          el.classList.add(w>h?"vid-landscape":"vid-portrait");
-          /* Callers cap these cards at 220-240px tall, which for a portrait
-             clip leaves them ~130px wide — too narrow to actually use a seek
-             bar. Give portrait players room; landscape needs no cap. */
-          el.style.maxHeight = (w>h) ? "" : "360px";
-          vid.style.objectFit="contain";
+          applyRotation(w,h);
           return true;
         };
         /* The src is set by innerHTML above, so for a cached video the browser
@@ -1717,6 +1751,27 @@ async function hydrateVideos(root){
           vid.addEventListener("canplay",applyOrientation,{once:true});
           vid.addEventListener("play",applyOrientation,{once:true});
         }
+        /* Correct a clip filmed in the wrong orientation. Saved against the
+           storage path, so the fix follows the clip to every screen. */
+        const rb=document.createElement("button");
+        rb.className="vid-rot"; rb.type="button";
+        rb.title="Rotate"; rb.setAttribute("aria-label","Rotate video");
+        rb.textContent="⟳";
+        rb.addEventListener("click",async e=>{
+          e.stopPropagation();
+          const next=(rot+90)%360;
+          rb.disabled=true;
+          try{
+            await store.setVideoRotation(path,next);
+            rot=next;
+            applyOrientation();
+            toast(next?`Rotated ${next}°`:"Rotation cleared",1800);
+          }catch(err){
+            console.error("setVideoRotation",err);
+            toast(err.message||"Couldn't save the rotation",4000);
+          }finally{ rb.disabled=false; }
+        });
+        el.appendChild(rb);
       }
       el.addEventListener("click",e=>{
         const v=el.querySelector("video"); if(!v)return;

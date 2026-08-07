@@ -61,6 +61,10 @@ let storeJs = "";
 try { storeJs = readFileSync(join(root, "store.supabase.js"), "utf8"); } catch {}
 if (storeJs) {
   const exposed = new Set([...storeJs.matchAll(/(\w+)\s*:\s*table\("/g)].map(m => m[1]));
+  // store members are also written as plain or async methods, e.g.
+  // `async videoRotations(paths) {` — those are exposed just the same
+  for (const m of storeJs.matchAll(/^\s*(?:async\s+)?([A-Za-z_]\w*)\s*\([^)]*\)\s*\{/gm)) exposed.add(m[1]);
+  for (const m of storeJs.matchAll(/(\w+)\s*:\s*(?:async\s*)?\(/g)) exposed.add(m[1]);
   ["auth","video","coachApps","coaches","_sb","subscribe","from"].forEach(k => exposed.add(k));
   const used = new Set([...js.matchAll(/\bstore\.([A-Za-z_][A-Za-z0-9_]*)/g)].map(m => m[1]));
   const notExposed = [...used].filter(u => !exposed.has(u)).sort();
