@@ -1512,7 +1512,7 @@ function sbConfetti(){
 function openStreakBurst(){
   const dates=streakDates();
   const n=(streakInfo&&streakInfo.count)||dates.length;
-  if(!n||!dates.length){ toast("Log a day to start your streak",2800); return; }
+  if(!n||!dates.length){ toast("Finish a workout to start your streak",2800); return; }
   const shown=dates.slice(-14);   // keep it on one screen
   $("#sb-cal").innerHTML=shown.map((iso,i)=>{
     const [y,m,d]=iso.split("-").map(Number);
