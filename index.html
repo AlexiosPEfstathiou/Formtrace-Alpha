@@ -721,6 +721,21 @@
     background:radial-gradient(120% 90% at 50% 30%, rgba(255,140,30,.22), rgba(0,0,0,.82) 70%);backdrop-filter:blur(3px);}
   #streakburst.on{display:flex;}
   #streakburst .sb-inner{position:relative;z-index:2;text-align:center;padding:0 24px;max-width:100%;}
+  .sb-actions{display:flex;gap:10px;justify-content:center;margin-top:22px;}
+  .sb-actions .btn{margin:0;min-width:118px;}
+  /* homepage milestone button — persists until tapped */
+  .home-milestone{margin-top:18px;}
+  .ms-btn{width:100%;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;
+    background:linear-gradient(135deg,#F5C542,#E0A81E);border:none;border-radius:16px;padding:14px 15px;
+    box-shadow:0 6px 20px rgba(245,197,66,.34);animation:msPulse 2.4s ease-in-out infinite;}
+  .ms-btn:active{transform:scale(.99);}
+  .ms-btn .ms-ic{font-size:26px;flex-shrink:0;line-height:1;}
+  .ms-btn .ms-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3;}
+  .ms-btn .ms-tx b{font-size:15px;font-weight:800;color:#3a2c00;}
+  .ms-btn .ms-tx span{font-size:12px;color:rgba(58,44,0,.72);}
+  .ms-btn .ms-arw{font-size:20px;color:#3a2c00;flex-shrink:0;}
+  @keyframes msPulse{0%,100%{box-shadow:0 6px 20px rgba(245,197,66,.34);}50%{box-shadow:0 6px 28px rgba(245,197,66,.62);}}
+  @media(prefers-reduced-motion:reduce){.ms-btn{animation:none;}}
   .sb-cal{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:22px;}
   .sb-day{position:relative;width:40px;height:52px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
@@ -807,6 +822,7 @@
       <div class="logo">FORM<b>TRACE</b> · COACH</div>
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
+      <div id="home-milestone" class="home-milestone" style="display:none"></div>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
@@ -1270,7 +1286,10 @@
       <div class="sb-cal" id="sb-cal"></div>
       <div class="sb-title" id="sb-title">You're on fire!</div>
       <div class="sb-sub" id="sb-sub"></div>
-      <button class="btn primary" id="sb-close" style="margin-top:22px">Nice</button>
+      <div class="sb-actions">
+        <button class="btn primary" id="sb-share">Share</button>
+        <button class="btn ghost" id="sb-close">Nice</button>
+      </div>
     </div>
   </div>
 
@@ -1509,10 +1528,13 @@ function sbConfetti(){
     box.appendChild(c);
   }
 }
-function openStreakBurst(){
+function openStreakBurst(milestone){
   const dates=streakDates();
   const n=(streakInfo&&streakInfo.count)||dates.length;
   if(!n||!dates.length){ toast("Finish a workout to start your streak",2800); return; }
+  // remember what's on screen so Share can render the matching story
+  sbState={count:n, milestone:(typeof milestone==="number"?milestone:0)};
+  $("#sb-title").textContent = sbState.milestone ? "Milestone achieved!" : "You're on fire!";
   const shown=dates.slice(-14);   // keep it on one screen
   $("#sb-cal").innerHTML=shown.map((iso,i)=>{
     const [y,m,d]=iso.split("-").map(Number);
@@ -1529,9 +1551,112 @@ function openStreakBurst(){
   setTimeout(sbConfetti,settle);
 }
 function closeStreakBurst(){ $("#streakburst").classList.remove("on"); $("#sb-confetti").innerHTML=""; }
+/* ---- milestones ---- */
+const MILESTONES=[7,14,30,60,90,180,270,365];
+function milestoneLabel(d){
+  if(d===365)return "1 year";
+  if(d===270)return "9 months";
+  if(d===180)return "6 months";
+  if(d===90) return "3 months";
+  if(d===60) return "2 months";
+  if(d===30) return "1 month";
+  return d+" days";
+}
+/* highest milestone this streak has reached, 0 if none */
+function milestoneFor(n){
+  let m=0;
+  for(const t of MILESTONES) if(n>=t) m=t;
+  return m;
+}
+/* Persists until tapped. If the streak breaks and is rebuilt, the stored
+   acknowledgement is lowered so the milestone can be earned again. */
+async function renderHomeMilestone(el){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME||roleOf()==="coach")return;
+  const n=(streakInfo&&streakInfo.count)||ME.streak_count||0;
+  const m=milestoneFor(n);
+  const ack=ME.milestone_ack||0;
+  if(m<ack){
+    // streak dropped below a tier already celebrated — allow re-earning
+    try{ ME=await store.auth.updateProfile({milestone_ack:m}); }catch(e){}
+    return;
+  }
+  if(!m||m===ack)return;
+  el.innerHTML=`<button class="ms-btn" id="ms-open">
+      <span class="ms-ic">🔥</span>
+      <span class="ms-tx"><b>Milestone achieved!</b><span>${escapeHtml(milestoneLabel(m))} streak · tap to celebrate</span></span>
+      <span class="ms-arw">›</span></button>`;
+  el.style.display="";
+  $("#ms-open").addEventListener("click",async()=>{
+    try{ ME=await store.auth.updateProfile({milestone_ack:m}); }catch(e){ console.error("milestone ack",e); }
+    el.style.display="none";
+    openStreakBurst(m);
+  });
+}
 $("#streak-badge")?.addEventListener("click",openStreakBurst);
 $("#sb-close")?.addEventListener("click",closeStreakBurst);
 $("#streakburst")?.addEventListener("click",e=>{ if(e.target.id==="streakburst")closeStreakBurst(); });
+let sbState={count:0,milestone:0};
+/* Draw a 1080x1920 story image. Canvas rather than a screenshot because
+   Instagram and Facebook only accept a real image file — there is no web
+   API that posts to a Story directly. */
+function drawStreakStory(){
+  const W=1080,H=1920;
+  const c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d");
+  x.fillStyle="#0B0E11";x.fillRect(0,0,W,H);
+  const g=x.createRadialGradient(W/2,H*0.34,60,W/2,H*0.34,W*0.95);
+  g.addColorStop(0,"rgba(255,150,40,.30)");g.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.textAlign="center";
+  x.fillStyle="rgba(255,255,255,.55)";
+  x.font="600 34px system-ui, sans-serif";
+  x.letterSpacing="8px";
+  x.fillText("FORMTRACE",W/2,150);
+  x.letterSpacing="0px";
+  // flame + count
+  x.font="200px system-ui, sans-serif";
+  x.fillText("🔥",W/2,H*0.34);
+  x.fillStyle="#F5C542";
+  x.font="800 250px system-ui, sans-serif";
+  x.fillText(String(sbState.count),W/2,H*0.34+250);
+  x.fillStyle="rgba(255,255,255,.75)";
+  x.font="600 46px system-ui, sans-serif";
+  x.fillText(sbState.count===1?"day streak":"days in a row",W/2,H*0.34+330);
+  // headline, wrapped by hand
+  const who=publicName((ME&&ME.display_name)||"Someone",(ME&&ME.name_style)||"first");
+  const what=sbState.milestone?milestoneLabel(sbState.milestone):(sbState.count+" day");
+  const lines=[`${who} just hit a`,`${what} milestone`,`on FormTrace`];
+  x.fillStyle="#fff";
+  x.font="700 64px system-ui, sans-serif";
+  lines.forEach((ln,i)=>x.fillText(ln,W/2,H*0.70+i*84));
+  x.fillStyle="rgba(255,255,255,.4)";
+  x.font="400 36px system-ui, sans-serif";
+  x.fillText("formtrace.app",W/2,H-110);
+  return c;
+}
+async function shareStreakStory(){
+  const btn=$("#sb-share"); const orig=btn?btn.textContent:"";
+  if(btn){ btn.disabled=true; btn.textContent="Preparing…"; }
+  try{
+    const canvas=drawStreakStory();
+    const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
+    if(!blob) throw new Error("Couldn't render the image");
+    const file=new File([blob],"formtrace-streak.png",{type:"image/png"});
+    const txt=`${sbState.milestone?milestoneLabel(sbState.milestone):sbState.count+" day"} streak on FormTrace`;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],text:txt});
+    }else{
+      // desktop and unsupported browsers: hand over the file to save
+      triggerDownload(blob,"formtrace-streak.png");
+      toast("Image saved — post it to your story from your photos",5000);
+    }
+  }catch(err){
+    if(err&&err.name==="AbortError"){ /* user dismissed the share sheet */ }
+    else { console.error("share story",err); toast("Couldn't prepare the image",4000); }
+  }finally{ if(btn){ btn.disabled=false; btn.textContent=orig||"Share"; } }
+}
+$("#sb-share")?.addEventListener("click",shareStreakStory);
 
 /* A tiny in-memory cache of signed URLs so we don't re-sign on every render. */
 const urlCache=new Map();
@@ -2116,6 +2241,7 @@ async function renderHome(){
   todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none"; measureEl.style.display="none"; newsEl.style.display="none";
   const gapsEl=$("#home-macrogaps"); if(gapsEl) gapsEl.style.display="none";
   const ppEl=$("#home-postpone"); if(ppEl) ppEl.style.display="none";
+  const msEl=$("#home-milestone"); if(msEl) msEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -2126,6 +2252,7 @@ async function renderHome(){
     $("#home-h").innerHTML=`Welcome back <span class="g">${firstName}</span>.`;
     $("#home-p").style.display="none";
     await renderHomeToday(engs, todayEl);
+    await renderHomeMilestone($("#home-milestone"));
     await renderHomeReviews(engs, reviewsEl);
     await renderHomePostpone(engs, $("#home-postpone"));
     await renderHomeMacro(macroEl);
