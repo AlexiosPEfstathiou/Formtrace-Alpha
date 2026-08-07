@@ -1178,6 +1178,7 @@
     </div>
     <div class="captools" id="r-tools">
       <button class="captool" id="r-timer">⏱ 3s timer</button>
+      <button class="captool" id="r-orient">▯ Portrait</button>
       <button class="captool" id="r-hand">✋ Touchless</button>
     </div>
     <div id="rreview">
@@ -5729,6 +5730,23 @@ function sizeCanvas(){const w=rvideo.videoWidth||rvideo.clientWidth,h=rvideo.vid
    looking. Enable with localStorage.setItem('ft-debug','1') and the live
    dimensions show on the recorder. */
 const rDims=$("#r-dims");
+/* Declared recording orientation. Persisted because someone who films
+   landscape once usually always does. */
+let recOrient=(function(){ try{ return localStorage.getItem("ft-orient")||"portrait"; }catch(e){ return "portrait"; } })();
+function syncOrientBtn(){
+  const b=$("#r-orient"); if(!b)return;
+  const land=recOrient==="landscape";
+  b.textContent = land ? "▭ Landscape" : "▯ Portrait";
+  b.classList.toggle("on", land);
+}
+$("#r-orient")?.addEventListener("click",()=>{
+  recOrient = recOrient==="landscape" ? "portrait" : "landscape";
+  try{ localStorage.setItem("ft-orient",recOrient); }catch(e){}
+  syncOrientBtn();
+  toast(recOrient==="landscape"
+    ? "Landscape — turn the phone sideways before recording"
+    : "Portrait — hold the phone upright", 3200);
+});
 function debugOn(){ try{ return localStorage.getItem("ft-debug")==="1"; }catch(e){ return false; } }
 function updateDims(){
   if(!rDims)return;
@@ -5837,29 +5855,45 @@ function rLoop(){
 function pickMime(){const c=["video/mp4;codecs=h264","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];return c.find(t=>MediaRecorder.isTypeSupported(t))||"";}
 function startRec(){
   const sw=rvideo.videoWidth,sh=rvideo.videoHeight;
-  // Downscale the recorded canvas to <=720px on the long side to shrink file size
-  // (analysis uses pose landmarks, not the video pixels, so grading is unaffected).
   const MAXDIM=720;
   const scale=Math.min(1, MAXDIM/Math.max(sw,sh));
-  const w=Math.round(sw*scale), h=Math.round(sh*scale);
+  /* Most people press record while holding the phone upright and THEN turn it
+     sideways. Many phones don't re-negotiate the camera track when rotated, so
+     the athlete ends up sideways inside a portrait frame. The declared
+     orientation fixes that at source: asking for landscape swaps the canvas
+     and rotates each frame, so the file really is landscape and upright. */
+  const wantLand = recOrient==="landscape";
+  const camIsPortrait = sh>sw;
+  const doRotate = wantLand && camIsPortrait;
+  const w = doRotate ? Math.round(sh*scale) : Math.round(sw*scale);
+  const h = doRotate ? Math.round(sw*scale) : Math.round(sh*scale);
+  // which way they turned it; 270 means the other way, so rotate the other way
+  const ang = (screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:90;
+  const rot = doRotate ? ((ang===270||ang===-90) ? -Math.PI/2 : Math.PI/2) : 0;
   recCanvas=document.createElement("canvas");recCanvas.width=w;recCanvas.height=h;recCtx=recCanvas.getContext("2d");
   const mirror=rFacing==="user";
   /* The canvas size is fixed for the whole recording — MediaRecorder cannot
-     take a resize mid-stream. Some phones DO re-negotiate the camera track
-     when rotated, so draw aspect-preserving (letterbox) rather than stretching
-     into the fixed box, or the athlete comes out squashed. When nothing
-     changes this is pixel-identical to a plain full-box draw. */
+     take a resize mid-stream. Draw aspect-preserving into it so a track that
+     re-negotiates mid-take letterboxes rather than squashing the athlete. */
   const paint=()=>{
     const vw=rvideo.videoWidth||sw, vh=rvideo.videoHeight||sh;
-    const fit=Math.min(w/vw, h/vh);
-    const dw=vw*fit, dh=vh*fit, dx=(w-dw)/2, dy=(h-dh)/2;
-    if(dx>0.5||dy>0.5){ recCtx.fillStyle="#000"; recCtx.fillRect(0,0,w,h); }
+    // the box available to the frame, in pre-rotation coordinates
+    const tw = rot? h : w, th = rot? w : h;
+    const fit=Math.min(tw/vw, th/vh);
+    const dw=vw*fit, dh=vh*fit;
+    recCtx.fillStyle="#000"; recCtx.fillRect(0,0,w,h);
     recCtx.save();
-    if(mirror){recCtx.translate(w,0);recCtx.scale(-1,1);}
-    recCtx.drawImage(rvideo,dx,dy,dw,dh);
+    recCtx.translate(w/2,h/2);
+    if(rot) recCtx.rotate(rot);
+    if(mirror) recCtx.scale(-1,1);
+    recCtx.drawImage(rvideo,-dw/2,-dh/2,dw,dh);
     recCtx.restore();
-    recCtx.drawImage(roverlay,dx,dy,dw,dh);
-    if(rDims) rDims.textContent=`cam ${vw}x${vh} · rec ${w}x${h}`;
+    recCtx.save();
+    recCtx.translate(w/2,h/2);
+    if(rot) recCtx.rotate(rot);
+    recCtx.drawImage(roverlay,-dw/2,-dh/2,dw,dh);
+    recCtx.restore();
+    if(rDims&&debugOn()) rDims.textContent=`cam ${vw}x${vh} · rec ${w}x${h}${rot?" · rotated":""}`;
     recPaintRAF=requestAnimationFrame(paint);
   };
   paint();
@@ -5910,6 +5944,7 @@ $("#r-hand").addEventListener("click",async()=>{
 });
 /* Reflect the touchless setting on both capture screens. */
 function syncCaptureTools(){
+  syncOrientBtn();
   const on=gestureEnabled();
   const label=on?(gestureRec?"✋ Touchless on":"✋ Loading…"):"✋ Touchless";
   ["#r-hand","#pc-hand"].forEach(sel=>{
