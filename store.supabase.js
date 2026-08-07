@@ -52,6 +52,25 @@
     async updateProfile(patch) {
       const u = await this.currentUser();
       return must(await sb.from("profiles").update(patch).eq("id", u.id).select().single());
+    },
+
+    // Private fields (date of birth, consent) live in profile_private, not
+    // profiles: profiles must stay broadly readable so coaches can be
+    // browsed, and RLS cannot hide a column on a row you may read.
+    async myPrivate() {
+      const u = await this.currentUser();
+      if (!u) return null;
+      const { data, error } = await sb.from("profile_private")
+        .select("*").eq("user_id", u.id).maybeSingle();
+      if (error) throw error;
+      return data || null;
+    },
+    async updatePrivate(patch) {
+      const u = await this.currentUser();
+      return must(await sb.from("profile_private")
+        .upsert({ user_id: u.id, ...patch, updated_at: new Date().toISOString() },
+                { onConflict: "user_id" })
+        .select().single());
     }
   };
 
@@ -170,9 +189,12 @@
     setLabels: table("set_labels"),
     measurements: table("measurements"),
 
-    // convenience: browse coaches for the marketplace
+    // convenience: browse coaches for the marketplace. Explicit columns, not
+    // *, so private fields are never hauled into the client by habit.
     async coaches() {
-      return must(await sb.from("profiles").select("*").eq("role", "coach"));
+      return must(await sb.from("profiles")
+        .select("id,role,display_name,bio,city,country_code,avatar_initials,avatar_path,streak_count,social_enabled,name_style,is_admin,created_at")
+        .eq("role", "coach"));
     },
 
     // realtime subscribe helper (e.g. new offers for a trainee)

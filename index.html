@@ -1864,6 +1864,7 @@ function showAuth(){
 /* Bump this when the wording changes materially — existing users are then
    re-prompted rather than being held to consent given to an older notice. */
 const CONSENT_VERSION="2026-08-v1";
+let MY_PRIVATE=null;   // profile_private row for the signed-in user
 function showConsentGate(){
   $("#app-loading").style.display="none";
   $$(".screen").forEach(s=>s.classList.remove("active"));
@@ -1875,7 +1876,7 @@ function showConsentGate(){
   // can't be born in the future, and must be old enough
   const maxDob=addDaysISO(todayISO(),-1);
   dob.max=maxDob;
-  if(ME&&ME.date_of_birth) dob.value=ME.date_of_birth;
+  if(ME&&MY_PRIVATE&&MY_PRIVATE.date_of_birth) dob.value=MY_PRIVATE.date_of_birth;
   agree.checked=false;
   btn.onclick=async()=>{
     const v=(dob.value||"").trim();
@@ -1884,7 +1885,7 @@ function showConsentGate(){
     if(!agree.checked){ toast("Please confirm you agree to continue",3400); return; }
     btn.disabled=true; const o=btn.textContent; btn.textContent="Saving…";
     try{
-      ME=await store.auth.updateProfile({date_of_birth:v,consent_version:CONSENT_VERSION,consented_at:new Date().toISOString()});
+      MY_PRIVATE=await store.auth.updatePrivate({date_of_birth:v,consent_version:CONSENT_VERSION,consented_at:new Date().toISOString()});
       currentView = roleOf()==="coach" ? "coach" : "trainee";
       refreshStreakBadge();
       resetNav("home");
@@ -1918,7 +1919,13 @@ async function bootSignedIn(){
   $("#app-loading").style.display="none";
   // One-off age + consent gate. Covers new signups and anyone who joined
   // before consent was recorded — the app is unreachable until both are in.
-  if(!ME.consented_at || ME.consent_version!==CONSENT_VERSION){ showConsentGate(); return; }
+  // Read from profile_private: profiles is broadly readable, so date of
+  // birth and consent must not live there.
+  try{
+    MY_PRIVATE=await store.auth.myPrivate();
+  }catch(e){ console.error("private profile read (run migrations_profile_privacy.sql)",e); MY_PRIVATE=null; }
+  const consented = MY_PRIVATE && MY_PRIVATE.consented_at && MY_PRIVATE.consent_version===CONSENT_VERSION;
+  if(!consented){ showConsentGate(); return; }
   currentView = roleOf()==="coach" ? "coach" : "trainee";
   refreshStreakBadge();
   resetNav("home");
