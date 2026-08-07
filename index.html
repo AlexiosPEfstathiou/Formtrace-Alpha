@@ -292,7 +292,7 @@
   #s-listing-new.active ~ #app-tabbar,
   #s-coach-apply.active ~ #app-tabbar,
   #s-goals.active ~ #app-tabbar,
-  #s-engagement.active ~ #app-tabbar,
+  #s-engagement.active:not(.tab-level) ~ #app-tabbar,
   #s-review.active ~ #app-tabbar,
   #s-timelapse.active ~ #app-tabbar,
   #s-rate.active ~ #app-tabbar,
@@ -300,6 +300,8 @@
   #s-trainee-workout.active ~ #app-tabbar{display:none !important;}
   .screen .body{padding-bottom:110px;}
   .screen .body.with-tabs{padding-bottom:190px;}
+  /* when the calendar keeps the tab bar, its content needs to clear it */
+  #s-engagement.tab-level .body{padding-bottom:180px;}
   /* per-screen SUB tab bars (coach library/workouts, listings goals/offers)
      stack directly above the persistent app bar instead of overlapping it */
   #s-coach .tabbar, #s-listings .tabbar{bottom:calc(env(safe-area-inset-bottom) + 62px);border-top:1px solid var(--line);}
@@ -1997,6 +1999,7 @@ document.addEventListener("click",async e=>{
 const TAB_SECTION={ // screen -> which tab should light up
   home:"home",
   "trainee-home":"trainee-home", "trainee-workout":"trainee-home",
+  engagement:"trainee-home",   // the trainee's Training calendar lives here
   listings:"listings", "listing-new":"listings",
   coach:"coach", "ex-edit":"coach", "wo-build":"coach",
   market:"market",
@@ -2004,7 +2007,7 @@ const TAB_SECTION={ // screen -> which tab should light up
 };
 // Top-level destinations show the persistent bar; deep/editor screens hide it
 // so it never covers their own bottom action buttons.
-const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","admin"]);
+const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","admin","engagement"]);
 function renderAppTabs(current){
   const bar=$("#app-tabbar"); if(!bar)return;
   if(!ME || !TAB_TOPLEVEL.has(current)){ bar.style.display="none"; return; }
@@ -3375,7 +3378,12 @@ async function openTraineeCalendar(engs){
   $("#eng-sub").textContent=traineeEngs.length>1?`${traineeEngs.length} goals`:(traineeEngs[0]?.goal_title||"Your schedule");
   $("#eng-back").onclick=()=>go("home");
   await renderEngagement();
-  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  /* This IS the trainee's Training tab destination, so it keeps the bar with
+     Training marked active. The coach's drill-down into one trainee's calendar
+     is not tab-level — it has its own bottom actions — hence the class. */
+  $("#s-engagement").classList.add("active","tab-level");
+  renderAppTabs("engagement");
 }
 /* Trainee: My Goals — ongoing / completed / cancelled, with cancel action */
 async function openGoals(){
@@ -3480,6 +3488,8 @@ async function cancelGoal(e){
 }
 async function openEngagement(id){
   traineeMerged=false;
+  // drill-down, not a tab destination: it has its own bottom action row
+  $("#s-engagement").classList.remove("tab-level");
   currentEng=await store.engagements.get(id);
   const iAmCoach=currentEng.coach_id===ME.id;
   const otherId=iAmCoach?currentEng.trainee_id:currentEng.coach_id;
