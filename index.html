@@ -4286,15 +4286,10 @@ async function playSetVideo(path,title){
 }
 function startTraineeSet(itemIndex,setIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
-  // keep last time's cue on screen while they set up and perform
-  const note=(prevSeries&&prevSeries.notes[it.name])||"";
-  const rn=$("#r-note");
-  if(rn){
-    if(note){ rn.textContent=note; rn.classList.add("on"); }
-    else { rn.textContent=""; rn.classList.remove("on"); }
-  }
   openRecorder({
     title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:true,useLabel:"✓ Use this take",
+    // last time's cue, kept on screen while they set up and perform
+    note:(prevSeries&&prevSeries.notes[it.name])||"",
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
   });
 }
@@ -5292,6 +5287,16 @@ async function openRecorder(opts){
   $("#r-tools").style.display="none";   // shown only once the live camera is up
   $("#rbtn").disabled=true;$("#rbtn").classList.remove("rec");$("#rtimer").classList.remove("on");
   cancelCountdown();
+  /* The recorder is shared by six flows. Anything a caller can set must be
+     reset here, or it leaks into the next flow — a coach note from a set
+     recording was persisting into the trainee's pitch recording. Callers
+     pass `note`; they no longer touch #r-note themselves. */
+  const rn=$("#r-note");
+  if(rn){
+    const note=(recOpts.note||"").trim();
+    rn.textContent=note;
+    rn.classList.toggle("on",!!note);
+  }
   if(recOpts.mode==="preview"){ $("#r-note")?.classList.remove("on"); return; }
   $("#r-use").textContent=recOpts.useLabel||"✓ Use this trace";
   $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
