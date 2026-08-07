@@ -135,6 +135,9 @@
   .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}
   .home-reviews .rv-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;}
   .rv-chip{display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--accent-surface);border:1px solid var(--accent-border);border-radius:13px;padding:10px 14px 10px 11px;cursor:pointer;text-align:left;}
+  /* declined reschedule reads amber, not lime — the answer was no */
+  .rv-chip.rv-no{background:rgba(255,194,74,.10);border-color:rgba(255,194,74,.34);}
+  .rv-chip.rv-no .rv-ic{background:rgba(255,194,74,.18);color:var(--amber);}
   .rv-chip:active{transform:scale(.98);}
   .rv-chip .rv-ic{width:30px;height:30px;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
   .rv-chip .rv-tx{display:flex;flex-direction:column;line-height:1.25;}
@@ -806,6 +809,7 @@
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
+      <div id="home-postpone" class="home-reviews" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
@@ -2063,6 +2067,7 @@ async function renderHome(){
   $("#home-h").innerHTML=`Hi ${firstName}.<br><span class="g">What's the plan today?</span>`;
   todayEl.style.display="none"; macroEl.style.display="none"; checkinEl.style.display="none"; reviewsEl.style.display="none"; coachEl.style.display="none"; measureEl.style.display="none"; newsEl.style.display="none";
   const gapsEl=$("#home-macrogaps"); if(gapsEl) gapsEl.style.display="none";
+  const ppEl=$("#home-postpone"); if(ppEl) ppEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -2074,6 +2079,7 @@ async function renderHome(){
     $("#home-p").style.display="none";
     await renderHomeToday(engs, todayEl);
     await renderHomeReviews(engs, reviewsEl);
+    await renderHomePostpone(engs, $("#home-postpone"));
     await renderHomeMacro(macroEl);
     await renderHomeMacroGaps($("#home-macrogaps"));
     await renderHomeCheckin(checkinEl);
@@ -2258,6 +2264,42 @@ async function renderHomeReviews(engs, el){
   el.innerHTML=`<div class="rv-title">${unviewed.length} new form review${unviewed.length>1?"s":""} from your coach</div><div class="rv-row">${chips}</div>`;
   el.style.display="";
   el.querySelectorAll("[data-rev]").forEach(b=>b.addEventListener("click",()=>openReview(b.getAttribute("data-rev"),true)));
+}
+/* Trainee homepage: the coach's decision on a postpone request, shown once.
+   Tapping (or dismissing) acknowledges it via ack_postpone — postpone_*
+   columns are not client-writable, so it can't just be an update. */
+async function renderHomePostpone(engs, el){
+  el.style.display="none"; el.innerHTML="";
+  const active=engs.filter(e=>e.status==="active");
+  if(!active.length) return;
+  let decided=[];
+  try{
+    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    decided=lists.flat().filter(a=>
+      (a.postpone_status==="approved"||a.postpone_status==="rejected") && !a.postpone_seen_at);
+  }catch(e){ console.error("home postpone",e); return; }
+  if(!decided.length) return;
+  decided.sort((a,b)=>(a.postpone_at||"")<(b.postpone_at||"")?1:-1);
+  const chips=decided.map(a=>{
+    const nm=(a.snapshot&&a.snapshot.name)||"Workout";
+    const ok=a.postpone_status==="approved";
+    const head=ok?"Move approved":"Move declined";
+    const sub=ok
+      ? `${nm} → ${fmtDay(a.due_date||a.postpone_to)}`
+      : `${nm} stays on ${fmtDay(a.due_date||"")}`;
+    return `<button class="rv-chip${ok?"":" rv-no"}" data-pp="${a.id}">
+        <span class="rv-ic">${ok?"✓":"✕"}</span>
+        <span class="rv-tx"><b>${head}</b><span>${escapeHtml(sub)}</span></span>
+      </button>`;
+  }).join("");
+  el.innerHTML=`<div class="rv-title">Your coach answered your reschedule request</div><div class="rv-row">${chips}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-pp]").forEach(b=>b.addEventListener("click",async()=>{
+    const id=b.getAttribute("data-pp");
+    try{ await store._sb.rpc("ack_postpone",{p_assigned:id}); }
+    catch(e){ console.error("ack_postpone",e); }
+    openAssigned(id);
+  }));
 }
 /* Coach homepage: active trainees with streak + days since last ASSIGNED
    workout, plus a quick-access review icon. Also builds the activity feed
