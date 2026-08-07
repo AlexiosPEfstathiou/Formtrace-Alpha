@@ -1386,8 +1386,32 @@ function dayState(iso, awMap){
   if(!wl.length) return "rest";
   return wl.some(a=>a.status==="assigned") ? "missed" : "done";
 }
+/* Earliest date anything was ever assigned. The streak must not walk back
+   past this, or every rest day before the trainee even started would count. */
+function firstAssignedISO(awMap){
+  const map=awMap||engAssignedByDate;
+  const keys=Object.keys(map||{});
+  if(!keys.length) return null;
+  let first=keys[0];
+  for(const k of keys) if(k<first) first=k;
+  return first;
+}
 function dayComplete(iso, logsMap, awMap){
-  return dayState(iso, awMap)!=="missed";
+  /* Display predicate. Two bounds the raw state doesn't have:
+     - the future is never complete; nothing has happened yet
+     - neither is anything before the first workout was ever assigned,
+       or an empty calendar history would paint as an unbroken rest streak */
+  if(iso>todayISO()) return false;
+  const map=awMap||engAssignedByDate;
+  const keys=Object.keys(map||{});
+  if(keys.length){
+    let first=keys[0];
+    for(const k of keys) if(k<first) first=k;
+    if(iso<first) return false;
+  }else{
+    return false;                 // nothing ever assigned: nothing to complete
+  }
+  return dayState(iso, map)!=="missed";
 }
 // A day is a MISSED-workout day when it's in the past and has a workout still 'assigned'.
 function dayMissedWorkout(iso, awMap){
@@ -1430,7 +1454,9 @@ function computeStreak(logsMap, awMap){
      day. The rest cap is what stops a trainee with nothing assigned from
      accruing an unbroken streak forever. */
   let count=0, cur=anchor, rest=0, guard=0;
+  const floor=firstAssignedISO(awMap);
   while(guard++<400){
+    if(floor && cur<floor) break;          // don't count before the goal began
     const st=dayState(cur,awMap);
     if(st==="missed") break;
     if(st==="rest"){ rest++; if(rest>=7) break; } else rest=0;
@@ -1457,7 +1483,9 @@ function streakDates(){
   for(const c of [today,addDaysISO(today,-1)]){ if(dayState(c)!=="missed"){anchor=c;break;} }
   if(!anchor)return [];
   const out=[]; let cur=anchor, rest=0, g=0;
+  const floor=firstAssignedISO();
   while(g++<400){
+    if(floor && cur<floor) break;
     const st=dayState(cur);
     if(st==="missed") break;
     if(st==="rest"){ rest++; if(rest>=7) break; } else rest=0;

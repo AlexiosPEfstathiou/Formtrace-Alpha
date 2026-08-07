@@ -78,7 +78,17 @@ declare
   v_state  text;
   v_rest   integer;
   v_guard  integer;
+  v_floor  date;
 begin
+  -- never count days before anything was ever assigned, or every rest day
+  -- before the trainee started would extend the streak
+  select min(coalesce(aw.due_date, (aw.created_at at time zone 'UTC')::date))
+    into v_floor
+  from public.assigned_workouts aw
+  join public.engagements e on e.id = aw.engagement_id
+  where e.trainee_id = p_trainee and e.status = 'active';
+  if v_floor is null then return 0; end if;   -- nothing ever assigned
+
   -- anchor on the most recent day that isn't a missed workout
   foreach v_cur in array array[v_today, v_today - 1] loop
     if public._day_state(p_trainee, v_cur) <> 'missed' then
@@ -90,6 +100,7 @@ begin
   -- backward
   v_cur := v_anchor; v_rest := 0; v_guard := 0;
   while v_guard < 400 loop
+    exit when v_cur < v_floor;
     v_state := public._day_state(p_trainee, v_cur);
     if v_state = 'missed' then exit; end if;
     if v_state = 'rest' then
