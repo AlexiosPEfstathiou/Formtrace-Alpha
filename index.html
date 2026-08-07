@@ -280,6 +280,7 @@
      .screen in the DOM, so this handles all of them declaratively — including
      any added later. !important beats the inline display:flex set in JS. */
   #s-auth.active ~ #app-tabbar,
+  #s-consent.active ~ #app-tabbar,
   #s-ex-edit.active ~ #app-tabbar,
   #s-wo-build.active ~ #app-tabbar,
   #s-offer.active ~ #app-tabbar,
@@ -1092,6 +1093,41 @@
     </div>
   </section>
 
+  <!-- ============ CONSENT + AGE GATE ============ -->
+  <section class="screen" id="s-consent">
+    <div class="top"><div style="flex:1"><h1>Before you start</h1><div class="sub">One-off confirmation</div></div></div>
+    <div class="body">
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">What FormTrace stores about you</div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.6">
+          To coach you, this app records: <b style="color:var(--ink)">videos of you exercising</b>, <b style="color:var(--ink)">weekly progress photos</b>, <b style="color:var(--ink)">body measurements and weight</b>, and <b style="color:var(--ink)">what you eat</b>.
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px">
+          Your coach can see this while you work together. Nobody else can — it isn't public, isn't sold, and isn't used for advertising. Videos you post to the marketplace are the one exception: those are visible to coaches browsing for trainees, because that's their purpose.
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px">
+          You can delete your account at any time from Profile. That permanently removes your photos, videos, food logs and measurements, and strips your name from anything shared.
+        </div>
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.55;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+          This is an early-access build. Don't record anything you wouldn't want a coach to see.
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="field"><label for="cg-dob">Your date of birth</label>
+          <input id="cg-dob" type="date">
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:-4px">You must be 18 or over to use FormTrace, because it records progress photos.</div>
+        <label class="cb-toggle" for="cg-agree" style="margin-top:14px">
+          <div style="flex:1"><div style="font-size:13px;font-weight:700">I understand and agree</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">You're agreeing to the data use described above.</div></div>
+          <span class="switch"><input type="checkbox" id="cg-agree"><span class="track"></span></span>
+        </label>
+        <button class="btn primary" id="cg-continue" style="margin-top:16px">Continue</button>
+        <button class="btn ghost" id="cg-signout" style="margin-top:8px;color:var(--red)">Sign out instead</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ RECORDER ============ -->
   <div id="rec">
     <div class="stage">
@@ -1825,11 +1861,64 @@ function showAuth(){
   resetNav("auth");
   const bar=$("#app-tabbar"); if(bar) bar.style.display="none";
 }
+/* Bump this when the wording changes materially — existing users are then
+   re-prompted rather than being held to consent given to an older notice. */
+const CONSENT_VERSION="2026-08-v1";
+function showConsentGate(){
+  $("#app-loading").style.display="none";
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  $("#s-consent").classList.add("active");
+  hideStreakBadge();
+  const bar=$("#app-tabbar"); if(bar) bar.style.display="none";
+  resetNav("consent");
+  const dob=$("#cg-dob"), agree=$("#cg-agree"), btn=$("#cg-continue");
+  // can't be born in the future, and must be old enough
+  const maxDob=addDaysISO(todayISO(),-1);
+  dob.max=maxDob;
+  if(ME&&ME.date_of_birth) dob.value=ME.date_of_birth;
+  agree.checked=false;
+  btn.onclick=async()=>{
+    const v=(dob.value||"").trim();
+    if(!v){ toast("Enter your date of birth"); return; }
+    if(!isAtLeast18(v)){ toast("You need to be 18 or over to use FormTrace",4200); return; }
+    if(!agree.checked){ toast("Please confirm you agree to continue",3400); return; }
+    btn.disabled=true; const o=btn.textContent; btn.textContent="Saving…";
+    try{
+      ME=await store.auth.updateProfile({date_of_birth:v,consent_version:CONSENT_VERSION,consented_at:new Date().toISOString()});
+      currentView = roleOf()==="coach" ? "coach" : "trainee";
+      refreshStreakBadge();
+      resetNav("home");
+      go("home");
+      checkPendingReview();
+    }catch(err){
+      console.error("consent save",err);
+      toast(err.message||"Couldn't save that — run migrations_consent_age.sql first",5000);
+      btn.disabled=false; btn.textContent=o;
+    }
+  };
+  $("#cg-signout").onclick=async()=>{
+    try{ await store.auth.signOut(); }catch(e){}
+    ME=null; urlCache.clear(); hideStreakBadge(); showAuth();
+  };
+}
+/* Whole years between a date of birth and today, in local time. */
+function isAtLeast18(iso){
+  const [y,m,d]=iso.split("-").map(Number);
+  if(!y||!m||!d)return false;
+  const now=new Date();
+  let age=now.getFullYear()-y;
+  const beforeBirthday = (now.getMonth()+1)<m || ((now.getMonth()+1)===m && now.getDate()<d);
+  if(beforeBirthday) age--;
+  return age>=18;
+}
 
 async function bootSignedIn(){
   ME=await store.auth.myProfile();
   if(!ME){ toast("Couldn't load your profile",4000); return; }
   $("#app-loading").style.display="none";
+  // One-off age + consent gate. Covers new signups and anyone who joined
+  // before consent was recorded — the app is unreachable until both are in.
+  if(!ME.consented_at || ME.consent_version!==CONSENT_VERSION){ showConsentGate(); return; }
   currentView = roleOf()==="coach" ? "coach" : "trainee";
   refreshStreakBadge();
   resetNav("home");
