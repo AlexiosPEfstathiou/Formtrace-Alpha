@@ -1625,7 +1625,10 @@ function drawStreakStory(){
   x.fillText(sbState.count===1?"day streak":"days in a row",W/2,H*0.34+330);
   // headline, wrapped by hand
   const who=publicName((ME&&ME.display_name)||"Someone",(ME&&ME.name_style)||"first");
-  const what=sbState.milestone?milestoneLabel(sbState.milestone):(sbState.count+" day");
+  // "a 7-day milestone", not "a 7 days milestone"
+  const what=sbState.milestone
+    ? (sbState.milestone<30 ? sbState.milestone+"-day" : milestoneLabel(sbState.milestone))
+    : sbState.count+"-day";
   const lines=[`${who} just hit a`,`${what} milestone`,`on FormTrace`];
   x.fillStyle="#fff";
   x.font="700 64px system-ui, sans-serif";
