@@ -3762,20 +3762,36 @@ function renderDashboard(container, iAmCoach){
   const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f));
   const bw=Math.min(30, (W-padL-8)/buckets.length-12);
   const gap=((W-padL-8)/buckets.length);
-  // patterns: protein solid, carbs diagonal stripes, fat dots — distinguishable without color
+  /* Texture carries the meaning as much as colour does. Default: protein solid,
+     carbs diagonal stripes, fat dots. In colourblind mode the assignment is
+     deliberately different — protein dotted orange, fat striped yellow, carbs
+     plain green — using Wong stops that stay separable without hue. */
+  const CB=document.documentElement.getAttribute("data-cb")==="1";
+  const M = CB
+    ? { p:{col:"#E69F00", fill:"url(#pat-dot-p)",  ink:"#1a1200"},
+        c:{col:"#009E73", fill:"#009E73",          ink:"#FFFFFF"},
+        f:{col:"#F0E442", fill:"url(#pat-str-f)",  ink:"#1a1a00"} }
+    : { p:{col:C.p, fill:C.p,               ink:C.pInk},
+        c:{col:C.c, fill:"url(#pat-carbs)", ink:C.cInk},
+        f:{col:C.f, fill:"url(#pat-fat)",   ink:C.fInk} };
   const defs=`<defs>
     <pattern id="pat-carbs" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${C.c}"/><rect width="3" height="6" fill="rgba(0,0,0,.22)"/></pattern>
     <pattern id="pat-fat" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="${C.f}"/><circle cx="3.5" cy="3.5" r="1.5" fill="rgba(0,0,0,.26)"/></pattern>
+    <pattern id="pat-dot-p" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="${M.p.col}"/><circle cx="3.5" cy="3.5" r="1.6" fill="rgba(0,0,0,.34)"/></pattern>
+    <pattern id="pat-str-f" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${M.f.col}"/><rect width="3" height="6" fill="rgba(0,0,0,.26)"/></pattern>
   </defs>`;
   const chartH=H-padB-padT;
   // soft kcal gridlines (0/25/50/75/100% of max), value labels sit just left of the plot
   let gridSvg="";
   for(let g=0;g<=4;g++){ const gy=padT+chartH-(g/4)*chartH; const gv=Math.round((g/4)*maxG);
     gridSvg+=`<line x1="${padL}" y1="${gy}" x2="${W-8}" y2="${gy}" stroke="${C.line}" stroke-width="${g===0?1:1}" ${g===0?"":'stroke-dasharray="1 4"'} opacity="${g===0?0.9:0.55}"/><text x="${padL-6}" y="${gy+3}" text-anchor="end" font-size="8.5" fill="${C.faint}">${gv}</text>`; }
+  const swP = CB ? `background:radial-gradient(${M.p.col} 40%,rgba(0,0,0,.34) 42%);background-size:7px 7px;border:1px solid ${M.p.col}` : `background:${M.p.col}`;
+  const swC = CB ? `background:${M.c.col}` : `background:repeating-linear-gradient(45deg,${M.c.col},${M.c.col} 2px,rgba(0,0,0,.24) 2px,rgba(0,0,0,.24) 4px)`;
+  const swF = CB ? `background:repeating-linear-gradient(45deg,${M.f.col},${M.f.col} 2px,rgba(0,0,0,.26) 2px,rgba(0,0,0,.26) 4px)` : `background:radial-gradient(${M.f.col} 40%,rgba(0,0,0,.28) 42%);background-size:7px 7px;border:1px solid ${M.f.col}`;
   let svg=`<div style="display:flex;gap:16px;margin:0 2px 14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap">
-      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:${C.p}"></span>Protein</span>
-      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:repeating-linear-gradient(45deg,${C.c},${C.c} 2px,rgba(0,0,0,.24) 2px,rgba(0,0,0,.24) 4px)"></span>Carbs</span>
-      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:radial-gradient(${C.f} 40%,rgba(0,0,0,.28) 42%);background-size:7px 7px;border:1px solid ${C.f}"></span>Fat</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;${swP}"></span>Protein</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;${swC}"></span>Carbs</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;${swF}"></span>Fat</span>
     </div>
     <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">${defs}${gridSvg}`;
   buckets.forEach((b,i)=>{
@@ -3784,7 +3800,7 @@ function renderDashboard(container, iAmCoach){
     const hP=(b.p/maxG)*chartH, hC=(b.c/maxG)*chartH, hF=(b.f/maxG)*chartH;
     let y=padT+chartH;
     // rounded top only on the uppermost non-zero segment
-    const segs=[["P",hP,C.p,b.p,C.pInk],["C",hC,"url(#pat-carbs)",b.c,C.cInk],["F",hF,"url(#pat-fat)",b.f,C.fInk]];
+    const segs=[["P",hP,M.p.fill,b.p,M.p.ink],["C",hC,M.c.fill,b.c,M.c.ink],["F",hF,M.f.fill,b.f,M.f.ink]];
     const topIdx=(hF>0)?2:(hC>0)?1:(hP>0)?0:-1;
     segs.forEach(([k,h,fill,val,ink],si)=>{
       if(h<=0)return; y-=h;
