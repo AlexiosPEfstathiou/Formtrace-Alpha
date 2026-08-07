@@ -1289,6 +1289,67 @@ import { PoseLandmarker, GestureRecognizer, FilesetResolver } from "https://cdn.
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 function toast(msg,ms=2600){const t=$("#toast");t.innerHTML=msg;t.classList.add("show");clearTimeout(toast._t);if(ms)toast._t=setTimeout(()=>t.classList.remove("show"),ms);}
+
+/* =========================================================================
+   1b. Error reporting
+   Most failures here are caught and console.error'd, which means nobody
+   sees them. This forwards them to client_errors so they're reviewable in
+   the admin screen. Deliberately narrow: message, stack, screen, UA — no
+   form values, no media paths. Never throws, never blocks, never recurses.
+   ========================================================================= */
+const APP_VERSION="2026-08-08";
+const ERR_MAX_PER_SESSION=25;
+let _errCount=0, _errSeen=new Set(), _errBusy=false;
+function activeScreenName(){
+  const s=document.querySelector(".screen.active");
+  return s&&s.id?s.id.replace(/^s-/,""):"(none)";
+}
+async function reportError(kind,message,stack){
+  try{
+    if(_errBusy)return;                       // never recurse through our own failure
+    if(_errCount>=ERR_MAX_PER_SESSION)return; // don't flood on a render loop
+    const msg=String(message||"").slice(0,500);
+    if(!msg)return;
+    const key=kind+"|"+msg;
+    if(_errSeen.has(key))return;              // one row per distinct problem per session
+    _errSeen.add(key); _errCount++;
+    if(!window.store||!store._sb)return;
+    const uid=(ME&&ME.id)||null;
+    if(!uid)return;                           // RLS requires an owner; skip pre-login
+    _errBusy=true;
+    await store._sb.from("client_errors").insert({
+      user_id:uid, kind,
+      message:msg,
+      stack:String(stack||"").slice(0,2000)||null,
+      screen:activeScreenName(),
+      ua:String(navigator.userAgent||"").slice(0,300),
+      app_version:APP_VERSION
+    });
+  }catch(e){ /* reporting must never surface */ }
+  finally{ _errBusy=false; }
+}
+window.addEventListener("error",e=>{
+  reportError("uncaught", e&&e.message, e&&e.error&&e.error.stack);
+});
+window.addEventListener("unhandledrejection",e=>{
+  const r=e&&e.reason;
+  reportError("unhandled-promise", (r&&(r.message||r))||"rejected", r&&r.stack);
+});
+/* Handled-but-logged failures are where today's silent bugs lived, so
+   console.error is forwarded too — still printed to the console as normal. */
+(function(){
+  const orig=console.error.bind(console);
+  console.error=function(...args){
+    orig(...args);
+    try{
+      const first=args[0];
+      const err=args.find(a=>a instanceof Error);
+      reportError("handled",
+        typeof first==="string"?first:(first&&first.message)||"console.error",
+        err&&err.stack);
+    }catch(_){}
+  };
+})();
 function fmt(sec){const m=Math.floor(sec/60),s=Math.floor(sec%60);return m+":"+String(s).padStart(2,"0");}
 function gradeColor(g){ if(g>=8)return "#C8FF3D"; if(g>=6)return "#B6E84A"; if(g>=4)return "#FFC24A"; return "#FF5A5A"; }
 function gradeWord(g){ return ["","Way off","Needs work","Rough","Getting there","Halfway","Decent","Solid","Strong","Great","Textbook"][g]||""; }
@@ -5235,13 +5296,62 @@ $("#ca-submit").addEventListener("click",async()=>{
 /* =========================================================================
    17. Admin — review & approve coach applications
    ========================================================================= */
+/* Recent client errors. Admin-only by RLS; this is the only place the log
+   is visible, so without it the table would collect data nobody reads. */
+async function renderAdminErrors(body){
+  let rows=[];
+  try{
+    const { data, error } = await store._sb.from("client_errors")
+      .select("*").order("occurred_at",{ascending:false}).limit(25);
+    if(error) throw error;
+    rows=data||[];
+  }catch(e){
+    // absent table or non-admin: say so quietly rather than break the screen
+    body.insertAdjacentHTML("beforeend",
+      `<div class="card" style="border-color:var(--line)"><div class="eyebrow">Client errors</div>
+       <div style="font-size:12px;color:var(--faint);margin-top:6px">Unavailable — run migrations_error_log.sql.</div></div>`);
+    return;
+  }
+  const card=document.createElement("div");card.className="card";
+  card.innerHTML=`<div class="eyebrow" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <span>Client errors · last ${rows.length}</span>
+      ${rows.length?`<button id="ae-clear" class="tl-play" style="background:transparent;border:1px solid var(--line2);color:var(--red)">Clear</button>`:""}
+    </div>`;
+  if(!rows.length){
+    card.insertAdjacentHTML("beforeend",`<div style="font-size:12px;color:var(--faint);margin-top:8px">Nothing reported. Good sign.</div>`);
+  }else{
+    for(const r of rows){
+      const col = r.kind==="uncaught"||r.kind==="unhandled-promise" ? "var(--red)" : "var(--amber)";
+      card.insertAdjacentHTML("beforeend",
+        `<div style="margin-top:11px;padding-top:10px;border-top:1px solid var(--line)">
+           <div style="display:flex;gap:8px;align-items:baseline">
+             <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:${col};flex-shrink:0">${escapeHtml(r.kind||"")}</span>
+             <span style="font-size:11px;color:var(--faint);flex-shrink:0">${escapeHtml(timeAgo(r.occurred_at))}</span>
+             <span style="font-size:11px;color:var(--faint);margin-left:auto">${escapeHtml(r.screen||"")}</span>
+           </div>
+           <div style="font-size:12.5px;color:var(--ink);margin-top:4px;line-height:1.45;word-break:break-word">${escapeHtml(r.message||"")}</div>
+         </div>`);
+    }
+  }
+  body.appendChild(card);
+  $("#ae-clear")?.addEventListener("click",async()=>{
+    const ok=await openConfirm({title:"Clear the error log?",body:"Removes every reported error. They'll start collecting again from now.",confirmLabel:"Clear",cancelLabel:"Keep",danger:true});
+    if(!ok)return;
+    try{
+      const { error }=await store._sb.from("client_errors").delete().neq("id","00000000-0000-0000-0000-000000000000");
+      if(error) throw error;
+      toast("Error log cleared"); renderAdmin();
+    }catch(e){ toast("Couldn't clear the log",4000); }
+  });
+}
 async function renderAdmin(){
   const body=$("#admin-body");body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   let apps=[];
   try{ apps=await store.coachApps.pending(); }catch(err){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><p>${escapeHtml(err.message||"Couldn't load applications")}</p></div>`; return; }
   $("#admin-sub").textContent=apps.length?`${apps.length} pending`:"Nothing pending";
   body.innerHTML="";
-  if(!apps.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`; return; }
+  await renderAdminErrors(body);
+  if(!apps.length){ body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`); return; }
   for(const a of apps){
     const prof=a.profiles||{};
     const div=document.createElement("div");div.className="card";
