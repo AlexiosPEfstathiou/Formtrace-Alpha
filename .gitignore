@@ -8,3 +8,6 @@
 Thumbs.db
 node_modules/
 *.log
+_smoke.mjs
+_check.mjs
+check.ps1.txt
