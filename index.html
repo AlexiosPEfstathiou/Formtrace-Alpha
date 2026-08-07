@@ -3850,8 +3850,8 @@ function renderDashboard(container, iAmCoach){
       if(sp){
         // drawn in FRONT of the area fill, or the comparison line gets muted
         const sy=Y(sp.w);
-        bandFg=`<line x1="${x0.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="${C.ink}" stroke-width="1.2" opacity="0.5" stroke-dasharray="5 4"/>`
-          +`<text x="${(x1-3).toFixed(1)}" y="${(sy+10).toFixed(1)}" text-anchor="end" font-size="8" font-weight="700" fill="${C.faint}">start ${sp.w.toFixed(1)}</text>`;
+        bandFg=`<line x1="${x0.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="var(--red)" stroke-width="0.8" opacity="0.85" stroke-dasharray="5 4"/>`
+          +`<text x="${(x1-3).toFixed(1)}" y="${(sy+10).toFixed(1)}" text-anchor="end" font-size="8" font-weight="700" fill="var(--red)">start ${sp.w.toFixed(1)}</text>`;
       }
     }
     const rangeNote = dashMode==="goal"
