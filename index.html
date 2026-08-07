@@ -4471,7 +4471,10 @@ async function submitToCoach(save=false){
     const report={items:currentAssigned.snapshot.items.map((it,i)=>({exercise_id:it.exercise_id||null,name:it.name,reps:it.reps,sets:it.sets,results:localResults[i]||[]}))};
     const sub=await store.submissions.add({assigned_id:currentAssigned.id,trainee_id:ME.id,report});
     await writeSetLabels(sub);
-    await store.assignedWorkouts.update(currentAssigned.id,{status:"submitted"});
+    // status transitions are server-checked: the function verifies the
+    // submission actually exists before it will mark this submitted
+    const { error:msErr }=await store._sb.rpc("mark_submitted",{p_assigned:currentAssigned.id});
+    if(msErr) throw msErr;
     try{ await store.assignedWorkouts.update(currentAssigned.id,{draft:null}); }catch(_){/* optional column */}
     toast(save?"Saved to device & sent to coach ✓":"Sent to your coach ✓",3200);
     go("trainee-home");
@@ -4757,10 +4760,10 @@ $("#rev-submit").addEventListener("click",async()=>{
     }
     await store.reviews.add({submission_id:currentSubmission.id,coach_id:ME.id,overall:($("#rev-overall")?.value||"").trim(),per_set});
     await saveCoachGrades();
-    // opened:false marks the review as UNSEEN by the trainee — it was set true
-    // when they opened the workout to record, so without this reset their
-    // homepage "new review" badge could never appear.
-    await store.assignedWorkouts.update(reviewState.assignedId,{status:"reviewed",opened:false});
+    // server-checked: refuses unless a review row exists, and flags the
+    // workout unseen so the trainee's homepage badge appears
+    const { error:mrErr }=await store._sb.rpc("mark_reviewed",{p_assigned:reviewState.assignedId});
+    if(mrErr) throw mrErr;
     toast("Review sent ✓"); openEngagement(currentEng.id);
   }catch(err){console.error(err);toast(err.message||"Couldn't send review",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
