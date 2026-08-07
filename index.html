@@ -3692,9 +3692,17 @@ function renderDashboard(container, iAmCoach){
   // ---- build buckets (day or week) ----
   const buckets=[]; // {label, p,c,f, kcal, wSum,wN, date}
   /* 'goal' is the default view: the whole goal plus the week before it began,
-     so the trainee sees the full arc first and narrows with Week / Day. */
-  const goalStart=(currentEng&&currentEng.started_at)?isoOf(new Date(currentEng.started_at)):null;
-  const goalEnd=(currentEng&&currentEng.completed_at)?isoOf(new Date(currentEng.completed_at)):todayISO();
+     so the trainee sees the full arc first and narrows with Week / Day.
+     In merged mode currentEng is null — the trainee's calendar spans every
+     goal — so fall back to the earliest active goal in traineeEngs. */
+  let goalRef=currentEng;
+  if(!goalRef && traineeMerged && traineeEngs.length){
+    const act=traineeEngs.filter(e=>e.status==="active");
+    const pool=act.length?act:traineeEngs;
+    goalRef=pool.slice().sort((a,b)=>(a.started_at||"")<(b.started_at||"")?-1:1)[0];
+  }
+  const goalStart=(goalRef&&goalRef.started_at)?isoOf(new Date(goalRef.started_at)):null;
+  const goalEnd=(goalRef&&goalRef.completed_at)?isoOf(new Date(goalRef.completed_at)):todayISO();
   const rangeFrom=goalStart?addDaysISO(goalStart,-7):null;
   let bandFrom=null,bandTo=null;   // goal span, as bucket indices
   if(dashMode==="goal"){
