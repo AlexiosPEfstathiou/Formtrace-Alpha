@@ -16,9 +16,11 @@
     --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF; --violet:#B79CFF;
     --shadow:0 12px 40px rgba(0,0,0,.5);
     --frame-outer:#0d1116; --frame-ring:#1c242c; --frame-bg:#05070A;
-    /* chart series (dark) — vivid but legible on dark panels */
-    --ch-1:#5AB0FF; --ch-2:#C8FF3D; --ch-3:#FFC24A; --ch-4:#B79CFF; --ch-weight:#B79CFF;
-    --ch-1-ink:#06121f; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
+    /* chart series (dark). ch-1 protein = red, ch-2 carbs = green, ch-3 fat = yellow.
+       Red/green is unreadable for red-green colour blindness, so the cb palette
+       below deliberately overrides these — the pattern fills also distinguish them. */
+    --ch-1:#FF5A5A; --ch-2:#8BD742; --ch-3:#FFC24A; --ch-4:#B79CFF; --ch-weight:#B79CFF;
+    --ch-1-ink:#2b0505; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
     /* tinted "accent" surface (lime-highlighted cards) */
     --accent-surface:linear-gradient(120deg,#1a2410,#141a10); --accent-border:#2f3d18;
     /* goal/offer status accents — active = green (dark), inactive = grey */
@@ -32,7 +34,7 @@
     --red:#D64545; --amber:#B7791F; --blue:#0072B2; --violet:#7A5CC4;
     --shadow:0 12px 36px rgba(20,30,40,.18);
     --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
-    --ch-1:#0072B2; --ch-2:#5B8C00; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
+    --ch-1:#C62828; --ch-2:#3F7D18; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#FFFFFF; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
     --accent-surface:linear-gradient(120deg,#EDF6DC,#F3F8E8); --accent-border:#C4DE8F;
     --goal-active:#0072B2; --goal-active-tint:rgba(0,114,178,.08); --goal-inactive:#8C98A3; --goal-inactive-tint:rgba(140,152,163,.12);
@@ -3666,7 +3668,7 @@ async function renderEngagement(){
  }
 }
 /* ===================== DASHBOARD (macros + weight + check-ins) ===================== */
-let dashMode="day"; // 'day' | 'week'
+let dashMode="goal"; // 'goal' (whole goal + a week before) | 'week' | 'day'
 function renderDashboard(container, iAmCoach){
  try{
   const logs=Object.values(logsByDate).sort((a,b)=>a.log_date<b.log_date?-1:1);
@@ -3674,7 +3676,7 @@ function renderDashboard(container, iAmCoach){
   const head=document.createElement("div");head.className="section-h";
   head.innerHTML=`<div class="eyebrow">Dashboard</div>`;
   const seg=document.createElement("div");seg.className="seg";seg.style.cssText="margin:0;width:auto";
-  seg.innerHTML=`<button data-dm="day" class="${dashMode==="day"?"on":""}">Day</button><button data-dm="week" class="${dashMode==="week"?"on":""}">Week</button>`;
+  seg.innerHTML=`<button data-dm="goal" class="${dashMode==="goal"?"on":""}">Goal</button><button data-dm="week" class="${dashMode==="week"?"on":""}">Week</button><button data-dm="day" class="${dashMode==="day"?"on":""}">Day</button>`;
   head.appendChild(seg);
   wrap.appendChild(head);
 
@@ -3688,12 +3690,32 @@ function renderDashboard(container, iAmCoach){
   }
 
   // ---- build buckets (day or week) ----
-  const buckets=[]; // {label, p,c,f, kcal, wSum,wN}
-  if(dashMode==="day"){
+  const buckets=[]; // {label, p,c,f, kcal, wSum,wN, date}
+  /* 'goal' is the default view: the whole goal plus the week before it began,
+     so the trainee sees the full arc first and narrows with Week / Day. */
+  const goalStart=(currentEng&&currentEng.started_at)?isoOf(new Date(currentEng.started_at)):null;
+  const goalEnd=(currentEng&&currentEng.completed_at)?isoOf(new Date(currentEng.completed_at)):todayISO();
+  const rangeFrom=goalStart?addDaysISO(goalStart,-7):null;
+  let bandFrom=null,bandTo=null;   // goal span, as bucket indices
+  if(dashMode==="goal"){
+    const inRange=logs.filter(l=>(!rangeFrom||l.log_date>=rangeFrom)&&l.log_date<=goalEnd);
+    const src=inRange.length?inRange:logs;
+    for(const l of src){
+      const [y,m,d]=l.log_date.split("-").map(Number);
+      buckets.push({label:`${d}/${m}`, date:l.log_date, p:l.protein_g||0,c:l.carbs_g||0,f:l.fat_g||0,
+        kcal:l.kcal||Math.round((l.protein_g||0)*4+(l.carbs_g||0)*4+(l.fat_g||0)*9),
+        wSum:l.weight_kg!=null?Number(l.weight_kg):null, wN:l.weight_kg!=null?1:0});
+    }
+    if(goalStart){
+      buckets.forEach((b,i)=>{
+        if(b.date>=goalStart && b.date<=goalEnd){ if(bandFrom==null)bandFrom=i; bandTo=i; }
+      });
+    }
+  }else if(dashMode==="day"){
     const recent=logs.slice(-14);
     for(const l of recent){
       const [y,m,d]=l.log_date.split("-").map(Number);
-      buckets.push({label:`${d}/${m}`, p:l.protein_g||0,c:l.carbs_g||0,f:l.fat_g||0,
+      buckets.push({label:`${d}/${m}`, date:l.log_date, p:l.protein_g||0,c:l.carbs_g||0,f:l.fat_g||0,
         kcal:l.kcal||Math.round((l.protein_g||0)*4+(l.carbs_g||0)*4+(l.fat_g||0)*9),
         wSum:l.weight_kg!=null?Number(l.weight_kg):null, wN:l.weight_kg!=null?1:0});
     }
@@ -3773,7 +3795,9 @@ function renderDashboard(container, iAmCoach){
   wrap.appendChild(macroCard);
 
   // ---- weight line chart (SVG) with area fill + themed color + date axis ----
-  const wpts=buckets.map((b,i)=>({i,w:b.wSum,label:b.label})).filter(p=>p.w!=null);
+  // Weekly buckets average the weight, which yields long decimals — round to
+  // one place so the chart labels stay readable.
+  const wpts=buckets.map((b,i)=>({i,w:(b.wSum==null?null:Math.round(b.wSum*10)/10),label:b.label,date:b.date||null})).filter(p=>p.w!=null);
   const wCard=document.createElement("div");wCard.className="card";wCard.style.padding="18px 14px 12px";
   if(wpts.length>=1){
     const wW=Math.max(320, buckets.length*52), wH=190, wpadB=32, wpadT=30, wpadL=38;
@@ -3788,9 +3812,10 @@ function renderDashboard(container, iAmCoach){
     wpts.forEach((p,k)=>{ const x=X(p.i),y=Y(p.w);
       line+=(k===0?"M":"L")+x.toFixed(1)+" "+y.toFixed(1)+" ";
       // value in a small pill above each point so it never collides with the line
-      const lw=(""+p.w).length*5.4+8;
+      const wtxt=p.w.toFixed(1);
+      const lw=wtxt.length*5.4+8;
       dots+=`<rect x="${(x-lw/2).toFixed(1)}" y="${(y-19).toFixed(1)}" width="${lw.toFixed(1)}" height="14" rx="7" fill="${C.panel2||C.panel}" opacity="0.9"/>`
-        +`<text x="${x}" y="${(y-9).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="800" fill="${C.ink}">${p.w}</text>`
+        +`<text x="${x}" y="${(y-9).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="800" fill="${C.ink}">${wtxt}</text>`
         +`<circle cx="${x}" cy="${y}" r="3.4" fill="${C.weight}" stroke="${C.panel}" stroke-width="2"/>`;
       xlabels+=`<text x="${x}" y="${wH-10}" text-anchor="middle" font-size="9" fill="${C.faint}">${p.label}</text>`;
     });
@@ -3801,9 +3826,22 @@ function renderDashboard(container, iAmCoach){
     const grid=[wMax,wMid,wMin].map(v=>`<line x1="${wpadL}" y1="${Y(v)}" x2="${wW-8}" y2="${Y(v)}" stroke="${C.line}" stroke-dasharray="1 4" opacity="0.55"/><text x="4" y="${Y(v)+3}" font-size="8.5" fill="${C.faint}">${v.toFixed(1)}</text>`).join("");
     const delta=(ws[ws.length-1]-ws[0]);
     const deltaTxt=(delta>0?"+":"")+delta.toFixed(1)+" kg";
+    /* Shade the goal's own span so the week before it is visually outside. */
+    let band="";
+    if(dashMode==="goal" && bandFrom!=null && bandTo!=null && buckets.length>1){
+      const bx=X(bandFrom), bx2=X(bandTo);
+      const x0=Math.max(wpadL, bx-((chW/(buckets.length-1))/2));
+      const x1=Math.min(wW-12, bx2+((chW/(buckets.length-1))/2));
+      band=`<rect x="${x0.toFixed(1)}" y="${wpadT-6}" width="${Math.max(2,x1-x0).toFixed(1)}" height="${(chH+12).toFixed(1)}" fill="${C.weight}" opacity="0.07"/>`
+        +`<line x1="${x0.toFixed(1)}" y1="${wpadT-6}" x2="${x0.toFixed(1)}" y2="${(wpadT+chH+6).toFixed(1)}" stroke="${C.weight}" stroke-width="1" opacity="0.45" stroke-dasharray="2 3"/>`
+        +`<text x="${(x0+4).toFixed(1)}" y="${wpadT+4}" font-size="8" fill="${C.faint}">goal starts</text>`;
+    }
+    const rangeNote = dashMode==="goal"
+      ? (goalStart?`Whole goal from ${fmtDay(goalStart)} · week before shown unshaded`:"All entries")
+      : (dashMode==="week"?"Weekly average":"By day");
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:baseline"><span>Weight (kg)</span><span style="font-size:12px;font-weight:800;letter-spacing:0;text-transform:none;color:${delta<=0?'var(--lime)':'var(--amber)'}">${wpts.length>1?deltaTxt:""}</span></div>
-      <div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">${dashMode==="week"?"Weekly average":"By day"}</div>
-      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${grid}<path d="${area}" fill="${C.weight}" opacity="0.12"/><path d="${line}" fill="none" stroke="${C.weight}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
+      <div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">${escapeHtml(rangeNote)}</div>
+      <div style="overflow-x:auto"><svg viewBox="0 0 ${wW} ${wH}" style="width:${wW<340?"100%":wW+"px"};height:${wH}px">${band}${grid}<path d="${area}" fill="${C.weight}" opacity="0.12"/><path d="${line}" fill="none" stroke="${C.weight}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}${xlabels}</svg></div>`;
   }else{
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
   }
