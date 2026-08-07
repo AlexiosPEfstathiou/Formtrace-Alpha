@@ -4799,6 +4799,17 @@ async function renderProfile(){
         <span class="switch"><input type="checkbox" id="cb-switch" ${curCb?"checked":""}><span class="track"></span></span>
       </label>
     </div>`;
+  // ---- Danger zone: account deletion ----
+  html+=`<div class="section-h"><div class="eyebrow" style="color:var(--red)">Danger zone</div></div>
+    <div class="card" style="border-color:rgba(255,90,90,.35)">
+      <div style="font-size:13px;font-weight:700">Delete my account</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45">Permanently removes your photos, videos, macro logs and body measurements, and strips your name and photo. Shared workout history stays with your coach or trainees, anonymised.</div>
+      <div style="display:flex;gap:8px;margin-top:13px">
+        <button class="btn sm" id="dz-preview" style="margin:0">See what's stored</button>
+        <button class="btn sm" id="dz-delete" style="margin:0;color:var(--red);border-color:rgba(255,90,90,.5)">Delete account</button>
+      </div>
+      <div id="dz-out" style="display:none;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)"></div>
+    </div>`;
   if(r==="trainee"){
     const apps=await store.coachApps.mine();
     const pending=apps.find(a=>a.status==="pending");
@@ -4840,7 +4851,58 @@ async function renderProfile(){
   }));
   $("#cb-switch")?.addEventListener("change",e=>setColorblind(e.target.checked));
   wireSocialProfile();
+  wireDangerZone();
   $("#apply-card")?.addEventListener("click",()=>go("coach-apply"));
+}
+/* ---------- account deletion (anonymises; see migrations_account_deletion.sql) ---------- */
+function wireDangerZone(){
+  $("#dz-preview")?.addEventListener("click",async()=>{
+    const out=$("#dz-out"); if(!out)return;
+    out.style.display=""; out.textContent="Checking…";
+    try{
+      const { data, error } = await store._sb.rpc("my_data_summary");
+      if(error) throw error;
+      const label={macro_logs:"Macro logs",checkin_photos:"Check-in photos",body_measurements:"Body measurements",
+        stored_files:"Stored files",goals_as_trainee:"Goals as trainee",goals_as_coach:"Goals as coach",
+        submissions:"Workouts submitted",reviews_written:"Reviews written",exercises:"Exercises",
+        workouts:"Workout plans",listings:"Posted goals",offers:"Offers",ratings:"Ratings"};
+      const rows=Object.keys(label).filter(k=>(data&&data[k])>0)
+        .map(k=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0"><span>${label[k]}</span><b>${data[k]}</b></div>`).join("");
+      out.innerHTML=rows
+        ? `<div style="font-size:12.5px;line-height:1.5">${rows}</div>
+           <div style="font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.5">Photos, videos, macro logs and measurements are deleted outright. Your name, city and photo are removed. Shared workout and grading records stay, attached to "Deleted user", so your coach or trainees don't lose their own history.</div>`
+        : `<div style="font-size:12.5px;color:var(--muted)">Nothing stored against this account yet.</div>`;
+    }catch(err){
+      console.error("data summary",err);
+      out.textContent="Couldn't read your data summary — run migrations_account_deletion.sql first.";
+    }
+  });
+  $("#dz-delete")?.addEventListener("click",async()=>{
+    const ok1=await openConfirm({title:"Delete your account?",body:"Your photos, videos, macro logs and body measurements are deleted permanently. Your name and profile photo are removed. This cannot be undone.",confirmLabel:"Continue",cancelLabel:"Keep my account",danger:true});
+    if(!ok1)return;
+    const ok2=await openConfirm({title:"Last check",body:"This is irreversible and you'll be signed out immediately. Delete everything?",confirmLabel:"Delete my account",cancelLabel:"Cancel",danger:true});
+    if(!ok2)return;
+    const btn=$("#dz-delete");btn.disabled=true;const o=btn.textContent;btn.textContent="Deleting…";
+    try{
+      // Remove the real storage objects first — the SQL function can clear the
+      // database rows but only the storage API deletes the underlying files.
+      try{
+        const { data:files } = await store._sb.storage.from("videos").list(ME.id,{limit:1000});
+        if(files&&files.length){
+          await store._sb.storage.from("videos").remove(files.map(f=>ME.id+"/"+f.name));
+        }
+      }catch(e){ console.error("storage purge",e); }
+      const { error } = await store._sb.rpc("delete_my_account");
+      if(error) throw error;
+      toast("Your account has been deleted",4000);
+      try{ await store.auth.signOut(); }catch(e){}
+      ME=null; urlCache.clear(); hideStreakBadge(); showAuth();
+    }catch(err){
+      console.error("delete account",err);
+      toast(err.message||"Couldn't delete the account — run migrations_account_deletion.sql first",5000);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
 }
 /* ---------- social profile controls ---------- */
 /* Mirrors public_name() in SQL so the preview matches what others will see.
