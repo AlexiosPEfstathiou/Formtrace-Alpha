@@ -2037,7 +2037,9 @@ async function refreshStreakBadge(){
    the trainee's badge identical to what every coach reads from the DB. */
 async function serverStreak(){
   try{
-    const { data, error } = await store._sb.rpc("refresh_my_streak");
+    // pass the DEVICE's date: the server's current_date is UTC, which
+    // disagrees with the client's anchor day for anyone ahead of UTC
+    const { data, error } = await store._sb.rpc("refresh_my_streak",{p_today:todayISO()});
     if(error){ console.error("refresh_my_streak",error); return null; }
     const v = (typeof data==="number") ? data : (Array.isArray(data)?data[0]:null);
     if(v!=null && ME) ME.streak_count=v;
