@@ -457,6 +457,25 @@
   .vid-rot:disabled{opacity:.5;}
   /* on the full-screen player, sit clear of the native control bar */
   #r-rot{width:40px;height:40px;font-size:19px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 78px);z-index:7;}
+  /* Landscape mode turns the whole recorder, camera feed and chrome together,
+     so the feed appears upright once the phone is physically turned. Sizes are
+     swapped in JS because a rotated absolute box needs explicit dimensions. */
+  #rec{transition:transform .38s cubic-bezier(.2,.8,.2,1);}
+  /* the turn hint stays screen-fixed: it must NOT rotate with the recorder */
+  #r-turn{position:absolute;inset:0;z-index:120;display:none;align-items:center;justify-content:center;
+    pointer-events:none;background:rgba(0,0,0,.35);}
+  #r-turn.on{display:flex;}
+  #r-turn .rt-card{background:rgba(0,0,0,.78);border:1px solid rgba(255,255,255,.2);border-radius:16px;
+    padding:16px 20px;text-align:center;backdrop-filter:blur(4px);}
+  #r-turn .rt-arrow{font-size:42px;line-height:1;color:var(--lime);animation:rtSpin 1.5s ease-in-out infinite;}
+  #r-turn .rt-tx{font-size:13px;color:#fff;margin-top:8px;line-height:1.4;}
+  /* marker pinned to the edge that becomes the top once turned */
+  #r-turn .rt-edge{position:absolute;font-size:10px;font-weight:800;letter-spacing:.18em;color:var(--lime);
+    background:rgba(0,0,0,.7);border:1px solid var(--lime-dim);border-radius:6px;padding:4px 8px;}
+  #r-turn.edge-right .rt-edge{right:10px;top:50%;transform:translateY(-50%) rotate(90deg);}
+  #r-turn.edge-left  .rt-edge{left:10px;top:50%;transform:translateY(-50%) rotate(-90deg);}
+  @keyframes rtSpin{0%,100%{transform:rotate(0);}50%{transform:rotate(80deg);}}
+  @media(prefers-reduced-motion:reduce){#rec{transition:none;}#r-turn .rt-arrow{animation:none;}}
   /* coach's 1-10 form grade selector on the review screen */
   .gsel{display:flex;gap:5px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
@@ -1213,6 +1232,16 @@
       <circle id="an-ring" cx="50" cy="50" r="42" fill="none" stroke="#C8FF3D" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/>
     </svg>
     <div><div class="m" id="an-msg">Analyzing your set…</div><div class="s" id="an-sub">Counting repetitions</div></div>
+  </div>
+
+  <!-- screen-fixed turn hint: sits OUTSIDE #rec so it stays upright while the
+       recorder itself is rotated, and can show which edge becomes the top -->
+  <div id="r-turn">
+    <div class="rt-card">
+      <div class="rt-arrow" id="rt-arrow">⟳</div>
+      <div class="rt-tx" id="rt-tx">Turn the phone</div>
+    </div>
+    <div class="rt-edge" id="rt-edge">UP</div>
   </div>
 
   <!-- ============ RESULT ============ -->
@@ -5892,10 +5921,47 @@ $("#r-orient")?.addEventListener("click",()=>{
   recOrient = recOrient==="landscape" ? "portrait" : "landscape";
   try{ localStorage.setItem("ft-orient",recOrient); }catch(e){}
   syncOrientBtn();
-  toast(recOrient==="landscape"
-    ? "Landscape — turn the phone sideways before recording"
-    : "Portrait — hold the phone upright", 3200);
+  applyRecOrientation(true);
 });
+/* Rotate the whole recorder — camera feed and chrome together — so that once
+   the phone is physically turned, everything reads upright. Rotating +90°
+   sends the UI's top edge to the screen's RIGHT, so the right edge is what
+   the user lifts; the hint marks that edge rather than describing it in
+   words, which is easy to get backwards. */
+function applyRecOrientation(announce){
+  const rec=$("#rec"); if(!rec)return;
+  const land=recOrient==="landscape";
+  const p=rec.parentElement;
+  if(land&&p){
+    const w=p.clientWidth||0, h=p.clientHeight||0;
+    if(w&&h){
+      rec.style.width=h+"px"; rec.style.height=w+"px";
+      rec.style.top="50%"; rec.style.left="50%"; rec.style.right="auto"; rec.style.bottom="auto";
+      rec.style.transform="translate(-50%,-50%) rotate(90deg)";
+    }
+  }else{
+    rec.style.width=""; rec.style.height="";
+    rec.style.top=""; rec.style.left=""; rec.style.right=""; rec.style.bottom="";
+    rec.style.transform="";
+  }
+  if(!announce)return;
+  const t=$("#r-turn"); if(!t)return;
+  const arrow=$("#rt-arrow"), tx=$("#rt-tx");
+  t.classList.remove("edge-left","edge-right");
+  if(land){
+    t.classList.add("edge-right");
+    if(arrow) arrow.textContent="⟳";
+    if(tx) tx.innerHTML="Turn the phone so the<br><b>marked edge is at the top</b>";
+  }else{
+    t.classList.add("edge-left");
+    if(arrow) arrow.textContent="⟲";
+    if(tx) tx.innerHTML="Back to upright —<br><b>hold the phone normally</b>";
+  }
+  t.classList.add("on");
+  clearTimeout(applyRecOrientation._t);
+  applyRecOrientation._t=setTimeout(()=>t.classList.remove("on"),2800);
+}
+addEventListener("resize",()=>{ if(recOrient==="landscape") applyRecOrientation(false); });
 function debugOn(){ try{ return localStorage.getItem("ft-debug")==="1"; }catch(e){ return false; } }
 function updateDims(){
   if(!rDims)return;
@@ -5916,6 +5982,17 @@ async function openRecorder(opts){
      stale path from the last clip can't be rotated from a recording screen. */
   const rr=$("#r-rot"); if(rr) rr.style.display="none";
   rPlayPath=null; rPlayRot=0; rplay.style.transform="";
+  /* Preview playback is never rotated as a whole — only recording is. Apply
+     the declared orientation on open so it isn't lost between takes, and drop
+     it entirely for preview so a replay isn't sideways. */
+  if(recOpts.mode==="preview"){
+    const rc=$("#rec");
+    rc.style.width="";rc.style.height="";rc.style.top="";rc.style.left="";
+    rc.style.right="";rc.style.bottom="";rc.style.transform="";
+    $("#r-turn")?.classList.remove("on");
+  }else{
+    applyRecOrientation(false);
+  }
   /* The recorder is shared by six flows. Anything a caller can set must be
      reset here, or it leaks into the next flow — a coach note from a set
      recording was persisting into the trainee's pitch recording. Callers
@@ -5940,7 +6017,14 @@ async function openRecorder(opts){
   }catch(err){console.error(err);$("#r-spin").classList.add("hidden");
     $("#r-statmsg").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS (or localhost). Open this over https and retry.";}
 }
-function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");}
+function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");
+  /* Undo the landscape turn on the way out, or the rotated box and its
+     explicit width/height leak onto whatever opens the recorder next. */
+  const rc=$("#rec");
+  rc.style.width="";rc.style.height="";rc.style.top="";rc.style.left="";
+  rc.style.right="";rc.style.bottom="";rc.style.transform="";
+  $("#r-turn")?.classList.remove("on");
+}
 async function startCam(){
   if(rStream)rStream.getTracks().forEach(t=>t.stop());
   const vc={facingMode:rFacing,width:{ideal:1280},height:{ideal:720}};
