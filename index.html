@@ -415,11 +415,12 @@
   .rep-hero .rep-n{font-size:74px;line-height:1;font-weight:800;letter-spacing:-.04em;color:var(--lime);font-variant-numeric:tabular-nums;}
   .rep-hero .rep-target{font-size:13px;color:var(--muted);}
   .rep-check{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;}
-  .rep-check .rc-q{font-size:14px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:13px;}
+  .rep-check .rc-q{font-size:12.5px;font-weight:600;color:var(--muted);text-align:center;margin-bottom:10px;}
   .rc-btns{display:flex;gap:10px;}
-  .rc-btn{flex:1;height:48px;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);}
+  /* single, quiet action: the counted reps already stand, so this is a
+     correction affordance rather than a decision the trainee has to make */
+  .rc-btn{flex:1;height:44px;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);}
   .rc-btn:active{transform:scale(.98);}
-  .rc-btn.ok{border-color:var(--lime);background:var(--lime);color:var(--lime-ink);}
   .rc-fix label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px;}
   .rc-fix-row{display:flex;gap:10px;}
   .rc-fix-row input{flex:1;min-width:0;height:48px;background:var(--panel2);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:17px;text-align:center;outline:none;}
@@ -1224,10 +1225,9 @@
         <div class="rep-cmp" id="res-cmp" style="display:none"></div>
       </div>
       <div class="rep-check" id="rep-check">
-        <div class="rc-q">Did we count your reps correctly?</div>
+        <div class="rc-q" id="rep-q">Miscounted?</div>
         <div class="rc-btns">
-          <button class="rc-btn ok" id="rep-ok">✓ Correct</button>
-          <button class="rc-btn no" id="rep-no">✗ Incorrect</button>
+          <button class="rc-btn" id="rep-fixbtn">Correct my reps</button>
         </div>
         <div class="rc-fix" id="rep-fix" style="display:none">
           <label for="rep-actual">How many did you actually do?</label>
@@ -4893,14 +4893,20 @@ function showResult(exName,it,setIndex,r,itemIndex){
   const showDone=txt=>{ btns.style.display="none"; fix.style.display="none"; doneEl.style.display=""; doneEl.textContent=txt; };
   const reset=()=>{ btns.style.display=""; fix.style.display="none"; doneEl.style.display="none"; $("#rep-actual").value=""; };
   reset();
-  if(r.reps_label==="correct") showDone(`Confirmed at ${r.reps} reps ✓`);
-  else if(r.reps_label==="incorrect") showDone(`Corrected to ${r.reps_corrected} reps ✓`);
+  /* Silence is agreement: the counted reps stand unless the trainee says
+     otherwise, so this records 'correct' immediately rather than asking a
+     question with two buttons that both looked like the primary action. */
+  if(r.reps_label!=="incorrect") setLabel("correct",null);
+  if(r.reps_label==="incorrect") showDone(`Corrected to ${r.reps_corrected} reps ✓`);
 
-  $("#rep-ok").onclick=()=>{ setLabel("correct",null); showDone(`Confirmed at ${r.reps} reps ✓`); };
-  $("#rep-no").onclick=()=>{ btns.style.display="none"; fix.style.display=""; $("#rep-actual").focus(); };
+  $("#rep-fixbtn").onclick=()=>{
+    btns.style.display="none"; fix.style.display="";
+    const a=$("#rep-actual"); a.value=String(r.reps); a.focus(); a.select();
+  };
   $("#rep-save").onclick=()=>{
     const v=parseInt(($("#rep-actual").value||"").trim(),10);
     if(!Number.isFinite(v)||v<0){ toast("Enter the number of reps you did"); return; }
+    if(v===r.reps){ setLabel("correct",null); showDone(`Confirmed at ${r.reps} reps ✓`); return; }
     setLabel("incorrect",v);
     showDone(`Corrected to ${v} reps ✓`);
   };
