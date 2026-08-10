@@ -523,6 +523,13 @@
   .mg-tag{font-size:10.5px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:2px 8px;
     background:var(--accent-surface);border:1px solid var(--accent-border);color:var(--lime-dim);white-space:nowrap;}
   .mg-tag.none{background:transparent;border-color:var(--line2);color:var(--faint);}
+  /* ---- wildcard slots ---- */
+  .wo-wild,.wild-card{border-color:rgba(255,194,74,.4)!important;background:rgba(255,194,74,.06);}
+  .wild-ic{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--amber);
+    background:rgba(255,194,74,.14)!important;}
+  .wild-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px;}
+  .wild-chip{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle;
+    background:rgba(255,194,74,.18);color:var(--amber);border-radius:20px;padding:2px 7px;margin-left:6px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
   .gs-chip:active{transform:scale(.95);}
   .gs-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
@@ -980,6 +987,7 @@
       <div id="wo-items"></div>
       <div id="wo-items-empty" class="empty hidden" style="padding:34px 20px;"><div class="ic">▦</div><p>No exercises added.<br>Pull movements from your library.</p></div>
       <button class="btn sm" id="wo-add-ex" style="margin-top:6px">+ Add from library</button>
+      <button class="btn sm" id="wo-add-wild" style="margin-top:8px">★ Add wildcard slot</button>
     </div>
     <div class="fab-row">
       <button class="btn ghost sm" style="flex:0 0 auto;width:52px;color:var(--red)" id="wo-delete" title="Delete">🗑</button>
@@ -1224,7 +1232,10 @@
           To coach you, this app records: <b style="color:var(--ink)">videos of you exercising</b>, <b style="color:var(--ink)">weekly progress photos</b>, <b style="color:var(--ink)">body measurements and weight</b>, and <b style="color:var(--ink)">what you eat</b>.
         </div>
         <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px">
-          Your coach can see this while you work together. Nobody else can — it isn't public, isn't sold, and isn't used for advertising. Videos you post to the marketplace are the one exception: those are visible to coaches browsing for trainees, because that's their purpose.
+          Your coach can see this while you work together. Nobody else can — it isn't public, isn't sold, and isn't used for advertising. Two exceptions, both deliberate: videos you post to the marketplace are visible to coaches browsing for trainees, and <b style="color:var(--ink)">your age is shown on your profile</b> to anyone who views it.
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px">
+          Your date of birth itself is never shown or shared — only the age calculated from it.
         </div>
         <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px">
           You can delete your account at any time from Profile. That permanently removes your photos, videos, food logs and measurements, and strips your name from anything shared.
@@ -2275,7 +2286,7 @@ function showAuth(){
 }
 /* Bump this when the wording changes materially — existing users are then
    re-prompted rather than being held to consent given to an older notice. */
-const CONSENT_VERSION="2026-08-v1";
+const CONSENT_VERSION="2026-08-v2";
 let MY_PRIVATE=null;   // profile_private row for the signed-in user
 function showConsentGate(){
   $("#app-loading").style.display="none";
@@ -3187,7 +3198,22 @@ function renderBuilderItems(){
   $("#wo-items-empty").classList.toggle("hidden",builder.items.length>0);
   builder.items.forEach((it,idx)=>{
     const ex=exMap[it.exercise_id];
-    const row=document.createElement("div");row.className="wo-item";
+    const wild=!!it.wildcard_mg;
+    const row=document.createElement("div");row.className="wo-item"+(wild?" wo-wild":"");
+    if(wild){
+      /* A wildcard is a slot, not an exercise: the trainee fills it from the
+         coach's exercises in that group, and chooses their own sets and reps.
+         Nothing to grade against until they pick, so no reference warning. */
+      row.innerHTML=`
+        <div class="hd">
+          <div class="ex-thumb wild-ic">★</div>
+          <h4>Wildcard · ${escapeHtml(mgLabel(it.wildcard_mg)||it.wildcard_mg)}</h4>
+          <button class="rm" data-rm="${idx}">✕</button>
+        </div>
+        <div class="wild-note">The trainee picks any ${escapeHtml((mgLabel(it.wildcard_mg)||"").toLowerCase())} exercise from your library, and chooses their own sets and reps.</div>`;
+      wrap.appendChild(row);
+      return;
+    }
     row.innerHTML=`
       <div class="hd">
         <div class="ex-thumb">${exThumb(ex)}</div>
@@ -3213,10 +3239,37 @@ function renderBuilderItems(){
   hydrateVideos(wrap);
 }
 $("#wo-add-ex").addEventListener("click",openSheet);
+/* Wildcard slots: the coach chooses a muscle group, the trainee chooses the
+   exercise. Only groups the coach actually has exercises for are offered —
+   a wildcard pointing at an empty group would be a dead end for the trainee. */
+$("#wo-add-wild")?.addEventListener("click",()=>{
+  const present=MUSCLE_GROUPS.filter(([k])=>libCache.some(x=>x.muscle_group===k));
+  if(!present.length){ toast("Label some exercises with a muscle group first",4200); return; }
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Add a wildcard slot";
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:14px">
+      The trainee picks the exercise and sets their own sets and reps. Useful for
+      accessory work where the specific movement matters less than the muscle.</div>`;
+  present.forEach(([k,l])=>{
+    const n=libCache.filter(x=>x.muscle_group===k).length;
+    const b=document.createElement("button");
+    b.className="btn sm";b.style.cssText="width:100%;margin:0 0 8px;justify-content:space-between;display:flex";
+    b.innerHTML=`<span>★ Wildcard ${escapeHtml(l)}</span><span style="color:var(--faint);font-weight:600">${n} to choose from</span>`;
+    b.addEventListener("click",()=>{
+      builder.items.push({exercise_id:null,wildcard_mg:k,sets:null,reps:null});
+      closeSheet(); renderBuilderItems();
+    });
+    wrap.appendChild(b);
+  });
+  body.appendChild(wrap);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+});
 $("#wo-save").addEventListener("click",async()=>{
   const name=$("#in-wo-name").value.trim()||"Untitled workout";
   if(!builder.items.length){toast("Add at least one exercise");return;}
-  const items=builder.items.map(i=>({exercise_id:i.exercise_id,sets:i.sets,reps:i.reps}));
+  const items=builder.items.map(i=>({exercise_id:i.exercise_id||null,wildcard_mg:i.wildcard_mg||null,sets:i.sets,reps:i.reps}));
   if(builder.isNew) await store.workouts.add({coach_id:ME.id,name,items});
   else await store.workouts.update(builder.id,{name,items});
   toast("Workout saved"); go("coach");
@@ -4672,6 +4725,15 @@ async function doAssign(w,targetDate){
   const exMap=Object.fromEntries(exs.map(e=>[e.id,e]));
   // snapshot freezes the plan + reference landmarks (no video blobs; paths only)
   const snapItems=(w.items||[]).map(it=>{
+    /* A wildcard is frozen as an UNFILLED slot: the trainee resolves it when
+       they open the workout, which writes the chosen exercise back into this
+       snapshot. Carrying the group (not a list) means the choice reflects the
+       coach's library at the moment the trainee picks, not at assign time. */
+    if(it.wildcard_mg){
+      return {exercise_id:null,wildcard_mg:it.wildcard_mg,
+        name:"Wildcard · "+(mgLabel(it.wildcard_mg)||it.wildcard_mg),
+        sets:it.sets||null,reps:it.reps||null,ref_video_path:null,landmarks:null};
+    }
     const ex=exMap[it.exercise_id]||{};
     return {exercise_id:it.exercise_id,name:ex.name||"(removed)",sets:it.sets,reps:it.reps,
       ref_video_path:ex.ref_video_path||null, landmarks:ex.landmarks||null};
@@ -4794,9 +4856,22 @@ function renderAssignedWorkout(){
     const results=localResults[i]||[];
     const doneCount=results.filter(Boolean).length;
     const card=document.createElement("div");card.className="card";
+    /* An unfilled wildcard shows a chooser instead of sets: there is no
+       exercise to record against until the trainee picks one. */
+    if(it.wildcard_mg && !it.exercise_id){
+      card.className="card wild-card";
+      card.innerHTML=`<div class="ex-top" style="margin-bottom:6px">
+          <div class="ex-thumb wild-ic">★</div>
+          <div class="ex-info"><h3>Wildcard · ${escapeHtml(mgLabel(it.wildcard_mg)||it.wildcard_mg)}</h3>
+            <div class="ex-meta"><div>your choice</div></div></div></div>
+        <div class="wild-note">Pick any ${escapeHtml((mgLabel(it.wildcard_mg)||"").toLowerCase())} exercise from your coach's library, and choose your own sets and reps.</div>
+        ${locked?"":`<button class="btn sm" data-wild="${i}" style="margin-top:12px">Choose an exercise</button>`}`;
+      wrap.appendChild(card);
+      return;
+    }
     let inner=`<div class="ex-top" style="margin-bottom:6px">
         <div class="ex-thumb" ${ref?'data-ref="'+i+'"':""} style="${ref?'cursor:pointer':''}">${ref&&it.ref_video_path?`<div data-video="${it.ref_video_path}" style="width:100%;height:100%"></div><div class="play">▶</div>`:'<span class="ph">◉</span>'}</div>
-        <div class="ex-info"><h3>${escapeHtml(it.name)}</h3>
+        <div class="ex-info"><h3>${escapeHtml(it.name)}${it.wildcard_mg?' <span class="wild-chip">your pick</span>':""}</h3>
           <div class="ex-meta"><div><b>${it.sets}</b> sets</div><div><b>${it.reps}</b> reps</div><div><b>${doneCount}</b> done</div></div></div></div>`;
     // Coach's note from the previous run of this workout, BEFORE any set, so
     // it can still be acted on. Neutral heading: the note may be praise.
@@ -4835,16 +4910,94 @@ function renderAssignedWorkout(){
     const [ii,si]=row.getAttribute("data-play").split("-").map(Number);
     const r=(localResults[ii]||[])[si]; if(r&&r.video_path) playSetVideo(r.video_path,`${items[ii].name} · Set ${si+1}`);
   }));
+  wrap.querySelectorAll("[data-wild]").forEach(b=>b.addEventListener("click",()=>openWildcardPicker(+b.getAttribute("data-wild"))));
   wrap.querySelectorAll("[data-ref]").forEach(t=>t.addEventListener("click",e=>{ if(e.target.closest("video"))return; previewReference(+t.getAttribute("data-ref")); }));
   // submit button: enabled when all sets done and not yet submitted
   const allDone=done===total&&total>0;
+  /* An unfilled wildcard has no sets, so it contributes nothing to the totals
+     and would let "all done" be true with a slot still empty. */
+  const unfilled=(items||[]).some(x=>x.wildcard_mg&&!x.exercise_id);
   const submitBtn=$("#tw-submit"), submitSaveBtn=$("#tw-submit-save");
-  submitBtn.classList.toggle("hidden",locked||!allDone);
-  submitSaveBtn.classList.toggle("hidden",locked||!allDone);
+  submitBtn.classList.toggle("hidden",locked||!allDone||unfilled);
+  submitSaveBtn.classList.toggle("hidden",locked||!allDone||unfilled);
   submitBtn.onclick=()=>submitToCoach(false);
   submitSaveBtn.onclick=()=>submitToCoach(true);
   renderPostponeRow(wrap);
   hydrateVideos(wrap);
+}
+/* Fill a wildcard slot. Reads the coach's CURRENT library for that muscle
+   group, so the trainee's options reflect what the coach has now rather than
+   what existed when the workout was assigned. The choice is written back into
+   the assigned workout's snapshot, which is what every other surface reads. */
+async function openWildcardPicker(itemIndex){
+  const a=currentAssigned; if(!a)return;
+  const it=a.snapshot.items[itemIndex]; if(!it||!it.wildcard_mg)return;
+  const coachId=currentEng?currentEng.coach_id:(engById[a.engagement_id]||{}).coach_id;
+  if(!coachId){ toast("Couldn't find your coach's library",4000); return; }
+  const body=$("#sheet-body");body.innerHTML=`<div class="empty" style="padding:30px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $("#sheet-lib").querySelector("h3").textContent="Choose a "+(mgLabel(it.wildcard_mg)||"").toLowerCase()+" exercise";
+  $("#sheet-add").style.display="none";
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  let list=[];
+  try{
+    const all=await store.exercises.list({coach_id:coachId});
+    list=all.filter(x=>x.muscle_group===it.wildcard_mg);
+  }catch(e){ console.error("wildcard library",e); }
+  body.innerHTML="";
+  if(!list.length){
+    body.innerHTML=`<div class="empty" style="padding:30px 20px"><p>Your coach hasn't added any ${escapeHtml((mgLabel(it.wildcard_mg)||"").toLowerCase())} exercises yet.</p></div>`;
+    return;
+  }
+  const intro=document.createElement("div");
+  intro.style.cssText="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px";
+  intro.textContent="Pick one, then set how many sets and reps you'll do.";
+  body.appendChild(intro);
+  for(const ex of list){
+    const row=document.createElement("div");row.className="sh-item";
+    row.innerHTML=`<div class="ex-thumb" style="width:42px;height:42px;border-radius:11px">${exThumb(ex)}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(ex.name)}</div>
+      <div style="font-size:11px;color:${hasRef(ex)?'var(--lime-dim)':'var(--faint)'};margin-top:2px">${hasRef(ex)?'graded against your coach\'s form':'no reference — not graded'}</div></div>
+      <div style="color:var(--lime)">→</div>`;
+    row.addEventListener("click",()=>wildcardSetsReps(itemIndex,ex));
+    body.appendChild(row);
+  }
+  hydrateVideos(body);
+}
+function wildcardSetsReps(itemIndex,ex){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=ex.name;
+  const w=document.createElement("div");
+  w.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">How many sets and reps will you do?</div>
+    <div class="field"><label for="wc-sets">Sets</label><input id="wc-sets" type="number" inputmode="numeric" min="1" max="20" value="3"></div>
+    <div class="field"><label for="wc-reps">Reps per set</label><input id="wc-reps" type="number" inputmode="numeric" min="1" max="100" value="12"></div>
+    <button class="btn primary" id="wc-save" style="margin-top:4px">Add to my workout</button>`;
+  body.appendChild(w);
+  $("#wc-save").addEventListener("click",async()=>{
+    const s=parseInt($("#wc-sets").value,10), r=parseInt($("#wc-reps").value,10);
+    if(!Number.isFinite(s)||s<1||s>20){ toast("Sets must be between 1 and 20"); return; }
+    if(!Number.isFinite(r)||r<1||r>100){ toast("Reps must be between 1 and 100"); return; }
+    const btn=$("#wc-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+    try{
+      const snap=JSON.parse(JSON.stringify(currentAssigned.snapshot));
+      const slot=snap.items[itemIndex];
+      slot.exercise_id=ex.id;
+      slot.name=ex.name;
+      slot.sets=s; slot.reps=r;
+      slot.ref_video_path=ex.ref_video_path||null;
+      slot.landmarks=ex.landmarks||null;
+      // wildcard_mg is kept so the slot still reads as the trainee's own pick
+      await store.assignedWorkouts.update(currentAssigned.id,{snapshot:snap});
+      currentAssigned.snapshot=snap;
+      localResults=reshapeResults(localResults,snap.items);
+      closeSheet();
+      toast("Added ✓");
+      renderAssignedWorkout();
+    }catch(err){
+      console.error("wildcard save",err);
+      toast(err.message||"Couldn't save your choice",4000);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
 }
 /* Trainee: ask the coach to move an unstarted workout to another day. */
 function renderPostponeRow(wrap){
@@ -5849,7 +6002,7 @@ function subBar(label,val){
 function renderCoachProfile(p){
   const nm=publicName(p.display_name,p.name_style||"first");
   $("#cp-name").textContent=nm;
-  $("#cp-sub").textContent=[p.city,p.country_code?(COUNTRY_NAME(p.country_code)||p.country_code):null].filter(Boolean).join(" · ")||"Coach";
+  $("#cp-sub").textContent=[p.age?p.age+" years old":null,p.city,p.country_code?(COUNTRY_NAME(p.country_code)||p.country_code):null].filter(Boolean).join(" · ")||"Coach";
   const body=$("#cp-body");
   const rc=p.rating_count||0;
   const avg=p.rating_avg!=null?Number(p.rating_avg):null;

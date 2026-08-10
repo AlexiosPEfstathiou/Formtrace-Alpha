@@ -116,25 +116,38 @@ Small. Worth doing alongside anything else that touches the coach profile.
 
 ## I. Age displayed on profiles
 
-**Blocked on a decision, not effort.** Date of birth was deliberately moved to
-`profile_private` (owner-only RLS) because `profiles` is readable by every
-signed-in user for any coach, and RLS cannot hide a column.
+**DECIDED 2026-08-07:** age is visible on all profiles. The consent notice is
+updated to say so and `CONSENT_VERSION` bumped, which re-prompts every
+existing user before their age becomes visible.
 
-So age cannot simply be added to the profile row. Two options:
+Date of birth stays in `profile_private` (owner-only). `coach_public_profile()`
+computes the age and returns only the integer, so the birth date itself is
+never exposed — a coach's exact DOB is not derivable from their profile.
 
-1. `coach_public_profile()` computes age from `profile_private` and returns
-   only the integer. Works today — the function is SECURITY DEFINER — and
-   never exposes the date itself.
-2. Store a coarse public band (`30s`, `40s`) instead of an exact age.
+---
 
-Either way it needs **explicit consent**: the consent notice currently says
-this data is visible only to the coach. Publishing age to strangers changes
-that promise, so the notice needs updating and existing users re-prompted
-(bump `CONSENT_VERSION`, which already triggers a re-prompt).
+## J. Find a coach — offers grouped by goal
 
-Recommend option 1 with an opt-in toggle, defaulting off. Age is a plausible
-experience signal for a coach and irrelevant for a trainee, so it may be
-worth showing on coach profiles only.
+The current screen mixes every offer regardless of goal or status. Rework so a
+trainee can tell at a glance what they're working on versus deciding on.
+
+**Show only Pending and Accepted**, visually distinct, so live goals and
+decisions-to-make are instantly separable. Finished offers move to an
+**Archive** section rather than cluttering the list.
+
+**Group by goal.** A trainee with several goals browses one goal at a time,
+with certainty about which goal they're looking at — the current flat list
+makes it easy to accept an offer against the wrong goal.
+
+**Visual states needed:** viewed vs unviewed, declined, pending, accepted.
+Some of this exists (`unviewed` class) but it isn't systematic.
+
+**Accept confirmation:** "This will auto-decline all other offers for this
+goal. Would you like to proceed?" The auto-decline already happens in
+`acceptOffer` — it is just silent, which is the actual problem. A trainee
+currently declines three coaches without being told.
+
+Note: `openConfirm` already exists and takes exactly this shape.
 
 ---
 
