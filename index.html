@@ -478,6 +478,40 @@
   @media(prefers-reduced-motion:reduce){#rec{transition:none;}#r-turn .rt-arrow{animation:none;}}
   /* coach's 1-10 form grade selector on the review screen */
   .gsel{display:flex;gap:5px;}
+  /* ---- public coach profile ---- */
+  .cp-head{display:flex;align-items:center;gap:14px;}
+  .cp-av{width:56px;height:56px;border-radius:50%;flex-shrink:0;background:var(--panel2);border:1px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;color:var(--ink);}
+  .cp-id{min-width:0;flex:1;}
+  .cp-nm{font-size:18px;font-weight:800;color:var(--ink);}
+  .cbadges{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
+  .cbadge{font-size:10.5px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:3px 9px;white-space:nowrap;}
+  .cbadge.v{background:rgba(90,176,255,.16);color:#7BC0FF;border:1px solid rgba(90,176,255,.4);}
+  .cbadge.pro{background:rgba(255,194,74,.16);color:var(--amber);border:1px solid rgba(255,194,74,.44);}
+  .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
+  .cp-exp{font-size:14px;font-weight:700;color:var(--lime-dim);margin-top:4px;}
+  .cp-bio{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px;}
+  .cp-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .cp-stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 13px;}
+  .cp-stat b{display:block;font-size:22px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .cp-stat span{font-size:11px;color:var(--faint);}
+  .cp-avg{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .cp-avg b{font-size:19px;font-weight:800;color:var(--ink);}
+  .cp-avg span{font-size:11.5px;color:var(--faint);}
+  .cp-norate{font-size:12.5px;color:var(--faint);line-height:1.5;margin-top:4px;}
+  .sb-wrap{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);}
+  .sb-row{display:flex;align-items:center;gap:9px;padding:4px 0;}
+  .sb-l{font-size:11.5px;color:var(--muted);width:96px;flex-shrink:0;}
+  .sb-track{flex:1;height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;}
+  .sb-fill{display:block;height:100%;border-radius:3px;background:var(--lime);}
+  .sb-v{font-size:11.5px;font-weight:800;color:var(--ink);width:26px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;}
+  .cp-rev{padding:11px 0;border-top:1px solid var(--line);}
+  .cp-rev:first-of-type{border-top:none;}
+  .cp-rev-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .cp-rev-h span{font-size:12px;font-weight:700;color:var(--ink);}
+  .cp-rev-h i{font-size:10.5px;color:var(--faint);font-style:normal;margin-left:auto;}
+  .cp-rev-t{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:5px;}
+  .coach-link{cursor:pointer;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:2px;}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
   .gs-chip:active{transform:scale(.95);}
   .gs-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
@@ -1156,6 +1190,12 @@
       </div>
       <button class="btn primary" style="margin-top:14px" id="tl-done">Done</button>
     </div>
+  </section>
+
+  <!-- ============ PUBLIC COACH PROFILE ============ -->
+  <section class="screen" id="s-coachprofile">
+    <div class="top"><div class="back" id="cp-back">←</div><div style="flex:1"><h1 id="cp-name">Coach</h1><div class="sub" id="cp-sub"></div></div></div>
+    <div class="body" id="cp-body"></div>
   </section>
 
   <!-- ============ CONSENT + AGE GATE ============ -->
@@ -3244,8 +3284,9 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive){
   const exp=document.createElement("div");exp.className="offer-expanded";
   exp.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <div class="avatar">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
-      <div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(coachName)}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
+      <div style="flex:1;min-width:0"><div style="font-weight:700" class="coach-link" data-coach="${o.coach_id}">${escapeHtml(coachName)}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
       <span class="badge ${o.status}">${o.status}</span></div>
+    <div style="font-size:11.5px;color:var(--faint);margin:-6px 0 12px">Tap the name to see their full profile, badges and ratings</div>
     <h3 style="font-size:17px;font-weight:800;margin-bottom:4px">${escapeHtml(o.title)}</h3>
     <div class="video-card" style="margin:12px 0" data-video="${o.pitch_video_path}"></div>
     <div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(o.length_text||"—")}</span></div>
@@ -5676,6 +5717,116 @@ function wireDangerZone(){
 /* Mirrors public_name() in SQL so the preview matches what others will see.
    "initial" uses the FIRST token plus the initial of the LAST token, so
    "Maria del Carmen Ruiz" renders "Maria R." and not "Maria d.". */
+/* ---------- public coach profile ----------
+   Coaching is a credence good: quality is hard to judge even after buying.
+   So this leans on signals that are costly to fake — admin verification,
+   volume of completed work, and ratings split into dimensions rather than
+   one star score, which compresses to 5 and stops informing. */
+const SUBR=[["professionalism","Professionalism"],["communication","Communication"],
+            ["motivation","Motivation"],["price","Price"],["instructions","Instructions"]];
+let cpFrom=null;   // where to return to
+async function openCoachProfile(coachId,backTo){
+  if(!coachId){ toast("Coach unavailable"); return; }
+  cpFrom=backTo||null;
+  const body=$("#cp-body");
+  $("#cp-name").textContent="Coach";$("#cp-sub").textContent="";
+  body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  $("#s-coachprofile").classList.add("active");
+  hideStreakBadge();
+  let p=null;
+  try{
+    const { data, error } = await store._sb.rpc("coach_public_profile",{p_coach:coachId});
+    if(error) throw error;
+    p=data;
+  }catch(err){
+    console.error("coach_public_profile",err);
+    body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">!</div><p>Couldn't load this profile.</p><p class="s">${escapeHtml(err.message||"Run migrations_coach_profiles.sql")}</p></div>`;
+    return;
+  }
+  if(!p){ body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">?</div><p>This coach no longer has a profile.</p></div>`; return; }
+  renderCoachProfile(p);
+}
+function badgeRow(p){
+  const b=[];
+  if(p.verified) b.push(`<span class="cbadge v" title="Approved by FormTrace">✓ Verified</span>`);
+  if(p.pro_status==="professional") b.push(`<span class="cbadge pro">★ Professional</span>`);
+  if(p.pro_status==="certified") b.push(`<span class="cbadge cert">◆ Certified Professional</span>`);
+  return b.length?`<div class="cbadges">${b.join("")}</div>`:"";
+}
+function subBar(label,val){
+  const v=val==null?null:Number(val);
+  const pct=v==null?0:Math.max(0,Math.min(100,(v/5)*100));
+  return `<div class="sb-row">
+    <span class="sb-l">${escapeHtml(label)}</span>
+    <span class="sb-track"><span class="sb-fill" style="width:${pct}%"></span></span>
+    <span class="sb-v">${v==null?"—":v.toFixed(1)}</span></div>`;
+}
+function renderCoachProfile(p){
+  const nm=publicName(p.display_name,p.name_style||"first");
+  $("#cp-name").textContent=nm;
+  $("#cp-sub").textContent=[p.city,p.country_code?(COUNTRY_NAME(p.country_code)||p.country_code):null].filter(Boolean).join(" · ")||"Coach";
+  const body=$("#cp-body");
+  const rc=p.rating_count||0;
+  const avg=p.rating_avg!=null?Number(p.rating_avg):null;
+  const sub=p.sub||{};
+  const anySub=SUBR.some(([k])=>sub[k]!=null);
+  let h="";
+  h+=`<div class="card cp-head">
+      <div class="cp-av">${p.avatar_initials?escapeHtml(p.avatar_initials):escapeHtml(initials(nm))}</div>
+      <div class="cp-id">
+        <div class="cp-nm">${escapeHtml(nm)}</div>
+        ${badgeRow(p)}
+      </div>
+    </div>`;
+  if(p.expertise) h+=`<div class="card"><div class="eyebrow">Expertise</div><div class="cp-exp">${escapeHtml(p.expertise)}</div></div>`;
+  if(p.bio) h+=`<div class="card"><div class="eyebrow">About</div><div class="cp-bio">${escapeHtml(p.bio)}</div></div>`;
+  h+=`<div class="cp-stats">
+      <div class="cp-stat"><b>${p.trainees_all_time||0}</b><span>trainees all-time</span></div>
+      <div class="cp-stat"><b>${p.goals_all_time||0}</b><span>goals all-time</span></div>
+      <div class="cp-stat"><b>${p.goals_completed||0}</b><span>goals completed</span></div>
+      <div class="cp-stat"><b>${p.workouts_reviewed||0}</b><span>workouts reviewed</span></div>
+    </div>`;
+  // Always show the count beside the average: an average without an n invites
+  // over-reading two reviews as a track record.
+  h+=`<div class="card"><div class="eyebrow">Ratings</div>`;
+  if(!rc){
+    h+=`<div class="cp-norate">No ratings yet — this coach is new to FormTrace.</div>`;
+  }else{
+    h+=`<div class="cp-avg">${starsHtml(avg)}<b>${avg.toFixed(1)}</b><span>from ${rc} rating${rc===1?"":"s"}</span></div>`;
+    if(anySub) h+=`<div class="sb-wrap">${SUBR.map(([k,l])=>subBar(l,sub[k])).join("")}</div>`;
+    else h+=`<div class="cp-norate" style="margin-top:10px">Detailed ratings start with this coach's next review.</div>`;
+  }
+  h+=`</div>`;
+  const revs=Array.isArray(p.reviews)?p.reviews:[];
+  if(revs.length){
+    h+=`<div class="card"><div class="eyebrow">Reviews</div>${revs.map(r=>`
+      <div class="cp-rev">
+        <div class="cp-rev-h">${starsHtml(r.stars)}<span>${escapeHtml(r.by||"Trainee")}</span><i>${escapeHtml(timeAgo(r.created_at))}</i></div>
+        <div class="cp-rev-t">${escapeHtml(r.text||"")}</div>
+      </div>`).join("")}</div>`;
+  }
+  body.innerHTML=h;
+}
+function COUNTRY_NAME(code){
+  try{ return new Intl.DisplayNames([navigator.language||"en"],{type:"region"}).of(code); }catch(e){ return code; }
+}
+$("#cp-back")?.addEventListener("click",()=>{
+  if(cpFrom==="market"){ go("market"); return; }
+  if(cpFrom==="listings"){ go("listings"); return; }
+  if(cpFrom==="engagement"&&currentEng){ openEngagement(currentEng.id); return; }
+  go(roleOf()==="coach"?"coach":"trainee-home");
+});
+/* Delegated, so any coach name anywhere becomes a link to their profile
+   without each surface needing its own handler. */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-coach]");
+  if(!el)return;
+  const id=el.getAttribute("data-coach");
+  if(!id)return;
+  e.stopPropagation();          // don't collapse the offer row underneath
+  openCoachProfile(id, activeScreenName());
+});
 function publicName(display,style){
   const w=String(display||"").trim().split(/\s+/).filter(Boolean);
   if(!w.length) return "Someone";
