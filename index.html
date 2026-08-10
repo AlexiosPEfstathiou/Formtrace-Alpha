@@ -132,6 +132,15 @@
   .home-checkin .ci-main .t{font-size:14px;font-weight:800;color:var(--ink);}
   .home-checkin .ci-main .s{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
   .home-checkin .ci-arw{color:var(--lime-dim);font-size:18px;flex-shrink:0;}
+  /* high-priority variant: the weekly check-in is time-boxed and easy to miss,
+     so it reads as a notification rather than a suggestion */
+  .home-checkin.ci-urgent{margin-top:18px;background:rgba(255,194,74,.12);border-color:rgba(255,194,74,.42);
+    box-shadow:0 6px 20px rgba(255,194,74,.18);animation:ciPulse 2.6s ease-in-out infinite;}
+  .home-checkin.ci-urgent .ci-ic{background:var(--amber);color:#241a00;}
+  .home-checkin.ci-urgent .ci-main .t{color:var(--amber);}
+  .home-checkin.ci-urgent .ci-arw{color:var(--amber);}
+  @keyframes ciPulse{0%,100%{box-shadow:0 6px 20px rgba(255,194,74,.18);}50%{box-shadow:0 6px 26px rgba(255,194,74,.40);}}
+  @media(prefers-reduced-motion:reduce){.home-checkin.ci-urgent{animation:none;}}
   /* trainee homepage: unviewed form-review chips */
   .home-reviews{margin-top:18px;}
   .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}
@@ -839,6 +848,7 @@
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <div id="home-milestone" class="home-milestone" style="display:none"></div>
+      <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
@@ -846,7 +856,6 @@
       <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div>
-      <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
   </section>
@@ -2701,14 +2710,25 @@ async function feedOpenDay(engId,iso){
    (hidden if today isn't Saturday or this Saturday is already done). */
 async function renderHomeCheckin(el){
   el.style.display="none"; el.innerHTML="";
+  el.classList.remove("ci-urgent");
+  /* The check-in window opens Saturday and stays open while it's unmet — a
+     missed Saturday used to mean the prompt simply vanished for a week. */
   const now=new Date();
-  if(now.getDay()!==6) return; // Saturday only
+  const dow=now.getDay();              // 0 Sun, 6 Sat
+  if(dow!==6 && dow!==0) return;
   const iso=todayISO();
+  const ws=weekStartISO();
   let done=false;
-  try{ done=!!(await store.checkins.list({trainee_id:ME.id,checkin_date:iso}))[0]; }catch(e){}
+  try{
+    const wk=await store.checkins.list({trainee_id:ME.id});
+    done=(wk||[]).some(c=>c.checkin_date>=ws);
+  }catch(e){}
   if(done) return;
+  const late = dow===0;                // Sunday: last chance this week
+  el.classList.add("ci-urgent");
   el.innerHTML=`<div class="ci-ic">📷</div>
-    <div class="ci-main"><div class="t">Weekly check-in</div><div class="s">It's Saturday — snap this week's progress photo.</div></div>
+    <div class="ci-main"><div class="t">Weekly check-in${late?" — last chance":""}</div>
+      <div class="s">${late?"The week ends today. Take this week's progress photo." : "Snap this week's progress photo so your coach can see the change."}</div></div>
     <div class="ci-arw">›</div>`;
   el.style.display="";
   el.onclick=()=>startCheckin(iso);
