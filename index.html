@@ -512,6 +512,17 @@
   .cp-rev-h i{font-size:10.5px;color:var(--faint);font-style:normal;margin-left:auto;}
   .cp-rev-t{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:5px;}
   .coach-link{cursor:pointer;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:2px;}
+  /* ---- muscle-group filter + tags ---- */
+  .mg-bar{display:flex;gap:7px;overflow-x:auto;padding:2px 2px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .mg-bar::-webkit-scrollbar{display:none;}
+  .mg-chip{flex-shrink:0;height:32px;padding:0 13px;border-radius:16px;border:1px solid var(--line2);
+    background:var(--panel2);color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .mg-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  .mg-chip:active{transform:scale(.96);}
+  .ex-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:5px;}
+  .mg-tag{font-size:10.5px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:2px 8px;
+    background:var(--accent-surface);border:1px solid var(--accent-border);color:var(--lime-dim);white-space:nowrap;}
+  .mg-tag.none{background:transparent;border-color:var(--line2);color:var(--faint);}
   .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
   .gs-chip:active{transform:scale(.95);}
   .gs-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
@@ -935,6 +946,11 @@
     <div class="top"><div class="back" data-go="coach">←</div><div style="flex:1"><h1 id="ex-edit-title">New exercise</h1></div></div>
     <div class="body">
       <div class="field"><label>Exercise name</label><input id="in-name" placeholder="e.g. Back squat" autocomplete="off"></div>
+      <div class="field">
+        <label for="in-mg">Muscle group</label>
+        <select id="in-mg"></select>
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">Lets you filter your library when building a workout, and lets trainees fill a "Wildcard" slot from this group.</div>
+      </div>
       <div class="field">
         <label>Correct form reference</label>
         <div class="card" style="margin:0;">
@@ -2984,15 +3000,53 @@ async function renderCoach(){
     renderWorkoutsInto($("#coach-body"),wos,exs);
   }
 }
+/* Canonical muscle groups. Owned here rather than in the database so the
+   ordering is anatomical rather than alphabetical, and so adding one doesn't
+   need a migration — the SQL CHECK is deliberately widenable. */
+const MUSCLE_GROUPS=[
+  ["chest","Chest"],["back","Back"],["shoulders","Shoulders"],
+  ["biceps","Biceps"],["triceps","Triceps"],["forearms","Forearms"],
+  ["abs","Abs"],["glutes","Glutes"],["quads","Quads"],
+  ["hamstrings","Hamstrings"],["calves","Calves"],
+  ["full_body","Full body"],["cardio","Cardio"],["mobility","Mobility"]
+];
+function mgLabel(k){ const f=MUSCLE_GROUPS.find(m=>m[0]===k); return f?f[1]:null; }
+let libFilterMG="";      // library filter, "" = all
 function renderLibraryInto(el,list){
   el.innerHTML="";
   if(!list.length){el.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="ic">▤</div><p>Your library is empty.<br>Record an exercise and its correct form.</p></div>`;return;}
-  el.innerHTML=`<div class="section-h"><div class="eyebrow">Movements</div><div class="eyebrow">${list.length}</div></div>`;
-  for(const ex of list){
+  /* Only offer groups that actually appear in this library — a filter row of
+     fourteen chips where twelve return nothing is just noise. */
+  const present=MUSCLE_GROUPS.filter(([k])=>list.some(x=>x.muscle_group===k));
+  const unlabelled=list.filter(x=>!x.muscle_group).length;
+  if(present.length>1||unlabelled){
+    const bar=document.createElement("div");bar.className="mg-bar";
+    bar.innerHTML=`<button class="mg-chip${libFilterMG===""?" on":""}" data-mg="">All ${list.length}</button>`
+      +present.map(([k,l])=>`<button class="mg-chip${libFilterMG===k?" on":""}" data-mg="${k}">${escapeHtml(l)}</button>`).join("")
+      +(unlabelled?`<button class="mg-chip${libFilterMG==="__none"?" on":""}" data-mg="__none">Unlabelled ${unlabelled}</button>`:"");
+    el.appendChild(bar);
+    bar.querySelectorAll("[data-mg]").forEach(b=>b.addEventListener("click",()=>{
+      libFilterMG=b.getAttribute("data-mg");
+      renderLibraryInto(el,list);
+    }));
+  }
+  const shown = libFilterMG===""? list
+    : libFilterMG==="__none" ? list.filter(x=>!x.muscle_group)
+    : list.filter(x=>x.muscle_group===libFilterMG);
+  el.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Movements</div><div class="eyebrow">${shown.length}</div></div>`);
+  if(!shown.length){
+    el.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><p>Nothing in this group yet.</p></div>`);
+    return;
+  }
+  for(const ex of shown){
     const div=document.createElement("div");div.className="card ex-card";
+    const mg=mgLabel(ex.muscle_group);
     div.innerHTML=`<div class="ex-top"><div class="ex-thumb">${exThumb(ex)}</div>
       <div class="ex-info"><h3>${escapeHtml(ex.name)}</h3>
-        <span class="ref-tag ${hasRef(ex)?"ref-yes":"ref-no"}">${hasRef(ex)?"✓ correct form set":"● no reference"}</span></div></div>`;
+        <div class="ex-tags">
+          ${mg?`<span class="mg-tag">${escapeHtml(mg)}</span>`:`<span class="mg-tag none">No muscle group</span>`}
+          <span class="ref-tag ${hasRef(ex)?"ref-yes":"ref-no"}">${hasRef(ex)?"✓ correct form set":"● no reference"}</span>
+        </div></div></div>`;
     div.addEventListener("click",()=>openExEditor(ex.id));
     el.appendChild(div);
   }
@@ -3027,6 +3081,12 @@ async function openExEditor(id){
   const ex=id?await store.exercises.get(id):null;
   $("#ex-edit-title").textContent=ex?"Edit exercise":"New exercise";
   $("#in-name").value=ex?ex.name:"";
+  const mg=$("#in-mg");
+  if(mg){
+    mg.innerHTML=`<option value="">— choose a muscle group —</option>`
+      +MUSCLE_GROUPS.map(([k,l])=>`<option value="${k}">${escapeHtml(l)}</option>`).join("");
+    mg.value=(ex&&ex.muscle_group)||"";
+  }
   $("#ex-delete").style.display=ex?"flex":"none";
   await updateRefCard(ex);
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-ex-edit").classList.add("active");
@@ -3082,10 +3142,11 @@ $("#ex-save").addEventListener("click",async()=>{
       landmarks={frames:pendingRef.frames,fps:pendingRef.fps,reps:pendingRef.reps};
     }
     if(editingExId){
-      const patch={name}; if(pendingRef){patch.ref_video_path=ref_video_path;patch.landmarks=landmarks;}
+      const patch={name,muscle_group:($("#in-mg")?.value||null)||null};
+      if(pendingRef){patch.ref_video_path=ref_video_path;patch.landmarks=landmarks;}
       await store.exercises.update(editingExId,patch);
     }else{
-      await store.exercises.add({coach_id:ME.id,name,ref_video_path:ref_video_path||null,landmarks:landmarks||null});
+      await store.exercises.add({coach_id:ME.id,name,muscle_group:($("#in-mg")?.value||null)||null,ref_video_path:ref_video_path||null,landmarks:landmarks||null});
     }
     toast("Saved to library"); go("coach");
   }catch(err){console.error(err);toast(err.message||"Couldn't save",4000);}
@@ -3163,24 +3224,47 @@ $("#wo-save").addEventListener("click",async()=>{
 $("#wo-delete").addEventListener("click",async()=>{ if(!builder||builder.isNew)return; await store.workouts.remove(builder.id); toast("Workout removed"); go("coach"); });
 
 let sheetSel=new Set();
+let sheetFilterMG="";
 function openSheet(){
   sheetSel=new Set();
+  sheetFilterMG="";
   // belt and braces: make sure the footer is visible even if a previous sheet
   // hid it and was dismissed without going through closeSheet()
   $("#sheet-add").style.display="";
   $("#sheet-lib").querySelector("h3").textContent="Add from library";
+  renderSheetLibrary();
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+/* Selections survive filtering — a coach picking a chest exercise then
+   switching to Back should keep the first one. */
+function renderSheetLibrary(){
   const body=$("#sheet-body");body.innerHTML="";
-  if(!libCache.length){body.innerHTML=`<div class="empty" style="padding:30px"><p>No exercises in your library yet. Add some from the Library tab first.</p></div>`;}
-  for(const ex of libCache){
-    const row=document.createElement("div");row.className="sh-item";row.setAttribute("data-id",ex.id);
+  if(!libCache.length){
+    body.innerHTML=`<div class="empty" style="padding:30px"><p>No exercises in your library yet. Add some from the Library tab first.</p></div>`;
+    updateSheetBtn(); return;
+  }
+  const present=MUSCLE_GROUPS.filter(([k])=>libCache.some(x=>x.muscle_group===k));
+  if(present.length>1){
+    const bar=document.createElement("div");bar.className="mg-bar";
+    bar.innerHTML=`<button class="mg-chip${sheetFilterMG===""?" on":""}" data-mg="">All</button>`
+      +present.map(([k,l])=>`<button class="mg-chip${sheetFilterMG===k?" on":""}" data-mg="${k}">${escapeHtml(l)}</button>`).join("");
+    body.appendChild(bar);
+    bar.querySelectorAll("[data-mg]").forEach(b=>b.addEventListener("click",()=>{
+      sheetFilterMG=b.getAttribute("data-mg"); renderSheetLibrary();
+    }));
+  }
+  const list=sheetFilterMG?libCache.filter(x=>x.muscle_group===sheetFilterMG):libCache;
+  if(!list.length) body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:26px"><p>Nothing in this group.</p></div>`);
+  for(const ex of list){
+    const row=document.createElement("div");row.className="sh-item"+(sheetSel.has(ex.id)?" sel":"");row.setAttribute("data-id",ex.id);
+    const mg=mgLabel(ex.muscle_group);
     row.innerHTML=`<div class="sh-check">✓</div><div class="ex-thumb" style="width:42px;height:42px;border-radius:11px">${exThumb(ex)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(ex.name)}</div>
-      <div style="font-size:11px;color:${hasRef(ex)?'var(--lime-dim)':'var(--red)'};font-weight:600;margin-top:2px">${hasRef(ex)?'correct form set':'no reference'}</div></div>`;
+      <div style="font-size:11px;margin-top:2px">${mg?`<span style="color:var(--muted)">${escapeHtml(mg)}</span> · `:""}<span style="color:${hasRef(ex)?'var(--lime-dim)':'var(--red)'};font-weight:600">${hasRef(ex)?'correct form set':'no reference'}</span></div></div>`;
     row.addEventListener("click",()=>{ if(sheetSel.has(ex.id)){sheetSel.delete(ex.id);row.classList.remove("sel");}else{sheetSel.add(ex.id);row.classList.add("sel");} updateSheetBtn();});
     body.appendChild(row);
   }
   updateSheetBtn();
-  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
   hydrateVideos(body);
 }
 function updateSheetBtn(){ $("#sheet-add").textContent=sheetSel.size?`Add ${sheetSel.size} exercise${sheetSel.size>1?"s":""}`:"Add selected"; $("#sheet-add").disabled=!sheetSel.size; }

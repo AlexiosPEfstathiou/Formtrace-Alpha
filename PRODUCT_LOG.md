@@ -67,7 +67,7 @@ in SQL so the client cannot widen it.
 
 ---
 
-## D. Muscle-group labels on exercises
+## D. Muscle-group labels on exercises  ← STARTING HERE
 
 Coach labels each exercise with a muscle group. Filter the library by muscle
 group when building a workout.
@@ -95,6 +95,46 @@ Needs a social graph — friend requests, membership, challenge definitions,
 shared progress. Large. Also the surface where the wellbeing concerns around
 comparison are sharpest; challenges should be built on consistency and
 effort, not body outcomes.
+
+---
+
+## H. Profile pictures on profiles
+
+Avatar upload already exists for the social profile (`profiles.avatar_path`,
+`uploadAvatar`, shrunk to 256px on device before upload). What's missing:
+
+- The public coach profile renders **initials only** — it should show the
+  actual photo when one is set.
+- Coaches have no obvious prompt to add one. A photo is a cheap trust signal
+  on a marketplace profile and currently most coaches won't have set one.
+- Storage policy already allows avatars to be read by anyone
+  (`profiles.avatar_path` is in the storage read policy), so no policy work.
+
+Small. Worth doing alongside anything else that touches the coach profile.
+
+---
+
+## I. Age displayed on profiles
+
+**Blocked on a decision, not effort.** Date of birth was deliberately moved to
+`profile_private` (owner-only RLS) because `profiles` is readable by every
+signed-in user for any coach, and RLS cannot hide a column.
+
+So age cannot simply be added to the profile row. Two options:
+
+1. `coach_public_profile()` computes age from `profile_private` and returns
+   only the integer. Works today — the function is SECURITY DEFINER — and
+   never exposes the date itself.
+2. Store a coarse public band (`30s`, `40s`) instead of an exact age.
+
+Either way it needs **explicit consent**: the consent notice currently says
+this data is visible only to the coach. Publishing age to strangers changes
+that promise, so the notice needs updating and existing users re-prompted
+(bump `CONSENT_VERSION`, which already triggers a re-prompt).
+
+Recommend option 1 with an opt-in toggle, defaulting off. Age is a plausible
+experience signal for a coach and irrelevant for a trainee, so it may be
+worth showing on coach profiles only.
 
 ---
 
