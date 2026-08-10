@@ -1598,8 +1598,12 @@ function milestoneFor(n){
 }
 /* Persists until tapped. If the streak breaks and is rebuilt, the stored
    acknowledgement is lowered so the milestone can be earned again. */
+/* At most ONE high-priority notification at a time. The milestone wins while
+   it's showing — it's rarer and self-clearing — and the check-in drops to its
+   ordinary styling until the milestone is tapped, then gets promoted. */
+let milestoneShowing=false;
 async function renderHomeMilestone(el){
-  el.style.display="none"; el.innerHTML="";
+  el.style.display="none"; el.innerHTML=""; milestoneShowing=false;
   if(!ME||roleOf()==="coach")return;
   const n=(streakInfo&&streakInfo.count)||ME.streak_count||0;
   const m=milestoneFor(n);
@@ -1615,9 +1619,13 @@ async function renderHomeMilestone(el){
       <span class="ms-tx"><b>Milestone achieved!</b><span>${escapeHtml(milestoneLabel(m))} streak · tap to celebrate</span></span>
       <span class="ms-arw">›</span></button>`;
   el.style.display="";
+  milestoneShowing=true;
   $("#ms-open").addEventListener("click",async()=>{
     try{ ME=await store.auth.updateProfile({milestone_ack:m}); }catch(e){ console.error("milestone ack",e); }
     el.style.display="none";
+    milestoneShowing=false;
+    // the check-in was held at secondary while this was showing — promote it
+    const ci=$("#home-checkin"); if(ci) renderHomeCheckin(ci);
     openStreakBurst(m);
   });
 }
@@ -2725,7 +2733,10 @@ async function renderHomeCheckin(el){
   }catch(e){}
   if(done) return;
   const late = dow===0;                // Sunday: last chance this week
-  el.classList.add("ci-urgent");
+  /* Only one high-priority card at a time: while a milestone is waiting to be
+     tapped, this stays at ordinary prominence. Tapping the milestone
+     re-renders this and it takes over. */
+  if(!milestoneShowing) el.classList.add("ci-urgent");
   el.innerHTML=`<div class="ci-ic">📷</div>
     <div class="ci-main"><div class="t">Weekly check-in${late?" — last chance":""}</div>
       <div class="s">${late?"The week ends today. Take this week's progress photo." : "Snap this week's progress photo so your coach can see the change."}</div></div>
