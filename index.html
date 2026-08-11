@@ -662,10 +662,25 @@
   .or-tag{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;border-radius:20px;padding:2px 7px;margin-left:6px;text-decoration:none;display:inline-block;vertical-align:middle;}
   .or-tag-acc{background:rgba(200,255,61,.16);color:var(--lime-dim);}
   .or-tag-dec{background:rgba(255,90,90,.12);color:var(--red);}
-  .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
+  .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--faint);}
+  /* Pending flashes regardless of viewed state — per spec, "pending" itself
+     is the signal, not whether it's been glanced at. */
+  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
   @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
-  .offer-expanded{background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
-  .offer-expanded .oe-collapse{margin-top:12px;}
+  .offer-expanded{position:relative;background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
+  /* collapse control lives top-right on the card itself, not a button at
+     the bottom — reachable the instant the card opens, no scrolling needed */
+  .oe-close{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;
+    background:var(--panel2);border:1px solid var(--line2);color:var(--muted);font-size:13px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;}
+  .oe-close:active{transform:scale(.9);}
+  /* Rejected / Completed folders: closed by default, expand inline on tap */
+  .offer-folder{margin-top:18px;}
+  .offer-folder-h{width:100%;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:700;margin-bottom:8px;}
+  .offer-folder-h .of-ic{font-size:15px;}
+  .offer-folder-h .of-n{margin-left:auto;color:var(--faint);font-weight:600;font-size:12px;}
+  .offer-folder-h .of-arw{color:var(--faint);font-size:11px;}
   /* ===== shared calendar (coach & trainee) ===== */
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 16px;}
   .cal-head .mtitle{font-size:18px;font-weight:800;letter-spacing:-.01em;}
@@ -3566,12 +3581,20 @@ async function renderListings(){
     await renderOffersTab(body);
   }
 }
-let offersArchiveMode=false;   // false = Active (pending+accepted), true = Archive (declined/expired)
-let offersGoalFilter="";       // "" = all goals, else a listing_id
-/* Offers grouped by goal, split into Active vs Archive so a trainee never
-   has to scan resolved offers to find one still awaiting a decision, and a
-   goal chip row so browsing is always scoped to ONE goal at a time rather
-   than a flat list where it is easy to accept against the wrong one. */
+let offersGoalFilter="";        // "" = all goals, else a listing_id — scopes the Pending section only
+let offersRejectedOpen=false;   // Rejected folder, closed by default
+let offersCompletedOpen=false;  // Completed folder, closed by default
+/* Four buckets, in a fixed order: Pending (live, flashing) and Accepted
+   (live, shown fully expanded) are always visible; Rejected and Completed
+   sit behind a closed folder each, since neither needs attention right now.
+   'Rejected' folds in offer.status='expired' too — the spec named four
+   buckets, and an expired offer reads the same as a declined one to a
+   trainee (nobody chose it). 'Completed' means the offer's own engagement
+   has ended or completed, NOT offer.status — an accepted offer stays
+   'accepted' forever in the database; it's the underlying goal that
+   finishes. Goal chips (grouping) apply only within Pending: an accepted
+   offer is already 1:1 with its goal by construction (accepting
+   auto-declines every sibling), so there is nothing to disambiguate there. */
 async function renderOffersTab(body){
   const offers=await store.offers.list({trainee_id:ME.id});
   if(!offers.length){
@@ -3586,92 +3609,114 @@ async function renderOffersTab(body){
   ]);
   const coaches=Object.fromEntries(coachRows.map(c=>[c.id,c]));
   const listingById=Object.fromEntries(mine.map(l=>[l.id,l]));
-  let activeOfferIds=new Set();
-  for(const e of engs){ if(e.status==="active"&&e.offer_id) activeOfferIds.add(e.offer_id); }
-  const isArchived=o=>o.status==="rejected"||o.status==="expired";
-  const activeCount=offers.filter(o=>!isArchived(o)).length;
-  const archiveCount=offers.length-activeCount;
-  $("#listings-sub").textContent=`${activeCount} active · ${archiveCount} archived`;
+  const engByOffer={};
+  for(const e of engs){ if(e.offer_id) engByOffer[e.offer_id]=e; }
 
+  const pending=offers.filter(o=>o.status==="pending");
+  const rejected=offers.filter(o=>o.status==="rejected"||o.status==="expired");
+  const accepted=offers.filter(o=>o.status==="accepted");
+  const acceptedLive=accepted.filter(o=>{ const e=engByOffer[o.id]; return !e||e.status==="active"; });
+  const completed=accepted.filter(o=>{ const e=engByOffer[o.id]; return e&&e.status!=="active"; });
+
+  $("#listings-sub").textContent=`${pending.length} pending · ${acceptedLive.length} accepted`;
   body.innerHTML="";
-  // Active / Archive toggle
-  const toggle=document.createElement("div");toggle.className="mg-bar";toggle.style.marginBottom="4px";
-  toggle.innerHTML=`<button class="mg-chip${!offersArchiveMode?" on":""}" data-om="0">Active${activeCount?` · ${activeCount}`:""}</button>
-    <button class="mg-chip${offersArchiveMode?" on":""}" data-om="1">Archive${archiveCount?` · ${archiveCount}`:""}</button>`;
-  body.appendChild(toggle);
-  toggle.querySelectorAll("[data-om]").forEach(b=>b.addEventListener("click",()=>{
-    offersArchiveMode=b.getAttribute("data-om")==="1"; offersGoalFilter=""; renderOffersTab(body);
-  }));
 
-  const scoped=offers.filter(o=>isArchived(o)===offersArchiveMode);
-  if(!scoped.length){
-    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><p>${offersArchiveMode?"Nothing archived yet.":"No active offers right now."}</p></div>`);
-    return;
-  }
+  const mkRow=(o,expanded)=>{
+    const c=coaches[o.coach_id]||{};
+    const coachName=c.display_name||"Coach";
+    const shortName=(()=>{const p=coachName.trim().split(/\s+/);return p.length>1?`${p[0]} ${p[1][0]}.`:p[0];})();
+    const wrap=document.createElement("div");
+    if(expanded) expandOfferRow(wrap,o,c,shortName,coachName,true,true);
+    else renderOfferRow(wrap,o,c,shortName,o.status==="pending",coachName,false);
+    return wrap;
+  };
 
-  // Goal chips: only goals that actually have an offer in THIS scope
-  const goalIds=[...new Set(scoped.map(o=>o.listing_id).filter(Boolean))];
-  if(goalIds.length>1){
-    const gbar=document.createElement("div");gbar.className="mg-bar";
-    gbar.innerHTML=`<button class="mg-chip${offersGoalFilter===""?" on":""}" data-gf="">All goals</button>`
-      +goalIds.map(id=>{
-          const t=(listingById[id]&&listingById[id].title)||"Goal";
-          return `<button class="mg-chip${offersGoalFilter===id?" on":""}" data-gf="${id}">${escapeHtml(t)}</button>`;
-        }).join("");
-    body.appendChild(gbar);
-    gbar.querySelectorAll("[data-gf]").forEach(b=>b.addEventListener("click",()=>{
-      offersGoalFilter=b.getAttribute("data-gf"); renderOffersTab(body);
-    }));
-  }
-  const shown=offersGoalFilter?scoped.filter(o=>o.listing_id===offersGoalFilter):scoped;
-
-  // group by goal so it's always unambiguous which goal an offer belongs to
-  const byGoal={};
-  for(const o of shown){ (byGoal[o.listing_id||"none"]=byGoal[o.listing_id||"none"]||[]).push(o); }
-  for(const [gid,list] of Object.entries(byGoal)){
-    const l=listingById[gid];
-    if(goalIds.length>1||!offersGoalFilter){
-      body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">${escapeHtml(l?l.title:"Goal")}</div><div class="eyebrow">${list.length}</div></div>`);
+  // ---- Pending: flashing, grouped by goal (the only bucket where several
+  // offers can share one goal — accepted/completed are 1:1 by construction) ----
+  body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Pending</div><div class="eyebrow">${pending.length}</div></div>`);
+  if(!pending.length){
+    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:24px 20px"><p>No pending offers.</p></div>`);
+  }else{
+    const goalIds=[...new Set(pending.map(o=>o.listing_id).filter(Boolean))];
+    if(goalIds.length>1){
+      const gbar=document.createElement("div");gbar.className="mg-bar";
+      gbar.innerHTML=`<button class="mg-chip${offersGoalFilter===""?" on":""}" data-gf="">All goals</button>`
+        +goalIds.map(id=>{
+            const t=(listingById[id]&&listingById[id].title)||"Goal";
+            return `<button class="mg-chip${offersGoalFilter===id?" on":""}" data-gf="${id}">${escapeHtml(t)}</button>`;
+          }).join("");
+      body.appendChild(gbar);
+      gbar.querySelectorAll("[data-gf]").forEach(b=>b.addEventListener("click",()=>{
+        offersGoalFilter=b.getAttribute("data-gf"); renderOffersTab(body);
+      }));
     }
-    for(const o of list){
-      const c=coaches[o.coach_id]||{};
-      const coachName=c.display_name||"Coach";
-      const shortName=(()=>{const p=coachName.trim().split(/\s+/);return p.length>1?`${p[0]} ${p[1][0]}.`:p[0];})();
-      const unviewed=!o.viewed_at;
-      const goalActive=activeOfferIds.has(o.id);
-      const wrap=document.createElement("div");
-      renderOfferRow(wrap,o,c,shortName,unviewed,coachName,goalActive);
-      body.appendChild(wrap);
-    }
+    const shownPending=offersGoalFilter?pending.filter(o=>o.listing_id===offersGoalFilter):pending;
+    for(const o of shownPending) body.appendChild(mkRow(o,false));
   }
+
+  // ---- Accepted: shown fully expanded, no collapse-by-default ----
+  body.insertAdjacentHTML("beforeend",`<div class="section-h" style="margin-top:18px"><div class="eyebrow">Accepted</div><div class="eyebrow">${acceptedLive.length}</div></div>`);
+  if(!acceptedLive.length){
+    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:24px 20px"><p>No accepted offers yet.</p></div>`);
+  }else{
+    for(const o of acceptedLive) body.appendChild(mkRow(o,true));
+  }
+
+  // ---- Rejected / Completed: closed folders, opened on tap ----
+  const folder=(label,items,openState,setOpen)=>{
+    const f=document.createElement("div");f.className="offer-folder";
+    f.innerHTML=`<button class="offer-folder-h"><span class="of-ic">${openState?"📂":"📁"}</span><span>${escapeHtml(label)}</span><span class="of-n">${items.length}</span><span class="of-arw">${openState?"▾":"▸"}</span></button>`;
+    body.appendChild(f);
+    f.querySelector("button").addEventListener("click",()=>{ setOpen(!openState); renderOffersTab(body); });
+    if(openState){
+      if(!items.length) f.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:20px"><p>Nothing here.</p></div>`);
+      for(const o of items) f.appendChild(mkRow(o,false));
+    }
+  };
+  folder("Rejected",rejected,offersRejectedOpen,v=>offersRejectedOpen=v);
+  folder("Completed",completed,offersCompletedOpen,v=>offersCompletedOpen=v);
+
   hydrateVideos(body);
 }
-/* Renders the collapsed offer row into `wrap`; wires expand/collapse + view-marking. */
-function renderOfferRow(wrap,o,c,shortName,unviewed,coachName,goalActive){
+/* Renders the collapsed offer row into `wrap`; wires expand/collapse + view-marking.
+   `flash` drives the pulsing dot — now tied to status==='pending' rather than
+   viewed_at, per spec ("pending flashes"), so it never turns off just because
+   a trainee glanced at it without deciding. `forceExpanded` skips straight to
+   the expanded card (used for Accepted, which is never shown collapsed). */
+function renderOfferRow(wrap,o,c,shortName,flash,coachName,goalActive){
   const statusCls = goalActive ? " goal-active" : (o.status==="rejected"||o.status==="expired") ? " goal-declined" : " goal-inactive";
   const statusTag = o.status==="accepted" ? `<span class="or-tag or-tag-acc">Accepted</span>`
     : o.status==="rejected" ? `<span class="or-tag or-tag-dec">Declined</span>`
     : o.status==="expired" ? `<span class="or-tag or-tag-dec">Expired</span>`
     : "";
-  wrap.innerHTML=`<div class="offer-row${unviewed?" unviewed":""}${statusCls}">
+  wrap.innerHTML=`<div class="offer-row${flash?" pending-flash":""}${o.viewed_at?"":" unviewed"}${statusCls}">
       <div class="or-av">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
       <div class="or-main">
         <div class="or-t">Offer from ${escapeHtml(shortName)} — ${escapeHtml(o.price_text||"—")} ${statusTag}</div>
-        ${unviewed?`<div class="or-ago">${escapeHtml(timeAgo(o.created_at))}</div>`:`<div class="or-s">${escapeHtml(o.title)}</div>`}
+        <div class="or-s">${escapeHtml(o.title)}</div>
       </div>
       <div class="or-chev">›</div>
     </div>`;
   wrap.querySelector(".offer-row").addEventListener("click",async()=>{
-    // mark viewed on first expand
     if(!o.viewed_at){
       try{ await store.offers.update(o.id,{viewed_at:new Date().toISOString()}); o.viewed_at=new Date().toISOString(); }catch(e){console.error(e);}
     }
     expandOfferRow(wrap,o,c,shortName,coachName,goalActive);
   });
 }
-function expandOfferRow(wrap,o,c,shortName,coachName,goalActive){
+/* `preExpanded` = rendered straight into the expanded card with no prior tap
+   (Accepted section); it still marks the offer viewed, since showing it IS
+   viewing it. Collapse control is a top-right X on the card itself rather
+   than a button at the bottom — the X can undo any expansion, including
+   a pre-expanded one, back down to the compact row. */
+function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
+  if(preExpanded&&!o.viewed_at){
+    store.offers.update(o.id,{viewed_at:new Date().toISOString()}).catch(e=>console.error(e));
+    o.viewed_at=new Date().toISOString();
+  }
   const exp=document.createElement("div");exp.className="offer-expanded";
-  exp.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+  exp.innerHTML=`<button class="oe-close" aria-label="Collapse">✕</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-right:26px">
       <div class="avatar">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
       <div style="flex:1;min-width:0"><div style="font-weight:700" class="coach-link" data-coach="${o.coach_id}">${escapeHtml(coachName)}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
       <span class="badge ${o.status}">${o.status}</span></div>
@@ -3714,9 +3759,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive){
     });
     row.querySelector("[data-rej]").addEventListener("click",async()=>{ await store.offers.update(o.id,{status:"rejected"}); toast("Offer declined"); renderListings(); });
   }
-  const collapse=document.createElement("button");collapse.className="btn ghost sm oe-collapse";collapse.textContent="Collapse ▲";
-  collapse.addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,false,coachName,goalActive));
-  exp.appendChild(collapse);
+  exp.querySelector(".oe-close").addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,o.status==="pending",coachName,goalActive));
   wrap.innerHTML="";wrap.appendChild(exp);
   hydrateVideos(exp);
 }
