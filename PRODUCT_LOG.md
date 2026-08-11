@@ -36,14 +36,85 @@ badge — a coach cannot be Certified without being Professional first.
 
 ---
 
-## B. Make the payment cadence visible (lower first commitment)
+## B. Make the payment cadence visible (lower first commitment)  ← NEXT
 
-Accepting an offer is not a lump sum. Payment is periodic — weekly, per
-workout reviewed — so a trainee can stop at any point without owing the
-remainder of the goal. This must be prominent at the moment of accepting,
-because that is where perceived risk is highest.
+Accepting an offer is not a lump sum. Payment is periodic, tied to review,
+so a trainee can stop at any point without owing the remainder of the goal.
+This must be prominent at the moment of accepting, because that is where
+perceived risk is highest.
 
-**Needs an interview before building.** Open questions in the section below.
+**Interviewed 2026-08-08. Mechanics decided:**
+
+**Cadence.** Weekly cycles. A workout becomes payable only once REVIEWED —
+never for merely being performed. At the end of the week, everything
+reviewed-but-unpaid is queued; the trainee is actually charged and the coach
+actually paid **at the end of the following week** (one cycle of float).
+
+**Rate.** Whatever the accepted offer states, per workout reviewed. No
+platform floor or ceiling at this stage — the offer is the sole source of
+truth for price.
+
+**The review deadline is the sharp edge of this design.** A coach has until
+the payment date to review a given week's workouts. If they miss it, that
+week's reviews are no longer payable — not delayed, gone. If they review
+late but before the *next* payment date, it rolls into that cycle instead.
+This is a genuine forcing function: it protects trainees from ever being
+charged for a workout nobody looked at, and it gives a coach a real reason
+to stay on top of reviews. It also means the system needs to be exact about
+"the deadline for week N" versus "the payment run for week N" — those are
+two different dates and the wording must never conflate them.
+
+**The three cancellation/no-show cases, each different:**
+| Situation | Outcome |
+|---|---|
+| Coach assigns nothing that week | Trainee may cancel, owes nothing |
+| Trainee misses their workout(s) | Trainee owes a **fraction** of the per-workout rate — this fraction must be visible in the offer itself, not discovered later |
+| Trainee performs, coach never reviews | No charge that cycle; payable next cycle if the coach reviews late (before ITS deadline) |
+
+The missed-workout fraction is a NEW field on the offer (alongside the
+per-workout rate), because it has to be shown to the trainee before they
+accept, per point 2.
+
+**Coach-facing summary**, per point 5 — the coach needs to see obligation and
+protection at once, broken down per trainee:
+- Next payment date
+- Per trainee: rate/workout agreed · workouts/week agreed · reviewed-and-
+  pending count · computed total
+- The "workouts/week agreed" cap matters for protecting trainees from being
+  billed beyond what they signed up for — if an offer says 3/week and 5 get
+  reviewed, only 3 are payable that cycle. Needs explicit confirmation this
+  cap is wanted, but it falls out of point 5's framing and I'm building on
+  that assumption unless corrected.
+
+**Provider — explicitly deferred.** No research done, no preference yet.
+Per instruction, this is pushed to the end of the sprint, after every other
+log item. Until then this phase is display/accounting only: the app computes
+and shows exactly what is owed, to whom, and why — no money actually moves.
+That is not a simplification for now, it is the whole of what's being built
+in this pass; settlement is a separate, later piece of work once a provider
+is chosen.
+
+**Data model consequence (not yet built):** this needs a `payment_cycles` or
+equivalent ledger — something that can answer "what was reviewed, when, was
+it inside its deadline, has it been included in a payout yet" per assigned
+workout. This is materially bigger than originally scoped as "make the
+existing cadence visible" — it is really "build the accounting model, then
+surface it." Flagging that before starting the build.
+
+**Follow-up decided 2026-08-08:** point 1 (per-workout review payment) and
+point 6 (no-show fraction) are two DIFFERENT billing events, not one ledger
+row type — review-based coach earnings, and a separate trainee no-show fee
+that is never tied to review. The offer needs two numbers: per-workout rate,
+and no-show fraction.
+
+**No-show fee is per missed workout**, not per week — three missed workouts
+in a week owe three fractions, to keep the incentive to show up per-session
+rather than a single flat penalty a trainee could shrug off once triggered.
+
+**A rescheduled workout moves with its due date and is judged in whichever
+week it lands** — postponing is not a no-show, and the workout's current
+`due_date` is simply which cycle it belongs to. No separate "originally due"
+tracking needed; the ledger only ever looks at the current due date.
 
 ---
 
