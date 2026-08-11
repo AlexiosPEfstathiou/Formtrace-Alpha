@@ -101,20 +101,36 @@ workout. This is materially bigger than originally scoped as "make the
 existing cadence visible" — it is really "build the accounting model, then
 surface it." Flagging that before starting the build.
 
-**Follow-up decided 2026-08-08:** point 1 (per-workout review payment) and
-point 6 (no-show fraction) are two DIFFERENT billing events, not one ledger
-row type — review-based coach earnings, and a separate trainee no-show fee
-that is never tied to review. The offer needs two numbers: per-workout rate,
-and no-show fraction.
+**Follow-up decided 2026-08-08 (round 2):**
 
-**No-show fee is per missed workout**, not per week — three missed workouts
-in a week owe three fractions, to keep the incentive to show up per-session
-rather than a single flat penalty a trainee could shrug off once triggered.
+**No-show fee now waits for the payment date too.** Originally specified as
+triggering the day after a missed workout — that created a visible
+asymmetry (trainee charged immediately, coach's earning question open for
+two weeks) which is now removed. Both billing events settle together, once
+per week, at the same payment date.
 
-**A rescheduled workout moves with its due date and is judged in whichever
-week it lands** — postponing is not a no-show, and the workout's current
-`due_date` is simply which cycle it belongs to. No separate "originally due"
-tracking needed; the ledger only ever looks at the current due date.
+**Billing is per-cycle, not per-line-item.** A trainee is charged ONE number
+per week: `(reviewed / agreed) x weekly rate + (missed / agreed) x weekly
+rate x noshow_fraction`. Example given: 3 of 4 agreed workouts reviewed →
+3/4 of the weekly rate, plus 1/4 x the no-show fraction, summed to one
+charge. This means `rate_per_workout_cents` reframes as the derived
+per-workout share of a WEEKLY rate (`weekly_rate_cents / workouts_per_week`),
+not an independently-set per-workout price — the offer states a weekly
+figure and a workouts/week count; per-workout is arithmetic, not a separate
+input.
+
+**Coach review deadline gets a 24-hour advance warning**, high priority, on
+the coach's homepage — not just a silent cutoff. This is a NEW notification
+type, following the same one-high-priority-at-a-time rule as the milestone
+and check-in cards.
+
+**Repeated missed deadlines are a coaching-quality problem, not a billing
+one.** Per instruction: routinely missing reviews should lead to the coach
+being cancelled by trainees and/or removed by the FormTrace team — this is
+a moderation/retention signal, not something the ledger itself enforces.
+Logged here so it isn't lost; not yet designed (needs a "missed review
+count" surfaced to admins, and probably to the trainee at cancellation time
+as a reason).
 
 ---
 

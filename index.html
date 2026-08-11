@@ -924,6 +924,7 @@
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
+      <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
@@ -2427,6 +2428,7 @@ async function renderHome(){
   const gapsEl=$("#home-macrogaps"); if(gapsEl) gapsEl.style.display="none";
   const ppEl=$("#home-postpone"); if(ppEl) ppEl.style.display="none";
   const msEl=$("#home-milestone"); if(msEl) msEl.style.display="none";
+  const rdEl=$("#home-reviewdue"); if(rdEl) rdEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -2447,6 +2449,7 @@ async function renderHome(){
   }else{
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
+    await renderHomeReviewDue($("#home-reviewdue"));
     await renderCoachHome(todayEl);
     await renderCoachTrainees(coachEl,newsEl);
     $("#home-p").style.display="";
@@ -2660,6 +2663,58 @@ async function renderHomePostpone(engs, el){
     catch(e){ console.error("ack_postpone",e); }
     openAssigned(id);
   }));
+}
+/* Coach homepage: 24h advance warning that a review window is about to
+   close. Deliberately loud — the deadline itself has no grace, so this is
+   the only chance to act before a workout's earning expires outright. */
+async function renderHomeReviewDue(el){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME||roleOf()!=="coach")return;
+  let due=[];
+  try{
+    const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
+    const today=todayISO();
+    const lists=await Promise.all(engs.map(async e=>{
+      const aw=await store.assignedWorkouts.list({engagement_id:e.id});
+      const prof=(await store._sb.from("profiles").select("display_name").eq("id",e.trainee_id).maybeSingle()).data;
+      return {aw,name:prof?.display_name||"a trainee"};
+    }));
+    for(const {aw,name} of lists){
+      for(const a of aw){
+        if(a.status!=="submitted")continue;
+        const d=a.due_date||isoOf(new Date(a.created_at||Date.now()));
+        const deadline=cyclePaymentDateISO(d);
+        const hoursLeft=(new Date(deadline+"T23:59:59")-new Date(today+"T00:00:00"))/3600000;
+        // window: inside the final 24h, not yet passed
+        if(hoursLeft>0 && hoursLeft<=24){
+          due.push({name,deadline,workoutName:(a.snapshot&&a.snapshot.name)||"a workout"});
+        }
+      }
+    }
+  }catch(e){ console.error("renderHomeReviewDue",e); return; }
+  if(!due.length)return;
+  // Same one-high-priority rule as the trainee's milestone/check-in cards.
+  if(milestoneShowing)return;
+  const n=due.length;
+  const names=[...new Set(due.map(d=>d.name))];
+  el.classList.add("ci-urgent");
+  el.innerHTML=`<div class="ci-ic">⏰</div>
+    <div class="ci-main"><div class="t">Review window closing</div>
+      <div class="s">${n} workout${n===1?"":"s"} from ${escapeHtml(names.join(", "))} must be reviewed within 24 hours, or that pay can't be claimed.</div></div>
+    <div class="ci-arw">›</div>`;
+  el.style.display="";
+  el.onclick=()=>go("coach");
+}
+/* Same math as cycle_payment_date() in migrations_payment_ledger_v2.sql —
+   Monday of the workout's week, +13 days. Duplicated deliberately: this is
+   a homepage nudge, not a source of truth, and querying the DB per workout
+   here would be one round trip per row on every coach's homepage load. */
+function cyclePaymentDateISO(dueISO){
+  const [y,m,d]=dueISO.split("-").map(Number);
+  const dt=new Date(y,m-1,d);
+  const dow=(dt.getDay()+6)%7;         // Monday=0
+  dt.setDate(dt.getDate()-dow+13);     // to that week's Monday, then +13
+  return isoOf(dt);
 }
 /* Coach homepage: active trainees with streak + days since last ASSIGNED
    workout, plus a quick-access review icon. Also builds the activity feed
