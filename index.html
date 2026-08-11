@@ -946,6 +946,7 @@
     <div class="tabbar">
       <button data-tab="library" class="on"><span class="i">▤</span>Library</button>
       <button data-tab="workouts"><span class="i">▦</span>Workouts</button>
+      <button data-tab="payments"><span class="i">$</span>Payments</button>
     </div>
   </section>
 
@@ -1034,7 +1035,20 @@
           </select>
           <input id="of-price" type="number" min="0" placeholder="40" style="flex:1">
         </div>
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">This is what the trainee pays per week, split across the sessions above. Payment is per week reviewed, never a lump sum — see below.</div>
       </div>
+      <div class="field">
+        <label for="of-noshow">If a session is missed</label>
+        <select id="of-noshow" class="sel">
+          <option value="0">No charge for a missed session</option>
+          <option value="25">25% of that session's share</option>
+          <option value="50" selected>50% of that session's share</option>
+          <option value="75">75% of that session's share</option>
+          <option value="100">Full share, same as if reviewed</option>
+        </select>
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">Charged only if the trainee never submits that session — never for you simply not reviewing it yet.</div>
+      </div>
+      <div class="card" id="of-cadence-preview" style="background:var(--accent-surface);border-color:var(--accent-border)"></div>
       <div class="field">
         <label>Video pitch — required</label>
         <div class="video-slot" id="of-video-slot">
@@ -3047,17 +3061,72 @@ function exThumb(ex){
   return `<span class="ph">◉</span>`;
 }
 function hasRef(ex){ return !!(ex && ex.landmarks && ex.landmarks.frames && ex.landmarks.frames.length); }
+/* Coach payments tab. Per the requested layout: rate/week and workouts/week
+   AGREED (protects the trainee — reviewing extra cannot inflate the charge,
+   since there's nothing to divide it by), reviewed-pending count, and the
+   computed total, per trainee. coach_payment_summary recomputes on the
+   server before returning, so these numbers are always current. */
+async function renderCoachPayments(el){
+  el.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
+  let rows=[];
+  try{
+    const { data, error } = await store._sb.rpc("coach_payment_summary",{p_coach:ME.id});
+    if(error) throw error;
+    rows=data||[];
+  }catch(err){
+    console.error("coach_payment_summary",err);
+    el.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">!</div><p>Couldn't load payments.</p><p class="s">${escapeHtml(err.message||"Run migrations_payment_ledger_v2.sql")}</p></div>`;
+    return;
+  }
+  const priced=rows.filter(r=>r.weekly_rate_cents!=null && r.workouts_per_week);
+  if(!priced.length){
+    el.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">$</div><p>No priced goals yet.</p><p class="s">Offers sent before structured pricing existed won't appear here — only new offers carry a weekly rate.</p></div>`;
+    return;
+  }
+  const nextAll=priced.map(r=>r.next_payment_date).filter(Boolean).sort();
+  const totalPayable=priced.reduce((s,r)=>s+(r.payable_total_cents||0),0);
+  el.innerHTML=`<div class="card" style="background:var(--accent-surface);border-color:var(--accent-border);margin-bottom:14px">
+      <div class="eyebrow">Next payment</div>
+      <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:4px">${money(totalPayable)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${nextAll.length?escapeHtml(fmtDay(nextAll[0])):"—"} · across ${priced.length} trainee${priced.length===1?"":"s"}</div>
+    </div>`;
+  for(const r of priced){
+    const cc=r.current_cycle||{};
+    const rate=(r.weekly_rate_cents/100), per=rate/r.workouts_per_week;
+    const card=document.createElement("div");card.className="card";card.style.marginBottom="10px";
+    card.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+        <div style="font-weight:800;font-size:14.5px">${escapeHtml(r.trainee_name||"Trainee")}</div>
+        <div style="font-size:11px;color:var(--faint)">${cc.status==="payable"?"payable":"in progress"}</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">${money(r.weekly_rate_cents)}/week agreed · ${r.workouts_per_week} workout${r.workouts_per_week===1?"":"s"}/week · ${money(Math.round(per*100))} each</div>
+      <div style="display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+        <div><div style="font-size:18px;font-weight:800;color:var(--lime-dim)">${cc.reviewed??0}</div><div style="font-size:10.5px;color:var(--faint)">reviewed</div></div>
+        <div><div style="font-size:18px;font-weight:800;color:${cc.missed?"var(--red)":"var(--faint)"}">${cc.missed??0}</div><div style="font-size:10.5px;color:var(--faint)">missed</div></div>
+        <div><div style="font-size:18px;font-weight:800;color:var(--faint)">${cc.agreed??r.workouts_per_week}</div><div style="font-size:10.5px;color:var(--faint)">agreed</div></div>
+        <div style="margin-left:auto;text-align:right"><div style="font-size:18px;font-weight:800;color:var(--ink)">${money(cc.total_cents||0)}</div><div style="font-size:10.5px;color:var(--faint)">this week</div></div>
+      </div>
+      ${r.next_payment_date?`<div style="font-size:11px;color:var(--faint);margin-top:8px">Paid ${escapeHtml(fmtDay(r.next_payment_date))}</div>`:""}`;
+    el.appendChild(card);
+  }
+}
+function money(cents){ return "$"+((cents||0)/100).toFixed(2); }
 
 $$(".tabbar button[data-tab]").forEach(b=>b.addEventListener("click",()=>{coachTab=b.getAttribute("data-tab");$$(".tabbar button[data-tab]").forEach(x=>x.classList.toggle("on",x===b));renderCoach();}));
 $("#coach-fab").addEventListener("click",()=>{ if(coachTab==="library")go("ex-edit-new"); else go("wo-build-new"); });
 
 async function renderCoach(){
+  $("#coach-fab-row").style.display=coachTab==="payments"?"none":"";
   if(coachTab==="library"){
     $("#coach-title").textContent="Exercise library";
     $("#coach-fab").textContent="+ Add exercise";
     const list=await store.exercises.list({coach_id:ME.id});
     $("#coach-sub").textContent=list.length?`${list.length} exercise${list.length>1?"s":""} saved`:"Record your first exercise";
     renderLibraryInto($("#coach-body"),list);
+  }else if(coachTab==="payments"){
+    $("#coach-title").textContent="Payments";
+    $("#coach-sub").textContent="What's owed, and when";
+    await renderCoachPayments($("#coach-body"));
   }else{
     $("#coach-title").textContent="Workouts";
     $("#coach-fab").textContent="+ New workout";
@@ -3485,6 +3554,23 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive){
     <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(o.sessions_text||"—")}</span></div>
     <div class="kv"><span class="k">Start</span><span class="v">${escapeHtml(o.start_text||"—")}</span></div>
     <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>`;
+  /* The whole point of surfacing this: accepting is not a lump-sum
+     commitment, so it needs to be visible at the moment that decision is
+     being made, not buried in a help article. Only shown when the offer
+     actually has the structured numbers to explain — older offers sent
+     before this existed fall back to price_text alone, above. */
+  if(o.rate_per_workout_cents!=null && o.workouts_per_week_cap){
+    const card=document.createElement("div");
+    card.className="card";card.style.cssText="background:var(--accent-surface);border-color:var(--accent-border);margin-top:4px";
+    card.innerHTML=cadenceExplainer({
+      sessions:o.workouts_per_week_cap,
+      price:o.rate_per_workout_cents/100,
+      cur:(o.price_text||"$").trim()[0]||"$",
+      noshow:o.noshow_fraction_pct||0,
+      perspective:"trainee"
+    });
+    exp.appendChild(card);
+  }
   if(o.status==="pending"){
     const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;margin-top:14px";
     row.innerHTML=`<button class="btn sm" style="flex:1;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
@@ -3614,10 +3700,47 @@ async function openOffer(listingId){
   $("#offer-sub").textContent=`Re: ${offerListing.title}`;
   $("#of-title").value=offerListing.title; $("#of-focus").value=offerListing.focus||"";
   $("#of-length-min").value="";$("#of-length-max").value="";$("#of-sessions").value="";
-  $("#of-start").value="";$("#of-price").value="";$("#of-currency").value="$";
+  $("#of-start").value="";$("#of-price").value="";$("#of-currency").value="$";$("#of-noshow").value="50";
   const slot=$("#of-video-slot");slot.classList.remove("filled");
   slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your pitch</div><div class="vs">Every offer carries a short video. No attachments.</div>`;
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-offer").classList.add("active");
+  renderCadencePreview();
+}
+/* Live example so a coach can see exactly what the numbers above mean
+   before sending — this is the same explanation the trainee sees on the
+   offer itself, kept in sync by sharing cadenceExplainer(). */
+function renderCadencePreview(){
+  const el=$("#of-cadence-preview"); if(!el)return;
+  const sessions=Number($("#of-sessions").value)||0;
+  const price=Number($("#of-price").value)||0;
+  const cur=$("#of-currency").value||"$";
+  const noshow=Number($("#of-noshow").value)||0;
+  if(!sessions||!price){
+    el.innerHTML=`<div style="font-size:12px;color:var(--faint)">Fill in sessions and price to see how payment works.</div>`;
+    return;
+  }
+  el.innerHTML=cadenceExplainer({sessions,price,cur,noshow,perspective:"coach"});
+}
+["of-sessions","of-price","of-currency","of-noshow"].forEach(id=>{
+  $("#"+id)?.addEventListener("change",renderCadencePreview);
+  $("#"+id)?.addEventListener("input",renderCadencePreview);
+});
+/* Shared between the offer-builder preview and the trainee's offer card, so
+   the two can never describe the mechanic differently. Pure string
+   building — no DOM access — so it works in either context. */
+function cadenceExplainer({sessions,price,cur,noshow,perspective}){
+  const per=price/sessions;
+  const you=perspective==="coach"?"you":"your coach";
+  const lines=[
+    `<div style="font-size:12px;font-weight:800;color:var(--ink);margin-bottom:8px">How payment actually works</div>`,
+    `<div style="font-size:12.5px;color:var(--muted);line-height:1.55">This is <b style="color:var(--ink)">${cur}${price} a week, paid weekly</b> — never a lump sum for the whole goal. Each of the ${sessions} session${sessions===1?"":"s"} is worth ${cur}${per.toFixed(2)} of that.</div>`,
+    `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">A session is only paid once ${you==="you"?"you":"your coach"} review${you==="you"?"":"s"} it. If all ${sessions} are reviewed, the full ${cur}${price} is charged that week.</div>`,
+    noshow>0
+      ? `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">If a session is never submitted, it costs <b style="color:var(--ink)">${noshow}%</b> of its share (${cur}${(per*noshow/100).toFixed(2)}) instead — the cost of reserving ${you}'s time.</div>`
+      : `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">A session that's never submitted simply isn't charged.</div>`,
+    `<div style="font-size:11.5px;color:var(--faint);line-height:1.5;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)">The payment for a given week is charged the following week, once every session in it has had a chance to be reviewed — so nothing is ever charged for a session nobody looked at. Either side can end the goal at any time; the next week's charge is always the last.</div>`
+  ];
+  return lines.join("");
 }
 $("#of-video-slot").addEventListener("click",()=>{
   openRecorder({title:"Your pitch",subtitle:"why you're the right coach",review:true,audio:true,onComplete:cap=>{
@@ -3648,7 +3771,13 @@ $("#of-send").addEventListener("click",async()=>{
       listing_id:offerListing.id,coach_id:ME.id,trainee_id:offerListing.trainee_id,kind:"offer",
       title,focus:$("#of-focus").value.trim(),length_text,
       start_text,sessions_text,
-      price_text,pitch_video_path:path,status:"pending"
+      price_text,pitch_video_path:path,status:"pending",
+      // structured fields the payment ledger actually computes from —
+      // price_text/sessions_text above stay as the coach's own framing of
+      // these same two numbers, shown alongside rather than replaced.
+      rate_per_workout_cents:Math.round(Number(price)*100),
+      workouts_per_week_cap:Number(sessions),
+      noshow_fraction_pct:Number($("#of-noshow").value)||0
     });
     toast("Offer sent ✓"); go("market");
   }catch(err){console.error(err);toast(err.message||"Couldn't send offer",4000);}
