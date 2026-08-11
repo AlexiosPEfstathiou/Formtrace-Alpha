@@ -241,6 +241,79 @@ Note: `openConfirm` already exists and takes exactly this shape.
 
 ---
 
+## K. Profile pictures in Find a coach
+
+The public profile shows an avatar (item H); the coach BROWSE list itself
+(the actual "Find a coach" tab, before opening a profile) still shows
+whatever it showed before H — needs checking whether that's initials or
+nothing, and wiring the same avatar there.
+
+Small — same asset, same `avatar_path`, second render site.
+
+---
+
+## L. Languages on profiles
+
+Add a languages field to both trainee and coach profiles. For a coach this
+is a real filtering/matching signal (a trainee who only speaks Spanish
+needs to know before messaging); for a trainee it's mostly informational
+for the coach.
+
+Open question: free text, or a fixed list with multi-select? A fixed list
+is filterable on the marketplace (find a coach who speaks X); free text
+is not, without normalising it server-side. Recommend fixed list given the
+marketplace-filtering use case is the actual reason this was requested.
+
+---
+
+## M. Vacation mode — trainee-initiated
+
+A trainee pauses their OWN goal. While paused:
+- the streak freezes for both the trainee AND their coach (a coach's own
+  "days since last assigned" style numbers shouldn't degrade because their
+  trainee is away)
+- no workouts are due, none can be marked missed
+- a vacation message is visible to the coach, presumably in place of or
+  alongside the normal engagement status
+
+Interacts directly with the streak redefinition (register item, now closed)
+and the payment ledger (item B): a paused week should presumably not bill
+either the reviewed-share or the no-show-share, which needs its own case in
+`recompute_cycle` — a vacation week is neither reviewed nor missed, it's
+exempt. Needs deciding before building: does a vacation week bill nothing,
+or a pro-rated nothing based on days paused?
+
+---
+
+## N. Vacation mode — coach-initiated
+
+Same mechanism as M, but the coach pauses ALL their active trainees at
+once, with one message shown to all of them. Likely shares most of its
+implementation with M — a pause is a pause regardless of who triggered
+it — with the coach's version being "apply this to every active
+engagement" rather than one.
+
+Worth building M and N as one underlying pause primitive (per-engagement,
+who-triggered, message, start, end) rather than two separate mechanisms,
+given how similar the requirements are.
+
+---
+
+## O. Admin: coach inactivity / missed-review monitoring
+
+Carried over from item B's interview. Admin-visible signal for coaches
+routinely missing their review deadline, so the FormTrace team can contact
+them — this is the moderation lever behind "a coach who does this
+routinely will probably get cancelled and/or removed."
+
+The payment ledger (`payment_cycles`, once populated with real cycles) is
+the natural data source: a rising count of cycles where `reviewed_count`
+is low relative to `agreed_count` is exactly the inactivity signal needed.
+Not designed yet — needs an admin screen and probably a threshold/alerting
+rule, which doesn't exist for anything else in the app yet either.
+
+---
+
 ## G. Scheduled video calls
 
 Coach offers three time slots on a single day; trainee accepts one. At that

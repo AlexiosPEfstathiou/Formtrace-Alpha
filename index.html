@@ -654,6 +654,14 @@
   .offer-row.goal-inactive{border-left:4px solid var(--goal-inactive);background:linear-gradient(90deg,var(--goal-inactive-tint),var(--panel) 60%);}
   .offer-row.goal-inactive .or-av{color:var(--goal-inactive);}
   .offer-row.goal-inactive .or-t{color:var(--muted);}
+  /* declined/expired: visually distinct from a still-pending offer, dimmer
+     than active states so it doesn't compete for attention once archived */
+  .offer-row.goal-declined{border-left:4px solid var(--faint);opacity:.62;}
+  .offer-row.goal-declined .or-av{color:var(--faint);}
+  .offer-row.goal-declined .or-t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line2);}
+  .or-tag{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;border-radius:20px;padding:2px 7px;margin-left:6px;text-decoration:none;display:inline-block;vertical-align:middle;}
+  .or-tag-acc{background:rgba(200,255,61,.16);color:var(--lime-dim);}
+  .or-tag-dec{background:rgba(255,90,90,.12);color:var(--red);}
   .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
   @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
   .offer-expanded{background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
@@ -3531,7 +3539,6 @@ async function cancelListing(listingId,title){
 }
 
 async function renderListings(){
-  // keep the tabbar highlight in sync with listingsTab (covers default landing + post-goal)
   $$(".tabbar button[data-ltab]").forEach(x=>x.classList.toggle("on",x.getAttribute("data-ltab")===listingsTab));
   const body=$("#listings-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   if(listingsTab==="goals"){
@@ -3556,19 +3563,77 @@ async function renderListings(){
     }
     hydrateVideos(body);
   }else{
-    // offers received — collapsed rows that expand on tap
-    const offers=await store.offers.list({trainee_id:ME.id});
-    $("#listings-sub").textContent=offers.length?`${offers.length} offer${offers.length>1?"s":""} received`:"No offers yet";
-    body.innerHTML="";
-    if(!offers.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">✉</div><p>No offers yet.<br>Post a goal to attract coaches.</p></div>`; return; }
-    const coaches=Object.fromEntries((await store.coaches()).map(c=>[c.id,c]));
-    // which offers led to a currently-active goal (engagement)?
-    let activeOfferIds=new Set();
-    try{
-      const engs=await store.engagements.list({trainee_id:ME.id});
-      for(const e of engs){ if(e.status==="active"&&e.offer_id) activeOfferIds.add(e.offer_id); }
-    }catch(e){ console.error("offers active-goal lookup",e); }
-    for(const o of offers){
+    await renderOffersTab(body);
+  }
+}
+let offersArchiveMode=false;   // false = Active (pending+accepted), true = Archive (declined/expired)
+let offersGoalFilter="";       // "" = all goals, else a listing_id
+/* Offers grouped by goal, split into Active vs Archive so a trainee never
+   has to scan resolved offers to find one still awaiting a decision, and a
+   goal chip row so browsing is always scoped to ONE goal at a time rather
+   than a flat list where it is easy to accept against the wrong one. */
+async function renderOffersTab(body){
+  const offers=await store.offers.list({trainee_id:ME.id});
+  if(!offers.length){
+    $("#listings-sub").textContent="No offers yet";
+    body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">✉</div><p>No offers yet.<br>Post a goal to attract coaches.</p></div>`;
+    return;
+  }
+  const [coachRows,mine,engs]=await Promise.all([
+    store.coaches(),
+    store.listings.list({trainee_id:ME.id}),
+    store.engagements.list({trainee_id:ME.id})
+  ]);
+  const coaches=Object.fromEntries(coachRows.map(c=>[c.id,c]));
+  const listingById=Object.fromEntries(mine.map(l=>[l.id,l]));
+  let activeOfferIds=new Set();
+  for(const e of engs){ if(e.status==="active"&&e.offer_id) activeOfferIds.add(e.offer_id); }
+  const isArchived=o=>o.status==="rejected"||o.status==="expired";
+  const activeCount=offers.filter(o=>!isArchived(o)).length;
+  const archiveCount=offers.length-activeCount;
+  $("#listings-sub").textContent=`${activeCount} active · ${archiveCount} archived`;
+
+  body.innerHTML="";
+  // Active / Archive toggle
+  const toggle=document.createElement("div");toggle.className="mg-bar";toggle.style.marginBottom="4px";
+  toggle.innerHTML=`<button class="mg-chip${!offersArchiveMode?" on":""}" data-om="0">Active${activeCount?` · ${activeCount}`:""}</button>
+    <button class="mg-chip${offersArchiveMode?" on":""}" data-om="1">Archive${archiveCount?` · ${archiveCount}`:""}</button>`;
+  body.appendChild(toggle);
+  toggle.querySelectorAll("[data-om]").forEach(b=>b.addEventListener("click",()=>{
+    offersArchiveMode=b.getAttribute("data-om")==="1"; offersGoalFilter=""; renderOffersTab(body);
+  }));
+
+  const scoped=offers.filter(o=>isArchived(o)===offersArchiveMode);
+  if(!scoped.length){
+    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><p>${offersArchiveMode?"Nothing archived yet.":"No active offers right now."}</p></div>`);
+    return;
+  }
+
+  // Goal chips: only goals that actually have an offer in THIS scope
+  const goalIds=[...new Set(scoped.map(o=>o.listing_id).filter(Boolean))];
+  if(goalIds.length>1){
+    const gbar=document.createElement("div");gbar.className="mg-bar";
+    gbar.innerHTML=`<button class="mg-chip${offersGoalFilter===""?" on":""}" data-gf="">All goals</button>`
+      +goalIds.map(id=>{
+          const t=(listingById[id]&&listingById[id].title)||"Goal";
+          return `<button class="mg-chip${offersGoalFilter===id?" on":""}" data-gf="${id}">${escapeHtml(t)}</button>`;
+        }).join("");
+    body.appendChild(gbar);
+    gbar.querySelectorAll("[data-gf]").forEach(b=>b.addEventListener("click",()=>{
+      offersGoalFilter=b.getAttribute("data-gf"); renderOffersTab(body);
+    }));
+  }
+  const shown=offersGoalFilter?scoped.filter(o=>o.listing_id===offersGoalFilter):scoped;
+
+  // group by goal so it's always unambiguous which goal an offer belongs to
+  const byGoal={};
+  for(const o of shown){ (byGoal[o.listing_id||"none"]=byGoal[o.listing_id||"none"]||[]).push(o); }
+  for(const [gid,list] of Object.entries(byGoal)){
+    const l=listingById[gid];
+    if(goalIds.length>1||!offersGoalFilter){
+      body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">${escapeHtml(l?l.title:"Goal")}</div><div class="eyebrow">${list.length}</div></div>`);
+    }
+    for(const o of list){
       const c=coaches[o.coach_id]||{};
       const coachName=c.display_name||"Coach";
       const shortName=(()=>{const p=coachName.trim().split(/\s+/);return p.length>1?`${p[0]} ${p[1][0]}.`:p[0];})();
@@ -3578,16 +3643,20 @@ async function renderListings(){
       renderOfferRow(wrap,o,c,shortName,unviewed,coachName,goalActive);
       body.appendChild(wrap);
     }
-    hydrateVideos(body);
   }
+  hydrateVideos(body);
 }
 /* Renders the collapsed offer row into `wrap`; wires expand/collapse + view-marking. */
 function renderOfferRow(wrap,o,c,shortName,unviewed,coachName,goalActive){
-  const statusCls = goalActive ? " goal-active" : " goal-inactive";
+  const statusCls = goalActive ? " goal-active" : (o.status==="rejected"||o.status==="expired") ? " goal-declined" : " goal-inactive";
+  const statusTag = o.status==="accepted" ? `<span class="or-tag or-tag-acc">Accepted</span>`
+    : o.status==="rejected" ? `<span class="or-tag or-tag-dec">Declined</span>`
+    : o.status==="expired" ? `<span class="or-tag or-tag-dec">Expired</span>`
+    : "";
   wrap.innerHTML=`<div class="offer-row${unviewed?" unviewed":""}${statusCls}">
       <div class="or-av">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
       <div class="or-main">
-        <div class="or-t">Offer from ${escapeHtml(shortName)} — ${escapeHtml(o.price_text||"—")}</div>
+        <div class="or-t">Offer from ${escapeHtml(shortName)} — ${escapeHtml(o.price_text||"—")} ${statusTag}</div>
         ${unviewed?`<div class="or-ago">${escapeHtml(timeAgo(o.created_at))}</div>`:`<div class="or-s">${escapeHtml(o.title)}</div>`}
       </div>
       <div class="or-chev">›</div>
@@ -3634,7 +3703,15 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive){
     const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;margin-top:14px";
     row.innerHTML=`<button class="btn sm" style="flex:1;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
     exp.appendChild(row);
-    row.querySelector("[data-acc]").addEventListener("click",()=>acceptOffer(o.id));
+    row.querySelector("[data-acc]").addEventListener("click",async()=>{
+      const ok=await openConfirm({
+        title:"Accept this offer?",
+        body:"This will auto-decline all other offers for this goal. Would you like to proceed?",
+        confirmLabel:"Accept",cancelLabel:"Cancel"
+      });
+      if(!ok)return;
+      acceptOffer(o.id);
+    });
     row.querySelector("[data-rej]").addEventListener("click",async()=>{ await store.offers.update(o.id,{status:"rejected"}); toast("Offer declined"); renderListings(); });
   }
   const collapse=document.createElement("button");collapse.className="btn ghost sm oe-collapse";collapse.textContent="Collapse ▲";
