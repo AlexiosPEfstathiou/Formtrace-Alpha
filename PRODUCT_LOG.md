@@ -128,9 +128,12 @@ and check-in cards.
 one.** Per instruction: routinely missing reviews should lead to the coach
 being cancelled by trainees and/or removed by the FormTrace team — this is
 a moderation/retention signal, not something the ledger itself enforces.
-Logged here so it isn't lost; not yet designed (needs a "missed review
-count" surfaced to admins, and probably to the trainee at cancellation time
-as a reason).
+
+**DECIDED 2026-08-08:** admin controls to surface coaches drifting into
+inactivity (e.g. a rising `expired`/missed-review count) and let the
+FormTrace team contact them will be built later, as their own item. Not
+designed yet; logged here so the payment ledger's data (once it tracks
+missed deadlines rather than just charges) is the natural source for it.
 
 ---
 

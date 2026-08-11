@@ -46,11 +46,35 @@ drop function if exists public.coach_payment_summary(uuid);
 drop table if exists public.payment_ledger;
 
 -- ---------------------------------------------------------------------
--- PART 1 — offers: rename the mental model, not the column, to avoid a
--- second migration touching every offer row. rate_per_workout_cents now
--- HOLDS a weekly figure; the comment says so for anyone reading the schema
--- later. workouts_per_week_cap is the agreed count this is divided by.
+-- PART 1 — structured pricing on the offer.
+--   Adding these here rather than assuming migrations_payment_ledger.sql
+--   (v1) already ran: it didn't, on this database, which is what surfaced
+--   this gap. v2 no longer depends on v1 having been applied.
 -- ---------------------------------------------------------------------
+alter table public.offers
+  add column if not exists rate_per_workout_cents integer,
+  add column if not exists noshow_fraction_pct    smallint,
+  add column if not exists workouts_per_week_cap   integer;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname='offers_rate_nonneg_chk') then
+    alter table public.offers add constraint offers_rate_nonneg_chk
+      check (rate_per_workout_cents is null or rate_per_workout_cents >= 0);
+  end if;
+  if not exists (select 1 from pg_constraint where conname='offers_noshow_pct_chk') then
+    alter table public.offers add constraint offers_noshow_pct_chk
+      check (noshow_fraction_pct is null or noshow_fraction_pct between 0 and 100);
+  end if;
+  if not exists (select 1 from pg_constraint where conname='offers_cap_pos_chk') then
+    alter table public.offers add constraint offers_cap_pos_chk
+      check (workouts_per_week_cap is null or workouts_per_week_cap > 0);
+  end if;
+end $$;
+
+-- Despite the historical name, this column now holds a WEEKLY figure — the
+-- v2 model bills one proportional charge per week, not per workout. Kept
+-- unrenamed so this migration doesn't have to touch every existing offer row.
 comment on column public.offers.rate_per_workout_cents is
   'Despite the name, this is the WEEKLY rate as of the v2 payment model. Per-workout share = this / workouts_per_week_cap. NULL on offers without structured pricing.';
 comment on column public.offers.workouts_per_week_cap is
