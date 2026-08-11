@@ -3507,6 +3507,31 @@ let listingFocus=null;
 $$(".tabbar button[data-ltab]").forEach(b=>b.addEventListener("click",()=>{listingsTab=b.getAttribute("data-ltab");$$(".tabbar button[data-ltab]").forEach(x=>x.classList.toggle("on",x===b));renderListings();}));
 $("#listings-fab").addEventListener("click",()=>go("listing-new"));
 
+/* Trainee cancels a posted goal that hasn't been accepted yet. Coaches may
+   already have sent pending offers on it — those are auto-declined so they
+   surface on the coach's homepage decline notice rather than sitting
+   forever as "pending" against a goal that no longer exists. */
+async function cancelListing(listingId,title){
+  const ok=await openConfirm({
+    title:"Cancel this goal?",
+    body:`"${title||"This goal"}" will be closed and any coaches who sent offers will be notified they weren't selected. You can post a new goal any time.`,
+    confirmLabel:"Cancel goal",cancelLabel:"Keep it",danger:true
+  });
+  if(!ok)return;
+  try{
+    const offers=await store.offers.list({listing_id:listingId});
+    await Promise.all(
+      offers.filter(o=>o.status==="pending").map(o=>store.offers.update(o.id,{status:"rejected"}))
+    );
+    await store.listings.update(listingId,{status:"closed",closed_reason:"cancelled"});
+    toast("Goal cancelled");
+    renderListings();
+  }catch(err){
+    console.error("cancelListing",err);
+    toast(err.message||"Couldn't cancel this goal",4000);
+  }
+}
+
 async function renderListings(){
   // keep the tabbar highlight in sync with listingsTab (covers default landing + post-goal)
   $$(".tabbar button[data-ltab]").forEach(x=>x.classList.toggle("on",x.getAttribute("data-ltab")===listingsTab));
@@ -3518,11 +3543,18 @@ async function renderListings(){
     if(!mine.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No goals posted yet.<br>Post one and coaches will send video offers.</p></div>`; return; }
     for(const l of mine){
       const div=document.createElement("div");div.className="card";
+      const badgeCls=l.closed_reason==="cancelled"?"rejected":l.status;
+      const badgeTxt=l.closed_reason==="cancelled"?"cancelled":l.status;
       div.innerHTML=`<div class="list-row">
           <div class="ex-thumb" style="width:52px;height:52px" ${l.pitch_video_path?`data-video="${l.pitch_video_path}"`:""}>${l.pitch_video_path?"":'<span class="ph">◉</span>'}</div>
           <div class="lr-main"><h3>${escapeHtml(l.title)}</h3><div class="sub">${escapeHtml(l.focus||"")}</div></div>
-          <span class="badge ${l.status}">${l.status}</span></div>`;
+          <span class="badge ${badgeCls}">${escapeHtml(badgeTxt)}</span></div>
+        ${l.status==="open"?`<button class="btn sm" style="width:100%;margin-top:10px;color:var(--red)" data-cancel-listing="${l.id}">Cancel this goal</button>`:""}`;
       body.appendChild(div);
+      div.querySelector("[data-cancel-listing]")?.addEventListener("click",async e=>{
+        e.stopPropagation();
+        await cancelListing(l.id,l.title);
+      });
     }
     hydrateVideos(body);
   }else{
