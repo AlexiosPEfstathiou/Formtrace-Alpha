@@ -925,6 +925,7 @@
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
       <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
+      <div id="home-declined" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
@@ -2443,6 +2444,7 @@ async function renderHome(){
   const ppEl=$("#home-postpone"); if(ppEl) ppEl.style.display="none";
   const msEl=$("#home-milestone"); if(msEl) msEl.style.display="none";
   const rdEl=$("#home-reviewdue"); if(rdEl) rdEl.style.display="none";
+  const dcEl=$("#home-declined"); if(dcEl) dcEl.style.display="none";
 
   let noActiveGoal=false;
   if(base==="trainee" && ME){
@@ -2464,6 +2466,7 @@ async function renderHome(){
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
     await renderHomeReviewDue($("#home-reviewdue"));
+    await renderHomeDeclined($("#home-declined"));
     await renderCoachHome(todayEl);
     await renderCoachTrainees(coachEl,newsEl);
     $("#home-p").style.display="";
@@ -2729,6 +2732,32 @@ function cyclePaymentDateISO(dueISO){
   const dow=(dt.getDay()+6)%7;         // Monday=0
   dt.setDate(dt.getDate()-dow+13);     // to that week's Monday, then +13
   return isoOf(dt);
+}
+/* Coach homepage: a trainee declined an offer. Was previously invisible
+   until the whole listing closed (see renderMarket), so a coach could go
+   indefinitely without learning a specific trainee said no. Once per
+   offer — coach_seen_at is set on open so it doesn't nag forever. */
+async function renderHomeDeclined(el){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME||roleOf()!=="coach")return;
+  let mine=[];
+  try{ mine=await store.offers.list({coach_id:ME.id}); }catch(e){ console.error("renderHomeDeclined",e); return; }
+  const unseen=mine.filter(o=>o.status==="rejected" && !o.coach_seen_at);
+  if(!unseen.length)return;
+  if(milestoneShowing)return;   // same one-high-priority rule as elsewhere
+  const n=unseen.length;
+  el.classList.add("ci-urgent");
+  el.innerHTML=`<div class="ci-ic">✕</div>
+    <div class="ci-main"><div class="t">Offer${n===1?"":"s"} declined</div>
+      <div class="s">${n===1?`Your offer for "${escapeHtml(unseen[0].title||"a goal")}" was not selected.`:`${n} of your offers weren't selected this time.`}</div></div>
+    <div class="ci-arw">›</div>`;
+  el.style.display="";
+  el.onclick=async()=>{
+    try{
+      await Promise.all(unseen.map(o=>store.offers.update(o.id,{coach_seen_at:new Date().toISOString()})));
+    }catch(e){ console.error("ack decline",e); }
+    go("market");
+  };
 }
 /* Coach homepage: active trainees with streak + days since last ASSIGNED
    workout, plus a quick-access review icon. Also builds the activity feed
@@ -3651,11 +3680,18 @@ async function renderMarket(){
   const open=await store.listings.list({status:"open"});
   // this coach's sent offers (for the pitched-lock AND the outcomes section)
   const mySent=await store.offers.list({coach_id:ME.id});
-  const pitchedIds=new Set(mySent.map(o=>o.listing_id));
   const openIds=new Set(open.map(l=>l.id));
-  // Offers on still-open listings are represented by the "✓ Pitched" tag in Open goals below,
-  // so exclude them here to avoid showing the same offer twice.
-  const sentOutcomes=mySent.filter(o=>!openIds.has(o.listing_id));
+  /* Split on the OFFER's own status, not on whether its listing happens to
+     still be open. A listing stays open until the trainee accepts someone,
+     so a coach whose offer was declined while others were still pending —
+     or before the trainee had decided at all — had that decline hidden: it
+     read as "✓ Pitched" below with no outcome ever surfacing. Resolved
+     means the coach has an answer; pending on a still-open listing is the
+     only case that belongs in the "✓ Pitched" tag instead. */
+  const resolved=new Set(["accepted","rejected","expired"]);
+  const sentOutcomes=mySent.filter(o=>resolved.has(o.status) || !openIds.has(o.listing_id));
+  const stillPitching=mySent.filter(o=>!resolved.has(o.status) && openIds.has(o.listing_id));
+  const pitchedIds=new Set(stillPitching.map(o=>o.listing_id));
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
   // --- Your sent offers (outcomes for offers whose listing is no longer open) ---
