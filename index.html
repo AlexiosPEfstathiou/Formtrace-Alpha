@@ -1040,18 +1040,16 @@
       </div>
       <div class="field">
         <label for="of-noshow">If a session is missed</label>
-        <select id="of-noshow" class="sel">
-          <option value="0">No charge for a missed session</option>
-          <option value="25">25% of that session's share</option>
-          <option value="50" selected>50% of that session's share</option>
-          <option value="75">75% of that session's share</option>
-          <option value="100">Full share, same as if reviewed</option>
-        </select>
+        <div class="two">
+          <input id="of-noshow" type="number" min="0" max="100" step="1" value="50" style="flex:1">
+          <div style="align-self:center;color:var(--muted);font-weight:700">%</div>
+        </div>
         <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">Charged only if the trainee never submits that session — never for you simply not reviewing it yet.</div>
       </div>
       <div class="card" id="of-cadence-preview" style="background:var(--accent-surface);border-color:var(--accent-border)"></div>
       <div class="field">
         <label>Video pitch — required</label>
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.5;margin-bottom:8px">The trainee can already see your bio, badges and ratings on your profile — use this video for what's specific to <i>this</i> offer (your plan for their goal, what a typical week looks like), not a repeat of your general qualifications.</div>
         <div class="video-slot" id="of-video-slot">
           <div class="vic">●</div><div class="vt">Record your pitch</div>
           <div class="vs">Every offer carries a short video. No attachments.</div>
@@ -3782,7 +3780,7 @@ function renderCadencePreview(){
   const sessions=Number($("#of-sessions").value)||0;
   const price=Number($("#of-price").value)||0;
   const cur=$("#of-currency").value||"$";
-  const noshow=Number($("#of-noshow").value)||0;
+  const noshow=Math.max(0,Math.min(100,Number($("#of-noshow").value)||0));
   if(!sessions||!price){
     el.innerHTML=`<div style="font-size:12px;color:var(--faint)">Fill in sessions and price to see how payment works.</div>`;
     return;
@@ -3799,12 +3797,13 @@ function renderCadencePreview(){
 function cadenceExplainer({sessions,price,cur,noshow,perspective}){
   const per=price/sessions;
   const you=perspective==="coach"?"you":"your coach";
+  const yourPoss=perspective==="coach"?"your":"your coach's";
   const lines=[
     `<div style="font-size:12px;font-weight:800;color:var(--ink);margin-bottom:8px">How payment actually works</div>`,
     `<div style="font-size:12.5px;color:var(--muted);line-height:1.55">This is <b style="color:var(--ink)">${cur}${price} a week, paid weekly</b> — never a lump sum for the whole goal. Each of the ${sessions} session${sessions===1?"":"s"} is worth ${cur}${per.toFixed(2)} of that.</div>`,
     `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">A session is only paid once ${you==="you"?"you":"your coach"} review${you==="you"?"":"s"} it. If all ${sessions} are reviewed, the full ${cur}${price} is charged that week.</div>`,
     noshow>0
-      ? `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">If a session is never submitted, it costs <b style="color:var(--ink)">${noshow}%</b> of its share (${cur}${(per*noshow/100).toFixed(2)}) instead — the cost of reserving ${you}'s time.</div>`
+      ? `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">If a session is never submitted, it costs <b style="color:var(--ink)">${noshow}%</b> of its share (${cur}${(per*noshow/100).toFixed(2)}) instead — the cost of reserving ${yourPoss} time.</div>`
       : `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">A session that's never submitted simply isn't charged.</div>`,
     `<div style="font-size:11.5px;color:var(--faint);line-height:1.5;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)">The payment for a given week is charged the following week, once every session in it has had a chance to be reviewed — so nothing is ever charged for a session nobody looked at. Either side can end the goal at any time; the next week's charge is always the last.</div>`
   ];
@@ -3845,7 +3844,7 @@ $("#of-send").addEventListener("click",async()=>{
       // these same two numbers, shown alongside rather than replaced.
       rate_per_workout_cents:Math.round(Number(price)*100),
       workouts_per_week_cap:Number(sessions),
-      noshow_fraction_pct:Number($("#of-noshow").value)||0
+      noshow_fraction_pct:Math.max(0,Math.min(100,Number($("#of-noshow").value)||0))
     });
     toast("Offer sent ✓"); go("market");
   }catch(err){console.error(err);toast(err.message||"Couldn't send offer",4000);}
