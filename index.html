@@ -5633,10 +5633,12 @@ async function openReview(assignedId,readonly=false){
   /* Reachable straight from the trainee's training list, where the engagement
      context was never loaded. currentEngOther is null there, and reading
      .display_name off it threw — so the screen silently never opened. Load the
-     context on demand so the header and the back button both work. */
+     context on demand so the header and the back button both work. Fetched
+     once and reused below for loadPrevSeries rather than fetching twice. */
+  const assignedRow=currentAssigned&&currentAssigned.id===assignedId?currentAssigned:await store.assignedWorkouts.get(assignedId).catch(()=>null);
   if(!currentEng||!currentEngOther){
     try{
-      const a=currentAssigned||await store.assignedWorkouts.get(assignedId);
+      const a=assignedRow;
       if(a&&a.engagement_id){
         currentEng=await store.engagements.get(a.engagement_id);
         const otherId=(currentEng.coach_id===ME.id)?currentEng.trainee_id:currentEng.coach_id;
@@ -5657,6 +5659,12 @@ async function openReview(assignedId,readonly=false){
       if(!prevWeight[k] || (row.created_at||"")>(prevWeight[k].created_at||"")) prevWeight[k]=row;
     }
   }catch(e){ console.error("previous weights",e); }
+  /* The coach's own comment from the last time THIS recurring workout was
+     reviewed, so they can check whether their last instruction was actually
+     applied. loadPrevSeries populates the shared prevSeries.notes map keyed
+     by exercise name — same data source the trainee sees before a set, so
+     the two can never show different wording for the same past comment. */
+  try{ await loadPrevSeries(assignedRow); }catch(e){ console.error("prev series (review)",e); prevSeries=null; }
   /* Once a workout is 'reviewed', `opened` means "the trainee has seen the
      review" (it was set true earlier when they opened it to record). The coach
      resets it to false on submit, so viewing here is what clears the badge. */
@@ -5682,9 +5690,25 @@ async function openReview(assignedId,readonly=false){
     else go("trainee-home");
   };
   const body=$("#review-body");body.innerHTML="";
+  const notedItems=new Set();
   (rep.items||[]).forEach((item,ii)=>{
     (item.results||[]).forEach((r,si)=>{
       if(!r)return;
+      /* Coach's own last comment on this exercise, shown once before its
+         first set — not per set, since it's one instruction for the movement,
+         not one per rep count. Neutral heading: it may have been praise.
+         Coach-only: this screen is also reachable read-only by the trainee,
+         who already saw the same note before recording — showing it again
+         here under "Your note" would misattribute it to them. */
+      if(!notedItems.has(ii) && roleOf()==="coach"){
+        notedItems.add(ii);
+        const prevNote=prevSeries&&prevSeries.notes[item.name];
+        if(prevNote){
+          const note=document.createElement("div");note.className="prev-note";
+          note.innerHTML=`<div class="pn-h">Your note, ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last time"}</div><div class="pn-b">${escapeHtml(prevNote)}</div>`;
+          body.appendChild(note);
+        }
+      }
       const key=ii+"-"+si;
       const lab=labelBy[key]||{};
       const corrected=(lab.reps_label==="incorrect"&&lab.reps_corrected!=null);
