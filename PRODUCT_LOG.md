@@ -334,6 +334,57 @@ rule, which doesn't exist for anything else in the app yet either.
 
 ---
 
+## P. "The Journey" — goal-completion recap
+
+When a goal completes and its final review is submitted, replace the current
+thin recap with a richer summary of the whole goal:
+
+1. **Timelapse of every check-in photo taken during the goal**
+2. **Weight change over the goal's X weeks**, visualised
+3. **Streak overview** — the highest streak reached during the goal
+4. **Share button, trainee-only** — a shareable summary of the above
+
+**What already exists, checked before writing this down rather than assumed:**
+
+- `openTimelapse(traineeId, {intro, onDone})` already exists and already
+  fires right after a rating is submitted (`openRate`'s submit handler) —
+  but it fetches **every check-in the trainee has ever logged**, with no
+  date filtering, despite its own empty-state message already saying "for
+  this goal." Needs a `fromDate`/`toDate` (or `engagementId`) parameter so
+  it actually scopes to the goal that just finished, not the trainee's
+  whole history.
+- The weight chart's **'goal' dashboard mode** (built for the macro/weight
+  dashboard) already computes exactly this: the goal's date span, a shaded
+  band, and a start-weight reference line. That rendering logic is directly
+  reusable here, not a new chart.
+- `openGoalRecap(e, coach)` is the CURRENT recap — a plain sheet with goal
+  title, duration, coach name, outcome. This is what "The Journey" replaces
+  or supersedes; not yet decided whether it's the same sheet upgraded or a
+  new dedicated screen (a rich screen with a timelapse and a chart likely
+  doesn't fit the small bottom-sheet pattern `openGoalRecap` currently uses).
+- **Highest streak during the goal does not exist anywhere.** Current streak
+  logic (`compute_streak` / `dayState`) only ever computes the streak ending
+  at "today" — there is no "longest run within an arbitrary past window"
+  query. This is new logic: walk the goal's date range day-by-day (same
+  done/rest/missed rule, same 7-rest-day break) and track the longest run
+  rather than just the most recent one. Probably a new SQL function
+  (`peak_streak_in_range(engagement_id)`) mirroring `compute_streak`'s
+  structure, since doing this client-side would mean fetching the whole
+  goal's assigned-workout history just to count.
+- **Share** has a direct precedent: `shareStreakStory()` /
+  `drawStreakStory()` already render a canvas image and hand it to the
+  native share sheet with a desktop-download fallback. A "Journey" share
+  image is the same mechanism with different canvas content (a collage or
+  a few key numbers rather than a single streak count) — build path is
+  proven, just needs new artwork.
+
+**Trainee-only** is explicit in the ask — a coach viewing the same completed
+goal should NOT get a share button, presumably because the photos and
+weight data are the trainee's personal data to choose to share, not the
+coach's.
+
+---
+
 ## G. Scheduled video calls
 
 Coach offers three time slots on a single day; trainee accepts one. At that
