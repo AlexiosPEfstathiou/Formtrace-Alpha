@@ -607,6 +607,12 @@
   .rate-stars span{cursor:pointer;transition:transform .1s;}
   .rate-stars span.on{color:var(--amber);}
   .rate-stars span:active{transform:scale(1.15);}
+  .rsub-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);}
+  .rsub-row:last-child{border-bottom:none;}
+  .rsub-l{font-size:13px;color:var(--muted);font-weight:600;}
+  .rsub-stars{display:flex;gap:3px;font-size:17px;color:var(--line2);}
+  .rsub-stars span{cursor:pointer;}
+  .rsub-stars span.on{color:var(--amber);}
   .list-row{display:flex;align-items:center;gap:13px;}
   .list-row .lr-main{flex:1;min-width:0;}
   .list-row .lr-main h3{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1208,6 +1214,10 @@
         <div style="font-size:13px;color:var(--muted);margin-top:4px" id="rate-role">—</div>
       </div>
       <div class="rate-stars" id="rate-stars"><span data-s="1">★</span><span data-s="2">★</span><span data-s="3">★</span><span data-s="4">★</span><span data-s="5">★</span></div>
+      <div id="rate-sub-wrap" style="display:none;margin-top:18px">
+        <div style="font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:10px">Optional — helps other trainees choose a coach</div>
+        <div id="rate-sub"></div>
+      </div>
       <div class="field" style="margin-top:16px"><label>Comments</label><textarea id="rate-text" placeholder="How did it go?"></textarea></div>
     </div>
     <div class="fab-row"><button class="btn primary" id="rate-submit">Submit rating</button></div>
@@ -6156,6 +6166,7 @@ async function openTimelapse(traineeId,{intro,onDone}={}){
 }
 
 let rateStars=0;
+let rateSubScores={};   // {professionalism:5, communication:4, ...} — coach-only, optional
 function openRate(){
   rateStars=0;
   const iAmCoach=currentEng.coach_id===ME.id;
@@ -6165,6 +6176,29 @@ function openRate(){
   $("#rate-role").textContent=iAmCoach?"Trainee":"Coach";
   $("#rate-text").value="";
   $$("#rate-stars span").forEach(s=>s.classList.remove("on"));
+  /* Sub-ratings only make sense for rating a COACH — Price and Instructions
+     don't apply to a trainee. This is the reason the earlier build only
+     wired the columns and the display; the submission form needed its own
+     pass, which this is. */
+  rateSubScores={};
+  const subWrap=$("#rate-sub-wrap");
+  if(!iAmCoach){
+    subWrap.style.display="";
+    $("#rate-sub").innerHTML=SUBR.map(([k,l])=>`
+      <div class="rsub-row">
+        <span class="rsub-l">${escapeHtml(l)}</span>
+        <span class="rsub-stars" data-subk="${k}">${[1,2,3,4,5].map(n=>`<span data-s="${n}">★</span>`).join("")}</span>
+      </div>`).join("");
+    $("#rate-sub").querySelectorAll(".rsub-stars").forEach(row=>{
+      const k=row.getAttribute("data-subk");
+      row.querySelectorAll("span").forEach(s=>s.addEventListener("click",()=>{
+        rateSubScores[k]=+s.getAttribute("data-s");
+        row.querySelectorAll("span").forEach(x=>x.classList.toggle("on",+x.getAttribute("data-s")<=rateSubScores[k]));
+      }));
+    });
+  }else{
+    subWrap.style.display="none";
+  }
   $("#rate-back").onclick=()=>{
     // openRate can be reached at login via checkPendingReview, when currentEng
     // is null — an unguarded currentEng.id would throw and trap the user here.
@@ -6182,7 +6216,16 @@ $("#rate-submit").addEventListener("click",async()=>{
   const iAmCoach=currentEng.coach_id===ME.id;
   const btn=$("#rate-submit");btn.disabled=true;const o=btn.textContent;btn.textContent="…";
   try{
-    await store.ratings.add({engagement_id:currentEng.id,rater_id:ME.id,ratee_id:iAmCoach?currentEng.trainee_id:currentEng.coach_id,stars:rateStars,text:$("#rate-text").value.trim()});
+    const payload={engagement_id:currentEng.id,rater_id:ME.id,ratee_id:iAmCoach?currentEng.trainee_id:currentEng.coach_id,stars:rateStars,text:$("#rate-text").value.trim()};
+    if(!iAmCoach){
+      // optional — only whichever sub-ratings were actually tapped go through
+      if(rateSubScores.professionalism) payload.r_professionalism=rateSubScores.professionalism;
+      if(rateSubScores.communication)   payload.r_communication=rateSubScores.communication;
+      if(rateSubScores.motivation)      payload.r_motivation=rateSubScores.motivation;
+      if(rateSubScores.price)           payload.r_price=rateSubScores.price;
+      if(rateSubScores.instructions)    payload.r_instructions=rateSubScores.instructions;
+    }
+    await store.ratings.add(payload);
     toast("Thanks — rating submitted ✓");
     // then play back the journey; Done returns home
     const traineeId=iAmCoach?currentEng.trainee_id:ME.id;

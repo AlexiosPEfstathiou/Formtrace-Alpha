@@ -29,6 +29,14 @@ badge — a coach cannot be Certified without being Professional first.
 **Notes**
 - Sub-ratings replace the single star score in the rating flow. Existing
   ratings keep their overall score; sub-ratings start empty and accumulate.
+  **Correction 2026-08-11:** this was true of the database columns and the
+  profile display from day one, but the rate-submission SCREEN itself was
+  never actually updated to ask for them — a real user testing a rating
+  found nothing there. Fixed: `openRate()` now shows five optional star
+  rows (Professionalism, Communication, Motivation, Price, Instructions)
+  when a trainee is rating a coach, and none when a coach is rating a
+  trainee, since Price/Instructions don't apply to a trainee. Each
+  sub-rating is submitted only if actually tapped.
 - Show the rating COUNT beside every average. An average without an n is
   close to meaningless and invites over-reading two reviews.
 - `profiles` is already readable for coaches (role = 'coach'), so no policy
