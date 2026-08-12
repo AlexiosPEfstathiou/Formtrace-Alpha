@@ -188,19 +188,25 @@ effort, not body outcomes.
 
 ---
 
-## H. Profile pictures on profiles
+## H. Profile pictures on profiles — DONE 2026-08-11
 
 Avatar upload already exists for the social profile (`profiles.avatar_path`,
-`uploadAvatar`, shrunk to 256px on device before upload). What's missing:
+`uploadAvatar`, shrunk to 256px on device before upload). Two gaps closed
+together, since building K without also fixing this would have meant a
+coach's photo appearing on the offer row and then vanishing on their profile:
 
-- The public coach profile renders **initials only** — it should show the
-  actual photo when one is set.
-- Coaches have no obvious prompt to add one. A photo is a cheap trust signal
-  on a marketplace profile and currently most coaches won't have set one.
+- The public coach profile now shows the actual photo when one is set,
+  via a generic `hydrateAvatars()` helper mirroring `hydrateVideos()` —
+  any element with `data-avatar="<path>"` upgrades from initials to a real
+  image once its signed URL resolves, initials rendering instantly as the
+  fallback so there's no empty circle while it loads.
 - Storage policy already allows avatars to be read by anyone
   (`profiles.avatar_path` is in the storage read policy), so no policy work.
 
-Small. Worth doing alongside anything else that touches the coach profile.
+Still open: coaches have no obvious in-app prompt to add a photo. Worth a
+homepage nudge similar to the check-in/milestone cards, since most coaches
+won't have set one and a photo is a cheap trust signal on a marketplace
+profile.
 
 ---
 
@@ -241,14 +247,20 @@ Note: `openConfirm` already exists and takes exactly this shape.
 
 ---
 
-## K. Profile pictures in Find a coach
+## K. Profile pictures in Find a coach — DONE 2026-08-11
 
-The public profile shows an avatar (item H); the coach BROWSE list itself
-(the actual "Find a coach" tab, before opening a profile) still shows
-whatever it showed before H — needs checking whether that's initials or
-nothing, and wiring the same avatar there.
+Correction to how this was originally logged: item H had NOT actually been
+built when K was written — the public profile rendered initials only, same
+as everywhere else. Checking found the gap was in three places, not one:
+the offer row, the expanded offer card, and the profile screen itself
+(H). All three now use the `data-avatar` / `hydrateAvatars()` mechanism
+built for this, so a coach's photo is consistent everywhere a trainee
+encounters them in this flow.
 
-Small — same asset, same `avatar_path`, second render site.
+Left out of scope: the coach's own trainee-list avatar on their homepage
+has the identical gap (initials only), but that's a different surface from
+"Find a coach" and wasn't part of this ask — noted here in case it should
+be picked up as a quick follow-on.
 
 ---
 

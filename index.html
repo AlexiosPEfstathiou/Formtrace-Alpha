@@ -1838,6 +1838,27 @@ async function playable(path){
   try{ const u=await store.video.signedUrl(path,3600); urlCache.set(path,u); return u; }
   catch(e){ console.error("signedUrl",e); return null; }
 }
+/* Fill any element with data-avatar="<path>" as a real photo, replacing its
+   initials fallback text once the signed URL resolves. Initials render
+   instantly from markup; this only upgrades them, so there's never an
+   empty circle while the image loads. Mirrors hydrateVideos's pattern —
+   same signed-URL cache via playable(), same idempotent data-hydrated
+   marker so re-renders don't re-fetch. */
+async function hydrateAvatars(root){
+  const scope=root||document;
+  for(const el of scope.querySelectorAll("[data-avatar]:not([data-hydrated-av])")){
+    el.setAttribute("data-hydrated-av","1");
+    const path=el.getAttribute("data-avatar");
+    if(!path)continue;
+    const url=await playable(path);
+    if(url){
+      el.style.backgroundImage=`url("${url}")`;
+      el.style.backgroundSize="cover";
+      el.style.backgroundPosition="center";
+      el.textContent="";
+    }
+  }
+}
 /* Fill a container that has data-video="<path>" with a playable <video>. */
 async function hydrateVideos(root){
   const scope=root||document;
@@ -3677,6 +3698,7 @@ async function renderOffersTab(body){
   folder("Completed",completed,offersCompletedOpen,v=>offersCompletedOpen=v);
 
   hydrateVideos(body);
+  hydrateAvatars(body);
 }
 /* Renders the collapsed offer row into `wrap`; wires expand/collapse + view-marking.
    `flash` drives the pulsing dot — now tied to status==='pending' rather than
@@ -3690,7 +3712,7 @@ function renderOfferRow(wrap,o,c,shortName,flash,coachName,goalActive){
     : o.status==="expired" ? `<span class="or-tag or-tag-dec">Expired</span>`
     : "";
   wrap.innerHTML=`<div class="offer-row${flash?" pending-flash":""}${o.viewed_at?"":" unviewed"}${statusCls}">
-      <div class="or-av">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
+      <div class="or-av" data-avatar="${escapeHtml(c.avatar_path||"")}">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
       <div class="or-main">
         <div class="or-t">Offer from ${escapeHtml(shortName)} — ${escapeHtml(o.price_text||"—")} ${statusTag}</div>
         <div class="or-s">${escapeHtml(o.title)}</div>
@@ -3717,7 +3739,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
   const exp=document.createElement("div");exp.className="offer-expanded";
   exp.innerHTML=`<button class="oe-close" aria-label="Collapse">✕</button>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-right:26px">
-      <div class="avatar">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
+      <div class="avatar" data-avatar="${escapeHtml(c.avatar_path||"")}">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
       <div style="flex:1;min-width:0"><div style="font-weight:700" class="coach-link" data-coach="${o.coach_id}">${escapeHtml(coachName)}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div></div>
       <span class="badge ${o.status}">${o.status}</span></div>
     <div style="font-size:11.5px;color:var(--faint);margin:-6px 0 12px">Tap the name to see their full profile, badges and ratings</div>
@@ -3762,6 +3784,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
   exp.querySelector(".oe-close").addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,o.status==="pending",coachName,goalActive));
   wrap.innerHTML="";wrap.appendChild(exp);
   hydrateVideos(exp);
+  hydrateAvatars(exp);
 }
 async function acceptOffer(offerId){
   const accBtn=document.querySelector(`[data-acc="${offerId}"]`);
@@ -6405,7 +6428,7 @@ function renderCoachProfile(p){
   const anySub=SUBR.some(([k])=>sub[k]!=null);
   let h="";
   h+=`<div class="card cp-head">
-      <div class="cp-av">${p.avatar_initials?escapeHtml(p.avatar_initials):escapeHtml(initials(nm))}</div>
+      <div class="cp-av" data-avatar="${escapeHtml(p.avatar_path||"")}">${p.avatar_initials?escapeHtml(p.avatar_initials):escapeHtml(initials(nm))}</div>
       <div class="cp-id">
         <div class="cp-nm">${escapeHtml(nm)}</div>
         ${badgeRow(p)}
@@ -6439,6 +6462,7 @@ function renderCoachProfile(p){
       </div>`).join("")}</div>`;
   }
   body.innerHTML=h;
+  hydrateAvatars(body);
 }
 function COUNTRY_NAME(code){
   try{ return new Intl.DisplayNames([navigator.language||"en"],{type:"region"}).of(code); }catch(e){ return code; }
