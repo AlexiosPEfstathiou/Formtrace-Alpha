@@ -304,6 +304,7 @@
   #s-engagement.active:not(.tab-level) ~ #app-tabbar,
   #s-review.active ~ #app-tabbar,
   #s-timelapse.active ~ #app-tabbar,
+  #s-journey.active ~ #app-tabbar,
   #s-rate.active ~ #app-tabbar,
   #s-celebrate.active ~ #app-tabbar,
   #s-trainee-workout.active ~ #app-tabbar{display:none !important;}
@@ -613,6 +614,10 @@
   .rsub-stars{display:flex;gap:3px;font-size:17px;color:var(--line2);}
   .rsub-stars span{cursor:pointer;}
   .rsub-stars span.on{color:var(--amber);}
+  /* ---- The Journey ---- */
+  .jr-card{margin-bottom:12px;}
+  .jr-ic{width:38px;height:38px;border-radius:12px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .jr-arw{color:var(--faint);font-size:18px;flex-shrink:0;}
   .list-row{display:flex;align-items:center;gap:13px;}
   .list-row .lr-main{flex:1;min-width:0;}
   .list-row .lr-main h3{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1260,6 +1265,16 @@
         <button class="tl-play" id="tl-replay" style="display:none">↺ Replay</button>
       </div>
       <button class="btn primary" style="margin-top:14px" id="tl-done">Done</button>
+    </div>
+  </section>
+
+  <!-- ============ THE JOURNEY (goal-completion recap) ============ -->
+  <section class="screen" id="s-journey">
+    <div class="top"><div class="back" id="jr-back">←</div><div style="flex:1"><h1 id="jr-title">Your journey</h1><div class="sub" id="jr-sub"></div></div></div>
+    <div class="body" id="jr-body"></div>
+    <div class="fab-row" id="jr-fabrow" style="display:none">
+      <button class="btn ghost" id="jr-later" style="flex:1">Continue</button>
+      <button class="btn primary" id="jr-share" style="flex:1">Share</button>
     </div>
   </section>
 
@@ -6098,7 +6113,11 @@ function tlExit(onDone){
   }catch(e){ console.error("timelapse exit",e); }
   go("trainee-home");
 }
-async function openTimelapse(traineeId,{intro,onDone}={}){
+/* fromDate/toDate are optional — omitted, this plays the trainee's WHOLE
+   check-in history (the dashboard's own "Play timelapse" button wants that).
+   The Journey screen is the only caller that passes a range, scoping this
+   to one finished goal instead of everything the trainee has ever logged. */
+async function openTimelapse(traineeId,{intro,onDone,fromDate,toDate}={}){
   const wrap=$("#tl-wrap"),bar=$("#tl-bar"),lenEl=$("#tl-len"),replay=$("#tl-replay");
   $("#tl-intro").textContent=intro||"Weekly check-ins, played back.";
   bar.innerHTML=""; lenEl.textContent=""; replay.style.display="none";
@@ -6110,7 +6129,11 @@ async function openTimelapse(traineeId,{intro,onDone}={}){
   msg("Loading check-ins…");
 
   let cis=[];
-  try{ cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1); }catch(e){console.error(e);}
+  try{
+    cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1);
+    if(fromDate) cis=cis.filter(c=>c.checkin_date>=fromDate);
+    if(toDate)   cis=cis.filter(c=>c.checkin_date<=toDate);
+  }catch(e){console.error(e);}
   if(!cis.length){ msg("No check-in photos were logged for this goal."); return; }
 
   // step one - resolve every signed URL in parallel
@@ -6164,6 +6187,202 @@ async function openTimelapse(traineeId,{intro,onDone}={}){
   replay.onclick=play;
   play();
 }
+
+/* ---------------------------------------------------------------------
+   "The Journey" — trainee-only recap shown when a goal completes and its
+   final review is submitted. A new screen (not the coach's thin
+   openGoalRecap sheet, which stays as-is for the coach's own view) because
+   a timelapse plus a chart doesn't fit a bottom sheet.
+   --------------------------------------------------------------------- */
+let journeyCtx=null;   // {engagement, summary} — kept for the Share button
+async function openJourney(eng,onExit){
+  journeyCtx={eng,summary:null,onExit};
+  $("#jr-title").textContent="Your journey";
+  $("#jr-sub").textContent=eng.goal_title||"";
+  const body=$("#jr-body");
+  body.innerHTML=`<div class="empty" style="padding:60px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $("#jr-fabrow").style.display="none";
+  $("#jr-back").onclick=()=>{ if(onExit) onExit(); else go("trainee-home"); };
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-journey").classList.add("active");
+
+  let sum=null;
+  try{ sum=await store.journeySummary(eng.id); }
+  catch(err){
+    console.error("journeySummary",err);
+    body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">!</div><p>Couldn't load your journey.</p><p class="s">${escapeHtml(err.message||"Run migrations_journey.sql")}</p></div>`;
+    return;
+  }
+  journeyCtx.summary=sum;
+
+  const wStart=sum.weight_start!=null?Number(sum.weight_start):null;
+  const wEnd=sum.weight_end!=null?Number(sum.weight_end):null;
+  const wDelta=(wStart!=null&&wEnd!=null)?(wEnd-wStart):null;
+
+  body.innerHTML="";
+  // ---- timelapse launcher ----
+  const hasPhotos=sum.checkin_count>0;
+  const tlCard=document.createElement("div");tlCard.className="card jr-card";
+  tlCard.innerHTML=`<div class="eyebrow">Your transformation</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+      <div class="jr-ic">📷</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">${sum.checkin_count} check-in photo${sum.checkin_count===1?"":"s"}</div>
+        <div style="font-size:12px;color:var(--muted)">${hasPhotos?"Watch them play back":"No progress photos logged this goal"}</div></div>
+      ${hasPhotos?'<div class="jr-arw">›</div>':""}
+    </div>`;
+  if(hasPhotos){
+    tlCard.style.cursor="pointer";
+    tlCard.addEventListener("click",()=>{
+      openTimelapse(sum.trainee_id,{
+        intro:"Your transformation over this goal.",
+        fromDate:sum.started_at?isoOf(new Date(sum.started_at)):null,
+        toDate:sum.completed_at?isoOf(new Date(sum.completed_at)):todayISO(),
+        onDone:()=>openJourney(eng,onExit)
+      });
+    });
+  }
+  body.appendChild(tlCard);
+
+  // ---- weight change ----
+  const wCard=document.createElement("div");wCard.className="card jr-card";
+  wCard.innerHTML=`<div class="eyebrow">Weight change · ${sum.weeks} week${sum.weeks===1?"":"s"}</div>`;
+  if(wStart!=null&&wEnd!=null){
+    const dTxt=(wDelta>0?"+":"")+wDelta.toFixed(1)+" kg";
+    const dColor=wDelta<0?"var(--lime)":wDelta>0?"var(--amber)":"var(--faint)";
+    wCard.insertAdjacentHTML("beforeend",`
+      <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px">
+        <span style="font-size:26px;font-weight:800;color:var(--ink)">${wEnd.toFixed(1)}<span style="font-size:13px;color:var(--faint);font-weight:600"> kg now</span></span>
+        <span style="font-size:14px;font-weight:800;color:${dColor}">${dTxt}</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--faint);margin-top:2px">Started at ${wStart.toFixed(1)} kg</div>`);
+    wCard.appendChild(drawJourneyWeightChart(sum));
+  }else{
+    wCard.insertAdjacentHTML("beforeend",`<div style="font-size:12.5px;color:var(--faint);margin-top:6px">Not enough weigh-ins logged this goal to chart.</div>`);
+  }
+  body.appendChild(wCard);
+
+  // ---- peak streak ----
+  const sCard=document.createElement("div");sCard.className="card jr-card";
+  const ps=sum.peak_streak||0;
+  sCard.innerHTML=`<div class="eyebrow">Streak overview</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <div style="font-size:30px">🔥</div>
+      <div><div style="font-size:24px;font-weight:800;color:var(--ink)">${ps} day${ps===1?"":"s"}</div>
+        <div style="font-size:12px;color:var(--muted)">your best run during this goal</div></div>
+    </div>`;
+  body.appendChild(sCard);
+
+  // ---- Share is trainee-only, per spec — a coach viewing the same
+  // completed goal only ever reaches this screen if they ARE the trainee
+  // (they never are), so this simply always shows on this screen. Kept as
+  // an explicit check rather than an assumption, in case a coach-facing
+  // entry point is ever added later. ----
+  const iAmTrainee=ME&&ME.id===sum.trainee_id;
+  $("#jr-fabrow").style.display=iAmTrainee?"flex":"none";
+  hydrateVideos(body);
+}
+$("#jr-later")?.addEventListener("click",()=>{
+  if(journeyCtx&&journeyCtx.onExit) journeyCtx.onExit();
+  else go("trainee-home");
+});
+/* Small self-contained line chart, deliberately NOT a call into the big
+   macro/weight dashboard renderer — that function draws both charts
+   together against `currentEng`/`engAssignedByDate` and pulling just the
+   weight-line piece out cleanly would need a larger refactor than this
+   screen's scope justifies. Same visual language (rounded to 1 decimal,
+   area fill, start-weight reference line) so it reads as the same feature. */
+function drawJourneyWeightChart(sum){
+  const box=document.createElement("div");box.style.marginTop="12px";
+  const start=sum.weight_start!=null?Number(sum.weight_start):null;
+  const end=sum.weight_end!=null?Number(sum.weight_end):null;
+  if(start==null||end==null)return box;
+  const W=280,H=90,pad=14;
+  const lo=Math.min(start,end),hi=Math.max(start,end);
+  const span=(hi-lo)||1, padV=span*0.3;
+  const y=v=>H-pad-((v-(lo-padV))/((hi+padV)-(lo-padV)))*(H-pad*2);
+  const x0=pad,x1=W-pad;
+  const y0=y(start),y1=y(end);
+  const areaPath=`M${x0},${H-pad} L${x0},${y0} L${x1},${y1} L${x1},${H-pad} Z`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
+      <line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" stroke="var(--red)" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.75"/>
+      <path d="${areaPath}" fill="var(--weight,#B79CFF)" opacity="0.12"/>
+      <path d="M${x0},${y0} L${x1},${y1}" fill="none" stroke="var(--weight,#B79CFF)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${x0}" cy="${y0}" r="3.5" fill="var(--weight,#B79CFF)"/>
+      <circle cx="${x1}" cy="${y1}" r="3.5" fill="var(--weight,#B79CFF)"/>
+      <text x="${x0}" y="${y0-8}" font-size="9" fill="var(--faint)">${start.toFixed(1)}</text>
+      <text x="${x1}" y="${y1-8}" text-anchor="end" font-size="9" font-weight="800" fill="var(--ink)">${end.toFixed(1)}</text>
+    </svg>`;
+  return box;
+}
+/* Journey share image: goal title, duration, weight change, peak streak,
+   check-in count. Same canvas + native-share-sheet mechanism as
+   shareStreakStory/drawStreakStory — proven pattern, new content. */
+function drawJourneyStory(sum,goalTitle){
+  const W=1080,H=1920;
+  const c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d");
+  x.fillStyle="#0B0E11";x.fillRect(0,0,W,H);
+  const g=x.createRadialGradient(W/2,H*0.28,60,W/2,H*0.28,W*0.95);
+  g.addColorStop(0,"rgba(180,150,255,.26)");g.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.textAlign="center";
+  x.fillStyle="rgba(255,255,255,.55)";x.font="600 32px system-ui, sans-serif";x.letterSpacing="8px";
+  x.fillText("FORMTRACE",W/2,140);x.letterSpacing="0px";
+  x.fillStyle="#fff";x.font="700 58px system-ui, sans-serif";
+  wrapCanvasText(x,goalTitle||"My goal",W/2,H*0.24,W-160,64);
+  x.font="600 40px system-ui, sans-serif";x.fillStyle="rgba(255,255,255,.65)";
+  x.fillText(`${sum.weeks} week${sum.weeks===1?"":"s"}`,W/2,H*0.24+120);
+  const stats=[];
+  if(sum.weight_start!=null&&sum.weight_end!=null){
+    const d=Number(sum.weight_end)-Number(sum.weight_start);
+    stats.push(["⚖", (d>0?"+":"")+d.toFixed(1)+" kg","weight change"]);
+  }
+  stats.push(["🔥", String(sum.peak_streak||0),"day best streak"]);
+  stats.push(["📷", String(sum.checkin_count||0),"check-ins logged"]);
+  const rowY=H*0.46, gap=(H*0.62-rowY)/Math.max(1,stats.length-1);
+  stats.forEach((s,i)=>{
+    const yy=stats.length>1?rowY+i*gap:H*0.52;
+    x.font="80px system-ui, sans-serif";x.fillText(s[0],W/2,yy);
+    x.font="700 64px system-ui, sans-serif";x.fillStyle="#fff";x.fillText(s[1],W/2,yy+80);
+    x.font="500 30px system-ui, sans-serif";x.fillStyle="rgba(255,255,255,.55)";x.fillText(s[2],W/2,yy+124);
+  });
+  x.fillStyle="rgba(255,255,255,.4)";x.font="400 34px system-ui, sans-serif";
+  x.fillText("formtrace.app",W/2,H-100);
+  return c;
+}
+function wrapCanvasText(ctx,text,cx,y,maxW,lineH){
+  const words=String(text).split(" ");
+  let line="",lines=[];
+  for(const w of words){
+    const test=line?line+" "+w:w;
+    if(ctx.measureText(test).width>maxW && line){ lines.push(line); line=w; }
+    else line=test;
+  }
+  if(line)lines.push(line);
+  lines=lines.slice(0,2);
+  lines.forEach((l,i)=>ctx.fillText(l,cx,y+i*lineH));
+}
+async function shareJourneyStory(){
+  if(!journeyCtx||!journeyCtx.summary){ toast("Still loading your journey",2000); return; }
+  const btn=$("#jr-share"); const orig=btn?btn.textContent:"";
+  if(btn){ btn.disabled=true; btn.textContent="Preparing…"; }
+  try{
+    const canvas=drawJourneyStory(journeyCtx.summary,journeyCtx.eng.goal_title);
+    const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
+    if(!blob) throw new Error("Couldn't render the image");
+    const file=new File([blob],"formtrace-journey.png",{type:"image/png"});
+    const txt=`My journey on FormTrace: ${journeyCtx.eng.goal_title||"a goal"}, ${journeyCtx.summary.weeks} weeks`;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],text:txt});
+    }else{
+      triggerDownload(blob,"formtrace-journey.png");
+      toast("Image saved — post it to your story from your photos",5000);
+    }
+  }catch(err){
+    if(err&&err.name==="AbortError"){ /* dismissed the share sheet */ }
+    else { console.error("share journey",err); toast("Couldn't prepare the image",4000); }
+  }finally{ if(btn){ btn.disabled=false; btn.textContent=orig||"Share"; } }
+}
+$("#jr-share")?.addEventListener("click",shareJourneyStory);
 
 let rateStars=0;
 let rateSubScores={};   // {professionalism:5, communication:4, ...} — coach-only, optional
@@ -6227,10 +6446,17 @@ $("#rate-submit").addEventListener("click",async()=>{
     }
     await store.ratings.add(payload);
     toast("Thanks — rating submitted ✓");
-    // then play back the journey; Done returns home
+    /* A trainee whose goal actually COMPLETED (not just ended/cancelled)
+       gets the full recap; everyone else gets the plain timelapse-then-home
+       flow this already did before. 'completed' vs 'ended' matters here —
+       Journey is a celebration, and cancelling isn't one. */
     const traineeId=iAmCoach?currentEng.trainee_id:ME.id;
     const backHome=()=>go(iAmCoach?"home":"trainee-home");
-    openTimelapse(traineeId,{intro:"Your journey together, played back.",onDone:backHome});
+    if(!iAmCoach && currentEng.status==="completed"){
+      openJourney(currentEng,backHome);
+    }else{
+      openTimelapse(traineeId,{intro:"Your journey together, played back.",onDone:backHome});
+    }
   }catch(err){console.error(err);toast(err.message||"Couldn't submit rating",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });

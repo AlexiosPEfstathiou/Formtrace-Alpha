@@ -54,6 +54,14 @@
       return must(await sb.from("profiles").update(patch).eq("id", u.id).select().single());
     },
 
+    // "The Journey" recap: duration, peak streak, weight start/end, check-in
+    // count for one finished goal — computed server-side in one call.
+    async journeySummary(engagementId) {
+      const { data, error } = await sb.rpc("journey_summary", { p_engagement: engagementId });
+      if (error) throw error;
+      return data;
+    },
+
     // Private fields (date of birth, consent) live in profile_private, not
     // profiles: profiles must stay broadly readable so coaches can be
     // browsed, and RLS cannot hide a column on a row you may read.
