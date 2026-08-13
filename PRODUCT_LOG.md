@@ -658,32 +658,50 @@ is the actual point of grading — the trainee is meant to see it.
 
 ---
 
-## V. Coach voice-over an existing (trainee) video
+## V. Coach voice-over an existing (trainee) video — DONE 2026-08-11
 
 Coach records their own audio commentary while watching the trainee's
 submitted clip play, so the trainee can watch their form with the coach
 talking over it — not a second video, a voice track added to the one that
 already exists.
 
-**Two genuinely different ways to build this, not yet decided:**
-1. **Two synced files.** Record only the coach's microphone audio (no new
-   video) while the original clip plays alongside for reference. Store the
-   audio separately, and on playback for the trainee, start both the
-   original video and the coach's audio together. Cheap: no video
-   re-encoding, MediaRecorder already handles audio-only capture, and item
-   T's audio-permission work is directly reusable.
-2. **One muxed file.** Combine the coach's audio into the original video
-   as a real new file with both tracks. Needs something to do the muxing —
-   ffmpeg.wasm in-browser, or a server-side step — which is meaningfully
-   more engineering than option 1, for a result that's more convenient
-   (one file, no sync-on-play logic) but not obviously necessary.
+**Built as option 1 from the two logged here** (proceeding on the
+recommendation since it wasn't overridden): audio-only capture, no video
+re-encoding. No muxing library, no server step.
 
-Recommend option 1 unless there's a reason the trainee needs a single
-downloadable file rather than in-app synced playback — same build-vs-buy
-shape as item G's video-call question, just smaller. `openRecorder`'s
-existing "Record feedback video" flow (used from the review screen today)
-is the natural integration point once the recording MODE itself is
-decided.
+**Genuinely new code, not a variant of anything existing** — `openRecorder`
+is built around the camera (preview, pose detection, countdown), which
+doesn't fit "play back a clip that already exists while capturing only
+the mic." Built as its own small flow inside the review screen's shared
+bottom sheet: the trainee's clip plays (muted) while `getUserMedia({audio:
+true})` records; the recorder starts an instant before playback rather
+than after, so a few ms of recorded silence at the front is harmless where
+a missed first instant of speech wouldn't be. The clip's own `ended` event
+stops the recording automatically, which is what actually keeps the two
+in sync — they started together and the clip's own length decided when
+they stopped.
+
+**No schema change** — same lesson as item U: `reviews.per_set` already
+takes arbitrary keys, so `voiceover_path` is just a new field in the same
+jsonb blob, alongside the existing `video_path` (a full feedback video) and
+`comment`. A coach can use either, neither, or in principle both; they're
+independent.
+
+**Playback is a small synced dual-track player** (silent trainee video +
+coach's audio, one shared play/pause button, periodic drift correction
+rather than trusting two independent media clocks to stay matched over a
+whole clip) — used identically whether it's the coach previewing their own
+recording before saving, or the trainee viewing it afterwards on the
+read-only review screen.
+
+**Caught before it became a real leak:** the generic review-sheet close
+button and the tap-outside-to-dismiss scrim both call one shared
+`closeSheet()`, which had no way to know a microphone stream was open if
+someone closed the sheet mid-recording — the stream and recorder were
+local to the recording function and would have been silently orphaned
+with the mic still live. Tracked in a small module-level `voState` so
+`closeSheet()` can stop both if it needs to, rather than assuming the
+happy path (Stop, then Save) is the only way this screen gets left.
 
 ---
 

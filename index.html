@@ -470,6 +470,11 @@
     background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:16px;
     line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
   .vid-rot:active{transform:scale(.92);}
+  /* item V: play/pause overlay on the dual-track voice-over player */
+  .vo-playbtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.32);color:#fff;font-size:20px;
+    line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
+  .vo-playbtn:active{transform:translate(-50%,-50%) scale(.92);}
   .vid-rot:disabled{opacity:.5;}
   /* on the full-screen player, sit clear of the native control bar */
   #r-rot{width:40px;height:40px;font-size:19px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 78px);z-index:7;}
@@ -3706,6 +3711,15 @@ let measureDate=null;
 function closeSheet(){
   $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on");
   macroLogDate=null; measureDate=null;
+  // Item V: if a voice-over recording is in progress when the sheet closes
+  // (X, scrim tap, or navigating away), the mic stream and recorder are
+  // otherwise orphaned — nothing else references them once this function's
+  // local variables go out of scope. voState is the one place that's tracked.
+  if(voState){
+    try{ if(voState.recorder&&voState.recorder.state!=="inactive") voState.recorder.stop(); }catch(e){}
+    try{ voState.stream&&voState.stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+    voState=null;
+  }
   const add=$("#sheet-add");
   if(add){ add.style.display=""; add.disabled=false; add.textContent="Add selected"; }
   $("#sheet-lib").querySelector("h3").textContent="Add from library";
@@ -6246,6 +6260,22 @@ async function openReview(assignedId,readonly=false){
         });
         fbRow.appendChild(fbBtn);
         div.appendChild(fbRow);
+        // item V: voice-over the trainee's OWN clip, rather than a new
+        // video of the coach — only offered when there's a clip to talk
+        // over. Separate field (voiceover_path) from the feedback video
+        // above, since a coach might use either, neither, or in principle
+        // both — they're not mutually exclusive.
+        if(r.video_path){
+          const voRow=document.createElement("div");voRow.style.cssText="margin-top:8px";
+          const voBtn=document.createElement("button");voBtn.className="btn sm ghost";
+          const hasVo=()=>!!(reviewState.per_set[key]||{}).voiceover_path;
+          voBtn.textContent=hasVo()?"✓ Voice-over recorded — re-record":"🎤 Voice-over this video";
+          voBtn.addEventListener("click",()=>{
+            openVoiceoverRecorder(item.name,si,r.video_path,key,voBtn);
+          });
+          voRow.appendChild(voBtn);
+          div.appendChild(voRow);
+        }
       }else if(savedEntry){
         const ps=savedEntry;
         if(ps.comment){
@@ -6253,6 +6283,11 @@ async function openReview(assignedId,readonly=false){
         }
         if(ps.video_path){ const cvc=document.createElement("div");cvc.className="video-card";cvc.style.cssText="margin-top:10px;max-height:220px";cvc.setAttribute("data-video",ps.video_path);
           const lbl=document.createElement("div");lbl.className="eyebrow";lbl.style.margin="10px 0 6px";lbl.textContent="Coach feedback video";div.appendChild(lbl);div.appendChild(cvc); }
+        if(ps.voiceover_path&&r.video_path){
+          const lbl=document.createElement("div");lbl.className="eyebrow";lbl.style.margin="10px 0 6px";lbl.textContent="Coach's voice-over";
+          div.appendChild(lbl);
+          div.appendChild(renderVoiceoverPlayer(r.video_path,ps.voiceover_path));
+        }
       }
       body.appendChild(div);
     });
@@ -6302,6 +6337,141 @@ async function saveCoachGrades(){
     try{ await store.setLabels.update(row.id,patch); }
     catch(e){ console.error("coach grade save failed",e); }
   }
+}
+
+/* =========================================================================
+   Item V — coach voice-over on the trainee's own clip. Genuinely new: no
+   existing recorder fits (openRecorder is built around the CAMERA, not
+   playing back an existing clip while capturing only the mic). Recorded as
+   audio-only, no video re-encoding — matches the "two synced files" option
+   from the log rather than muxing, which would need ffmpeg.wasm or a
+   server step for a result that isn't obviously more useful.
+   ========================================================================= */
+let voState=null;
+async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
+  voState=null;
+  const body=$("#sheet-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $("#sheet-lib").querySelector("h3").textContent=`Voice-over · ${exName} · Set ${setIndex+1}`;
+  $("#sheet-add").style.display="none";
+  let url;
+  try{ url=await playable(videoPath); }
+  catch(e){ console.error("voiceover: signed url",e); body.innerHTML=`<div class="empty" style="padding:30px 20px"><p>Couldn't load this clip.</p></div>`; return; }
+  body.innerHTML="";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+      Talk over the trainee's own clip as it plays — this records your voice only, not a new video.</div>
+    <video id="vo-vid" muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:280px" src="${url}"></video>
+    <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
+    <button class="btn primary" id="vo-record">🎤 Start recording</button>
+    <div id="vo-review" style="display:none;margin-top:14px">
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Preview — plays your voice over the clip:</div>
+      <div id="vo-preview-slot"></div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn sm" id="vo-redo" style="flex:1">Re-record</button>
+        <button class="btn primary sm" id="vo-save" style="flex:1">Save voice-over</button>
+      </div>
+    </div>`;
+  body.appendChild(wrap);
+  const vid=$("#vo-vid"), status=$("#vo-status"), recordBtn=$("#vo-record"), reviewBox=$("#vo-review");
+  let stream=null, recorder=null, chunks=[], resultBlob=null;
+
+  const cleanupStream=()=>{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } voState=null; };
+
+  const startRecording=async()=>{
+    try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+    catch(e){ console.error("voiceover mic",e); toast("Microphone access is needed to record a voice-over",4000); return; }
+    chunks=[];
+    const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||"";
+    recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    voState={stream,recorder};   // so closeSheet() can tear this down if the sheet closes mid-recording
+    recorder.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+    recorder.onstop=()=>{
+      resultBlob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+      cleanupStream();
+      showPreview();
+    };
+    vid.currentTime=0;
+    // Starting the recorder immediately before play (rather than after) is
+    // the right order here: a few ms of recorded silence before playback
+    // begins is harmless, but starting playback first risks the recorder
+    // missing the very first instant of audio.
+    recorder.start();
+    try{ await vid.play(); }catch(e){}
+    status.textContent="Recording… talking over the clip.";
+    recordBtn.textContent="⏹ Stop recording";
+    recordBtn.onclick=stopRecording;
+  };
+  const stopRecording=()=>{
+    if(recorder&&recorder.state!=="inactive") recorder.stop();
+    vid.pause();
+  };
+  vid.addEventListener("ended",()=>{ if(recorder&&recorder.state==="recording") stopRecording(); });
+
+  const showPreview=()=>{
+    reviewBox.style.display="";
+    recordBtn.style.display="none";
+    status.textContent="Recording finished.";
+    const slot=$("#vo-preview-slot");slot.innerHTML="";
+    const audioUrl=URL.createObjectURL(resultBlob);
+    slot.appendChild(buildSyncPlayer(url,audioUrl));
+  };
+
+  recordBtn.onclick=startRecording;
+  $("#vo-redo").addEventListener("click",()=>{
+    resultBlob=null; reviewBox.style.display="none"; recordBtn.style.display=""; recordBtn.textContent="🎤 Start recording"; recordBtn.onclick=startRecording;
+    status.textContent="Tap record, then talk — it starts the clip automatically.";
+  });
+  $("#vo-save").addEventListener("click",async()=>{
+    if(!resultBlob){ toast("Record something first"); return; }
+    const btn=$("#vo-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+    try{
+      const ext=(resultBlob.type||"").includes("mp4")?"m4a":"webm";
+      const path=await store.video.upload(resultBlob,ext);
+      reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:setIndex+1,exercise:exName,voiceover_path:path};
+      if(btnEl) btnEl.textContent="✓ Voice-over recorded — re-record";
+      toast("Voice-over saved ✓");
+      closeSheet();
+    }catch(e){ console.error("voiceover upload",e); toast("Couldn't save the voice-over",4000); btn.disabled=false;btn.textContent=o; }
+  });
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+/* Builds a small dual-track player: the trainee's original clip (muted,
+   visible) plus the coach's recorded audio, kept in sync. One play/pause
+   button drives both; a periodic correction re-aligns audio to the video's
+   currentTime if they drift, rather than trusting two independent clocks
+   to stay matched over a whole clip. */
+function buildSyncPlayer(videoUrl,audioUrl){
+  const box=document.createElement("div");box.style.cssText="position:relative";
+  box.innerHTML=`<video muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:240px" src="${videoUrl}"></video>
+    <audio src="${audioUrl}" style="display:none"></audio>
+    <button class="vo-playbtn" type="button">▶</button>`;
+  const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
+  let syncInt=null;
+  const stopSync=()=>{ if(syncInt){ clearInterval(syncInt); syncInt=null; } };
+  const play=()=>{
+    v.currentTime=a.currentTime;
+    Promise.all([v.play(),a.play()]).catch(()=>{});
+    btn.textContent="⏸";
+    stopSync();
+    syncInt=setInterval(()=>{ if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime; },800);
+  };
+  const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); };
+  btn.addEventListener("click",()=>{ v.paused?play():pause(); });
+  a.addEventListener("ended",pause);
+  v.addEventListener("ended",pause);
+  return box;
+}
+/* Read-only render of a saved voice-over — same sync player, just resolving
+   the trainee's clip through a signed URL first (it's stored by path, not
+   a raw URL, same as every other video in the app). */
+function renderVoiceoverPlayer(videoPath,voiceoverPath){
+  const box=document.createElement("div");box.style.marginTop="10px";
+  box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Loading…</div>`;
+  Promise.all([playable(videoPath),playable(voiceoverPath)]).then(([vUrl,aUrl])=>{
+    box.innerHTML="";
+    box.appendChild(buildSyncPlayer(vUrl,aUrl));
+  }).catch(e=>{ console.error("voiceover player",e); box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load the voice-over.</div>`; });
+  return box;
 }
 
 /* =========================================================================
