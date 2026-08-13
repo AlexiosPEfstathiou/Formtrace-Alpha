@@ -5703,13 +5703,27 @@ async function runAnalysis(itemIndex,setIndex,capture){
   showResult(it.name||"Set",it,setIndex,result,itemIndex);
 }
 /* Persist in-progress set results to the assigned_workouts row so exiting mid-workout
-   doesn't lose recorded videos. Best-effort: needs the optional 'draft' jsonb column. */
-async function saveWorkoutDraft(){
-  if(!currentAssigned)return;
-  try{
-    await store.assignedWorkouts.update(currentAssigned.id,{draft:{results:localResults,saved_at:new Date().toISOString()}});
-    currentAssigned.draft={results:localResults};
-  }catch(e){ console.error("draft save (add a 'draft' jsonb column to assigned_workouts)",e); }
+   doesn't lose recorded videos. Best-effort: needs the optional 'draft' jsonb column.
+
+   Serialised through draftSaveChain rather than fired independently: the
+   weight field saves on every keystroke and a rep correction saves
+   separately, so two overlapping requests were common. Network responses
+   don't preserve dispatch order, so an earlier-sent-but-slower request
+   could land AFTER a later one and silently overwrite it with a stale
+   localResults snapshot — the reported case of a correction reverting was
+   exactly this: reps and weight are both mutated on the same shared
+   object, so one clobbered save wipes both fields together. Chaining
+   guarantees saves reach the network in the order they were queued. */
+let draftSaveChain=Promise.resolve();
+function saveWorkoutDraft(){
+  if(!currentAssigned)return draftSaveChain;
+  draftSaveChain=draftSaveChain.then(async()=>{
+    try{
+      await store.assignedWorkouts.update(currentAssigned.id,{draft:{results:localResults,saved_at:new Date().toISOString()}});
+      currentAssigned.draft={results:localResults};
+    }catch(e){ console.error("draft save (add a 'draft' jsonb column to assigned_workouts)",e); }
+  });
+  return draftSaveChain;
 }
 function showResult(exName,it,setIndex,r,itemIndex){
   const R=$("#result");R.classList.add("on");
@@ -5739,6 +5753,11 @@ function showResult(exName,it,setIndex,r,itemIndex){
     r.reps_label=label;
     r.reps_corrected=(corrected==null?null:corrected);
     saveWorkoutDraft();
+    // The headline number was set once from the raw pose-detected count and
+    // never updated after a correction — so a genuine detection miss (0
+    // counted) stayed showing "0" even once the trainee had fixed it,
+    // making a correctly-saved correction look like it hadn't taken.
+    $("#res-reps").textContent=(label==="incorrect"&&corrected!=null)?corrected:r.reps;
   };
   const showDone=txt=>{ btns.style.display="none"; fix.style.display="none"; doneEl.style.display=""; doneEl.textContent=txt; };
   const reset=()=>{ btns.style.display=""; fix.style.display="none"; doneEl.style.display="none"; $("#rep-actual").value=""; };
@@ -5769,7 +5788,10 @@ function showResult(exName,it,setIndex,r,itemIndex){
     const s=(wIn.value||"").trim();
     const v=Number(s);
     r.weight_kg = (s===""||!Number.isFinite(v)||v<0) ? null : v;
-    saveWorkoutDraft();
+    // Debounced: the chained queue above makes overlapping saves SAFE, but
+    // still no reason to fire one per keystroke while someone's mid-type.
+    clearTimeout(wIn._saveT);
+    wIn._saveT=setTimeout(saveWorkoutDraft,400);
   };
   // show what they lifted for this exercise last time, so they can progress
   lastWeightFor(it.name).then(prev=>{
