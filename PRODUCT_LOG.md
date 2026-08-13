@@ -282,17 +282,27 @@ be picked up as a quick follow-on.
 
 ---
 
-## L. Languages on profiles
+## L. Languages on profiles — DONE 2026-08-11
 
 Add a languages field to both trainee and coach profiles. For a coach this
 is a real filtering/matching signal (a trainee who only speaks Spanish
 needs to know before messaging); for a trainee it's mostly informational
 for the coach.
 
-Open question: free text, or a fixed list with multi-select? A fixed list
-is filterable on the marketplace (find a coach who speaks X); free text
-is not, without normalising it server-side. Recommend fixed list given the
-marketplace-filtering use case is the actual reason this was requested.
+**Built as a fixed list** (ISO 639-1 codes), not free text — the actual
+reason this was requested is marketplace filtering, and free text can't
+be filtered reliably without normalising it server-side. Same pattern
+already used for country: store the code, let `Intl.DisplayNames` render
+the localised name client-side, so no name list ships or needs keeping in
+sync. Multi-select chips in the Social Profile section, reusing the
+muscle-group chip pattern.
+
+**Checked before building: no marketplace filter UI exists to consume
+this.** "Find a coach" is a reverse marketplace — coaches respond to
+posted goals, trainees don't browse a directory — so this is informational
+display only for now, shown on the coach's public profile. Filtering is a
+separate, later piece of work if a browse screen is ever built; noting
+this so nobody is surprised the fixed list isn't yet wired to a filter.
 
 ---
 
@@ -599,32 +609,41 @@ data is now being captured" event.
 
 ---
 
-## U. Grading: drop the numeric score, make the tags multi-select
+## U. Grading: drop the numeric score, make the tags multi-select — DONE 2026-08-11
 
-**Checked the actual review screen before logging this — it changes the
-scope a lot.** The five tags in the request already exist verbatim in the
-code today: "Nailed it," "Good," "Watch depth," "Slow down," "Fix form."
-They sit alongside a required 1–10 numeric grade (`form_grade`), and are
-currently SINGLE-select — clicking one clears any other via
-`pills.querySelectorAll(".pill").forEach(x=>x.classList.remove("on"))`.
+**Checked the actual review screen before logging this — it changed the
+scope a lot.** The five tags in the request already existed verbatim in
+the code: "Nailed it," "Good," "Watch depth," "Slow down," "Fix form."
+They sat alongside a required 1–10 numeric grade (`form_grade`), and were
+single-select.
 
-So this is not "design a tagging system" — it's two edits to something
-already built:
-1. Remove the 1–10 grade chips and `gradeColor`/`gradeWord` from the
-   review screen. `form_grade` stops being asked for.
-2. Change the pill click handler so tags toggle independently instead of
-   clearing siblings, and change the stored shape from one `label: string`
-   to `labels: string[]`.
+**A wrong turn worth recording honestly, since it nearly shipped.** First
+pass concluded the tag/comment were never persisted anywhere at all — only
+`set_labels.form_grade` existed as a column, no `label` or `comment`
+column did — and started writing a migration to add `form_tags text[]`
+and `coach_comment text`. That was solving a problem that didn't exist:
+`reviews.per_set` (a jsonb blob, written once when a review is submitted)
+was already the real, working persistence path for the tag and comment —
+just checked in the wrong table. Caught before running the migration;
+that file is now a note explaining the wrong turn, same treatment as the
+superseded v1 payment-ledger file. **No schema change was needed for this
+item at all.**
 
-**Not yet checked, needs doing before building:** every OTHER place
-`form_grade`/`grade`/`gradeColor` is read, not just where it's set. At
-minimum the review screen's own `grade-badge` (shows "N/10" next to each
-set) needs to change to show the tag set instead. Also unconfirmed: whether
-anything on the trainee-facing side displays the numeric grade, and whether
-`writeSetLabels`/`saveCoachGrades` treat `form_grade` as a required column
-anywhere in a way that would need a matching migration to make it optional
-or drop it. Sizing this at "small" without checking those would be a guess,
-not a finding — check first.
+While restructuring the review screen around this correction, an edit
+briefly left `if(readonly){}else{}else if(...)` in the file — not valid
+JavaScript — plus an orphaned closing brace from a removed wrapper.
+Neither was caught by eye; both were caught by re-reading the file
+directly and confirmed fixed by the smoke test passing, which is what
+should be trusted here, not my own confidence.
+
+**What actually shipped:** the numeric grade UI is gone. Tags toggle
+independently (multi-select) and save as `labels: string[]` inside the
+existing `reviews.per_set` blob — old reviews that saved one tag as
+singular `label` still display correctly (read as a one-item array). The
+"leave without saving" and "send without grading" checks now look for a
+tag instead of a numeric grade. The trainee-facing read-only view (the
+same screen, gated by `readonly`) shows the saved tags and comment, which
+is the actual point of grading — the trainee is meant to see it.
 
 ---
 

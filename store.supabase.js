@@ -223,7 +223,7 @@
     // *, so private fields are never hauled into the client by habit.
     async coaches() {
       return must(await sb.from("profiles")
-        .select("id,role,display_name,bio,city,country_code,avatar_initials,avatar_path,streak_count,social_enabled,name_style,is_admin,created_at")
+        .select("id,role,display_name,bio,city,country_code,avatar_initials,avatar_path,streak_count,social_enabled,name_style,is_admin,created_at,languages")
         .eq("role", "coach"));
     },
 

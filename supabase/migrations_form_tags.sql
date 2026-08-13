@@ -1,0 +1,14 @@
+-- =====================================================================
+-- NOT NEEDED — do not run.
+--
+-- Written on a wrong assumption: that the coach's per-set tag and comment
+-- were never persisted anywhere. Checking further showed they ARE already
+-- persisted, correctly, as a jsonb blob on the reviews table
+-- (reviews.per_set), written once when a review is submitted. That is
+-- the real, working mechanism — item U only needed the shape of what goes
+-- into that blob to change (label:string -> labels:string[]), plus the
+-- 1-10 numeric grade removed from the UI. No schema change was required.
+--
+-- Kept only as a record of the wrong turn, same as
+-- migrations_payment_ledger.sql was kept after its v2 superseded it.
+-- =====================================================================

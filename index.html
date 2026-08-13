@@ -239,6 +239,10 @@
   .grade-badge{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .grade-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
   .grade-lab{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  /* item U: badge shows tag chips instead of a 1-10 score */
+  .grade-badge.tags{flex-wrap:wrap;justify-content:flex-end;max-width:60%;}
+  .ftag-chip{font-size:10px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:3px 9px;
+    background:rgba(200,255,61,.14);color:var(--lime-dim);border:1px solid rgba(200,255,61,.32);white-space:nowrap;}
 
   .btn{width:100%;height:52px;border-radius:15px;font-size:15px;font-weight:700;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line);
@@ -6103,7 +6107,7 @@ async function openReview(assignedId,readonly=false){
      queue and can be picked up later. */
   $("#rev-back").onclick=async()=>{
     if(!readonly){
-      const touched=Object.values(reviewState.per_set||{}).some(p=>p&&(p.grade!=null||p.comment||p.label||p.video_path));
+      const touched=Object.values(reviewState.per_set||{}).some(p=>p&&((p.labels&&p.labels.length)||p.comment||p.video_path));
       const overall=($("#rev-overall")?.value||"").trim();
       if(touched||overall){
         const ok=await openConfirm({title:"Leave this review?",body:"Your grades and notes here aren't saved yet. This workout stays in your review queue, so you can come back to it.",confirmLabel:"Leave without saving",cancelLabel:"Stay here",danger:true});
@@ -6154,8 +6158,20 @@ async function openReview(assignedId,readonly=false){
         wLine=`<div style="font-size:12px;margin-bottom:10px">${now}${cmp}</div>`;
       }
       const div=document.createElement("div");div.className="review-set";
-      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>
-        ${lab.form_grade?`<div class="grade-badge"><span class="grade-num" style="color:${gradeColor(lab.form_grade)}">${lab.form_grade}</span><span class="grade-lab">/10</span></div>`:`<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"grade below"}</span></div>`}</div>
+      /* Existing saved tags for THIS set, if the review was already submitted.
+         reviews.per_set is a single jsonb blob written once at final submit —
+         this is the real, working persistence path (checked before assuming
+         otherwise). Older reviews stored one tag as `label` (singular); read
+         both shapes so nothing already saved silently stops displaying. */
+      const savedEntry=(existing&&existing.per_set||[]).find(p=>p.exercise===item.name&&p.set===si+1);
+      const savedTags=savedEntry ? (Array.isArray(savedEntry.labels)?savedEntry.labels:(savedEntry.label?[savedEntry.label]:[])) : [];
+      // In-progress (this session, not yet submitted) selection, if any.
+      const liveTags=(reviewState.per_set[key]||{}).labels;
+      const shownTags = liveTags || savedTags;
+      const badgeHtml = shownTags.length
+        ? `<div class="grade-badge tags">${shownTags.map(t=>`<span class="ftag-chip">${escapeHtml(t)}</span>`).join("")}</div>`
+        : `<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"tag below"}</span></div>`;
+      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:${wLine?"6px":"10px"}">${shownReps} reps · target ${item.reps}${repNote}</div>${wLine}`;
       // trainee's submitted video for this set
       if(r.video_path){
@@ -6167,33 +6183,23 @@ async function openReview(assignedId,readonly=false){
         div.appendChild(nv);
       }
       if(!readonly){
-        // coach's form grade for this set — this is now the ONLY form score
-        const gWrap=document.createElement("div");gWrap.style.cssText="margin-bottom:12px";
-        gWrap.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:7px">Form grade</div>`;
-        const gsel=document.createElement("div");gsel.className="gsel";
-        for(let n=1;n<=10;n++){
-          const b=document.createElement("button");b.className="gs-chip";b.textContent=n;
-          if(lab.form_grade===n)b.classList.add("on");
-          b.addEventListener("click",()=>{
-            gsel.querySelectorAll(".gs-chip").forEach(x=>x.classList.remove("on"));
-            b.classList.add("on");
-            b.style.borderColor=gradeColor(n);
-            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,grade:n,item_index:ii,set_index:si};
-          });
-          gsel.appendChild(b);
-        }
-        gWrap.appendChild(gsel);
-        div.appendChild(gWrap);
-        if(lab.form_grade) reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,grade:lab.form_grade,item_index:ii,set_index:si};
+        // form tags (item U) — independently toggled, not single-select
+        const tWrap=document.createElement("div");tWrap.style.cssText="margin-bottom:12px";
+        tWrap.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:7px">How was this set?</div>`;
         const pills=document.createElement("div");pills.className="pill-row";
+        const current=new Set(liveTags || savedTags);
         ["Nailed it","Good","Watch depth","Slow down","Fix form"].forEach(labelTxt=>{
           const p=document.createElement("span");p.className="pill";p.textContent=labelTxt;
-          if((reviewState.per_set[key]||{}).label===labelTxt)p.classList.add("on");
-          p.addEventListener("click",()=>{ pills.querySelectorAll(".pill").forEach(x=>x.classList.remove("on"));p.classList.add("on");
-            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,label:labelTxt}; });
+          if(current.has(labelTxt))p.classList.add("on");
+          p.addEventListener("click",()=>{
+            p.classList.toggle("on");
+            if(p.classList.contains("on")) current.add(labelTxt); else current.delete(labelTxt);
+            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,labels:[...current],item_index:ii,set_index:si};
+          });
           pills.appendChild(p);
         });
-        div.appendChild(pills);
+        tWrap.appendChild(pills);
+        div.appendChild(tWrap);
         // per-set comment
         const ci=document.createElement("input");ci.type="text";ci.placeholder="Note for this set (optional)";ci.style.cssText="width:100%;height:42px;margin-top:10px;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:0 12px;outline:none;font-size:14px";
         ci.value=(reviewState.per_set[key]||{}).comment||"";
@@ -6217,14 +6223,13 @@ async function openReview(assignedId,readonly=false){
         });
         fbRow.appendChild(fbBtn);
         div.appendChild(fbRow);
-      }else if(existing&&existing.per_set){
-        const ps=(existing.per_set||[]).find(p=>p.exercise===item.name&&p.set===si+1);
-        if(ps){
-          let fb=`<div style="margin-top:6px"><span class="badge coach">${escapeHtml(ps.label||"note")}</span> <span style="font-size:13px;color:var(--muted)">${escapeHtml(ps.comment||"")}</span></div>`;
-          div.innerHTML+=fb;
-          if(ps.video_path){ const cvc=document.createElement("div");cvc.className="video-card";cvc.style.cssText="margin-top:10px;max-height:220px";cvc.setAttribute("data-video",ps.video_path);
-            const lbl=document.createElement("div");lbl.className="eyebrow";lbl.style.margin="10px 0 6px";lbl.textContent="Coach feedback video";div.appendChild(lbl);div.appendChild(cvc); }
+      }else if(savedEntry){
+        const ps=savedEntry;
+        if(ps.comment){
+          div.insertAdjacentHTML("beforeend",`<div style="margin-top:6px;font-size:13px;color:var(--muted)">${escapeHtml(ps.comment)}</div>`);
         }
+        if(ps.video_path){ const cvc=document.createElement("div");cvc.className="video-card";cvc.style.cssText="margin-top:10px;max-height:220px";cvc.setAttribute("data-video",ps.video_path);
+          const lbl=document.createElement("div");lbl.className="eyebrow";lbl.style.margin="10px 0 6px";lbl.textContent="Coach feedback video";div.appendChild(lbl);div.appendChild(cvc); }
       }
       body.appendChild(div);
     });
@@ -6243,8 +6248,8 @@ $("#rev-submit").addEventListener("click",async()=>{
   try{
     const per_set=Object.values(reviewState.per_set);
     const totalSets=Object.keys(reviewState.labelBy||{}).length;
-    if(totalSets && per_set.filter(p=>p.grade!=null).length===0){
-      const ok=await openConfirm({title:"Send without grading?",body:"You haven't graded any sets. Grades are what the trainee sees for form, and what we keep as labelled data.",confirmLabel:"Send anyway",cancelLabel:"Go back and grade"});
+    if(totalSets && per_set.filter(p=>p.labels&&p.labels.length).length===0){
+      const ok=await openConfirm({title:"Send without tagging?",body:"You haven't tagged any sets. Tags are what the trainee sees for form, and what we keep as labelled data.",confirmLabel:"Send anyway",cancelLabel:"Go back and tag"});
       if(!ok){ btn.disabled=false;btn.textContent=o; return; }
     }
     await store.reviews.add({submission_id:currentSubmission.id,coach_id:ME.id,overall:($("#rev-overall")?.value||"").trim(),per_set});
@@ -6266,12 +6271,9 @@ async function saveCoachGrades(){
     const row=labelBy[key]; if(!row||!row.id)continue;
     const ps=reviewState.per_set[key]||{};
     const patch={};
-    if(ps.grade!=null){
-      patch.form_grade=ps.grade;
-      patch.form_grade_source="coach";
-      patch.graded_at=new Date().toISOString();
-      patch.coach_id=ME.id;
-    }
+    // Numeric grade retired (item U) — tags/comment live on reviews.per_set
+    // instead, saved once above. Nothing writes form_grade any more; the
+    // column stays for any pre-existing rows rather than being dropped.
     if(ps.video_path) patch.coach_feedback_video_path=ps.video_path;
     if(!Object.keys(patch).length)continue;
     try{ await store.setLabels.update(row.id,patch); }
@@ -6790,6 +6792,9 @@ async function renderProfile(){
         <div class="field" style="margin:18px 0 0"><label>Country</label>
           <select class="sel" id="sp-country"><option value="">Not set</option></select>
         </div>
+        <div class="field" style="margin:18px 0 0"><label>Languages you speak</label>
+          <div id="sp-languages" class="mg-bar" style="flex-wrap:wrap;overflow:visible;padding-bottom:0"></div>
+        </div>
       </div>
     </div>`;
   // ---- Appearance: theme + colorblind-safe mode ----
@@ -6981,6 +6986,11 @@ function renderCoachProfile(p){
       </div>
     </div>`;
   if(p.expertise) h+=`<div class="card"><div class="eyebrow">Expertise</div><div class="cp-exp">${escapeHtml(p.expertise)}</div></div>`;
+  if(Array.isArray(p.languages)&&p.languages.length){
+    let dn=null; try{ dn=new Intl.DisplayNames([navigator.language||"en"],{type:"language"}); }catch(e){}
+    const names=p.languages.map(c=>{ try{ return dn?dn.of(c)||c:c; }catch(e){ return c; } });
+    h+=`<div class="card"><div class="eyebrow">Languages</div><div class="cp-exp">${escapeHtml(names.join(", "))}</div></div>`;
+  }
   if(p.bio) h+=`<div class="card"><div class="eyebrow">About</div><div class="cp-bio">${escapeHtml(p.bio)}</div></div>`;
   h+=`<div class="cp-stats">
       <div class="cp-stat"><b>${p.trainees_all_time||0}</b><span>trainees all-time</span></div>
@@ -7045,6 +7055,18 @@ function countryList(){
   return COUNTRY_CODES.map(c=>({code:c,name:(()=>{ try{ return dn?dn.of(c)||c:c; }catch(e){ return c; } })()}))
     .sort((a,b)=>a.name.localeCompare(b.name));
 }
+/* Item L: fixed ISO 639-1 list, same pattern as countries above — a fixed
+   list is what a future marketplace filter would need (free text can't be
+   filtered reliably), even though no browse/filter screen exists yet to
+   consume it. Display names come from Intl.DisplayNames, same as
+   countries, so no name list needs shipping or keeping in sync. */
+const LANGUAGE_CODES="en es fr de it pt nl el tr ru pl sv no da fi cs ro hu uk ar he fa hi bn ur ta te ml zh ja ko vi th id ms tl sw af".split(" ");
+function languageList(){
+  let dn=null;
+  try{ dn=new Intl.DisplayNames([navigator.language||"en"],{type:"language"}); }catch(e){}
+  return LANGUAGE_CODES.map(c=>({code:c,name:(()=>{ try{ return dn?dn.of(c)||c:c; }catch(e){ return c; } })()}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+}
 function wireSocialProfile(){
   const sw=$("#sp-switch"); if(!sw)return;
   // Own profile photo: #sp-avatar already exists in the DOM by this point,
@@ -7065,6 +7087,20 @@ function wireSocialProfile(){
       sel.appendChild(o);
     }
     sel.addEventListener("change",()=>saveSocial({country_code:sel.value||null}));
+  }
+  // languages — multi-select chips, same pattern as muscle-group filtering
+  const langWrap=$("#sp-languages");
+  if(langWrap){
+    const mine=new Set(Array.isArray(ME.languages)?ME.languages:[]);
+    for(const l of languageList()){
+      const b=document.createElement("button");b.className="mg-chip"+(mine.has(l.code)?" on":"");b.textContent=l.name;
+      b.addEventListener("click",()=>{
+        if(mine.has(l.code)){ mine.delete(l.code); b.classList.remove("on"); }
+        else{ mine.add(l.code); b.classList.add("on"); }
+        saveSocial({languages:[...mine]}).catch(e=>{ console.error("languages save",e); toast("Couldn't save languages",3200); });
+      });
+      langWrap.appendChild(b);
+    }
   }
   sw.addEventListener("change",async()=>{
     const on=sw.checked;
