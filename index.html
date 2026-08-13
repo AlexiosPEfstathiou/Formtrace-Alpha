@@ -143,6 +143,13 @@
   @media(prefers-reduced-motion:reduce){.home-checkin.ci-urgent{animation:none;}}
   .sr-btns{display:flex;gap:8px;margin-top:9px;}
   .sr-btns .btn{margin:0;flex:1;}
+  /* items M/N: vacation banner rows */
+  .vac-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;}
+  .vac-row+.vac-row{border-top:1px solid var(--line);}
+  .vac-main{flex:1;font-size:13px;line-height:1.5;}
+  .vac-msg{font-size:12px;color:var(--muted);margin-top:3px;font-style:italic;}
+  .vac-who{font-size:11px;color:var(--faint);margin-top:3px;}
+  .vac-resume{margin:0;flex-shrink:0;width:auto;padding:0 14px;height:36px;}
   /* trainee homepage: unviewed form-review chips */
   .home-reviews{margin-top:18px;}
   .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}
@@ -736,6 +743,10 @@
   .cal-reviewed .dn{color:#ffe6b0;}
   .cal-reviewed:active{transform:scale(.95);}
   .cal-missed{background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4);color:var(--red);}
+  /* items M/N: deliberately calm and distinct — a pause is neither an
+     achievement (gold) nor a lapse (red) */
+  .cal-paused{background:rgba(90,176,255,.08);border-color:rgba(90,176,255,.3);color:#5AB0FF;}
+  .cal-paused .cal-badge{filter:grayscale(.2);}
   .cal-missed .dn{color:#ffb3b3;text-decoration:line-through;}
   .cal-today{outline:2px solid var(--ink);outline-offset:1px;}
   .cal-badge{position:absolute;top:3px;right:4px;font-size:9px;font-weight:800;}
@@ -987,6 +998,7 @@
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <div id="home-milestone" class="home-milestone" style="display:none"></div>
       <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
+      <div id="home-vacation" class="home-checkin" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
@@ -1619,10 +1631,72 @@ function macrosLogged(l){ return !!(l && (l.protein_g!=null || l.carbs_g!=null |
    Macros do NOT affect the streak: this badge reads as a training streak,
    and requiring a food log on a rest day surprised everyone who saw it. */
 function dayState(iso, awMap){
+  if(isPausedOn(iso)) return "paused";
   awMap=awMap||engAssignedByDate;
   const wl=awMap[iso]||[];
   if(!wl.length) return "rest";
   return wl.some(a=>a.status==="assigned") ? "missed" : "done";
+}
+/* Items M/N: active vacation ranges for the signed-in user, fetched once
+   per relevant load — not per cell — since a trainee/coach has at most a
+   handful of these at once. Client-side approximation, not the source of
+   truth: it flags a date paused if it falls in ANY known range, whereas
+   the server (_day_state) only calls a day paused when EVERY one of the
+   trainee's active goals is paused for it. Fine for calendar colouring;
+   the actual streak number always comes from the server. */
+let activePauses=[];
+async function loadActivePauses(){
+  try{
+    const { data, error } = await store._sb.rpc("my_active_pauses");
+    if(error) throw error;
+    activePauses=data||[];
+  }catch(e){ console.error("loadActivePauses (run migrations_vacation.sql)",e); activePauses=[]; }
+}
+function isPausedOn(iso){
+  return activePauses.some(p=>p.starts_on<=iso && (!p.ends_on || p.ends_on>=iso));
+}
+/* Same list, looked up by engagement rather than by date — for per-goal
+   controls (My Goals, the engagement screen) rather than calendar cells. */
+function activePauseFor(engagementId){
+  const today=todayISO();
+  return activePauses.find(p=>p.engagement_id===engagementId && p.starts_on<=today && (!p.ends_on||p.ends_on>=today)) || null;
+}
+/* Shared by trainee (pausing their own goal) and coach (pausing one
+   trainee) — the same sheet, the same function underneath (start_pause),
+   per the log's own note that M and N are one mechanism with different
+   triggers. onDone re-renders whichever screen opened this. */
+function openPauseSheet(engagementId,goalTitle,onDone){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=`Pause "${goalTitle||"this goal"}"`;
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      While paused, no workouts are due and the streak freezes rather than breaks. Resume any time.</div>
+    <div class="field"><label for="pz-msg">Message (optional)</label>
+      <textarea id="pz-msg" placeholder="e.g. Travelling for two weeks, back on the 20th"></textarea></div>
+    <div class="field" style="margin-top:12px"><label for="pz-end">End date (optional — leave blank to resume manually)</label>
+      <input id="pz-end" type="date" min="${todayISO()}"></div>
+    <button class="btn primary" id="pz-save" style="margin-top:4px">Start pause</button>`;
+  body.appendChild(wrap);
+  $("#pz-save").addEventListener("click",async()=>{
+    const btn=$("#pz-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+    try{
+      const { error }=await store._sb.rpc("start_pause",{
+        p_engagement:engagementId,
+        p_message:($("#pz-msg").value||"").trim()||null,
+        p_ends_on:$("#pz-end").value||null
+      });
+      if(error) throw error;
+      closeSheet();
+      toast("Paused ✓",2600);
+      if(onDone) onDone();
+    }catch(err){
+      console.error("start_pause",err);
+      toast(err.message||"Couldn't pause (run migrations_vacation.sql)",4500);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 /* Earliest date anything was ever assigned. The streak must not walk back
    past this, or every rest day before the trainee even started would count. */
@@ -1653,6 +1727,7 @@ function dayComplete(iso, logsMap, awMap){
 }
 // A day is a MISSED-workout day when it's in the past and has a workout still 'assigned'.
 function dayMissedWorkout(iso, awMap){
+  if(isPausedOn(iso)) return false;
   awMap=awMap||engAssignedByDate;
   const today=todayISO();
   if(iso>=today)return false;
@@ -1696,13 +1771,19 @@ function computeStreak(logsMap, awMap){
   while(guard++<400){
     if(floor && cur<floor) break;          // don't count before the goal began
     const st=dayState(cur,awMap);
+    if(st==="paused"){ cur=addDaysISO(cur,-1); continue; }   // skip: no progress, no break
     if(st==="missed") break;
     if(st==="rest"){ rest++; if(rest>=7) break; } else rest=0;
     count++; cur=addDaysISO(cur,-1);
   }
   // forwards only for days already trained ahead; empty future dates don't count
   cur=addDaysISO(anchor,1); guard=0;
-  while(guard++<400 && dayState(cur,awMap)==="done"){ count++; cur=addDaysISO(cur,1); }
+  while(guard++<400){
+    const st=dayState(cur,awMap);
+    if(st==="paused"){ cur=addDaysISO(cur,1); continue; }
+    if(st!=="done") break;
+    count++; cur=addDaysISO(cur,1);
+  }
   return {count, danger, broken:false};
 }
 function updateStreakBadge(info){
@@ -1875,6 +1956,46 @@ async function renderHomeStreakRisk(el,engs){
     el.style.display="none";
     toast("Streak left as-is");
   });
+}
+/* Items M/N: homepage banner for both roles — deliberately calm styling
+   (no ci-urgent, no pulse), since a pause is a deliberate choice, not
+   something to react to urgently. Doesn't compete in the one-high-priority
+   arbitration used by milestone/streak-risk/check-in; it's informational,
+   not a call to action. my_active_pauses() already scopes to whichever
+   engagements the caller (trainee or coach) is actually party to. */
+async function renderHomeVacation(el){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME)return;
+  let pauses=[];
+  try{
+    const { data, error } = await store._sb.rpc("my_active_pauses");
+    if(error) throw error;
+    pauses=data||[];
+  }catch(e){ console.error("renderHomeVacation (run migrations_vacation.sql)",e); return; }
+  if(!pauses.length)return;
+  const iAmCoach=roleOf()==="coach";
+  el.classList.remove("ci-urgent");
+  const rows=pauses.map(p=>{
+    const who=p.i_triggered_it?"You":(iAmCoach?"The trainee":"Your coach");
+    const range=p.ends_on?`until ${escapeHtml(fmtDay(p.ends_on))}`:"until resumed";
+    return `<div class="vac-row">
+        <div class="vac-main"><b>${escapeHtml(p.goal_title||"A goal")}</b> is paused ${range}
+          ${p.message?`<div class="vac-msg">"${escapeHtml(p.message)}"</div>`:""}
+          <div class="vac-who">${who} paused this</div></div>
+        <button class="btn sm ghost vac-resume" data-eng="${p.engagement_id}">Resume</button>
+      </div>`;
+  }).join("");
+  el.innerHTML=`<div class="ci-ic">🏖</div><div class="ci-main"><div class="t">${pauses.length>1?`${pauses.length} goals paused`:"Paused"}</div><div class="s">${rows}</div></div>`;
+  el.style.display="";
+  el.querySelectorAll(".vac-resume").forEach(b=>b.addEventListener("click",async e=>{
+    e.stopPropagation();
+    const engId=b.getAttribute("data-eng"); b.disabled=true;
+    try{
+      await store._sb.rpc("end_pause",{p_engagement:engId});
+      toast("Resumed ✓");
+      renderHomeVacation(el);
+    }catch(err){ console.error("end_pause",err); toast(err.message||"Couldn't resume",4000); b.disabled=false; }
+  }));
 }
 function openStreakRiskSheet(a){
   const body=$("#sheet-body");body.innerHTML="";
@@ -2570,6 +2691,7 @@ async function bootSignedIn(){
   const consented = MY_PRIVATE && MY_PRIVATE.consented_at && MY_PRIVATE.consent_version===CONSENT_VERSION;
   if(!consented){ showConsentGate(); return; }
   currentView = roleOf()==="coach" ? "coach" : "trainee";
+  await loadActivePauses();   // items M/N — must be known before the first streak computation
   refreshStreakBadge();
   resetNav("home");
   go("home");
@@ -2648,6 +2770,7 @@ async function renderHome(){
   const ppEl=$("#home-postpone"); if(ppEl) ppEl.style.display="none";
   const msEl=$("#home-milestone"); if(msEl) msEl.style.display="none";
   const srEl=$("#home-streakrisk"); if(srEl) srEl.style.display="none";
+  const vacEl=$("#home-vacation"); if(vacEl){ vacEl.style.display="none"; vacEl.innerHTML=""; }
   const rdEl=$("#home-reviewdue"); if(rdEl) rdEl.style.display="none";
   const dcEl=$("#home-declined"); if(dcEl) dcEl.style.display="none";
 
@@ -2662,6 +2785,7 @@ async function renderHome(){
     await renderHomeToday(engs, todayEl);
     await renderHomeMilestone($("#home-milestone"));
     await renderHomeStreakRisk($("#home-streakrisk"), engs);
+    await renderHomeVacation($("#home-vacation"));
     await renderHomeReviews(engs, reviewsEl);
     await renderHomePostpone(engs, $("#home-postpone"));
     await renderHomeMacro(macroEl);
@@ -2679,7 +2803,8 @@ async function renderHome(){
       renderHomeReviewDue($("#home-reviewdue")),
       renderHomeDeclined($("#home-declined")),
       renderCoachHome(todayEl),
-      renderCoachTrainees(coachEl,newsEl)
+      renderCoachTrainees(coachEl,newsEl),
+      renderHomeVacation($("#home-vacation"))
     ]);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
@@ -4314,6 +4439,7 @@ async function openGoals(){
 }
 async function renderGoals(){
   const body=$("#goals-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  await loadActivePauses();
   const engs=await store.engagements.list({trainee_id:ME.id});
   $("#goals-sub").textContent=engs.length?`${engs.length} goal${engs.length>1?"s":""}`:"No goals yet";
   // coach names
@@ -4340,7 +4466,26 @@ async function renderGoals(){
           <div style="font-size:12.5px;color:var(--muted);margin-top:4px">${statusTxt}${outcomeTxt}${coach.display_name?` · ${escapeHtml(coach.display_name)}`:""}</div></div>
         <span class="badge ${e.status}">${statusTxt}</span>${clickable?'<div style="color:var(--faint);align-self:center">›</div>':""}</div>`;
     if(e.status==="active"){
-      const btn=document.createElement("button");btn.className="btn sm";btn.style.cssText="margin-top:14px;color:var(--red)";
+      const pause=activePauseFor(e.id);
+      if(pause){
+        const info=document.createElement("div");info.className="prev-note";info.style.marginTop="10px";
+        info.innerHTML=`<div class="pn-h">🏖 Paused${pause.i_triggered_it?"":" by your coach"}</div><div class="pn-b">${escapeHtml(pause.message||"On hold for now — your streak is frozen, not broken.")}</div>`;
+        card.appendChild(info);
+        const resumeBtn=document.createElement("button");resumeBtn.className="btn sm";resumeBtn.style.marginTop="8px";
+        resumeBtn.textContent="Resume training";
+        resumeBtn.addEventListener("click",async ev=>{
+          ev.stopPropagation(); resumeBtn.disabled=true;
+          try{ await store._sb.rpc("end_pause",{p_engagement:e.id}); toast("Welcome back ✓"); renderGoals(); }
+          catch(err){ console.error("end_pause",err); toast(err.message||"Couldn't resume",4000); resumeBtn.disabled=false; }
+        });
+        card.appendChild(resumeBtn);
+      }else{
+        const pauseBtn=document.createElement("button");pauseBtn.className="btn sm ghost";pauseBtn.style.marginTop="8px";
+        pauseBtn.textContent="🏖 Pause this goal";
+        pauseBtn.addEventListener("click",ev=>{ ev.stopPropagation(); openPauseSheet(e.id,e.goal_title,renderGoals); });
+        card.appendChild(pauseBtn);
+      }
+      const btn=document.createElement("button");btn.className="btn sm";btn.style.cssText="margin-top:8px;color:var(--red)";
       btn.textContent="Cancel this goal";
       btn.addEventListener("click",ev=>{ ev.stopPropagation(); cancelGoal(e); });
       card.appendChild(btn);
@@ -4425,6 +4570,7 @@ async function renderEngagement(){
  try{
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const body=$("#engagement-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  await loadActivePauses();   // items M/N — refreshed on every open, not just at boot
   // gather assigned workouts — merged (all trainee engagements) or single engagement
   let assigned=[];
   if(traineeMerged){
@@ -4486,7 +4632,15 @@ async function renderEngagement(){
     const iso=engCalYear+"-"+pad2(engCalMonth+1)+"-"+pad2(d);
     const wl=engAssignedByDate[iso]||[];
     let cls="cal-rest",badge="",missed=false;
-    if(wl.length){
+    /* Items M/N: checked first and unconditionally — the common case during
+       a pause is an ordinary EMPTY day (nothing assigned at all), which the
+       block below would otherwise render as a plain rest day, giving no
+       indication anything is on hold. Putting this inside the wl.length
+       branch (as first written) only caught the rarer edge case of a
+       workout that happened to still be due during the pause. */
+    if(isPausedOn(iso)){
+      cls="cal-paused"; badge="🏖";
+    }else if(wl.length){
       const toDo=wl.some(a=>a.status==="assigned");
       const reviewed=wl.some(a=>a.status==="reviewed");
       const submitted=wl.some(a=>a.status==="submitted");
@@ -4516,6 +4670,12 @@ async function renderEngagement(){
       // TRAINEE: split diagonally — top triangle = macros logged, bottom triangle = workout state
       const logged=macrosLogged(logsByDate[iso]);
       const complete=dayComplete(iso);
+      // items M/N: dayComplete() now correctly returns true for a paused
+      // day (paused isn't a miss), but the gold-star/gold-chain styling
+      // below is meant to celebrate real completed days — falling through
+      // to it would make a deliberate pause look like an achievement.
+      // Checked explicitly so it gets its own distinct, honest look.
+      const paused=(cls==="cal-paused");
       // danger = a single missed-workout day forming the current break boundary
       const danger = missed && streakInfo.danger && iso>=addDaysISO(todayISO(),-1);
       const workoutColor = !wl.length ? "transparent"
@@ -4524,11 +4684,19 @@ async function renderEngagement(){
         : cls==="cal-reviewed" ? "rgba(255,194,74,.6)"
         : "rgba(90,176,255,.55)";
       const macroColor = logged ? "var(--violet)" : "transparent";
-      // golden line connectors for consecutive complete days
+      // golden line connectors for consecutive complete days — a pause never
+      // joins or extends this chain, even though it doesn't break the
+      // underlying streak count; the connector is decoration, not the number.
       let goldCls="";
-      if(complete){ goldCls=" cal-gold"; if(dayComplete(addDaysISO(iso,-1)))goldCls+=" gold-l"; if(dayComplete(addDaysISO(iso,1)))goldCls+=" gold-r"; }
-      cell.className="cal-day cal-split cal-tap"+goldCls+(danger?" cal-danger":"")+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
-      if(complete){
+      if(complete && !paused){
+        goldCls=" cal-gold";
+        if(dayComplete(addDaysISO(iso,-1)) && !isPausedOn(addDaysISO(iso,-1))) goldCls+=" gold-l";
+        if(dayComplete(addDaysISO(iso,1)) && !isPausedOn(addDaysISO(iso,1))) goldCls+=" gold-r";
+      }
+      cell.className="cal-day cal-split cal-tap"+goldCls+(danger?" cal-danger":"")+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"")+(paused?" cal-paused":"");
+      if(paused){
+        cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🏖</div>`;
+      }else if(complete){
         cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">★</div>`;
       }else{
         cell.innerHTML=`
@@ -4569,13 +4737,29 @@ async function renderEngagement(){
   // FAB: coach completes only via trainee side; either side rates when complete
   const fabRow=$("#eng-fab-row"),fab=$("#eng-fab");
   fabRow.classList.remove("hidden");
-  // clear any previously-added secondary (reopen) button
+  // clear any previously-added secondary (reopen/pause) buttons
   const oldReopen=$("#eng-reopen"); if(oldReopen)oldReopen.remove();
+  const oldPause=$("#eng-pause"); if(oldPause)oldPause.remove();
   if(traineeMerged){
     // merged trainee view: completion/rating happens inside a specific goal
     fabRow.classList.add("hidden");
   }else if(currentEng.status==="active" && iAmCoach){
     fab.textContent="✓ Goal complete"; fab.onclick=coachCompleteGoal;
+    // items M/N: coach's per-trainee pause, same primitive as the trainee's own
+    const pause=activePauseFor(currentEng.id);
+    const pauseBtn=document.createElement("button");pauseBtn.id="eng-pause";pauseBtn.className="btn ghost";pauseBtn.style.marginTop="10px";
+    if(pause){
+      pauseBtn.textContent="Resume this trainee";
+      pauseBtn.onclick=async()=>{
+        pauseBtn.disabled=true;
+        try{ await store._sb.rpc("end_pause",{p_engagement:currentEng.id}); toast("Resumed ✓"); renderEngagement(); }
+        catch(err){ console.error("end_pause",err); toast(err.message||"Couldn't resume",4000); pauseBtn.disabled=false; }
+      };
+    }else{
+      pauseBtn.textContent="🏖 Pause this trainee";
+      pauseBtn.onclick=()=>openPauseSheet(currentEng.id,currentEng.goal_title,renderEngagement);
+    }
+    fabRow.appendChild(pauseBtn);
   }else if(currentEng.status==="active" && !iAmCoach){
     fab.textContent="Mark goal complete"; fab.onclick=completeEngagement;
   }else if(currentEng.status==="completed" || currentEng.status==="ended"){
@@ -7030,6 +7214,15 @@ async function renderProfile(){
       html+=`<div class="card ex-card" id="apply-card" style="margin-top:14px;background:var(--accent-surface);border-color:var(--accent-border)">
         <div class="list-row"><div class="ic" style="font-size:22px">✎</div><div class="lr-main"><h3>Apply for Coach profile</h3><div class="sub">${rejected?"Previous application declined — you can re-apply":"Build a library, take on trainees"}</div></div><div class="arw">→</div></div></div>`;
     }
+  }else if(r==="coach"){
+    // Item N: pause every active trainee at once, one shared message —
+    // the bulk version of the same primitive M uses per-goal. Lives here
+    // rather than on any one engagement screen since it's account-wide.
+    html+=`<div class="section-h"><div class="eyebrow">Vacation</div></div>
+      <div class="card ex-card" id="pause-all-card" style="cursor:pointer">
+        <div class="list-row"><div class="ic" style="font-size:22px">🏖</div>
+          <div class="lr-main"><h3>Pause all trainees</h3><div class="sub">Away for a while? Puts every active goal on hold with one message.</div></div>
+          <div class="arw">→</div></div></div>`;
   }
   // completed goals (as coach or trainee) with on-time/late labels
   try{
@@ -7063,6 +7256,40 @@ async function renderProfile(){
   wireSocialProfile();
   wireDangerZone();
   $("#apply-card")?.addEventListener("click",()=>go("coach-apply"));
+  $("#pause-all-card")?.addEventListener("click",openPauseAllSheet);
+}
+/* Item N: bulk version of openPauseSheet — one message, every active
+   engagement, via start_pause_all rather than start_pause. */
+function openPauseAllSheet(){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Pause all trainees";
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      Puts every active goal on hold at once. Each trainee sees this message; nothing is due, and nobody's streak breaks while you're away.</div>
+    <div class="field"><label for="pza-msg">Message (optional)</label>
+      <textarea id="pza-msg" placeholder="e.g. Out until the 3rd — back to normal after that"></textarea></div>
+    <div class="field" style="margin-top:12px"><label for="pza-end">End date (optional — leave blank to resume manually)</label>
+      <input id="pza-end" type="date" min="${todayISO()}"></div>
+    <button class="btn primary" id="pza-save" style="margin-top:4px">Pause everyone</button>`;
+  body.appendChild(wrap);
+  $("#pza-save").addEventListener("click",async()=>{
+    const btn=$("#pza-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Pausing…";
+    try{
+      const { data, error }=await store._sb.rpc("start_pause_all",{
+        p_message:($("#pza-msg").value||"").trim()||null,
+        p_ends_on:$("#pza-end").value||null
+      });
+      if(error) throw error;
+      closeSheet();
+      toast(`${data||0} trainee${data===1?"":"s"} paused ✓`,3200);
+    }catch(err){
+      console.error("start_pause_all",err);
+      toast(err.message||"Couldn't pause (run migrations_vacation.sql)",4500);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 /* ---------- account deletion (anonymises; see migrations_account_deletion.sql) ---------- */
 function wireDangerZone(){

@@ -317,7 +317,7 @@ ever built. Display (profile + offers) is what exists now.
 
 ---
 
-## M. Vacation mode — trainee-initiated
+## M. Vacation mode — trainee-initiated — DONE 2026-08-11
 
 A trainee pauses their OWN goal. While paused:
 - the streak freezes for both the trainee AND their coach (a coach's own
@@ -327,26 +327,64 @@ A trainee pauses their OWN goal. While paused:
 - a vacation message is visible to the coach, presumably in place of or
   alongside the normal engagement status
 
-Interacts directly with the streak redefinition (register item, now closed)
-and the payment ledger (item B): a paused week should presumably not bill
-either the reviewed-share or the no-show-share, which needs its own case in
-`recompute_cycle` — a vacation week is neither reviewed nor missed, it's
-exempt. Needs deciding before building: does a vacation week bill nothing,
-or a pro-rated nothing based on days paused?
+**DECIDED 2026-08-11, proceeding on this default since the question was
+never answered:** a paused week bills nothing at all — not a pro-rated
+partial charge. Simplest reading consistent with "no workouts are due,"
+and avoids inventing a day-by-day proration mechanism nobody asked for.
+
+**Built as one shared table and function set with item N** — see N for
+what they have in common. M-specific: "Pause this goal" / "Resume" on the
+trainee's My Goals screen and on the coach's own engagement screen for
+that one trainee, using the same `start_pause`/`end_pause` underneath.
+
+**A day only reads as 'paused' when EVERY one of the trainee's active
+goals is paused for it** — checked deliberately, not assumed: a trainee
+with two goals who pauses only one still has the other's workouts count
+normally, since their calendar is genuinely still live for that goal.
+
+**Two real gaps, named rather than hidden:**
+1. **The payment ledger doesn't know about pauses yet.** `recompute_cycle`
+   still bills a paused week normally. The "bills nothing" decision above
+   is only true in the streak/calendar sense right now, not the money
+   sense — that needs its own pass on the ledger, which wasn't touched
+   here given how sensitive that logic already is.
+2. **No server-side block on assigning a workout into a paused window.**
+   A coach can still do it today. The day-state fix means it simply won't
+   count as missed if they do, but nothing stops the assignment itself.
+
+**A duplicate-logic trap caught mid-build, worth recording:** the
+calendar's own cell-coloring code computes "missed" independently of
+`dayState()`/`dayMissedWorkout()` — the functions that were actually
+fixed for pauses. Fixing only those would have left the calendar itself
+still painting a paused day red. Fixed separately, in both the coach and
+trainee rendering branches, including making sure a pause doesn't fall
+through to the gold-star "achievement" styling either (`dayComplete()`
+correctly returns true for a paused day, which is right for the streak
+count but wrong for a visual that's specifically meant to celebrate real
+completed days).
 
 ---
 
-## N. Vacation mode — coach-initiated
+## N. Vacation mode — coach-initiated — DONE 2026-08-11
 
 Same mechanism as M, but the coach pauses ALL their active trainees at
-once, with one message shown to all of them. Likely shares most of its
-implementation with M — a pause is a pause regardless of who triggered
-it — with the coach's version being "apply this to every active
-engagement" rather than one.
+once, with one message shown to all of them.
 
-Worth building M and N as one underlying pause primitive (per-engagement,
-who-triggered, message, start, end) rather than two separate mechanisms,
-given how similar the requirements are.
+**Built exactly as suggested here** — one underlying primitive
+(`engagement_pauses`: per-engagement, who-triggered, message, start, end),
+not two mechanisms. `start_pause_all(message, ends_on)` is the literal bulk
+version: one call per active engagement, same table, same day-state logic,
+same everything M uses. Entry point is "Pause all trainees" on the coach's
+Profile screen, since it's account-wide rather than tied to any one
+engagement's screen.
+
+Homepage banner (both roles, calm styling — not the urgent/pulsing
+treatment used for streak-risk or check-in, since a pause is a deliberate
+choice, not something to react to) shows each active pause with its
+message and a Resume button, via `my_active_pauses()`.
+
+**Not done:** a legend entry for the calendar's new paused-day swatch —
+cosmetic, skipped to keep this landing rather than open-ended.
 
 ---
 
