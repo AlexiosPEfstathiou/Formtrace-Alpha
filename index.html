@@ -1820,7 +1820,11 @@ async function renderHomeStreakRisk(el,engs){
   let at=null;
   try{
     const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
-    const overdue=lists.flat().filter(a=>a.status==="assigned" && a.due_date && a.due_date<today && !dismissed.has(a.id));
+    // Only within the last 7 days: anything older is long past mattering
+    // for the current streak one way or the other, and would otherwise nag
+    // indefinitely for a miss that's ancient history.
+    const cutoff=addDaysISO(today,-7);
+    const overdue=lists.flat().filter(a=>a.status==="assigned" && a.due_date && a.due_date<today && a.due_date>=cutoff && !dismissed.has(a.id));
     overdue.sort((a,b)=>a.due_date<b.due_date?-1:1);
     at=overdue[0]||null;
   }catch(e){ console.error("renderHomeStreakRisk",e); return; }
@@ -2052,6 +2056,14 @@ async function hydrateVideos(root){
           }finally{ rb.disabled=false; }
         });
         el.appendChild(rb);
+      }else if(vid&&rot){
+        /* Thumbnails never ran any of the rotation logic above — the whole
+           block is gated on isPlayer — so a rotated clip shown as a small
+           preview stayed sideways regardless of what was saved. A plain
+           transform is enough here: thumbnails are already a fixed square
+           crop, not a full frame, so the letterbox/resize maths the player
+           needs doesn't apply. */
+        vid.style.transform=`rotate(${rot}deg)`;
       }
       el.addEventListener("click",e=>{
         const v=el.querySelector("video"); if(!v)return;
@@ -4199,6 +4211,14 @@ async function openTraineeCalendar(engs){
      is not tab-level — it has its own bottom actions — hence the class. */
   $("#s-engagement").classList.add("active","tab-level");
   renderAppTabs("engagement");
+  /* Belt and braces: the TAB_SECTION mapping resolves correctly on paper,
+     but this screen is reached via an async continuation inside
+     renderTraineeHome() (itself fired without being awaited by go()'s R()
+     helper), which leaves room for a race with go()'s own tab-bar call.
+     Rather than chase a root cause that didn't show up on static reading,
+     force the correct button active as the true last step. */
+  document.querySelectorAll('#app-tabbar [data-go]').forEach(b=>
+    b.classList.toggle('on', b.getAttribute('data-go')==='trainee-home'));
 }
 /* Trainee: My Goals — ongoing / completed / cancelled, with cancel action */
 async function openGoals(){
@@ -6586,7 +6606,7 @@ async function renderProfile(){
         <div class="sp-preview">Others will see <b id="sp-preview-name">—</b></div>
         <div style="font-size:13px;font-weight:700;margin:18px 0 8px">Profile photo</div>
         <div class="sp-avatar-row">
-          <div class="sp-avatar" id="sp-avatar"><span>${escapeHtml(ME.avatar_initials||initials(ME.display_name))}</span></div>
+          <div class="sp-avatar" id="sp-avatar" data-avatar="${escapeHtml(ME.avatar_path||"")}"><span>${escapeHtml(ME.avatar_initials||initials(ME.display_name))}</span></div>
           <div style="flex:1">
             <button class="btn sm" id="sp-photo-btn" style="margin:0">${ME.avatar_path?"Change photo":"Add photo"}</button>
             ${ME.avatar_path?`<button class="btn sm ghost" id="sp-photo-clear" style="margin:8px 0 0;color:var(--red)">Remove</button>`:""}
@@ -6853,6 +6873,10 @@ function countryList(){
 }
 function wireSocialProfile(){
   const sw=$("#sp-switch"); if(!sw)return;
+  // Own profile photo: #sp-avatar already exists in the DOM by this point,
+  // rendered with initials only until this upgrades it — same gap as the
+  // one fixed elsewhere for OTHER people's avatars, missed on this screen.
+  hydrateAvatars($("#sp-avatar")?.parentElement||document);
   const detail=$("#sp-detail");
   const refreshPreview=()=>{
     const style=($("#sp-style")?.querySelector("button.on")?.getAttribute("data-ns"))||ME.name_style||"first";

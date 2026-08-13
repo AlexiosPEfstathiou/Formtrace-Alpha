@@ -441,7 +441,36 @@ conversations — which affects the privacy notice.
 
 ---
 
-# Done (this session)
+## Q. Bug fixes from testing round (2026-08-11) — DONE
+
+Four defects found by testing, fixed together rather than as separate
+lettered features:
+
+1. **Training tab doesn't highlight; Home does instead.** Checked the whole
+   chain (`TAB_SECTION`, `go()`, `openTraineeCalendar`) and the mapping
+   reads correctly on paper — `engagement` resolves to the same tab-section
+   key as `trainee-home`. Couldn't reproduce a smoking gun via static
+   reading alone, so rather than keep guessing at a root cause, made the
+   highlight authoritative: `openTraineeCalendar` now force-sets the tab
+   button classes directly as its last step, so whatever raced it, this
+   wins.
+2. **Rotated videos don't adopt their rotation in thumbnails.** The
+   rotation logic in `hydrateVideos` was gated entirely on `isPlayer`
+   (`.video-card` class) — thumbnails (`.ex-thumb`) fetched the same
+   rotation value but never applied it. Added a simple transform for the
+   non-player case.
+3. **Own profile screen shows initials even with a photo set.** `#sp-avatar`
+   had CSS already anticipating an `<img>` but the markup only ever
+   rendered initials — the same gap fixed elsewhere (H/K) for OTHER
+   people's avatars, missed on the one screen showing your own. Wired into
+   the same `data-avatar`/`hydrateAvatars()` mechanism.
+4. **Streak-risk card should only fire within 7 days of the miss.** It was
+   picking the oldest overdue workout with no lower bound — a workout
+   missed a month ago would nag forever even though, per the streak rules,
+   whatever it broke is long since resolved one way or the other. Bounded
+   to `due_date >= today - 7`.
+
+---
 
 Risk register fully closed: storage lockdown, account deletion,
 consent + age gate, private profile fields, server-enforced scheduling and
