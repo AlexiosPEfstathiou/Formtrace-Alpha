@@ -472,6 +472,63 @@ lettered features:
 
 ---
 
+## R. Personal bests per exercise
+
+Each trainee gets a best-ever record per exercise: reps, weight (null for
+bodyweight movements like push-ups), and when it was set. Shown before the
+set — "Your personal best for this exercise is 10 reps. Can you beat it?"
+— using the same "read it before you perform, not after" placement already
+established for the coach's previous-workout note. Beating it triggers a
+milestone notification, "[Exercise] — New personal best," and the PB is
+archived and shown on the trainee's own profile above body measurements,
+and again on The Journey (item P) when the goal it was set during completes.
+
+**DECIDED 2026-08-11:** if both reps and weight go up, it's a PB. If one
+goes up and the other goes down, it's left unlogged — genuinely unclear
+which is the improvement, and no scoring formula is being invented to
+force an answer. So four outcomes per set: more reps + same/more weight →
+PB; same reps + more weight → PB; one up and one down → no change; neither
+improves → no change.
+
+**Keyed on exercise NAME, not exercise_id — proceeding on the recommendation
+below since it wasn't overridden.** The same tension as the workout-comparison
+feature: a coach can delete and recreate an exercise, two different coaches
+can each have their own "Push-ups" row, and the wildcard-slot mechanism
+(item E) lets a trainee freely pick between different underlying exercise
+records for the same muscle group. Keying on `exercise_id` would mean a
+trainee's push-up PB resets every time any of that happens, which doesn't
+match "your push-up PB" as a trainee would expect it. Keying on a
+normalised name merges those cases correctly but also merges two genuinely
+different movements that happen to share a name across coaches — accepted
+as the smaller cost.
+
+**Checked when RECORDED, not when reviewed.** Rep counts already work this
+way elsewhere (the trainee's own corrected count drives the vs-last-time
+comparison without waiting on the coach), so a new PB would show and
+notify immediately on the trainee's confirmed number. Worth confirming a
+coach is comfortable with an unreviewed set being able to set a PB, since
+it's a small trust extension beyond what currently exists.
+
+**Reuses three things already built, all in the codebase now:**
+- The previous-note placement pattern (before the set, not after) from the
+  workout-comparison feature.
+- The milestone notification mechanism and its one-high-priority-at-a-time
+  rule — a new PB needs its own slot in that arbitration alongside the
+  streak milestone, streak-risk, and check-in cards. Priority against the
+  existing streak milestone isn't decided; recommend PB below streak
+  milestone (rarer, more consequential) but above check-in.
+- The Journey screen (item P) already has a card-based layout for
+  goal-completion facts; "Personal bests reached this goal" is a new card
+  there, not a new screen.
+
+**New data model, not yet built:** a `personal_bests` table keyed on
+(trainee_id, exercise_key), holding reps/weight/achieved_at/assigned_id,
+written only by a SECURITY DEFINER function — consistent with every other
+trainee-asserted number that matters in this app (the streak, the payment
+ledger, workout status) being server-checked rather than client-writable.
+
+---
+
 Risk register fully closed: storage lockdown, account deletion,
 consent + age gate, private profile fields, server-enforced scheduling and
 status, streak redefinition, error reporting, query batching.

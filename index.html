@@ -444,6 +444,15 @@
   .prev-note{background:rgba(255,194,74,.10);border:1px solid rgba(255,194,74,.32);border-radius:12px;padding:10px 12px;margin:2px 0 10px;}
   .prev-note .pn-h{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--amber);margin-bottom:4px;}
   .prev-note .pn-b{font-size:12.5px;line-height:1.5;color:var(--ink);}
+  /* personal best: same layout as the coach note, gold rather than amber so
+     it reads as an achievement to chase, not an instruction to follow */
+  .prev-note.pb-note{background:rgba(245,197,66,.10);border-color:rgba(245,197,66,.34);}
+  .prev-note.pb-note .pn-h{color:#F5C542;}
+  .pb-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .pb-row:last-child{border-bottom:none;}
+  .pb-row .pb-ex{font-weight:700;color:var(--ink);flex-shrink:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pb-row .pb-v{color:#F5C542;font-weight:700;flex:1;text-align:right;}
+  .pb-row .pb-d{color:var(--faint);font-size:10.5px;flex-shrink:0;width:64px;text-align:right;}
   .r-note{position:absolute;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 168px);z-index:4;display:none;
     background:rgba(0,0,0,.62);border-radius:10px;padding:9px 11px;color:#fff;font-size:12px;line-height:1.45;
     backdrop-filter:blur(3px);max-height:44px;overflow:hidden;}
@@ -4754,6 +4763,14 @@ function renderDashboard(container, iAmCoach){
   ciCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Weekly check-ins</span><button id="dash-tl-play" class="tl-play" style="display:none">▶ Play timelapse</button></div><div id="dash-checkins" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
   wrap.appendChild(ciCard);
 
+  // ---- personal bests (item R), placed above measurements per spec.
+  // "Body measurements" only exists here (there is no such section on the
+  // standalone Profile tab), so this is the literal reading of "above body
+  // measurements" — flagged in case the Profile tab was actually meant. ----
+  const pbCard=document.createElement("div");pbCard.className="card";pbCard.style.padding="16px 14px";
+  pbCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">🏆 Personal bests</div><div id="dash-pbs"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
+  wrap.appendChild(pbCard);
+
   // ---- body measurements over time ----
   const msCard=document.createElement("div");msCard.className="card";msCard.style.padding="16px 14px";
   msCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Body measurements (cm)</span>${iAmCoach?"":`<button id="dash-ms-add" class="tl-play">＋ Log</button>`}</div>
@@ -4782,6 +4799,31 @@ function renderDashboard(container, iAmCoach){
     }catch(e){
       console.error("measurements",e);
       box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load measurements.</div>`;
+    }
+  })();
+
+  // load personal bests async (item R). Coaches see their trainee's PBs
+  // read-only, via personal_bests_in_range covering the whole history
+  // (any date span wide enough to include everything).
+  (async()=>{
+    const box=$("#dash-pbs"); if(!box)return;
+    try{
+      const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
+      const { data, error } = await store._sb.rpc("personal_bests_in_range",
+        { p_trainee:traineeId, p_from:"2000-01-01", p_to:todayISO() });
+      if(error) throw error;
+      const pbs=data||[];
+      if(!pbs.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">No personal bests yet — they're recorded automatically as you train.</div>`; return; }
+      box.innerHTML="";
+      for(const pb of pbs){
+        const row=document.createElement("div");row.className="pb-row";
+        const txt=pb.weight_kg!=null?`${pb.reps} reps @ ${pb.weight_kg} kg`:`${pb.reps} reps`;
+        row.innerHTML=`<span class="pb-ex">${escapeHtml(pb.exercise_name)}</span><span class="pb-v">${escapeHtml(txt)}</span><span class="pb-d">${escapeHtml(fmtDay(isoOf(new Date(pb.achieved_at))))}</span>`;
+        box.appendChild(row);
+      }
+    }catch(e){
+      console.error("personal bests (run migrations_personal_bests.sql)",e);
+      box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load personal bests.</div>`;
     }
   })();
 
@@ -5316,7 +5358,20 @@ async function openAssigned(id){
     }
   }catch(e){ console.error("restore results",e); }
   await loadPrevSeries(currentAssigned);
+  await loadMyPBs();
   go("trainee-workout");
+}
+/* Personal bests (item R) for the "can you beat it" note. Loaded once per
+   workout open — same pattern as loadPrevSeries/prevSeries — and looked up
+   by lower-cased exercise name, matching the server's keying. */
+let myPBs={};
+async function loadMyPBs(){
+  myPBs={};
+  try{
+    const { data, error } = await store._sb.rpc("my_personal_bests");
+    if(error) throw error;
+    for(const pb of (data||[])) myPBs[(pb.exercise_name||"").trim().toLowerCase()]=pb;
+  }catch(e){ console.error("loadMyPBs (run migrations_personal_bests.sql)",e); }
 }
 /* make a stored results array fit the current items/sets shape */
 function reshapeResults(src,items){
@@ -5421,6 +5476,15 @@ function renderAssignedWorkout(){
     const prevNote=prevSeries&&prevSeries.notes[it.name];
     if(prevNote){
       inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(prevSeries.prevName||snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
+    }
+    // Personal best (item R): shown before the set, same placement as the
+    // coach's note, so it's read before performing rather than after.
+    if(!it.wildcard_mg){
+      const pb=myPBs[(it.name||"").trim().toLowerCase()];
+      if(pb){
+        const pbTxt=pb.weight_kg!=null?`${pb.reps} reps at ${pb.weight_kg} kg`:`${pb.reps} reps`;
+        inner+=`<div class="prev-note pb-note"><div class="pn-h">🏆 Personal best</div><div class="pn-b">Your personal best for this exercise is ${escapeHtml(pbTxt)}. Can you beat it?</div></div>`;
+      }
     }
     const nextUndone=results.findIndex(x=>!x);
     for(let s=0;s<it.sets;s++){
@@ -5788,7 +5852,30 @@ function showResult(exName,it,setIndex,r,itemIndex){
     showDone(`Corrected to ${v} reps ✓`);
   };
   $("#rep-save").onclick=commitRepFix;
-  $("#res-continue").onclick=()=>{commitRepFix();R.classList.remove("on");renderAssignedWorkout();};
+  $("#res-continue").onclick=async()=>{
+    commitRepFix();
+    /* Personal best (item R), checked once the set is truly final — both the
+     * confirmed rep count and any weight the trainee typed. Surfaced right
+     * here, in context, rather than queued onto the homepage notification
+     * stack alongside the streak milestone/streak-risk/check-in cards —
+     * this is the moment it actually happened, and the trainee is already
+     * looking at this exact screen. Never blocks Continue: a failed check
+     * (e.g. migration not run) shouldn't stop someone finishing a workout. */
+    if(!it.wildcard_mg && it.name){
+      try{
+        const effReps=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:r.reps;
+        const { data, error } = await store._sb.rpc("recompute_personal_best",{
+          p_exercise_name:it.name, p_reps:effReps, p_weight_kg:r.weight_kg, p_assigned_id:currentAssigned?.id||null
+        });
+        if(error) throw error;
+        if(data){
+          myPBs[it.name.trim().toLowerCase()]=data;
+          toast(`🏆 ${it.name} — New personal best!`,4200);
+        }
+      }catch(e){ console.error("recompute_personal_best (run migrations_personal_bests.sql)",e); }
+    }
+    R.classList.remove("on");renderAssignedWorkout();
+  };
   // ---- weight used for this set (optional; dumbbells etc.) ----
   const wIn=$("#set-weight"), wLast=$("#wt-last");
   wIn.value = (r.weight_kg==null?"":r.weight_kg);
@@ -6425,6 +6512,26 @@ async function openJourney(eng,onExit){
         <div style="font-size:12px;color:var(--muted)">your best run during this goal</div></div>
     </div>`;
   body.appendChild(sCard);
+
+  // ---- personal bests reached this goal (item R) ----
+  try{
+    const { data: pbs, error } = await store._sb.rpc("personal_bests_in_range",{
+      p_trainee:sum.trainee_id,
+      p_from:sum.started_at?isoOf(new Date(sum.started_at)):"2000-01-01",
+      p_to:sum.completed_at?isoOf(new Date(sum.completed_at)):todayISO()
+    });
+    if(error) throw error;
+    if(pbs && pbs.length){
+      const pbCard=document.createElement("div");pbCard.className="card jr-card";
+      pbCard.innerHTML=`<div class="eyebrow">🏆 Personal bests this goal</div>`;
+      for(const pb of pbs){
+        const txt=pb.weight_kg!=null?`${pb.reps} reps @ ${pb.weight_kg} kg`:`${pb.reps} reps`;
+        pbCard.insertAdjacentHTML("beforeend",
+          `<div class="pb-row"><span class="pb-ex">${escapeHtml(pb.exercise_name)}</span><span class="pb-v">${escapeHtml(txt)}</span></div>`);
+      }
+      body.appendChild(pbCard);
+    }
+  }catch(e){ console.error("journey PBs (run migrations_personal_bests.sql)",e); }
 
   // ---- Share is trainee-only, per spec — a coach viewing the same
   // completed goal only ever reaches this screen if they ARE the trainee
