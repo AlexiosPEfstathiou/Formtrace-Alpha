@@ -129,9 +129,9 @@ stable
 security definer
 set search_path = public
 as $$
-  select coalesce(jsonb_agg(row order by achieved_at desc), '[]'::jsonb)
+  select coalesce(jsonb_agg(row order by ts desc), '[]'::jsonb)
   from (
-    select jsonb_build_object(
+    select achieved_at as ts, jsonb_build_object(
       'exercise_name', exercise_name, 'reps', reps, 'weight_kg', weight_kg, 'achieved_at', achieved_at
     ) as row
     from public.personal_bests where trainee_id = auth.uid()
@@ -157,9 +157,9 @@ begin
     raise exception 'not authorised';
   end if;
   return coalesce((
-    select jsonb_agg(row order by achieved_at desc)
+    select jsonb_agg(row order by ts desc)
     from (
-      select jsonb_build_object(
+      select achieved_at as ts, jsonb_build_object(
         'exercise_name', exercise_name, 'reps', reps, 'weight_kg', weight_kg, 'achieved_at', achieved_at
       ) as row
       from public.personal_bests
