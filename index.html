@@ -2523,6 +2523,20 @@ async function bootSignedIn(){
   try{
     MY_PRIVATE=await store.auth.myPrivate();
   }catch(e){ console.error("private profile read (run migrations_profile_privacy.sql)",e); MY_PRIVATE=null; }
+  /* Theme and colourblind mode were device-only (localStorage), so setting
+     either on one device did nothing on another — reported for colourblind
+     mode, but theme has the identical gap. The account is now the source
+     of truth; pull it into this device's localStorage on every login so a
+     new device picks up what was set elsewhere. localStorage stays the
+     fast path for the anti-flash inline script before ME is ever loaded. */
+  try{
+    // Guard against the column not existing yet (migration not run): treat
+    // "not a real boolean" as "nothing to sync", not as "turn it off" — an
+    // undefined value here must never downgrade someone's existing setting.
+    if(ME.theme_pref) localStorage.setItem("ft-theme",ME.theme_pref);
+    if(typeof ME.colorblind_mode==="boolean") localStorage.setItem("ft-cb", ME.colorblind_mode?"1":"0");
+    applyThemeAttrs();
+  }catch(e){ console.error("appearance sync (run migrations_appearance_sync.sql)",e); }
   const consented = MY_PRIVATE && MY_PRIVATE.consented_at && MY_PRIVATE.consent_version===CONSENT_VERSION;
   if(!consented){ showConsentGate(); return; }
   currentView = roleOf()==="coach" ? "coach" : "trainee";
@@ -6977,8 +6991,19 @@ function applyThemeAttrs(){
   if(dark) el.removeAttribute("data-theme"); else el.setAttribute("data-theme","light");
   if(cb) el.setAttribute("data-cb","1"); else el.removeAttribute("data-cb");
 }
-function setTheme(t){ try{localStorage.setItem("ft-theme",t);}catch(e){} applyThemeAttrs(); refreshChartsIfVisible(); }
-function setColorblind(on){ try{localStorage.setItem("ft-cb",on?"1":"0");}catch(e){} applyThemeAttrs(); refreshChartsIfVisible(); }
+function setTheme(t){
+  try{localStorage.setItem("ft-theme",t);}catch(e){}
+  applyThemeAttrs(); refreshChartsIfVisible();
+  // Write through to the account so another device picks this up on login.
+  // Fire-and-forget: the device already has the setting via localStorage,
+  // so a slow network shouldn't make the toggle feel laggy.
+  if(ME){ ME.theme_pref=t; store.auth.updateProfile({theme_pref:t}).catch(e=>console.error("theme sync",e)); }
+}
+function setColorblind(on){
+  try{localStorage.setItem("ft-cb",on?"1":"0");}catch(e){}
+  applyThemeAttrs(); refreshChartsIfVisible();
+  if(ME){ ME.colorblind_mode=on; store.auth.updateProfile({colorblind_mode:on}).catch(e=>console.error("colorblind sync",e)); }
+}
 // charts read CSS vars at build time, so re-render the engagement view if it's showing
 function refreshChartsIfVisible(){ if($("#s-engagement")?.classList.contains("active") && currentEng){ try{renderEngagement();}catch(e){} } }
 // keep 'system' choice in sync with OS changes
