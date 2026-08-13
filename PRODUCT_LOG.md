@@ -294,15 +294,26 @@ reason this was requested is marketplace filtering, and free text can't
 be filtered reliably without normalising it server-side. Same pattern
 already used for country: store the code, let `Intl.DisplayNames` render
 the localised name client-side, so no name list ships or needs keeping in
-sync. Multi-select chips in the Social Profile section, reusing the
-muscle-group chip pattern.
+sync.
+
+**Revised 2026-08-11: the ~35-chip picker took too much visible space,
+and the actual purpose turned out to be narrower than "profile field" —
+it's specifically so a trainee can see language match on an OFFER,
+without opening the coach's full profile.** Two changes from the original
+build: the picker is now a compact type-ahead (type, pick a suggestion or
+press Enter, get a small removable chip) rather than a wall of every
+option at once — still backed by the same fixed list, so typing doesn't
+mean free text underneath. And a one-line "🗣 language, language" indicator
+was added to both the collapsed offer row and the expanded offer card,
+omitted entirely when a coach hasn't set any — this is the piece that
+didn't exist in the first pass, since the original ask only said "on
+profiles."
 
 **Checked before building: no marketplace filter UI exists to consume
 this.** "Find a coach" is a reverse marketplace — coaches respond to
-posted goals, trainees don't browse a directory — so this is informational
-display only for now, shown on the coach's public profile. Filtering is a
-separate, later piece of work if a browse screen is ever built; noting
-this so nobody is surprised the fixed list isn't yet wired to a filter.
+posted goals, trainees don't browse a directory — so filtering by
+language is still a separate, later piece of work if a browse screen is
+ever built. Display (profile + offers) is what exists now.
 
 ---
 
