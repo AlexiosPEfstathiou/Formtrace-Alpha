@@ -5772,14 +5772,23 @@ function showResult(exName,it,setIndex,r,itemIndex){
     btns.style.display="none"; fix.style.display="";
     const a=$("#rep-actual"); a.value=String(r.reps); a.focus(); a.select();
   };
-  $("#rep-save").onclick=()=>{
-    const v=parseInt(($("#rep-actual").value||"").trim(),10);
-    if(!Number.isFinite(v)||v<0){ toast("Enter the number of reps you did"); return; }
+  /* Shared by the Save button and Continue, so forgetting to tap Save no
+     longer loses a correction someone actually typed in. Silent no-op on
+     an empty/invalid value rather than a toast — Continue is meant to be
+     frictionless, and there is nothing wrong with leaving the count as-is
+     if they back out of the correction without entering anything. */
+  const commitRepFix=()=>{
+    if(fix.style.display==="none")return;
+    const raw=($("#rep-actual").value||"").trim();
+    if(raw===""){ return; }
+    const v=parseInt(raw,10);
+    if(!Number.isFinite(v)||v<0){ return; }
     if(v===r.reps){ setLabel("correct",null); showDone(`Confirmed at ${r.reps} reps ✓`); return; }
     setLabel("incorrect",v);
     showDone(`Corrected to ${v} reps ✓`);
   };
-  $("#res-continue").onclick=()=>{R.classList.remove("on");renderAssignedWorkout();};
+  $("#rep-save").onclick=commitRepFix;
+  $("#res-continue").onclick=()=>{commitRepFix();R.classList.remove("on");renderAssignedWorkout();};
   // ---- weight used for this set (optional; dumbbells etc.) ----
   const wIn=$("#set-weight"), wLast=$("#wt-last");
   wIn.value = (r.weight_kg==null?"":r.weight_kg);
