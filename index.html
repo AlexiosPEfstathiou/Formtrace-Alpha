@@ -2650,10 +2650,16 @@ async function renderHome(){
   }else{
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
-    await renderHomeReviewDue($("#home-reviewdue"));
-    await renderHomeDeclined($("#home-declined"));
-    await renderCoachHome(todayEl);
-    await renderCoachTrainees(coachEl,newsEl);
+    /* These four don't depend on each other's output and each writes to
+       its own DOM node, so running them in series (as this did before) pays
+       the SUM of four round trips. Promise.all cuts that to roughly the
+       slowest single one. */
+    await Promise.all([
+      renderHomeReviewDue($("#home-reviewdue")),
+      renderHomeDeclined($("#home-declined")),
+      renderCoachHome(todayEl),
+      renderCoachTrainees(coachEl,newsEl)
+    ]);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
   }
@@ -2883,11 +2889,20 @@ async function renderHomeReviewDue(el){
   try{
     const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
     const today=todayISO();
-    const lists=await Promise.all(engs.map(async e=>{
-      const aw=await store.assignedWorkouts.list({engagement_id:e.id});
-      const prof=(await store._sb.from("profiles").select("display_name").eq("id",e.trainee_id).maybeSingle()).data;
-      return {aw,name:prof?.display_name||"a trainee"};
-    }));
+    /* Batched, same fix already applied to renderCoachTrainees: this used
+       to run one assignedWorkouts query AND one separate single-row
+       profiles query PER engagement (2N round trips, the profile lookups
+       fully sequential with their own workout fetch). Now it's the
+       workout fetches in parallel across engagements (unavoidable — each
+       needs its own filter) plus exactly one batched profiles query for
+       every trainee name at once. */
+    const traineeIds=[...new Set(engs.map(e=>e.trainee_id))];
+    const [awLists,profRes]=await Promise.all([
+      Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id}))),
+      store._sb.from("profiles").select("id,display_name").in("id",traineeIds)
+    ]);
+    const profs={}; for(const p of (profRes.data||[])) profs[p.id]=p;
+    const lists=engs.map((e,i)=>({aw:awLists[i],name:profs[e.trainee_id]?.display_name||"a trainee"}));
     for(const {aw,name} of lists){
       for(const a of aw){
         if(a.status!=="submitted")continue;

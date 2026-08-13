@@ -529,6 +529,47 @@ ledger, workout status) being server-checked rather than client-writable.
 
 ---
 
+## S. Make coach notifications load faster
+
+Checked the actual coach homepage load path before writing this down.
+Two real, well-defined bottlenecks; two other parts of the same path are
+already fine and shouldn't be touched.
+
+**1. The four notification loaders run one after another, not in parallel.**
+`renderHome()`'s coach branch does:
+```
+await renderHomeReviewDue(...);
+await renderHomeDeclined(...);
+await renderCoachHome(...);
+await renderCoachTrainees(...);
+```
+None of these four depend on each other's output, and each writes to its
+own DOM node. Run serially, total wait is the SUM of all four round trips;
+run via `Promise.all`, it's roughly the SLOWEST of the four. This is the
+single biggest, safest win — same class of fix as the trainee-side
+`renderHome()` already went through, just the ordering this time rather
+than the stale-render bug found there.
+
+**2. `renderHomeReviewDue` fetches one trainee's name per engagement,
+separately.** Inside its per-engagement loop it does two round trips —
+`assignedWorkouts.list`, then a SEPARATE single-row `profiles` query for
+that one trainee's `display_name` — repeated once per active engagement.
+For a coach with many trainees that's N profile queries where one batched
+`select id,display_name from profiles where id in (...)` would do, plus
+each engagement's own two queries are sequential when they don't need to
+be. `renderCoachTrainees` (a different function, also called from the same
+`renderHome()`) already solved exactly this problem — it has a comment
+noting it used to be "4N+1 queries" and is now "four queries total,
+regardless of trainee count," via batched `.in()` calls. `renderHomeReviewDue`
+should get the same treatment.
+
+**Already fine, checked and left alone:** `renderCoachHome` (one engagements
+query, then a properly parallel `Promise.all` across engagements) and
+`renderCoachTrainees` (already batched to a fixed 4 queries). Worth stating
+so nobody "fixes" something that isn't broken while addressing the above.
+
+---
+
 Risk register fully closed: storage lockdown, account deletion,
 consent + age gate, private profile fields, server-enforced scheduling and
 status, streak redefinition, error reporting, query batching.
