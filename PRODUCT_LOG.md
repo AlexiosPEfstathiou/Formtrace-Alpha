@@ -570,6 +570,93 @@ so nobody "fixes" something that isn't broken while addressing the above.
 
 ---
 
+## T. Audio on exercise/reference recordings — DONE 2026-08-11
+
+All videos were silent for four of six recording types. Checked `startCam()`
+before treating this as a from-scratch build, and it wasn't one: audio
+capture already existed, gated behind a per-call flag —
+
+> "Pitch videos are spoken to camera, so they ask for the mic. Set videos
+> and references stay silent."
+
+So marketplace pitch videos already recorded sound; exercise sets, coach
+references, video notes, and per-set feedback videos were silent by a
+design decision already in the code, not an oversight.
+
+**DECIDED 2026-08-11:** enabled for every recording type, matching the
+request as given rather than scoping it down over the unaddressed gym-
+privacy question. `wantAudio` is now passed for the Reference recorder,
+the exercise-set recorder, the coach's "Video note," and the per-set
+"Feedback video" — the two that already asked for it (goal/pitch videos)
+are untouched. Preview-only calls (playback, not recording) were correctly
+left alone throughout.
+
+Consent notice updated to say recordings now include sound, and
+`CONSENT_VERSION` bumped to `2026-08-v3` so every existing user is
+re-prompted before microphone capture starts for them — same treatment as
+the age-visibility change, since this is the same class of "a new kind of
+data is now being captured" event.
+
+---
+
+## U. Grading: drop the numeric score, make the tags multi-select
+
+**Checked the actual review screen before logging this — it changes the
+scope a lot.** The five tags in the request already exist verbatim in the
+code today: "Nailed it," "Good," "Watch depth," "Slow down," "Fix form."
+They sit alongside a required 1–10 numeric grade (`form_grade`), and are
+currently SINGLE-select — clicking one clears any other via
+`pills.querySelectorAll(".pill").forEach(x=>x.classList.remove("on"))`.
+
+So this is not "design a tagging system" — it's two edits to something
+already built:
+1. Remove the 1–10 grade chips and `gradeColor`/`gradeWord` from the
+   review screen. `form_grade` stops being asked for.
+2. Change the pill click handler so tags toggle independently instead of
+   clearing siblings, and change the stored shape from one `label: string`
+   to `labels: string[]`.
+
+**Not yet checked, needs doing before building:** every OTHER place
+`form_grade`/`grade`/`gradeColor` is read, not just where it's set. At
+minimum the review screen's own `grade-badge` (shows "N/10" next to each
+set) needs to change to show the tag set instead. Also unconfirmed: whether
+anything on the trainee-facing side displays the numeric grade, and whether
+`writeSetLabels`/`saveCoachGrades` treat `form_grade` as a required column
+anywhere in a way that would need a matching migration to make it optional
+or drop it. Sizing this at "small" without checking those would be a guess,
+not a finding — check first.
+
+---
+
+## V. Coach voice-over an existing (trainee) video
+
+Coach records their own audio commentary while watching the trainee's
+submitted clip play, so the trainee can watch their form with the coach
+talking over it — not a second video, a voice track added to the one that
+already exists.
+
+**Two genuinely different ways to build this, not yet decided:**
+1. **Two synced files.** Record only the coach's microphone audio (no new
+   video) while the original clip plays alongside for reference. Store the
+   audio separately, and on playback for the trainee, start both the
+   original video and the coach's audio together. Cheap: no video
+   re-encoding, MediaRecorder already handles audio-only capture, and item
+   T's audio-permission work is directly reusable.
+2. **One muxed file.** Combine the coach's audio into the original video
+   as a real new file with both tracks. Needs something to do the muxing —
+   ffmpeg.wasm in-browser, or a server-side step — which is meaningfully
+   more engineering than option 1, for a result that's more convenient
+   (one file, no sync-on-play logic) but not obviously necessary.
+
+Recommend option 1 unless there's a reason the trainee needs a single
+downloadable file rather than in-app synced playback — same build-vs-buy
+shape as item G's video-call question, just smaller. `openRecorder`'s
+existing "Record feedback video" flow (used from the review screen today)
+is the natural integration point once the recording MODE itself is
+decided.
+
+---
+
 Risk register fully closed: storage lockdown, account deletion,
 consent + age gate, private profile fields, server-enforced scheduling and
 status, streak redefinition, error reporting, query batching.

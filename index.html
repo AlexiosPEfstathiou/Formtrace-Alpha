@@ -1303,7 +1303,7 @@
       <div class="card">
         <div style="font-size:13px;font-weight:700;margin-bottom:8px">What FormTrace stores about you</div>
         <div style="font-size:12.5px;color:var(--muted);line-height:1.6">
-          To coach you, this app records: <b style="color:var(--ink)">videos of you exercising</b>, <b style="color:var(--ink)">weekly progress photos</b>, <b style="color:var(--ink)">body measurements and weight</b>, and <b style="color:var(--ink)">what you eat</b>.
+          To coach you, this app records: <b style="color:var(--ink)">videos of you exercising, with sound</b>, <b style="color:var(--ink)">weekly progress photos</b>, <b style="color:var(--ink)">body measurements and weight</b>, and <b style="color:var(--ink)">what you eat</b>.
         </div>
         <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px">
           Your coach can see this while you work together. Nobody else can — it isn't public, isn't sold, and isn't used for advertising. Two exceptions, both deliberate: videos you post to the marketplace are visible to coaches browsing for trainees, and <b style="color:var(--ink)">your age is shown on your profile</b> to anyone who views it.
@@ -2471,7 +2471,7 @@ function showAuth(){
 }
 /* Bump this when the wording changes materially — existing users are then
    re-prompted rather than being held to consent given to an older notice. */
-const CONSENT_VERSION="2026-08-v2";
+const CONSENT_VERSION="2026-08-v3";
 let MY_PRIVATE=null;   // profile_private row for the signed-in user
 function showConsentGate(){
   $("#app-loading").style.display="none";
@@ -3525,7 +3525,7 @@ $("#ex-save").addEventListener("click",async()=>{
 });
 $("#ex-delete").addEventListener("click",async()=>{ if(!editingExId)return; await store.exercises.remove(editingExId); toast("Exercise removed"); go("coach"); });
 $("#btn-record-ref").addEventListener("click",()=>{
-  openRecorder({title:"Reference",subtitle:"record correct form",review:true,useLabel:"✓ Use this trace",onComplete:cap=>{
+  openRecorder({title:"Reference",subtitle:"record correct form",review:true,audio:true,useLabel:"✓ Use this trace",onComplete:cap=>{
     // count on the full capture (more accurate) but STORE a subsampled track —
     // raw frames were posting hundreds of KB of JSON per exercise.
     const reps=countReps(cap.frames).reps;
@@ -4927,7 +4927,7 @@ function openCoachMissedDay(iso,wl){
   let pendingNoteVideo=null;
   const vidBtn=document.createElement("button");vidBtn.className="btn sm";vidBtn.style.marginBottom="10px";vidBtn.textContent="● Record video note";
   vidBtn.addEventListener("click",()=>{
-    openRecorder({title:"Video note",subtitle:fmtDay(iso),review:true,useLabel:"✓ Use this video",
+    openRecorder({title:"Video note",subtitle:fmtDay(iso),review:true,audio:true,useLabel:"✓ Use this video",
       onComplete:async cap=>{ if(!cap.blob)return; toast("Uploading…",2000);
         try{ const ext=(cap.blob.type||"").includes("mp4")?"mp4":"webm"; pendingNoteVideo=await store.video.upload(cap.blob,ext); vidBtn.textContent="✓ Video attached — re-record"; toast("Video attached ✓"); }
         catch(e){console.error(e);toast("Couldn't upload video",4000);} }});
@@ -5753,7 +5753,7 @@ $("#r-rot")?.addEventListener("click",async e=>{
 function startTraineeSet(itemIndex,setIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
   openRecorder({
-    title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:true,useLabel:"✓ Use this take",
+    title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:true,audio:true,useLabel:"✓ Use this take",
     // last time's cue, kept on screen while they set up and perform
     note:(prevSeries&&prevSeries.notes[it.name])||"",
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
@@ -6205,7 +6205,7 @@ async function openReview(assignedId,readonly=false){
         const hasFb=()=>!!(reviewState.per_set[key]||{}).video_path;
         fbBtn.textContent=hasFb()?"✓ Feedback video attached — re-record":"● Record feedback video";
         fbBtn.addEventListener("click",()=>{
-          openRecorder({title:"Feedback",subtitle:`${item.name} · set ${si+1}`,review:true,useLabel:"✓ Use this video",
+          openRecorder({title:"Feedback",subtitle:`${item.name} · set ${si+1}`,review:true,audio:true,useLabel:"✓ Use this video",
             onComplete:async cap=>{
               if(!cap.blob){return;}
               toast("Uploading feedback video…",2000);
@@ -7396,9 +7396,11 @@ function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecord
 async function startCam(){
   if(rStream)rStream.getTracks().forEach(t=>t.stop());
   const vc={facingMode:rFacing,width:{ideal:1280},height:{ideal:720}};
-  // Pitch videos are spoken to camera, so they ask for the mic. Set videos and
-  // references stay silent. If the mic is refused we still record the video
-  // rather than failing the whole capture.
+  // Every recording type now asks for the mic (item T) — the flag stays
+  // per-call rather than hardcoded true, so a future silent-by-design
+  // recording type (if one is ever added) still has a way to opt out. If
+  // the mic is refused we still record the video rather than failing the
+  // whole capture.
   const wantAudio=!!(recOpts&&recOpts.audio);
   try{
     rStream=await navigator.mediaDevices.getUserMedia({video:vc,
