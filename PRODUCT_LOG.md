@@ -145,23 +145,33 @@ missed deadlines rather than just charges) is the natural source for it.
 
 ---
 
-## C. Streak protection on a missed workout
+## C. Streak protection on a missed workout — DONE 2026-08-11
 
 When a missed workout would break a streak, notify the trainee and offer:
 - **Reschedule** — move the workout later in the calendar, streak intact
 - **Break my streak** — accept it
-
-Offered indefinitely, so a streak is always recoverable.
 
 **DECIDED 2026-08-07:** no coach approval needed, but the new date must fall
 **within the next 6 days**, and the trainee must be clearly notified of what
 they're doing. This keeps streaks recoverable without letting a trainee push
 a workout indefinitely or quietly rewrite the coach's programme.
 
-Implementation note: needs its own SECURITY DEFINER function rather than
-reusing `request_postpone` — that one sets status 'pending' and waits for a
-coach. This one commits the move immediately, with the 6-day ceiling enforced
-in SQL so the client cannot widen it.
+Built as `reschedule_for_streak(assigned_id, new_date)`, a SECURITY DEFINER
+function separate from `request_postpone` (which is coach-approved and has
+no day ceiling) — this one commits immediately, only on a workout that's
+genuinely overdue, only within the 6-day window, both enforced in SQL so
+the client can't widen either. Homepage card sits at the same priority as
+the milestone card (highest of the trainee notifications) since a streak
+at risk is more time-critical than the weekly check-in's week-long window.
+"Break my streak" dismisses that specific miss per-device rather than
+deleting anything — the workout stays reachable through the normal
+calendar tools if the trainee changes their mind.
+
+Note on the mechanism, since it wasn't obvious until built: the day-state
+rule reads a workout's CURRENT due_date, not history, so moving an overdue
+workout's date off the day it was due doesn't just avoid a future miss —
+it retroactively turns that past day into a rest day. The reschedule is
+what actually recovers the streak; there is no separate "un-miss" step.
 
 ---
 
@@ -359,9 +369,13 @@ thin recap with a richer summary of the whole goal:
   reusable here, not a new chart.
 - `openGoalRecap(e, coach)` is the CURRENT recap — a plain sheet with goal
   title, duration, coach name, outcome. This is what "The Journey" replaces
-  or supersedes; not yet decided whether it's the same sheet upgraded or a
-  new dedicated screen (a rich screen with a timelapse and a chart likely
-  doesn't fit the small bottom-sheet pattern `openGoalRecap` currently uses).
+  for the trainee's own completed goals.
+  **DECIDED 2026-08-11: a new dedicated screen**, not an upgrade to the
+  existing bottom sheet — a timelapse plus a chart doesn't fit that sheet's
+  small footprint. `openGoalRecap` stays as-is for the COACH's view of a
+  finished goal (no timelapse/chart/share was asked for on that side); the
+  new screen is trainee-only per the original ask, reached instead of the
+  sheet when the trainee is the one opening a completed goal.
 - **Highest streak during the goal does not exist anywhere.** Current streak
   logic (`compute_streak` / `dayState`) only ever computes the streak ending
   at "today" — there is no "longest run within an arbitrary past window"

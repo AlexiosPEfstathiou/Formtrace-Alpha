@@ -141,6 +141,8 @@
   .home-checkin.ci-urgent .ci-arw{color:var(--amber);}
   @keyframes ciPulse{0%,100%{box-shadow:0 6px 20px rgba(255,194,74,.18);}50%{box-shadow:0 6px 26px rgba(255,194,74,.40);}}
   @media(prefers-reduced-motion:reduce){.home-checkin.ci-urgent{animation:none;}}
+  .sr-btns{display:flex;gap:8px;margin-top:9px;}
+  .sr-btns .btn{margin:0;flex:1;}
   /* trainee homepage: unviewed form-review chips */
   .home-reviews{margin-top:18px;}
   .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}
@@ -954,6 +956,7 @@
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <div id="home-milestone" class="home-milestone" style="display:none"></div>
+      <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
@@ -1791,6 +1794,84 @@ $("#streak-badge")?.addEventListener("click",openStreakBurst);
 $("#sb-close")?.addEventListener("click",closeStreakBurst);
 $("#streakburst")?.addEventListener("click",e=>{ if(e.target.id==="streakburst")closeStreakBurst(); });
 let sbState={count:0,milestone:0};
+/* Item C: reschedule an overdue workout to protect a streak, no coach
+   approval, capped at 6 days out (reschedule_for_streak enforces this
+   server-side). The trigger is any overdue-and-still-'assigned' workout —
+   under the live day-state rule, moving its due_date off that day turns it
+   from 'missed' into 'rest' retroactively, which is what actually recovers
+   the streak, not the reschedule itself. "Break my streak" dismisses this
+   specific miss (per-device, since there's no server column for it) rather
+   than deleting anything — the trainee can still fix that workout later via
+   the normal calendar tools if they change their mind. */
+function streakRiskDismissed(){ try{ return JSON.parse(localStorage.getItem("ft-streakrisk-dismissed")||"[]"); }catch(e){ return []; } }
+function dismissStreakRisk(id){
+  try{
+    const list=streakRiskDismissed(); if(!list.includes(id)) list.push(id);
+    localStorage.setItem("ft-streakrisk-dismissed", JSON.stringify(list.slice(-50)));
+  }catch(e){}
+}
+async function renderHomeStreakRisk(el,engs){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME||roleOf()==="coach")return;
+  const active=(engs||[]).filter(e=>e.status==="active");
+  if(!active.length)return;
+  const today=todayISO();
+  const dismissed=new Set(streakRiskDismissed());
+  let at=null;
+  try{
+    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const overdue=lists.flat().filter(a=>a.status==="assigned" && a.due_date && a.due_date<today && !dismissed.has(a.id));
+    overdue.sort((a,b)=>a.due_date<b.due_date?-1:1);
+    at=overdue[0]||null;
+  }catch(e){ console.error("renderHomeStreakRisk",e); return; }
+  if(!at)return;
+  if(milestoneShowing)return;   // same one-high-priority rule as the other cards
+  const nm=(at.snapshot&&at.snapshot.name)||"a workout";
+  el.classList.add("ci-urgent");
+  el.innerHTML=`<div class="ci-ic">🔥</div>
+    <div class="ci-main"><div class="t">Your streak is at risk</div>
+      <div class="s">${escapeHtml(nm)} from ${escapeHtml(fmtDay(at.due_date))} was never done. Reschedule it and the day counts as rest instead of missed.</div>
+      <div class="sr-btns"><button class="btn sm" id="sr-resched">Reschedule</button><button class="btn sm ghost" id="sr-break">Break my streak</button></div>
+    </div>`;
+  el.style.display="";
+  el.querySelector("#sr-resched").addEventListener("click",e=>{ e.stopPropagation(); openStreakRiskSheet(at); });
+  el.querySelector("#sr-break").addEventListener("click",e=>{
+    e.stopPropagation();
+    dismissStreakRisk(at.id);
+    el.style.display="none";
+    toast("Streak left as-is");
+  });
+}
+function openStreakRiskSheet(a){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Reschedule to protect your streak";
+  $("#sheet-add").style.display="none";
+  const min=addDaysISO(todayISO(),1), max=addDaysISO(todayISO(),6);
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      Pick a day in the next 6 days. Your coach isn't asked to approve this — it exists purely to protect your streak.</div>
+    <div class="field"><label for="sr-date">Move to</label>
+      <input id="sr-date" type="date" min="${min}" max="${max}" value="${min}"></div>
+    <button class="btn primary" id="sr-save" style="margin-top:4px">Save new date</button>`;
+  body.appendChild(wrap);
+  $("#sr-save").addEventListener("click",async()=>{
+    const d=($("#sr-date").value||"").trim();
+    if(!d){ toast("Pick a day"); return; }
+    const btn=$("#sr-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
+    try{
+      const { error }=await store._sb.rpc("reschedule_for_streak",{p_assigned:a.id,p_new_date:d});
+      if(error) throw error;
+      closeSheet();
+      toast("Rescheduled — your streak is safe ✓",3400);
+      if($("#s-home")?.classList.contains("active")) renderHome();
+    }catch(err){
+      console.error("reschedule_for_streak",err);
+      toast(err.message||"Couldn't reschedule (run migrations_streak_reschedule.sql)",5000);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
 /* Draw a 1080x1920 story image. Canvas rather than a screenshot because
    Instagram and Facebook only accept a real image file — there is no web
    API that posts to a Story directly. */
@@ -2510,6 +2591,7 @@ async function renderHome(){
   const gapsEl=$("#home-macrogaps"); if(gapsEl) gapsEl.style.display="none";
   const ppEl=$("#home-postpone"); if(ppEl) ppEl.style.display="none";
   const msEl=$("#home-milestone"); if(msEl) msEl.style.display="none";
+  const srEl=$("#home-streakrisk"); if(srEl) srEl.style.display="none";
   const rdEl=$("#home-reviewdue"); if(rdEl) rdEl.style.display="none";
   const dcEl=$("#home-declined"); if(dcEl) dcEl.style.display="none";
 
@@ -2523,6 +2605,7 @@ async function renderHome(){
     $("#home-p").style.display="none";
     await renderHomeToday(engs, todayEl);
     await renderHomeMilestone($("#home-milestone"));
+    await renderHomeStreakRisk($("#home-streakrisk"), engs);
     await renderHomeReviews(engs, reviewsEl);
     await renderHomePostpone(engs, $("#home-postpone"));
     await renderHomeMacro(macroEl);
