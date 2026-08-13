@@ -2638,7 +2638,14 @@ async function renderHome(){
   // Remember whether the goal-submission path should glisten, so the
   // persistent app tab bar can reflect it, then (re)render that bar.
   window._ftGlistenGoal = (base!=="coach") && noActiveGoal;
-  renderAppTabs("home");
+  /* renderHome() has nine sequential awaits, so it can still be running
+     seconds after the user has already navigated elsewhere — e.g. tapping
+     Training before Home's own render finished. Without this guard, that
+     stale in-flight call reaches this line late and clobbers whatever tab
+     is genuinely active. This was the real cause of Training losing its
+     highlight; an earlier defensive fix in openTraineeCalendar addressed a
+     different, unconfirmed race and is left in place as a second guard. */
+  if($("#s-home")?.classList.contains("active")) renderAppTabs("home");
 }
 /* Trainee homepage: today's assigned workout (or Rest day) */
 async function renderHomeToday(engs, el){
