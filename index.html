@@ -5590,6 +5590,20 @@ let currentAssigned=null;   // the assigned_workouts row
 let localResults=null;      // per-item arrays, held until submit
 async function openAssigned(id){
   currentAssigned=await store.assignedWorkouts.get(id);
+  /* engById only ever got populated inside openTraineeCalendar — fine for
+     the normal Training-tab path, but this screen is also reached directly
+     from two homepage shortcuts (today's program, a postpone-decision
+     chip) that skip the calendar entirely. Anything downstream that reads
+     engById for this workout's coach (openWildcardPicker, at minimum) was
+     silently exposed to a stale/empty cache depending on HOW someone
+     arrived here — root-caused here instead of patched at each call site. */
+  if(!currentEng && currentAssigned.engagement_id && !engById[currentAssigned.engagement_id]){
+    try{
+      const { data, error } = await store._sb.from("engagements").select("*").eq("id",currentAssigned.engagement_id).single();
+      if(error) throw error;
+      if(data) engById[currentAssigned.engagement_id]=data;
+    }catch(e){ console.error("openAssigned: engagement lookup",e); }
+  }
   const items=currentAssigned.snapshot.items||[];
   // mark opened so the trainee's "new" glisten stops (best-effort; column may not exist)
   if(!currentAssigned.opened){ try{ await store.assignedWorkouts.update(id,{opened:true}); currentAssigned.opened=true; }catch(e){} }
