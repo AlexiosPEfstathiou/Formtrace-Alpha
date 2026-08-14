@@ -7773,6 +7773,41 @@ async function renderAdminErrors(body){
     }catch(e){ toast("Couldn't clear the log",4000); }
   });
 }
+/* Item O: coach inactivity signal. Deliberately a raw sorted list, not an
+   auto-"flagged" verdict — unreviewed = agreed - reviewed - missed is the
+   part of a low review rate that's genuinely on the coach (missed_count is
+   the TRAINEE never submitting, which isn't the coach's fault). Inventing
+   a numeric "this coach is routinely negligent" threshold wasn't asked for
+   and isn't obviously right at any specific number; an admin looking at a
+   sorted list can judge severity themselves. */
+async function renderAdminInactivity(body){
+  const wrap=document.createElement("div");wrap.className="card";wrap.style.marginBottom="14px";
+  wrap.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Coach review activity — last 8 finalized weeks</div><div id="admin-inact-body"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
+  body.appendChild(wrap);
+  const slot=wrap.querySelector("#admin-inact-body");
+  try{
+    const { data, error } = await store._sb.rpc("admin_coach_inactivity",{p_lookback_cycles:8});
+    if(error) throw error;
+    const rows=(data||[]).filter(r=>r.total_unreviewed>0);
+    if(!rows.length){
+      slot.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No coach has an unreviewed submission in their recent finalized weeks.</div>`;
+      return;
+    }
+    slot.innerHTML="";
+    for(const r of rows){
+      const row=document.createElement("div");row.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)";
+      row.innerHTML=`<div style="min-width:0"><div style="font-weight:700;font-size:13.5px">${escapeHtml(r.display_name||"Coach")}</div>
+          <div style="font-size:11.5px;color:var(--faint);margin-top:2px">${r.cycles_considered} week${r.cycles_considered===1?"":"s"} considered · last ${escapeHtml(fmtDay(r.most_recent_cycle_start))}</div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-weight:800;color:var(--amber)">${r.total_unreviewed} unreviewed</div>
+          <div style="font-size:11px;color:var(--faint)">${r.unreviewed_rate}% of agreed</div></div>`;
+      slot.appendChild(row);
+    }
+    slot.lastElementChild.style.borderBottom="none";
+  }catch(e){
+    console.error("admin_coach_inactivity (run migrations_admin_inactivity.sql)",e);
+    slot.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load review activity.</div>`;
+  }
+}
 async function renderAdmin(){
   const body=$("#admin-body");body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   let apps=[];
@@ -7780,6 +7815,7 @@ async function renderAdmin(){
   $("#admin-sub").textContent=apps.length?`${apps.length} pending`:"Nothing pending";
   body.innerHTML="";
   await renderAdminErrors(body);
+  await renderAdminInactivity(body);
   if(!apps.length){ body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`); return; }
   for(const a of apps){
     const prof=a.profiles||{};

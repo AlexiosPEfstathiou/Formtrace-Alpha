@@ -415,18 +415,33 @@ cosmetic, skipped to keep this landing rather than open-ended.
 
 ---
 
-## O. Admin: coach inactivity / missed-review monitoring
+## O. Admin: coach inactivity / missed-review monitoring — DONE 2026-08-11
 
 Carried over from item B's interview. Admin-visible signal for coaches
 routinely missing their review deadline, so the FormTrace team can contact
 them — this is the moderation lever behind "a coach who does this
 routinely will probably get cancelled and/or removed."
 
-The payment ledger (`payment_cycles`, once populated with real cycles) is
-the natural data source: a rising count of cycles where `reviewed_count`
-is low relative to `agreed_count` is exactly the inactivity signal needed.
-Not designed yet — needs an admin screen and probably a threshold/alerting
-rule, which doesn't exist for anything else in the app yet either.
+**Refined the signal before building — "reviewed_count low relative to
+agreed_count" alone isn't clean.** A low reviewed count can mean the coach
+didn't review, OR the trainee never submitted (`missed_count`), which is
+the trainee's fault, not the coach's. The part that's genuinely on the
+coach is `agreed_count - reviewed_count - missed_count` — submitted, and
+nobody ever graded it. That's the number actually surfaced.
+
+**DECIDED: a raw sorted list, not an auto-"flagged" verdict.** Inventing a
+numeric threshold for what counts as "routine" negligence wasn't asked
+for and isn't obviously right at any specific number — an admin looking
+at coaches sorted by unreviewed count can judge severity themselves. A
+hard threshold is a small addition on top of this later if wanted, not a
+redesign now.
+
+Window is the coach's last 8 *finalized* weeks (`status <> 'pending'`)
+across all their engagements combined, not per-trainee — a coach with
+several trainees gets one combined signal, not one row per relationship.
+Added as a new section on the existing admin screen, above the coach
+applications list, rather than a separate screen — this is the same kind
+of thing.
 
 ---
 
