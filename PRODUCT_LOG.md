@@ -332,10 +332,25 @@ never answered:** a paused week bills nothing at all — not a pro-rated
 partial charge. Simplest reading consistent with "no workouts are due,"
 and avoids inventing a day-by-day proration mechanism nobody asked for.
 
+**REVISED 2026-08-11:** pausing is now a whole-account action for the
+trainee — one button, every active goal — same shape as the coach's
+"pause all trainees" (item N), not per-goal. Reasoning given at the time:
+since a pause already meant "everything," scattering the trigger per-goal
+on My Goals didn't match how it actually behaves. The trigger moved to a
+single button at the bottom of the Training tab (repurposing the fab that
+had no other job there, since completion/rating already happens inside a
+specific goal). Per-goal `start_pause`/`end_pause` are unchanged underneath
+and still exist; `start_pause_all_mine`/`end_pause_all_mine` are the new
+"do it to every active goal" wrappers, mirroring `start_pause_all` exactly.
+My Goals still shows a paused goal's message, but it's read-only now —
+the action lives in one place. **Traded away by this change:** a trainee
+running two goals at once can no longer pause just one while keeping the
+other active — accepted, since that's what was asked for.
+
 **Built as one shared table and function set with item N** — see N for
-what they have in common. M-specific: "Pause this goal" / "Resume" on the
-trainee's My Goals screen and on the coach's own engagement screen for
-that one trainee, using the same `start_pause`/`end_pause` underneath.
+what they have in common. The underlying `start_pause`/`end_pause`
+primitive is unchanged; only the trainee-facing trigger moved and gained
+a bulk wrapper.
 
 **A day only reads as 'paused' when EVERY one of the trainee's active
 goals is paused for it** — checked deliberately, not assumed: a trainee

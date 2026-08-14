@@ -4466,24 +4466,15 @@ async function renderGoals(){
           <div style="font-size:12.5px;color:var(--muted);margin-top:4px">${statusTxt}${outcomeTxt}${coach.display_name?` · ${escapeHtml(coach.display_name)}`:""}</div></div>
         <span class="badge ${e.status}">${statusTxt}</span>${clickable?'<div style="color:var(--faint);align-self:center">›</div>':""}</div>`;
     if(e.status==="active"){
+      /* Revised: pausing moved to a single whole-account action at the
+         bottom of the Training tab (mirrors the coach's "pause all
+         trainees"), so this card is informational only now — no action
+         buttons for it here, just what's currently true and where to act. */
       const pause=activePauseFor(e.id);
       if(pause){
         const info=document.createElement("div");info.className="prev-note";info.style.marginTop="10px";
-        info.innerHTML=`<div class="pn-h">🏖 Paused${pause.i_triggered_it?"":" by your coach"}</div><div class="pn-b">${escapeHtml(pause.message||"On hold for now — your streak is frozen, not broken.")}</div>`;
+        info.innerHTML=`<div class="pn-h">🏖 Paused${pause.i_triggered_it?"":" by your coach"}</div><div class="pn-b">${escapeHtml(pause.message||"On hold for now — your streak is frozen, not broken.")} Resume from the Training tab.</div>`;
         card.appendChild(info);
-        const resumeBtn=document.createElement("button");resumeBtn.className="btn sm";resumeBtn.style.marginTop="8px";
-        resumeBtn.textContent="Resume training";
-        resumeBtn.addEventListener("click",async ev=>{
-          ev.stopPropagation(); resumeBtn.disabled=true;
-          try{ await store._sb.rpc("end_pause",{p_engagement:e.id}); toast("Welcome back ✓"); renderGoals(); }
-          catch(err){ console.error("end_pause",err); toast(err.message||"Couldn't resume",4000); resumeBtn.disabled=false; }
-        });
-        card.appendChild(resumeBtn);
-      }else{
-        const pauseBtn=document.createElement("button");pauseBtn.className="btn sm ghost";pauseBtn.style.marginTop="8px";
-        pauseBtn.textContent="🏖 Pause this goal";
-        pauseBtn.addEventListener("click",ev=>{ ev.stopPropagation(); openPauseSheet(e.id,e.goal_title,renderGoals); });
-        card.appendChild(pauseBtn);
       }
       const btn=document.createElement("button");btn.className="btn sm";btn.style.cssText="margin-top:8px;color:var(--red)";
       btn.textContent="Cancel this goal";
@@ -4741,8 +4732,32 @@ async function renderEngagement(){
   const oldReopen=$("#eng-reopen"); if(oldReopen)oldReopen.remove();
   const oldPause=$("#eng-pause"); if(oldPause)oldPause.remove();
   if(traineeMerged){
-    // merged trainee view: completion/rating happens inside a specific goal
-    fabRow.classList.add("hidden");
+    /* Revised: pausing is now a whole-account action for a trainee, same
+       shape as the coach's "pause all trainees" — so its one trigger lives
+       here, at the bottom of the Training tab, rather than scattered as a
+       button per goal on My Goals. completion/rating still happens inside
+       a specific goal, so this fab is repurposed rather than left idle. */
+    const activeGoals=traineeEngs.filter(e=>e.status==="active");
+    if(!activeGoals.length){
+      fabRow.classList.add("hidden");
+    }else{
+      fabRow.classList.remove("hidden");
+      const allPaused=activeGoals.every(e=>activePauseFor(e.id));
+      if(allPaused){
+        fab.textContent="Resume training";
+        fab.onclick=async()=>{
+          fab.disabled=true;
+          try{
+            const { error }=await store._sb.rpc("end_pause_all_mine");
+            if(error) throw error;
+            toast("Welcome back ✓"); renderEngagement();
+          }catch(err){ console.error("end_pause_all_mine",err); toast(err.message||"Couldn't resume",4000); fab.disabled=false; }
+        };
+      }else{
+        fab.textContent="🏖 Pause all my goals";
+        fab.onclick=openPauseAllMineSheet;
+      }
+    }
   }else if(currentEng.status==="active" && iAmCoach){
     fab.textContent="✓ Goal complete"; fab.onclick=coachCompleteGoal;
     // items M/N: coach's per-trainee pause, same primitive as the trainee's own
@@ -7286,6 +7301,42 @@ function openPauseAllSheet(){
     }catch(err){
       console.error("start_pause_all",err);
       toast(err.message||"Couldn't pause (run migrations_vacation.sql)",4500);
+      btn.disabled=false;btn.textContent=o;
+    }
+  });
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+/* Trainee's version of the same bulk pause — same sheet shape as
+   openPauseAllSheet above, calling start_pause_all_mine instead of
+   start_pause_all. Lives at the bottom of the Training tab now rather
+   than per-goal on My Goals. */
+function openPauseAllMineSheet(){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Pause all my goals";
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+      Puts every active goal on hold at once. Your coach(es) see this message; nothing is due, and your streak freezes rather than breaks.</div>
+    <div class="field"><label for="pzm-msg">Message (optional)</label>
+      <textarea id="pzm-msg" placeholder="e.g. Travelling for two weeks, back on the 20th"></textarea></div>
+    <div class="field" style="margin-top:12px"><label for="pzm-end">End date (optional — leave blank to resume manually)</label>
+      <input id="pzm-end" type="date" min="${todayISO()}"></div>
+    <button class="btn primary" id="pzm-save" style="margin-top:4px">Pause everything</button>`;
+  body.appendChild(wrap);
+  $("#pzm-save").addEventListener("click",async()=>{
+    const btn=$("#pzm-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Pausing…";
+    try{
+      const { data, error }=await store._sb.rpc("start_pause_all_mine",{
+        p_message:($("#pzm-msg").value||"").trim()||null,
+        p_ends_on:$("#pzm-end").value||null
+      });
+      if(error) throw error;
+      closeSheet();
+      toast(`${data||0} goal${data===1?"":"s"} paused ✓`,3200);
+      renderEngagement();
+    }catch(err){
+      console.error("start_pause_all_mine",err);
+      toast(err.message||"Couldn't pause (run migrations_vacation_trainee_bulk.sql)",4500);
       btn.disabled=false;btn.textContent=o;
     }
   });
