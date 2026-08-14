@@ -5588,6 +5588,18 @@ async function doAssign(w,targetDate){
    ========================================================================= */
 let currentAssigned=null;   // the assigned_workouts row
 let localResults=null;      // per-item arrays, held until submit
+/* Debug hook: this script is a module, so its top-level state (currentAssigned,
+   currentEng, engById...) is invisible to a plain DevTools console — there's
+   no "the app's variables" for it to see. Getters, not a one-time snapshot,
+   so this always reflects live state whenever it's read, however long ago
+   this line ran. Read-only window dressing over state the browser's own
+   Network tab already exposes anyway; no new capability, just easier to get at. */
+window.__ft={
+  get currentAssigned(){return currentAssigned;},
+  get currentEng(){return currentEng;},
+  get engById(){return engById;},
+  get traineeEngs(){return traineeEngs;},
+};
 async function openAssigned(id){
   currentAssigned=await store.assignedWorkouts.get(id);
   /* engById only ever got populated inside openTraineeCalendar — fine for
