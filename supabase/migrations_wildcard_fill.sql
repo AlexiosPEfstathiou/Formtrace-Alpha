@@ -46,7 +46,11 @@ begin
   join public.engagements en on en.id = aw.engagement_id
   where aw.id = p_assigned;
 
-  if aw.id is null then raise exception 'workout not found'; end if;
+  -- record variables (not a %rowtype) are left genuinely UNASSIGNED on a
+  -- zero-row match, not filled with nulls — touching aw.id here would
+  -- itself raise "record is not assigned yet" instead of the intended
+  -- exception. FOUND is the correct, safe check.
+  if not found then raise exception 'workout not found'; end if;
   if aw.trainee_id <> uid then raise exception 'not your workout'; end if;
   if aw.status <> 'assigned' then raise exception 'this workout has already been submitted'; end if;
 
@@ -58,7 +62,7 @@ begin
   from public.exercises
   where id = p_exercise_id and coach_id = aw.coach_id;
 
-  if ex.id is null then raise exception 'exercise not found in your coach''s library'; end if;
+  if not found then raise exception 'exercise not found in your coach''s library'; end if;
   if ex.muscle_group is distinct from item->>'wildcard_mg' then
     raise exception 'that exercise does not match this slot''s muscle group';
   end if;
