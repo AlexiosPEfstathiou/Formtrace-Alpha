@@ -4730,7 +4730,6 @@ async function renderEngagement(){
   fabRow.classList.remove("hidden");
   // clear any previously-added secondary (reopen/pause) buttons
   const oldReopen=$("#eng-reopen"); if(oldReopen)oldReopen.remove();
-  const oldPause=$("#eng-pause"); if(oldPause)oldPause.remove();
   if(traineeMerged){
     /* Revised: pausing is now a whole-account action for a trainee, same
        shape as the coach's "pause all trainees" — so its one trigger lives
@@ -4760,21 +4759,12 @@ async function renderEngagement(){
     }
   }else if(currentEng.status==="active" && iAmCoach){
     fab.textContent="✓ Goal complete"; fab.onclick=coachCompleteGoal;
-    // items M/N: coach's per-trainee pause, same primitive as the trainee's own
-    const pause=activePauseFor(currentEng.id);
-    const pauseBtn=document.createElement("button");pauseBtn.id="eng-pause";pauseBtn.className="btn ghost";pauseBtn.style.marginTop="10px";
-    if(pause){
-      pauseBtn.textContent="Resume this trainee";
-      pauseBtn.onclick=async()=>{
-        pauseBtn.disabled=true;
-        try{ await store._sb.rpc("end_pause",{p_engagement:currentEng.id}); toast("Resumed ✓"); renderEngagement(); }
-        catch(err){ console.error("end_pause",err); toast(err.message||"Couldn't resume",4000); pauseBtn.disabled=false; }
-      };
-    }else{
-      pauseBtn.textContent="🏖 Pause this trainee";
-      pauseBtn.onclick=()=>openPauseSheet(currentEng.id,currentEng.goal_title,renderEngagement);
-    }
-    fabRow.appendChild(pauseBtn);
+    /* Revised 2026-08-11: removed the per-trainee pause that lived here.
+       Vacation is a whole-account action for a coach too — "Pause all
+       trainees" on Profile — not something to trigger one trainee at a
+       time from their individual screen. The underlying start_pause/
+       end_pause(engagement_id) functions are unchanged in the database;
+       nothing in the UI calls them for a single engagement any more. */
   }else if(currentEng.status==="active" && !iAmCoach){
     fab.textContent="Mark goal complete"; fab.onclick=completeEngagement;
   }else if(currentEng.status==="completed" || currentEng.status==="ended"){

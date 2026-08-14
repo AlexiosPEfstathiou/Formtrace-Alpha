@@ -398,6 +398,18 @@ treatment used for streak-risk or check-in, since a pause is a deliberate
 choice, not something to react to) shows each active pause with its
 message and a Resume button, via `my_active_pauses()`.
 
+**REVISED 2026-08-11:** removed the per-trainee "Pause this trainee"
+button that had lived on the coach's individual engagement screen —
+symmetric with M's revision, vacation is a whole-account action on the
+coach's side too, not something to trigger one trainee at a time. "Pause
+all trainees" on Profile is now the coach's ONLY pause trigger. The
+underlying `start_pause`/`end_pause(engagement_id)` functions are
+unchanged in the database; nothing in the UI calls them for a single
+engagement any more on either side (M's revision already removed the
+trainee's own per-goal caller) — kept as the underlying primitive rather
+than deleted, in case a future feature wants single-engagement
+granularity again.
+
 **Not done:** a legend entry for the calendar's new paused-day swatch —
 cosmetic, skipped to keep this landing rather than open-ended.
 
