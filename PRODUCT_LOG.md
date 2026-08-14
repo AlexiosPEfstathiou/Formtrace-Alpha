@@ -4,6 +4,37 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## Wildcard picker: trainees could never read a coach's exercise library — DONE 2026-08-11
+
+Reported as "wildcard slot says the coach hasn't added exercises, but the
+library has two." Traced live, step by step, rather than guessed at:
+confirmed the muscle-group key matched exactly, confirmed the coach ID
+resolved was genuinely correct, then confirmed — same call, same coach_id,
+run as the coach versus run as the trainee — one returns rows, the other
+returns nothing. Not a data problem, not a client bug: a permissions gap.
+
+**The original schema never granted a trainee any read access to the
+`exercises` table at all.** The only policy on it is "coach manages own
+exercises," scoped to `coach_id = auth.uid()`. This never surfaced before
+because every other place a trainee sees exercise data comes from the
+assigned workout's SNAPSHOT — a frozen copy taken at assign time, needing
+no live read. The wildcard-slot feature is the one place that genuinely
+needs to read the coach's CURRENT library live, and that read was never
+granted when the feature was built.
+
+Fixed with an additive SELECT policy — a trainee may read a coach's
+exercises only while they have an active engagement with that specific
+coach, same scoping already used for `set_labels`' equivalent policy. No
+client code changed; `openWildcardPicker` was already correct.
+
+Also added, mid-diagnosis: `window.__ft` (currentAssigned, currentEng,
+engById, traineeEngs as live getters) — the app's script is a module, so
+its own state was invisible to a plain DevTools console, which cost a
+round trip when a suggested diagnostic snippet threw a ReferenceError for
+something that genuinely exists.
+
+---
+
 ## A. Public coach profiles  ← STARTING HERE
 
 Reachable by tapping a coach's name anywhere they appear — offers, the
