@@ -114,6 +114,34 @@ something that genuinely exists.
 
 ---
 
+## Wildcard picker, part 2: filling a slot was blocked by the same class of gap — DONE 2026-08-11
+
+Reported once the read-side fix above unblocked people far enough to
+actually reach this: "permission denied for table assigned_workouts"
+when tapping "Add to my workout" after choosing a wildcard exercise.
+
+**A hardening migration from an earlier session locked this down after
+the wildcard-fill feature was built, and nobody reconciled the two.**
+`migrations_status_enforce.sql` revokes blanket UPDATE on
+`assigned_workouts` and grants clients write access to exactly two
+columns — `draft` and `opened`. Every other column, `snapshot` included,
+was moved behind SECURITY DEFINER functions from that point on. The
+wildcard-fill code was calling `assignedWorkouts.update(id,
+{snapshot:...})` directly — correct when it was written, silently
+incompatible with the table lockdown that came later. Nobody had reached
+this code path at all until the read-side fix above cleared the way to it.
+
+Fixed with `fill_wildcard_slot(assigned_id, item_index, exercise_id,
+sets, reps)` — a real function, not a bypass: verifies the caller owns
+the workout and it's still unsubmitted, that the target slot genuinely is
+a wildcard, and that the chosen exercise belongs to the right coach AND
+actually matches the slot's muscle group, before writing. The picker's
+own filtering already implied all of that; this is where it's actually
+enforced, consistent with every other trainee-asserted write in this app
+going through a checked function rather than a raw column grant.
+
+---
+
 ## A. Public coach profiles  ← STARTING HERE
 
 Reachable by tapping a coach's name anywhere they appear — offers, the

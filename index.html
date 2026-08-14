@@ -5879,17 +5879,18 @@ function wildcardSetsReps(itemIndex,ex){
     if(!Number.isFinite(r)||r<1||r>100){ toast("Reps must be between 1 and 100"); return; }
     const btn=$("#wc-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
     try{
-      const snap=JSON.parse(JSON.stringify(currentAssigned.snapshot));
-      const slot=snap.items[itemIndex];
-      slot.exercise_id=ex.id;
-      slot.name=ex.name;
-      slot.sets=s; slot.reps=r;
-      slot.ref_video_path=ex.ref_video_path||null;
-      slot.landmarks=ex.landmarks||null;
-      // wildcard_mg is kept so the slot still reads as the trainee's own pick
-      await store.assignedWorkouts.update(currentAssigned.id,{snapshot:snap});
-      currentAssigned.snapshot=snap;
-      localResults=reshapeResults(localResults,snap.items);
+      // Was a direct client update({snapshot:...}) — blocked once
+      // migrations_status_enforce.sql locked assigned_workouts down to
+      // client-writable (draft, opened) only. Server-side function now
+      // does the write, with the same validation the picker's own
+      // filtering already implied but never actually enforced.
+      const { data: newSnapshot, error } = await store._sb.rpc("fill_wildcard_slot",{
+        p_assigned:currentAssigned.id, p_item_index:itemIndex,
+        p_exercise_id:ex.id, p_sets:s, p_reps:r
+      });
+      if(error) throw error;
+      currentAssigned.snapshot=newSnapshot;
+      localResults=reshapeResults(localResults,newSnapshot.items);
       closeSheet();
       toast("Added ✓");
       renderAssignedWorkout();
