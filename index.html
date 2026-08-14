@@ -4722,6 +4722,34 @@ async function renderEngagement(){
   // dashboard (both roles): macros stacked bars + weight line + check-in timelapse
   renderDashboard(body, iAmCoach);
 
+  /* Item M's control: ordinary content at the very end of the scrollable
+     body, not a floating overlay — only comes into view once someone has
+     genuinely scrolled all the way down. Trainee-only, and only when
+     there's at least one active goal to act on. */
+  if(traineeMerged){
+    const activeGoals=traineeEngs.filter(e=>e.status==="active");
+    if(activeGoals.length){
+      const allPaused=activeGoals.every(e=>activePauseFor(e.id));
+      const vacWrap=document.createElement("div");vacWrap.style.cssText="margin-top:22px;padding-top:4px";
+      const vacBtn=document.createElement("button");vacBtn.className="btn"+(allPaused?"":" ghost");
+      vacBtn.textContent=allPaused?"Resume training":"Take a vacation";
+      vacBtn.onclick=async()=>{
+        if(allPaused){
+          vacBtn.disabled=true;
+          try{
+            const { error }=await store._sb.rpc("end_pause_all_mine");
+            if(error) throw error;
+            toast("Welcome back ✓"); renderEngagement();
+          }catch(err){ console.error("end_pause_all_mine",err); toast(err.message||"Couldn't resume",4000); vacBtn.disabled=false; }
+        }else{
+          openPauseAllMineSheet();
+        }
+      };
+      vacWrap.appendChild(vacBtn);
+      body.appendChild(vacWrap);
+    }
+  }
+
   $("#eng-cal-prev").onclick=()=>{engCalMonth--;if(engCalMonth<0){engCalMonth=11;engCalYear--;}renderEngagement();};
   $("#eng-cal-next").onclick=()=>{engCalMonth++;if(engCalMonth>11){engCalMonth=0;engCalYear++;}renderEngagement();};
 
@@ -4731,32 +4759,12 @@ async function renderEngagement(){
   // clear any previously-added secondary (reopen/pause) buttons
   const oldReopen=$("#eng-reopen"); if(oldReopen)oldReopen.remove();
   if(traineeMerged){
-    /* Revised: pausing is now a whole-account action for a trainee, same
-       shape as the coach's "pause all trainees" — so its one trigger lives
-       here, at the bottom of the Training tab, rather than scattered as a
-       button per goal on My Goals. completion/rating still happens inside
-       a specific goal, so this fab is repurposed rather than left idle. */
-    const activeGoals=traineeEngs.filter(e=>e.status==="active");
-    if(!activeGoals.length){
-      fabRow.classList.add("hidden");
-    }else{
-      fabRow.classList.remove("hidden");
-      const allPaused=activeGoals.every(e=>activePauseFor(e.id));
-      if(allPaused){
-        fab.textContent="Resume training";
-        fab.onclick=async()=>{
-          fab.disabled=true;
-          try{
-            const { error }=await store._sb.rpc("end_pause_all_mine");
-            if(error) throw error;
-            toast("Welcome back ✓"); renderEngagement();
-          }catch(err){ console.error("end_pause_all_mine",err); toast(err.message||"Couldn't resume",4000); fab.disabled=false; }
-        };
-      }else{
-        fab.textContent="🏖 Pause all my goals";
-        fab.onclick=openPauseAllMineSheet;
-      }
-    }
+    /* Revised again: the fab-row is a floating overlay, always visible
+       regardless of scroll — wrong for this. The control now lives as
+       ordinary content at the very end of the dashboard body instead, so
+       it only comes into view once someone has actually scrolled all the
+       way down, not hovering permanently over everything else. */
+    fabRow.classList.add("hidden");
   }else if(currentEng.status==="active" && iAmCoach){
     fab.textContent="✓ Goal complete"; fab.onclick=coachCompleteGoal;
     /* Revised 2026-08-11: removed the per-trainee pause that lived here.
@@ -7302,7 +7310,7 @@ function openPauseAllSheet(){
    than per-goal on My Goals. */
 function openPauseAllMineSheet(){
   const body=$("#sheet-body");body.innerHTML="";
-  $("#sheet-lib").querySelector("h3").textContent="Pause all my goals";
+  $("#sheet-lib").querySelector("h3").textContent="Take a vacation";
   $("#sheet-add").style.display="none";
   const wrap=document.createElement("div");
   wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5">
@@ -7311,7 +7319,7 @@ function openPauseAllMineSheet(){
       <textarea id="pzm-msg" placeholder="e.g. Travelling for two weeks, back on the 20th"></textarea></div>
     <div class="field" style="margin-top:12px"><label for="pzm-end">End date (optional — leave blank to resume manually)</label>
       <input id="pzm-end" type="date" min="${todayISO()}"></div>
-    <button class="btn primary" id="pzm-save" style="margin-top:4px">Pause everything</button>`;
+    <button class="btn primary" id="pzm-save" style="margin-top:4px">Take a vacation</button>`;
   body.appendChild(wrap);
   $("#pzm-save").addEventListener("click",async()=>{
     const btn=$("#pzm-save");btn.disabled=true;const o=btn.textContent;btn.textContent="Pausing…";
