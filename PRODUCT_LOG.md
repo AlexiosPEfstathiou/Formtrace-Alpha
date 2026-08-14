@@ -4,6 +4,85 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## The pose overlay sometimes doesn't appear, cause unknown
+
+Reported as-is: sometimes the camera doesn't produce the skeleton lines,
+reason not yet known. Checked the actual detection loop before logging
+this — it isn't a fresh mystery so much as an existing safeguard with a
+gap, and there's a concrete, evidence-based lead rather than nothing.
+
+**This exact symptom already happened once before.** `rLoop()` carries its
+own comment: forcing a monotonic timestamp and wrapping every frame's
+`detectForVideo` call individually exists specifically because a shared-
+millisecond timestamp used to throw and "permanently kill the overlay —
+lines just stopped appearing mid-session." That fix works as designed:
+a `poseFails` counter climbs on repeated failure and triggers
+`resetPoseEngine()` once it hits 15, which tears down and rebuilds the
+whole pose landmarker (their own comment names GPU context loss on a long
+session as the expected cause).
+
+**The gap: `resetPoseEngine()`'s own rebuild can fail, and if it does,
+nothing tells anyone.** It calls `ensureModel()` again, and if THAT throws
+— genuinely lost GPU access for the rest of the session, not merely a
+transient stutter — the catch block only does `console.error("pose engine
+rebuild failed")`. No UI message, no retry, no visible state change.
+`landmarker` stays `null` permanently. Recording itself keeps working
+untouched (video capture doesn't depend on it), but the overlay is gone
+for the rest of that session, and rep counting silently stops working
+alongside it, since both read from the same landmarks. Nothing in the UI
+would tell a trainee any of this happened — only a console error a normal
+user would never see.
+
+A second, related gap in the same area: the FIRST-load path
+(`ensureModel()` called directly when the recorder opens, before any of
+this) fails into a catch that shows one of exactly two messages —
+"Camera permission denied" or "Camera needs HTTPS" — neither of which is
+accurate if the pose ENGINE failed to load (e.g. a slow or blocked CDN
+fetch for the WASM/model files) while the camera itself was fine. Someone
+hitting this would be told to fix HTTPS or permissions for a problem that
+has nothing to do with either.
+
+**Revised: no desktop console needed to confirm this.** Checked before
+assuming otherwise — every `console.error()` call in the app is already
+wrapped and automatically sent to `client_errors`, visible on the Admin
+screen's error log on any device, phone included. Both "pose detect
+failed" and "pose engine rebuild failed" are already being captured this
+way with no code change required. Checking that screen after the next
+occurrence is the actual next step, not a browser console anyone would
+need a computer for.
+
+If the rebuild-failure path IS what's firing, the fix is a visible,
+honest banner ("Form tracking stopped working this session — recording
+will still work, but reps won't be counted") shown in the recorder itself
+at the moment it happens, rather than a failure that only ever reaches an
+admin screen after the fact.
+
+**DONE 2026-08-11 — built ahead of confirming the cause,** since both gaps
+found were worth closing regardless of which one turns out to be firing:
+- `#r-posewarn`, a persistent banner (not `toast()` — the condition
+  doesn't resolve itself in a few seconds) shown whenever `landmarker` is
+  null after either the initial load or a failed mid-session rebuild, and
+  hidden again on a successful rebuild or when the recorder closes.
+- **A separate, real bug closed alongside it:** the initial-load path
+  used to let a failed pose-engine load (e.g. a slow or blocked CDN fetch)
+  block the ENTIRE recorder — camera included — even though recording
+  itself never depended on pose detection at all. `ensureModel()`'s
+  failure is now caught locally and logged, and the camera starts
+  regardless; only the overlay and rep-counting are lost, matching what
+  the banner now says honestly rather than stopping trainees from
+  recording over an unrelated failure.
+- Degrading to zero-reps-detected when pose genuinely isn't available
+  composes cleanly with the trainee's existing "Correct my reps" flow,
+  already built to handle exactly this shape of problem (a wrong or
+  missing auto-count) — no new correction mechanism needed.
+
+Still true regardless: checking the Admin error log after an occurrence
+is what would confirm which of the two original leads was actually
+firing, if that's ever wanted for certainty — this fix didn't require
+waiting for that confirmation first.
+
+---
+
 ## Wildcard picker: trainees could never read a coach's exercise library — DONE 2026-08-11
 
 Reported as "wildcard slot says the coach hasn't added exercises, but the

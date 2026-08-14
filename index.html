@@ -468,6 +468,12 @@
     background:rgba(0,0,0,.62);border-radius:10px;padding:9px 11px;color:#fff;font-size:12px;line-height:1.45;
     backdrop-filter:blur(3px);max-height:44px;overflow:hidden;}
   .r-note.on{display:block;}
+  /* Persistent, honest — unlike toast(), this must stay up for the rest of
+     the session rather than fade after a few seconds, since the underlying
+     condition (pose engine unavailable) doesn't resolve itself. */
+  .r-posewarn{position:absolute;left:14px;right:14px;top:64px;z-index:6;
+    background:rgba(255,194,74,.16);border:1px solid rgba(255,194,74,.5);border-radius:10px;
+    padding:9px 12px;color:#fff;font-size:12px;line-height:1.45;backdrop-filter:blur(3px);}
   /* diagnostic readout: enable with localStorage.setItem('ft-debug','1') */
   #r-dims{position:absolute;left:14px;top:calc(env(safe-area-inset-top) + 66px);z-index:6;display:none;
     background:rgba(0,0,0,.6);color:#8FE04A;font-size:10px;font-family:ui-monospace,monospace;padding:3px 7px;border-radius:6px;}
@@ -1374,6 +1380,7 @@
       <canvas id="roverlay"></canvas>
       <video id="rplay" playsinline controls></video>
       <div class="r-note" id="r-note"></div>
+      <div class="r-posewarn" id="r-posewarn" style="display:none">⚠ Form tracking isn't available this session — recording still works, but reps won't be counted.</div>
       <button class="vid-rot" id="r-rot" style="display:none" aria-label="Rotate video">⟳</button>
       <div id="r-dims"></div>
       <div class="rtop">
@@ -2260,11 +2267,19 @@ async function ensureModel(onmsg){
 /* Rebuild the pose engine after repeated detect failures (e.g. GPU context
    loss over a long session). Without this the overlay could stay dead until
    a full page reload. */
+/* Persistent, honest banner for when pose tracking genuinely can't run this
+   session (initial load failed, or a mid-session rebuild failed after
+   repeated detect errors — e.g. real GPU context loss, not a stutter).
+   Unlike toast(), this stays up until closeRecorder() or a successful
+   rebuild — the underlying condition doesn't resolve itself, so a message
+   that fades in a few seconds would be actively misleading. */
+function showPoseWarn(){ const el=$("#r-posewarn"); if(el) el.style.display=""; }
+function hidePoseWarn(){ const el=$("#r-posewarn"); if(el) el.style.display="none"; }
 async function resetPoseEngine(){
   try{ if(landmarker&&landmarker.close) landmarker.close(); }catch(e){ console.error("pose close",e); }
   landmarker=null; poseFails=0;
-  try{ await ensureModel(); console.warn("pose engine rebuilt"); }
-  catch(e){ console.error("pose engine rebuild failed",e); }
+  try{ await ensureModel(); console.warn("pose engine rebuilt"); hidePoseWarn(); }
+  catch(e){ console.error("pose engine rebuild failed",e); showPoseWarn(); }
 }
 
 /* =========================================================================
@@ -7970,17 +7985,26 @@ async function openRecorder(opts){
   $("#r-use").textContent=recOpts.useLabel||"✓ Use this trace";
   $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
   try{
-    await ensureModel(m=>$("#r-statmsg").textContent=m);
+    try{
+      await ensureModel(m=>$("#r-statmsg").textContent=m);
+    }catch(modelErr){
+      // Recording doesn't actually need pose detection — capture and upload
+      // work independently of it. Degrade gracefully instead of blocking the
+      // whole recorder over a failed model/WASM fetch: only the skeleton
+      // overlay and rep-counting are lost, not the ability to record at all.
+      console.error("pose engine failed to load",modelErr);
+    }
     $("#r-statmsg").textContent="Starting camera…";
     await startCam();
     $("#r-stat").classList.add("hidden");$("#rbtn").disabled=false;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";
     $("#r-tools").style.display="flex"; syncCaptureTools();
+    if(landmarker) hidePoseWarn(); else showPoseWarn();
     if(gestureEnabled()) ensureGesture().then(syncCaptureTools);
     rLoop();
   }catch(err){console.error(err);$("#r-spin").classList.add("hidden");
     $("#r-statmsg").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS (or localhost). Open this over https and retry.";}
 }
-function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");
+function closeRecorder(){cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");hidePoseWarn();
   /* Undo the landscape turn on the way out, or the rotated box and its
      explicit width/height leak onto whatever opens the recorder next. */
   const rc=$("#rec");
