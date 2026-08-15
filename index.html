@@ -243,6 +243,9 @@
   .set-cta{font-size:13px;font-weight:700;color:var(--lime-ink);background:var(--lime);padding:8px 14px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;}
   .set-cta:active{transform:scale(.96);}
   .set-cta.locked{background:var(--panel2);color:var(--faint);}
+  /* partial-workout skip: deliberately quiet, not competing with Record */
+  .set-cta.ghost{background:transparent;color:var(--faint);border:1px solid var(--line2);}
+  .set-cta.ghost:active{background:var(--panel2);}
   .grade-badge{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .grade-num{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
   .grade-lab{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
@@ -5749,15 +5752,28 @@ function renderAssignedWorkout(){
     const doneCount=results.filter(Boolean).length;
     const card=document.createElement("div");card.className="card";
     /* An unfilled wildcard shows a chooser instead of sets: there is no
-       exercise to record against until the trainee picks one. */
-    if(it.wildcard_mg && !it.exercise_id){
+       exercise to record against until the trainee picks one. Skip is
+       offered right here, BEFORE the picker even opens — per the explicit
+       ask, so a broken/stuck picker never blocks finishing the workout. */
+    if(it.wildcard_mg && !it.exercise_id && !it.skipped){
       card.className="card wild-card";
       card.innerHTML=`<div class="ex-top" style="margin-bottom:6px">
           <div class="ex-thumb wild-ic">★</div>
           <div class="ex-info"><h3>Wildcard · ${escapeHtml(mgLabel(it.wildcard_mg)||it.wildcard_mg)}</h3>
             <div class="ex-meta"><div>your choice</div></div></div></div>
         <div class="wild-note">Pick any ${escapeHtml((mgLabel(it.wildcard_mg)||"").toLowerCase())} exercise from your coach's library, and choose your own sets and reps.</div>
-        ${locked?"":`<button class="btn sm" data-wild="${i}" style="margin-top:12px">Choose an exercise</button>`}`;
+        ${locked?"":`<div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn sm" data-wild="${i}" style="flex:1">Choose an exercise</button>
+          <button class="btn sm ghost" data-wildskip="${i}" style="flex:0 0 auto">Skip</button></div>`}`;
+      wrap.appendChild(card);
+      return;
+    }
+    if(it.wildcard_mg && it.skipped){
+      card.className="card wild-card";
+      card.innerHTML=`<div class="ex-top" style="margin-bottom:6px">
+          <div class="ex-thumb wild-ic" style="opacity:.5">★</div>
+          <div class="ex-info"><h3>Wildcard · ${escapeHtml(mgLabel(it.wildcard_mg)||it.wildcard_mg)}</h3>
+            <div class="ex-meta"><div style="color:var(--faint)">skipped</div></div></div></div>`;
       wrap.appendChild(card);
       return;
     }
@@ -5785,7 +5801,9 @@ function renderAssignedWorkout(){
       const r=results[s];
       if(r){
         const shown=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:r.reps;
-        const badge = r.reps_label==="incorrect"
+        const badge = r.skipped
+          ? `<div class="grade-num" style="color:var(--faint);font-size:19px">—</div><div class="grade-lab">skipped</div>`
+          : r.reps_label==="incorrect"
           ? `<div class="grade-num" style="color:var(--amber);font-size:19px">${shown}</div><div class="grade-lab">corrected</div>`
           : r.reps_label==="correct"
           ? `<div class="grade-num" style="color:var(--lime);font-size:19px">${shown}</div><div class="grade-lab">reps ✓</div>`
@@ -5797,7 +5815,10 @@ function renderAssignedWorkout(){
         const isNext=(s===nextUndone)&&!locked;
         inner+=`<div class="setrow"><div class="set-n">${s+1}</div>
           <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${it.reps} reps target</div></div>
-          <button class="set-cta ${isNext?"":"locked"}" data-i="${i}" data-s="${s}">${locked?"—":isNext?"● Record":"Locked"}</button></div>`;
+          <div style="display:flex;gap:6px">
+            ${isNext?`<button class="set-cta ghost" data-skip-i="${i}" data-skip-s="${s}" style="flex:0 0 auto">Skip</button>`:""}
+            <button class="set-cta ${isNext?"":"locked"}" data-i="${i}" data-s="${s}">${locked?"—":isNext?"● Record":"Locked"}</button>
+          </div></div>`;
       }
     }
     card.innerHTML=inner;wrap.appendChild(card);
@@ -5812,12 +5833,36 @@ function renderAssignedWorkout(){
     const r=(localResults[ii]||[])[si]; if(r&&r.video_path) playSetVideo(r.video_path,`${items[ii].name} · Set ${si+1}`);
   }));
   wrap.querySelectorAll("[data-wild]").forEach(b=>b.addEventListener("click",()=>openWildcardPicker(+b.getAttribute("data-wild"))));
+  /* Skip options, per the explicit ask: Submit stays gated on full
+     completion, but "complete" now includes explicitly skipped items —
+     recorded as 0 reps, not left blank. Wildcard skip is its own
+     server call that never touches the exercises table, so it works even
+     if the picker itself is broken; regular-set skip is purely local
+     (localResults + the existing draft save), no new server call needed. */
+  wrap.querySelectorAll("[data-wildskip]").forEach(b=>b.addEventListener("click",async()=>{
+    const idx=+b.getAttribute("data-wildskip"); b.disabled=true;
+    try{
+      const { data: newSnapshot, error } = await store._sb.rpc("skip_wildcard_slot",{p_assigned:currentAssigned.id,p_item_index:idx});
+      if(error) throw error;
+      currentAssigned.snapshot=newSnapshot;
+      renderAssignedWorkout();
+    }catch(err){ console.error("skip_wildcard_slot (run migrations_workout_skip.sql)",err); toast(err.message||"Couldn't skip",4000); b.disabled=false; }
+  }));
+  wrap.querySelectorAll("[data-skip-i]").forEach(b=>b.addEventListener("click",()=>{
+    const ii=+b.getAttribute("data-skip-i"), si=+b.getAttribute("data-skip-s");
+    localResults[ii]=localResults[ii]||[];
+    localResults[ii][si]={reps:0,skipped:true,video_path:null,weight_kg:null,reps_label:null,reps_corrected:null};
+    saveWorkoutDraft();
+    renderAssignedWorkout();
+  }));
   wrap.querySelectorAll("[data-ref]").forEach(t=>t.addEventListener("click",e=>{ if(e.target.closest("video"))return; previewReference(+t.getAttribute("data-ref")); }));
   // submit button: enabled when all sets done and not yet submitted
   const allDone=done===total&&total>0;
   /* An unfilled wildcard has no sets, so it contributes nothing to the totals
-     and would let "all done" be true with a slot still empty. */
-  const unfilled=(items||[]).some(x=>x.wildcard_mg&&!x.exercise_id);
+     and would let "all done" be true with a slot still empty. A SKIPPED
+     wildcard is deliberately excluded here — it's resolved (just resolved
+     to "nothing"), not a gap still blocking submission. */
+  const unfilled=(items||[]).some(x=>x.wildcard_mg&&!x.exercise_id&&!x.skipped);
   const submitBtn=$("#tw-submit"), submitSaveBtn=$("#tw-submit-save");
   submitBtn.classList.toggle("hidden",locked||!allDone||unfilled);
   submitSaveBtn.classList.toggle("hidden",locked||!allDone||unfilled);

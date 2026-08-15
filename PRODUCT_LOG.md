@@ -4,6 +4,66 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## Partial workout management
+
+A trainee who completes 6 of 7 exercises has no way to submit what they
+did — the workout just sits unsubmitted until the due date passes, at
+which point it silently reads as a fully missed day rather than a mostly
+finished one. Fix: allow submitting a partial workout as genuinely
+complete; anything never attempted is recorded as an explicit 0-rep
+entry, not left blank.
+
+**Checked the exact mechanism before logging this — it's precise, not a
+vague "somewhere in the flow."** `submitToCoach()` itself has no
+completeness gate at all; it would happily build a report from whatever
+`localResults` holds, empty entries included. The actual block is purely
+cosmetic: `submitBtn.classList.toggle("hidden", locked||!allDone||unfilled)`
+hides the Submit button entirely unless every single exercise is marked
+done. A trainee who can't finish the last one never even sees a way to
+submit — not a disabled button with an explanation, just nothing there.
+
+**Open design question, not decided here:** should Submit simply become
+available once ANY progress exists, or should hitting it while incomplete
+require an explicit confirmation ("1 exercise wasn't attempted — it'll be
+recorded as 0 reps. Submit anyway?") so a partial submission is always a
+deliberate choice rather than something that could happen by accident?
+Leaning toward the confirmation, given how consequential a 0-rep record
+is downstream (streak, personal bests, a coach's grading), but not
+deciding that silently.
+
+**DECIDED 2026-08-11 — resolved differently than either option above:**
+Submit stays gated on full completion exactly as it was. "Complete" now
+includes an explicit Skip, which counts toward completion the same as a
+real recorded set. This is the confirmation built INTO the action itself
+— skipping is always a deliberate tap, never something that happens by
+just being allowed to submit with gaps.
+
+**Wildcard specifically gets Skip on the card itself, before the picker
+even opens** — a separate, explicit requirement: if that picker is ever
+stuck for any reason (this session alone found two real bugs in it), the
+trainee still isn't blocked from finishing. `skip_wildcard_slot()` is
+deliberately its own function, not routed through `fill_wildcard_slot` —
+it never touches the `exercises` table at all, only `assigned_workouts`,
+so a future exercises-related bug can't take this escape hatch down with
+it. Regular exercises get per-SET skip (not per-EXERCISE) — the natural
+unit the calendar already tracks completion in; skipping every set in an
+exercise is equivalent to skipping the exercise, so this covers both
+cases the request named without needing two separate mechanisms.
+
+A skipped set is recorded as a real entry — `{reps:0, skipped:true}` — not
+left blank, satisfying "any incomplete set or exercise should be saved as
+0 reps" literally. Shows as "— skipped" in the grade badge, distinct from
+an honest 0-rep performance.
+
+**Worth noting as a positive side effect, not the main point:** a
+workout that's genuinely submitted (even with skips) stops being derived
+as "missed" for streak purposes, and stops inflating a coach's
+missed-review numbers (item O) with something that was never actually a
+no-show — it was attempted, just not entirely finished. Fixing the
+trainee-facing gap here also makes those other two signals more honest.
+
+---
+
 ## The pose overlay sometimes doesn't appear, cause unknown
 
 Reported as-is: sometimes the camera doesn't produce the skeleton lines,
