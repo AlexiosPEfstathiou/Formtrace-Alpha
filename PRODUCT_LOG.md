@@ -1226,11 +1226,64 @@ coach's.
 
 ## G. Scheduled video calls
 
-Coach offers three time slots on a single day; trainee accepts one. At that
-time both join a call in the app to review the week.
+**REVISED — the original spec (coach offers three slots, trainee picks one)
+was superseded by a more specific design:** both coach and trainee declare
+recurring available hours; the trainee proposes a specific time block that
+falls within a window BOTH have declared; the coach has 24 hours to accept
+or propose an alternate block that's also commonly available.
 
-Largest item, and the only one needing infrastructure we don't have.
-Build-vs-buy decision required — see open questions.
+Largest item, and the only one needing infrastructure we don't have — the
+actual video call TECHNOLOGY (WebRTC vs. a paid provider) is still a
+separate, undecided question (see below). What's built here is the
+SCHEDULING layer that sits in front of whichever gets chosen — a real,
+usable feature on its own even before that decision is made.
+
+**Design decisions made explicit, not left implicit:**
+- Availability is a RECURRING WEEKLY pattern (day-of-week + time range),
+  not per-date — the only realistic thing a person would actually
+  maintain, and the natural reading of "hours on their calendar."
+- Availability is per-PERSON, not per-engagement. A coach has one real
+  schedule; it doesn't change depending on which trainee they're
+  scheduling with.
+- The 24-hour deadline is a derived check against a stored `expires_at`
+  timestamp, not a cron job — same philosophy as every other "missed"/
+  "expired" state already in this app (dayMissedWorkout, postpone
+  deadlines). This project has no scheduled-job infrastructure; building
+  one just for this would be a separate, bigger decision than what was
+  asked for.
+- The opening proposal is trainee-initiated, matching the spec exactly.
+  A coach's counter becomes a new pending proposal under the hood, using
+  the same accept/counter mechanism symmetrically — so the workflow
+  naturally extends to further rounds without needing a second, separate
+  code path for "coach responds" versus "trainee responds."
+
+**DONE — schema, availability declaration, and the full propose/accept/
+counter workflow, 2026-08-11.** `availability_blocks` (per-user, recurring)
+and `call_proposals` (per-engagement, with `expires_at`). `propose_call`
+and `respond_to_call_proposal` are SECURITY DEFINER functions — the
+accept/counter logic has real cross-party rules (only the party who did
+NOT just act may respond; a proposal can't be accepted twice; a counter
+must itself fall within genuine overlap) that a raw insert/update policy
+can't express cleanly, so this follows the same pattern as every other
+trainee/coach-asserted write in this app. The server independently
+re-validates the overlap on every call — the client's own overlap
+computation can only ever under-offer valid times, never let an invalid
+one through, even if its own logic were wrong.
+
+Built on Profile: an availability editor (day + start + end, add/remove).
+Built on the engagement screen (single-goal view only — scheduling needs
+one specific counterpart, so it has no place in the merged multi-goal
+calendar): a live proposal state (pending/accepted/expired), a trainee's
+"propose a time" flow that computes real overlap for a chosen date and
+only offers genuinely valid windows, and a coach's accept-or-counter
+choice with the 24-hour deadline shown plainly.
+
+**Still genuinely open, not decided here:** the video call technology
+itself. An accepted proposal currently just displays as a confirmed time
+— there's deliberately no "join call" button yet, since there's nowhere
+for it to lead. See the open questions below for the WebRTC-vs-provider
+tradeoff, which is a separate decision from the scheduling layer that's
+now built.
 
 ---
 

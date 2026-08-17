@@ -4939,6 +4939,16 @@ async function renderEngagement(){
   // dashboard (both roles): macros stacked bars + weight line + check-in timelapse
   renderDashboard(body, iAmCoach);
 
+  /* Item G: call scheduling only makes sense for ONE specific coach-trainee
+     pair (checking overlap needs a specific counterpart's availability) —
+     shown only on a single engagement's own screen, never the merged
+     multi-goal calendar, where there's no single "other party" to check. */
+  if(!traineeMerged && currentEng && currentEng.status==="active"){
+    const callWrap=document.createElement("div");callWrap.style.cssText="margin-top:18px";
+    body.appendChild(callWrap);
+    renderCallScheduling(callWrap);
+  }
+
   /* Item M's control: ordinary content at the very end of the scrollable
      body, not a floating overlay — only comes into view once someone has
      genuinely scrolled all the way down. Trainee-only, and only when
@@ -5334,6 +5344,148 @@ function renderDashboard(container, iAmCoach){
   })();
  }catch(err){ console.error("renderDashboard failed",err); }
 }
+
+/* =========================================================================
+   Item G: scheduled video calls — the propose/accept/counter workflow.
+   The actual call technology (WebRTC vs. a paid provider) is a separate,
+   still-open decision; this is the scheduling layer that would sit in
+   front of whichever gets chosen. An accepted proposal just displays as a
+   confirmed time for now — no "join call" button, since there's nowhere
+   for it to lead yet.
+   ========================================================================= */
+function fmtTimeRange(a,b){ return a.slice(0,5)+"–"+b.slice(0,5); }
+async function renderCallScheduling(el){
+  el.innerHTML=`<div class="section-h"><div class="eyebrow">Video call</div></div>
+    <div class="card" id="call-sched-body"><div style="font-size:12.5px;color:var(--faint)">Loading…</div></div>`;
+  const body=$("#call-sched-body");
+  const iAmCoachHere=(currentEng.coach_id===ME.id);
+  let proposal=null;
+  try{
+    const { data, error } = await store._sb.from("call_proposals").select("*")
+      .eq("engagement_id",currentEng.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+    if(error) throw error;
+    proposal=data;
+  }catch(e){ console.error("call proposal load (run migrations_scheduled_calls.sql)",e); body.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load — run migrations_scheduled_calls.sql</div>`; return; }
+
+  const isExpired = proposal && proposal.status==="pending" && new Date(proposal.expires_at) < new Date();
+
+  if(proposal && proposal.status==="accepted"){
+    body.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--lime)">✓ Call scheduled</div>
+      <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>`;
+    return;
+  }
+  if(proposal && proposal.status==="pending" && !isExpired){
+    const iProposedIt=(proposal.proposed_by===ME.id);
+    const hoursLeft=Math.max(0,Math.round((new Date(proposal.expires_at)-new Date())/3600000));
+    if(iProposedIt){
+      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">Waiting for ${escapeHtml(currentEngOther.display_name||"a response")}</div>
+        <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>
+        <div style="font-size:11.5px;color:var(--amber);margin-top:6px">Expires in about ${hoursLeft}h if there's no response</div>`;
+    }else{
+      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">${escapeHtml(currentEngOther.display_name||"They")} proposed:</div>
+        <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>
+        <div style="font-size:11.5px;color:var(--amber);margin-top:4px">Respond within about ${hoursLeft}h</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn sm" id="call-accept" style="flex:1;margin:0">✓ Accept</button>
+          <button class="btn sm ghost" id="call-counter" style="flex:1;margin:0">Different time</button>
+        </div>`;
+      $("#call-accept").addEventListener("click",async()=>{
+        const btn=$("#call-accept");btn.disabled=true;
+        try{
+          const { error } = await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:proposal.id,p_action:"accept"});
+          if(error) throw error;
+          toast("Call confirmed ✓"); renderCallScheduling(el);
+        }catch(err){ console.error("accept call",err); toast(err.message||"Couldn't accept",4000); btn.disabled=false; }
+      });
+      $("#call-counter").addEventListener("click",()=>openProposeCallSheet(true,proposal.id,el));
+    }
+    return;
+  }
+  // No live proposal, or the last one expired unanswered — the opening
+  // proposal is trainee-initiated, matching the spec exactly; a coach
+  // still reaches "propose" symmetrically via the counter path once
+  // there's something pending to respond to.
+  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${isExpired?"The last proposal expired without a response.":"No call scheduled yet."}</div>
+    ${!iAmCoachHere?`<button class="btn sm" id="call-propose" style="margin:0">📅 Propose a time</button>`:`<div style="font-size:12px;color:var(--faint)">Waiting for your trainee to propose a time.</div>`}`;
+  $("#call-propose")?.addEventListener("click",()=>openProposeCallSheet(false,null,el));
+}
+/* Shared sheet for both an opening proposal and a counter — the only
+   difference is which RPC gets called at the end. Overlap is computed
+   client-side from both parties' declared blocks for the chosen date's
+   weekday; the server re-validates independently in propose_call, so an
+   empty/incorrect client computation can only under-offer, never let an
+   invalid time actually get sent. */
+function openProposeCallSheet(isCounter,counterOfId,refreshEl){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=isCounter?"Propose a different time":"Propose a time";
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Pick a date — the windows shown are hours you and ${escapeHtml(currentEngOther.display_name||"they")} have both declared as available.</div>
+    <div class="field"><label for="pc-date">Date</label><input id="pc-date" type="date" min="${todayISO()}"></div>
+    <div id="pc-overlap" style="margin-top:6px"></div>
+    <button class="btn primary" id="pc-send" style="margin-top:16px" disabled>Send proposal</button>`;
+  body.appendChild(wrap);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+
+  let chosen=null;
+  const iAmCoachHere=(currentEng.coach_id===ME.id);
+  const otherId=iAmCoachHere?currentEng.trainee_id:currentEng.coach_id;
+
+  $("#pc-date").addEventListener("change",async e=>{
+    const dateStr=e.target.value;
+    const overlapEl=$("#pc-overlap");
+    chosen=null; $("#pc-send").disabled=true;
+    if(!dateStr){ overlapEl.innerHTML=""; return; }
+    const dow=new Date(dateStr+"T00:00:00").getDay();
+    overlapEl.innerHTML=`<div style="font-size:12px;color:var(--faint)">Checking availability…</div>`;
+    try{
+      const [mineRes,theirsRes]=await Promise.all([
+        store._sb.from("availability_blocks").select("*").eq("user_id",ME.id).eq("day_of_week",dow),
+        store._sb.from("availability_blocks").select("*").eq("user_id",otherId).eq("day_of_week",dow)
+      ]);
+      if(mineRes.error) throw mineRes.error; if(theirsRes.error) throw theirsRes.error;
+      const windows=[];
+      for(const m of (mineRes.data||[])) for(const t of (theirsRes.data||[])){
+        const s=m.start_time>t.start_time?m.start_time:t.start_time;
+        const en=m.end_time<t.end_time?m.end_time:t.end_time;
+        if(s<en) windows.push({start:s,end:en});
+      }
+      if(!windows.length){
+        overlapEl.innerHTML=`<div style="font-size:12.5px;color:var(--amber);line-height:1.5">Neither of you has declared overlapping availability on this day. Add availability from Profile, or try another date.</div>`;
+        return;
+      }
+      overlapEl.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Overlapping windows — tap one:</div>`
+        +windows.map((w,i)=>`<button class="gs-chip" data-win="${i}" style="width:100%;margin-bottom:6px;height:44px">${fmtTimeRange(w.start,w.end)}</button>`).join("");
+      overlapEl.querySelectorAll("[data-win]").forEach(b=>b.addEventListener("click",()=>{
+        overlapEl.querySelectorAll("[data-win]").forEach(x=>x.classList.remove("on"));
+        b.classList.add("on");
+        chosen=windows[+b.getAttribute("data-win")];
+        $("#pc-send").disabled=false;
+      }));
+    }catch(err){ console.error("overlap check",err); overlapEl.innerHTML=`<div style="font-size:12px;color:var(--red)">Couldn't check availability.</div>`; }
+  });
+
+  $("#pc-send").addEventListener("click",async()=>{
+    const dateStr=$("#pc-date").value;
+    if(!dateStr||!chosen){ toast("Pick a date and a window"); return; }
+    const btn=$("#pc-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
+    try{
+      if(isCounter){
+        const { error } = await store._sb.rpc("respond_to_call_proposal",
+          {p_proposal_id:counterOfId,p_action:"counter",p_counter_date:dateStr,p_counter_start:chosen.start,p_counter_end:chosen.end});
+        if(error) throw error;
+      }else{
+        const { error } = await store._sb.rpc("propose_call",
+          {p_engagement_id:currentEng.id,p_date:dateStr,p_start_time:chosen.start,p_end_time:chosen.end});
+        if(error) throw error;
+      }
+      toast("Proposal sent ✓");
+      closeSheet();
+      if(refreshEl) renderCallScheduling(refreshEl);
+    }catch(err){ console.error("propose call (run migrations_scheduled_calls.sql)",err); toast(err.message||"Couldn't send that proposal",4000); btn.disabled=false; btn.textContent=o; }
+  });
+}
+
 async function openEngDay(iso){
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const wl=engAssignedByDate[iso]||[];
