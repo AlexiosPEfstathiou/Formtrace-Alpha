@@ -4,6 +4,89 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## Trainee calendar: three different "done" states currently look identical
+
+Two related asks, both about the gold "complete day" star on the
+trainee's own calendar — checked the actual rendering logic before
+writing either down, since both are real conflations, not cosmetic
+nitpicks.
+
+**1. A reviewed-but-unopened day looks exactly like one the trainee has
+already seen.** Wanted: the existing glisten shine (already used
+elsewhere — the pending-offer flash, the new-goal CTA) on a gold day
+where the coach's review hasn't been opened yet.
+
+**First checked whether "has the trainee seen this review" exists
+anywhere — concluded no, started building a new `reviews.trainee_seen_at`
+column and a `mark_review_seen()` function. Wrong: it already exists.**
+`assigned_workouts.opened` already does double duty — before review it
+means "the trainee has opened this workout," and `mark_reviewed()` (the
+server function a coach's submission calls) already does
+`set status='reviewed', opened=false` in the same atomic update,
+specifically so `opened` means "seen this review" from that point on.
+`openReview()` already sets it back to `true` the moment a trainee views
+their own review, read-only. Caught this by tracing the actual code
+before shipping the new migration — deleted it, reverted the batch-fetch
+it needed, no schema change was ever necessary.
+
+**The real gap wasn't missing data, it was the frontend not using data it
+already had — plus a genuine CSS bug once traced further.** The glisten
+trigger (`attnNew`) already checks `reviewed && !opened` and was already
+being applied to the cell's class list. What actually suppressed the
+effect: `.cal-gold` is declared in the stylesheet AFTER `.cal-glisten`,
+and both set `box-shadow` at equal specificity — gold's silently won the
+cascade, so the lime attention-ring that makes glisten recognizable
+everywhere else in the app was being visually erased on a gold day
+specifically, even though the class was present and correct. Fixed with
+a `.cal-gold.cal-glisten` combined selector that wins the ring back.
+
+**2. A pure rest day and an actual completed-workout day currently render
+identically — both get the same gold star.** Checked why: `dayComplete()`
+returns true whenever a day isn't "missed," and a day with literally
+nothing assigned trivially isn't missed. The gold-star cell-coloring logic
+built for the streak feature never distinguished "did a workout and
+finished it" from "there was nothing scheduled" — both were always meant
+to not-break a streak, which is correct for the NUMBER, but conflates two
+very different days visually. Asked for: same gold family, visually
+distinct — not a different color scheme, a different treatment within it.
+
+**Put together, there are actually (at least) three states colliding into
+one visual right now, not two:**
+- Workout day, reviewed, already seen — the fully-resolved case.
+- Workout day, reviewed, NOT yet seen — needs the glisten.
+- Pure rest day, nothing assigned — needs its own gold-family look,
+  distinct from an actual completed workout.
+
+**A fourth, adjacent case, resolved the same way rather than left open:**
+a workout that's submitted but not yet reviewed by the coach at all also
+currently reads as a plain gold star under the same logic, identical to a
+fully-resolved day. **DECIDED: also visually different, same theme** —
+the same principle extended to this case too, rather than leaving it as
+an unremarkable gold star indistinguishable from a day that's genuinely
+fully resolved.
+
+**Four states now, not three, all needing their own look within the same
+gold family:**
+1. Workout day, reviewed, already seen by the trainee — fully resolved.
+2. Workout day, reviewed, NOT yet seen — needs the glisten.
+3. Workout day, submitted, not yet reviewed by the coach — awaiting them.
+4. Pure rest day, nothing assigned at all — nothing to distinguish from
+   an actual completed workout.
+
+**DONE 2026-08-11 — all four built, no schema change, no new RPC.** State
+1 unchanged (`cal-gold`, ★). State 2 is the `.cal-gold.cal-glisten` fix
+above. States 3 (`cal-gold-wait`, muted fill, ⏳ badge) and 4
+(`cal-gold-rest`, outline only, no fill, no badge) are new CSS variants,
+selected in JS purely from `wl` — already-loaded data, no extra fetch —
+since within a "complete" day, `wl` can only ever contain
+`submitted`/`reviewed` items, never `assigned` (the existing missed/
+complete logic already rules that out), making the four-way split
+exhaustive and safe. The gold connector chain excludes rest days
+specifically: a solid gold bar sprouting from an outlined cell would read
+as a rendering glitch, not a deliberate design.
+
+---
+
 ## Voice-over videos should adopt rotation corrections
 
 If a clip is badly oriented and someone corrects it (the existing

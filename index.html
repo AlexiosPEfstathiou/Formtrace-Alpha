@@ -815,6 +815,27 @@
   .cal-gold.gold-r{border-top-right-radius:0;border-bottom-right-radius:0;}
   .cal-gold.gold-l::before{content:"";position:absolute;left:-7px;top:0;bottom:0;width:8px;background:linear-gradient(135deg,#F5C542,#E0A81E);z-index:0;}
   .cal-gold.gold-r::after{content:"";position:absolute;right:-7px;top:0;bottom:0;width:8px;background:linear-gradient(135deg,#F5C542,#E0A81E);z-index:0;}
+  /* Real bug fix: .cal-gold is declared AFTER .cal-glisten, so their equal-
+     specificity box-shadow rules collide and gold's silently wins — the
+     lime attention-ring that makes glisten recognizable everywhere else in
+     the app (new-goal CTA, pending-offer flash) was being suppressed on a
+     gold day specifically, even though the class was correctly applied.
+     This combined selector wins the cascade back for the ring, keeping the
+     gold FILL (background/border, untouched, still !important) but making
+     the attention signal unmistakable rather than accidentally diluted. */
+  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--lime),0 0 16px rgba(200,255,61,.5);}
+  /* Item: completed-workout-awaiting-review — same gold family, visibly
+     quieter than a fully resolved day, since nobody's looked at it yet
+     but it's also not something the TRAINEE needs to act on right now. */
+  .cal-gold-wait{background:linear-gradient(135deg,rgba(245,197,66,.42),rgba(224,168,30,.42))!important;
+    border-color:rgba(245,197,66,.55)!important;box-shadow:0 2px 8px rgba(245,197,66,.16);}
+  .cal-gold-wait .dn{color:#5a4614!important;font-weight:700;}
+  .cal-gold-wait .cal-badge{color:#5a4614;}
+  /* Item: a pure rest day — nothing was ever due, so it shouldn't look like
+     an achievement. An outline only, no fill, reading as "fine, nothing
+     happened here" rather than "something was completed". */
+  .cal-gold-rest{background:var(--panel)!important;border:1.5px solid rgba(245,197,66,.38)!important;box-shadow:none;}
+  .cal-gold-rest .dn{color:var(--faint)!important;font-weight:500;}
   /* danger: a broken-boundary gold day flashes red */
   .cal-danger{animation:caldanger 1s ease-in-out infinite;}
   @keyframes caldanger{0%,100%{background:rgba(255,90,90,.25);border-color:rgba(255,90,90,.5);}50%{background:rgba(255,90,90,.7);border-color:var(--red);}}
@@ -4733,20 +4754,39 @@ async function renderEngagement(){
         : cls==="cal-reviewed" ? "rgba(255,194,74,.6)"
         : "rgba(90,176,255,.55)";
       const macroColor = logged ? "var(--violet)" : "transparent";
+      /* Item: which gold sub-state applies. Uses only wl, already in hand —
+         within complete && !paused, wl (if nonempty) can only ever contain
+         'submitted'/'reviewed' items, never 'assigned' (dayComplete/dayState
+         already rule that out), so this partition is exhaustive: */
+      let goldVariant="";   // "" = resolved (glisten handles the unseen case separately), "wait", "rest"
+      if(complete && !paused){
+        if(!wl.length) goldVariant="rest";
+        else if(wl.some(a=>a.status==="submitted")) goldVariant="wait";
+      }
+      const goldBase = goldVariant==="rest" ? "cal-gold-rest" : goldVariant==="wait" ? "cal-gold-wait" : "cal-gold";
       // golden line connectors for consecutive complete days — a pause never
       // joins or extends this chain, even though it doesn't break the
       // underlying streak count; the connector is decoration, not the number.
+      // A pure rest day is excluded too: it renders as an outline, not a
+      // fill, and a solid gold connector bar sprouting from an outlined
+      // cell would read as a rendering glitch, not a deliberate design.
       let goldCls="";
       if(complete && !paused){
-        goldCls=" cal-gold";
-        if(dayComplete(addDaysISO(iso,-1)) && !isPausedOn(addDaysISO(iso,-1))) goldCls+=" gold-l";
-        if(dayComplete(addDaysISO(iso,1)) && !isPausedOn(addDaysISO(iso,1))) goldCls+=" gold-r";
+        goldCls=" "+goldBase;
+        if(goldVariant!=="rest"){
+          if(dayComplete(addDaysISO(iso,-1)) && !isPausedOn(addDaysISO(iso,-1))) goldCls+=" gold-l";
+          if(dayComplete(addDaysISO(iso,1)) && !isPausedOn(addDaysISO(iso,1))) goldCls+=" gold-r";
+        }
       }
       cell.className="cal-day cal-split cal-tap"+goldCls+(danger?" cal-danger":"")+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"")+(paused?" cal-paused":"");
       if(paused){
         cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🏖</div>`;
       }else if(complete){
-        cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">★</div>`;
+        // rest: no badge at all — nothing happened, nothing to show.
+        // wait: an hourglass, distinct from the star, signalling "waiting
+        // on someone else" rather than "you did this and it's resolved".
+        const badgeChar = goldVariant==="rest" ? "" : goldVariant==="wait" ? "⏳" : "★";
+        cell.innerHTML=`<div class="dn">${d}</div>${badgeChar?`<div class="cal-badge">${badgeChar}</div>`:""}`;
       }else{
         cell.innerHTML=`
           <div class="tri tri-top" style="background:${macroColor}"></div>
@@ -4774,6 +4814,9 @@ async function renderEngagement(){
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4)"></span>Missed — locked</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--violet)"></span>Macros logged (top)</div>
       <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Complete day ★ (streak)</div>
+      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E);box-shadow:0 0 0 2px var(--lime)"></span>Reviewed, not yet seen</div>
+      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,rgba(245,197,66,.42),rgba(224,168,30,.42))"></span>Awaiting coach review ⏳</div>
+      <div class="leg-item"><span class="leg-sw" style="background:var(--panel);border-color:rgba(245,197,66,.5)"></span>Rest day — nothing due</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
 
