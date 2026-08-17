@@ -4,6 +4,43 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## "Increase reps" / "Increase weight" reminder buttons on review
+
+While reviewing a set, the coach gets two buttons — "Increase reps" and
+"Increase weight." Tapping either means the trainee sees a reminder to do
+that, shown the next time they perform the same exercise.
+
+**Checked before logging this — it hooks directly into a mechanism that
+already exists, not something new.** `loadPrevSeries()` already reads a
+coach's per-set comment from the previous review
+(`rev.per_set[].comment`) into `prevSeries.notes[exerciseName]`, shown to
+the trainee as a pre-set note before their next attempt — the exact same
+placement already used for the personal-best "can you beat it?" note.
+`reviews.per_set` is the same flexible jsonb blob tags and comments
+already live in (confirmed by item U — no schema change was needed
+there either), so a new `directive` key alongside the existing `label`/
+`comment`/`voiceover_path` fields is the natural fit, read into a new
+`prevSeries.directives[exerciseName]` map the same way notes already are.
+
+**Two things worth deciding before building, not decided here:**
+1. **Generic nudge, or a specific target?** As asked, these read as a
+   plain binary signal ("do more") — not "aim for 12 reps" or "aim for
+   25kg" with an actual number attached. Worth confirming that's the
+   intent, since a coach typing a target via the existing free-text
+   comment already sort of covers the specific-number case today; the
+   value of dedicated buttons is presumably the visibility/prominence a
+   plain comment doesn't get, not a new capability comments couldn't
+   already express.
+2. **Visual treatment.** The personal-best note got its own distinct gold
+   styling, separate from the coach's ordinary amber note, specifically
+   so an achievement reads differently from an instruction. This should
+   probably get its own similarly distinct look too, rather than folding
+   into the existing free-text note and losing the prominence that's
+   presumably the whole point of making it a button instead of a
+   sentence.
+
+---
+
 ## Voice-over preview: no sound, and no way to visually confirm it recorded
 
 Reported by the coach: previewing a just-recorded voice-over produces no
@@ -107,6 +144,31 @@ written, backing out during the check step (the X button, tapping
 outside) would have left the microphone running invisibly. Fixed by
 tracking the stream from the moment it's acquired, not from the moment
 recording starts.
+
+**Root cause confirmed 2026-08-11 — and it's genuinely different from any
+of the three original candidates.** The mic-check step itself gave the
+decisive evidence: the live input meter moved correctly (mic input was
+never the problem), but the OUTPUT test tone was silent — a freshly
+synthesised tone, unrelated to MediaRecorder, codecs, or any recorded
+blob. That ruled out all three original candidates and pointed at
+something more fundamental: an `AudioContext` never being explicitly
+resumed. Mobile browsers can create a new `AudioContext` in a `suspended`
+state even inside a genuine click handler, despite the spec saying it
+should start running on a user gesture — plenty of engines don't honour
+that reliably. Anything scheduled on a suspended context plays completely
+silently, with no error anywhere.
+
+Fixed in both places that create an `AudioContext`: the test-tone handler,
+and — more importantly — `buildSyncPlayer()`'s playback meter, which
+routes the ENTIRE voice-over audio element through the same context via
+`createMediaElementSource`. **Worth being honest about:** it's genuinely
+plausible the playback meter itself, added to diagnose this, was
+accidentally the proximate cause of the silence persisting — before that
+meter existed, the audio element played directly with no Web Audio graph
+involved at all, so a suspended context couldn't have silenced it that
+way. Whether that's the FULL story or the original report had some other
+contributing cause too isn't fully certain, but the confirmed, reproduced
+mechanism is fixed either way.
 
 ---
 

@@ -6790,6 +6790,13 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
       // A short synthesised tone rather than a shipped audio file — one
       // fewer asset, and pitch/length are trivial to tune here.
       const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      // Real gotcha, confirmed by the test tone itself producing no sound:
+      // many mobile browsers create a new AudioContext already SUSPENDED,
+      // even inside a genuine click handler — the spec says it should start
+      // running on a user gesture, but plenty of engines don't honour that
+      // in practice. Anything scheduled on a suspended context plays
+      // completely silently, with no error at all. Must resume explicitly.
+      if(ctx.state==="suspended") await ctx.resume();
       const osc=ctx.createOscillator(), gain=ctx.createGain();
       osc.frequency.value=440; gain.gain.value=0.001;
       osc.connect(gain);
@@ -6912,10 +6919,20 @@ function buildSyncPlayer(videoUrl,audioUrl){
   const meterFill=box.querySelector(".vo-meter-fill");
   let syncInt=null, meterCtx=null, meterRAF=null, meterWired=false;
   const stopSync=()=>{ if(syncInt){ clearInterval(syncInt); syncInt=null; } };
-  const wireMeter=()=>{
+  const wireMeter=async()=>{
     if(meterWired)return; meterWired=true;   // createMediaElementSource can only run once per element
     try{
       meterCtx=new (window.AudioContext||window.webkitAudioContext)();
+      // Same real gotcha as the live-recording test tone, confirmed rather
+      // than assumed: a freshly-created AudioContext can start SUSPENDED on
+      // mobile even inside a genuine user gesture. Since this audio element's
+      // entire output now runs through this context (createMediaElementSource
+      // reroutes it), a suspended context here means total, silent playback —
+      // this is very plausibly what made voice-over preview silent in the
+      // first place, possibly introduced by the meter itself routing
+      // previously-untouched audio through an unresumed context for the
+      // first time. Must resume BEFORE the audio element starts playing.
+      if(meterCtx.state==="suspended") await meterCtx.resume();
       const src=meterCtx.createMediaElementSource(a);
       const analyser=meterCtx.createAnalyser();
       analyser.fftSize=256;
@@ -6931,8 +6948,8 @@ function buildSyncPlayer(videoUrl,audioUrl){
       tick();
     }catch(e){ console.error("playback meter",e); }   // meter is a diagnostic, never blocks playback
   };
-  const play=()=>{
-    wireMeter();
+  const play=async()=>{
+    await wireMeter();
     v.currentTime=a.currentTime;
     Promise.all([v.play(),a.play()]).catch(()=>{});
     btn.textContent="⏸";
