@@ -4,6 +4,85 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## Voice-over videos should adopt rotation corrections
+
+If a clip is badly oriented and someone corrects it (the existing
+per-path rotation fix, "one correction propagates everywhere the clip
+appears"), the voice-over recorder and player should show it corrected
+too — right now they don't.
+
+**Confirmed, not assumed.** Rotation correction only ever gets applied
+through `hydrateVideos()`, triggered by a `data-video` attribute that
+looks up the saved rotation for that storage path and applies a CSS
+transform. Checked both video elements this feature uses — the one shown
+DURING recording (`#vo-vid`) and the one shown during preview/playback
+(`buildSyncPlayer()`'s `<video>`) — and neither uses that attribute or
+goes through that pipeline at all. Both set `src` directly on a bare
+`<video>` tag. So a clip that displays correctly everywhere else in the
+app — My Goals, the review screen, the trainee's own workout view — would
+still show sideways specifically inside this one feature, since it never
+asks whether a correction exists in the first place.
+
+Fix is mechanical, not a design question: give both video elements the
+same `data-video` treatment (or call the same rotation-lookup/transform
+logic `hydrateVideos()` already has) rather than constructing them as
+plain, rotation-unaware tags.
+
+**DONE 2026-08-11.** Built as its own standalone helper
+(`applyRotationToBox`/`wireRotation`) rather than refactoring
+`hydrateVideos()`'s existing, already-working logic — same aspect-ratio-
+swap math, kept separate to avoid any risk of touching stable code for
+an unrelated feature. Wired into both places: `#vo-vid` (shown while
+recording) and `buildSyncPlayer()`'s video, which needed a new
+`videoPath` parameter threaded through both of its call sites so it has
+something to look the rotation up by — it previously only ever received
+already-resolved URLs, never the raw storage path a rotation is keyed on.
+An unrotated clip is left completely untouched (the lookup returns
+nothing, layout code never runs), so this only ever changes anything for
+a clip that actually needed correcting.
+
+---
+
+## Voice-over: extra time to wrap up after the clip ends
+
+Recording currently stops the instant the clip finishes playing
+(`vid.addEventListener("ended", stopRecording)`), cutting the coach off
+mid-sentence if they're still narrating when the video reaches its last
+frame. Requested: pause on that last frame and give the coach room to
+finish talking before recording actually stops.
+
+**One part of this may already happen for free.** Standard video
+behavior: a clip that finishes without looping just stops advancing and
+sits on its last frame — it doesn't go black or reset. If that's already
+true here (needs confirming, not assumed), the visual half of this
+request may need no work at all; what's missing is purely the timing —
+recording stops immediately, before any "extra time" exists to use.
+
+**A real design choice, not decided here: a timed buffer, or a manual
+"I'm done" button?** A fixed few-second grace period (say, 3–5 seconds)
+is simple but is a guess at how long any given coach needs to wrap up —
+too short for someone genuinely finishing a thought, wasted dead air for
+someone who was already done. A manual stop control removes the guessing
+entirely: the video freezes on its last frame, recording keeps running,
+and the coach taps "Finish" whenever they're actually done, however long
+that takes.
+
+**Playback has a real technical consequence worth flagging now, before
+this is built, since it affects a piece that already exists.** Once a
+recording can run longer than its clip, video and audio have different
+durations by design — the sync player's own correction logic currently
+assumes they're close to equal, nudging the video's position to match the
+audio's every time they drift. If the video reaches ITS end (duration
+maxed) while the audio still has extra seconds left, that logic would try
+to push `currentTime` past what the video actually has — and more
+seriously, `buildSyncPlayer()`'s shared pause handler is wired to the
+VIDEO's own `ended` event, which would fire early and cut the AUDIO off
+too, silencing exactly the extra commentary this feature exists to
+capture. Whatever gets built here needs the pause logic to key off
+whichever track is actually longer, not just the video's own end.
+
+---
+
 ## "Increase reps" / "Increase weight" reminder buttons on review
 
 While reviewing a set, the coach gets two buttons — "Increase reps" and

@@ -6641,6 +6641,45 @@ async function saveCoachGrades(){
    from the log rather than muxing, which would need ffmpeg.wasm or a
    server step for a result that isn't obviously more useful.
    ========================================================================= */
+/* Rotation for the voice-over feature's two video elements — neither used
+   the data-video/hydrateVideos() pipeline that applies a saved rotation
+   fix everywhere else, so a clip corrected elsewhere still showed sideways
+   here. Same aspect-ratio-swap math as hydrateVideos()'s player branch,
+   kept as its own copy rather than refactoring that already-working,
+   delicate code — a quarter turn needs the container to adopt the swapped
+   aspect ratio and the video scaled to the container's other axis before
+   rotating, or it clips instead of fitting. */
+function applyRotationToBox(box,vid,rot){
+  const w=vid.videoWidth,h=vid.videoHeight;
+  if(!w||!h)return false;
+  const quarter=rot===90||rot===270;
+  box.style.aspectRatio=quarter?`${h} / ${w}`:`${w} / ${h}`;
+  if(quarter){
+    box.style.position="relative"; box.style.overflow="hidden";
+    vid.style.position="absolute"; vid.style.top="50%"; vid.style.left="50%";
+    vid.style.width=(w/h*100)+"%";
+    vid.style.height=(h/w*100)+"%";
+    vid.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`;
+  }else{
+    vid.style.position=""; vid.style.top=""; vid.style.left="";
+    vid.style.width=""; vid.style.height="";
+    vid.style.transform=rot===180?"rotate(180deg)":"";
+  }
+  return true;
+}
+function wireRotation(box,vid,path){
+  if(!box||!vid||!path)return;
+  store.videoRotations([path]).then(rots=>{
+    const rot=(rots&&rots[path])||0;
+    if(!rot)return;   // nothing to correct — don't touch layout for an unrotated clip
+    const apply=()=>applyRotationToBox(box,vid,rot);
+    if(!apply()){
+      vid.addEventListener("loadedmetadata",apply,{once:true});
+      vid.addEventListener("loadeddata",apply,{once:true});
+      vid.addEventListener("canplay",apply,{once:true});
+    }
+  }).catch(e=>console.error("voiceover rotation lookup",e));
+}
 let voState=null;
 async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   voState=null;
@@ -6673,7 +6712,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
       <div id="vo-check-status" style="font-size:12px;color:var(--faint);margin-top:8px;text-align:center">Requesting microphone…</div>
     </div>
     <div id="vo-main" style="display:none">
-      <video id="vo-vid" muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:280px" src="${url}"></video>
+      <div id="vo-vid-box" style="width:100%;max-height:280px"><video id="vo-vid" muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:cover" src="${url}"></video></div>
       <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
       <button class="btn primary" id="vo-record">🎤 Start recording</button>
       <div id="vo-review" style="display:none;margin-top:14px">
@@ -6687,6 +6726,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     </div>`;
   body.appendChild(wrap);
   const vid=$("#vo-vid"), status=$("#vo-status"), recordBtn=$("#vo-record"), reviewBox=$("#vo-review");
+  wireRotation($("#vo-vid-box"),vid,videoPath);
   let stream=null, recorder=null, chunks=[], resultBlob=null, selectedMicId="";
 
   const cleanupStream=()=>{
@@ -6871,7 +6911,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     status.textContent="Recording finished.";
     const slot=$("#vo-preview-slot");slot.innerHTML="";
     const audioUrl=URL.createObjectURL(resultBlob);
-    slot.appendChild(buildSyncPlayer(url,audioUrl));
+    slot.appendChild(buildSyncPlayer(url,audioUrl,videoPath));
   };
 
   recordBtn.onclick=startRecording;
@@ -6908,14 +6948,15 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
    audio entirely. It must be wired IN-LINE to destination: source →
    analyser → destination, so the meter reads the signal without ever
    cutting it off. */
-function buildSyncPlayer(videoUrl,audioUrl){
-  const box=document.createElement("div");box.style.cssText="position:relative";
-  box.innerHTML=`<video muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:240px" src="${videoUrl}"></video>
+function buildSyncPlayer(videoUrl,audioUrl,videoPath){
+  const box=document.createElement("div");box.style.cssText="position:relative;max-height:240px";
+  box.innerHTML=`<video muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:cover" src="${videoUrl}"></video>
     <audio src="${audioUrl}" style="display:none"></audio>
     <button class="vo-playbtn" type="button">▶</button>
     <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
       <div class="vo-meter-track"><div class="vo-meter-fill"></div></div></div>`;
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
+  wireRotation(box,v,videoPath);
   const meterFill=box.querySelector(".vo-meter-fill");
   let syncInt=null, meterCtx=null, meterRAF=null, meterWired=false;
   const stopSync=()=>{ if(syncInt){ clearInterval(syncInt); syncInt=null; } };
@@ -6970,7 +7011,7 @@ function renderVoiceoverPlayer(videoPath,voiceoverPath){
   box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Loading…</div>`;
   Promise.all([playable(videoPath),playable(voiceoverPath)]).then(([vUrl,aUrl])=>{
     box.innerHTML="";
-    box.appendChild(buildSyncPlayer(vUrl,aUrl));
+    box.appendChild(buildSyncPlayer(vUrl,aUrl,videoPath));
   }).catch(e=>{ console.error("voiceover player",e); box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load the voice-over.</div>`; });
   return box;
 }
