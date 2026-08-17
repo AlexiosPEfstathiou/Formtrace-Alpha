@@ -6903,7 +6903,16 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     if(recorder&&recorder.state!=="inactive") recorder.stop();
     vid.pause();
   };
-  vid.addEventListener("ended",()=>{ if(recorder&&recorder.state==="recording") stopRecording(); });
+  /* DECIDED: manual stop, not a timed auto-cutoff. The clip freezes on its
+     own last frame (standard video behavior, nothing extra needed for
+     that part) while recording keeps running — the coach already has a
+     Stop button on screen the whole time; this just stops taking that
+     choice away from them the moment the clip happens to end. */
+  vid.addEventListener("ended",()=>{
+    if(recorder&&recorder.state==="recording"){
+      status.textContent="Clip finished — keep talking if you have more to say, then tap Stop recording.";
+    }
+  });
 
   const showPreview=()=>{
     reviewBox.style.display="";
@@ -6995,12 +7004,24 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath){
     Promise.all([v.play(),a.play()]).catch(()=>{});
     btn.textContent="⏸";
     stopSync();
-    syncInt=setInterval(()=>{ if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime; },800);
+    syncInt=setInterval(()=>{
+      if(videoEnded)return;   // video is already at its true last frame — stop trying to nudge it further
+      if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime;
+    },800);
   };
   const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); if(meterRAF){cancelAnimationFrame(meterRAF);meterRAF=null;} meterFill.style.width="0%"; };
   btn.addEventListener("click",()=>{ v.paused?play():pause(); });
   a.addEventListener("ended",pause);
-  v.addEventListener("ended",pause);
+  /* Manual-stop recordings (item: extra time to wrap up) mean audio can now
+     genuinely run longer than its clip — the video reaching its own end is
+     no longer the same thing as playback being over. Previously wired to
+     the shared pause() too, which would have silently cut the coach's
+     extra commentary the moment the shorter video track finished — exactly
+     the audio this whole feature exists to let them record. The video
+     simply freezes on its last frame (standard behavior) while audio
+     keeps going; only audio ending now stops both. */
+  let videoEnded=false;
+  v.addEventListener("ended",()=>{ videoEnded=true; });
   return box;
 }
 /* Read-only render of a saved voice-over — same sync player, just resolving

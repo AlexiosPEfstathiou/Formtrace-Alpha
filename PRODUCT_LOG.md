@@ -81,6 +81,26 @@ too, silencing exactly the extra commentary this feature exists to
 capture. Whatever gets built here needs the pause logic to key off
 whichever track is actually longer, not just the video's own end.
 
+**DECIDED and DONE 2026-08-11: manual stop.** Turned out simpler than
+either option first described — a Stop button already sits on screen for
+the whole recording; the actual bug was the clip's own end silently
+overriding it. Fix was removing that override: the video's `ended` event
+no longer calls `stopRecording()`, it just updates the status text to
+tell the coach the clip's done and they can keep talking. The last-frame
+freeze needed no extra code — that's just how a video without `loop`
+already behaves.
+
+**The playback fix flagged above was built alongside this, not
+separately** — shipping manual stop without it would have meant the
+extra commentary got silently cut on playback the moment anyone actually
+listened to it, which would have defeated the feature entirely.
+`buildSyncPlayer()`'s video `ended` listener no longer calls the shared
+pause; only the audio's own end does now, since audio can only be equal
+to or longer than video going forward, never shorter. The periodic
+drift-correction loop also stops trying to nudge the video's position
+once it's finished, rather than repeatedly attempting a no-op seek past
+its own duration every 800ms for the rest of playback.
+
 ---
 
 ## "Increase reps" / "Increase weight" reminder buttons on review
