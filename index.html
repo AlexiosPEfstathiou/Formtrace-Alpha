@@ -836,6 +836,13 @@
      happened here" rather than "something was completed". */
   .cal-gold-rest{background:var(--panel)!important;border:1.5px solid rgba(245,197,66,.38)!important;box-shadow:none;}
   .cal-gold-rest .dn{color:var(--faint)!important;font-weight:500;}
+  /* Item G: an accepted coaching call replaces the normal day coloring
+     entirely, per the explicit ask — a solid fill, same visual weight as
+     the gold "complete day" treatment, but blue so it reads as its own
+     category rather than a variant of achievement/streak coloring. */
+  .cal-coaching{background:linear-gradient(135deg,#5AB0FF,#2E7FD1)!important;border-color:#5AB0FF!important;box-shadow:0 3px 12px rgba(90,176,255,.35);}
+  .cal-coaching .dn{color:#04101F!important;font-weight:800;}
+  .cal-coaching .cal-badge{color:#04101F;}
   /* danger: a broken-boundary gold day flashes red */
   .cal-danger{animation:caldanger 1s ease-in-out infinite;}
   @keyframes caldanger{0%,100%{background:rgba(255,90,90,.25);border-color:rgba(255,90,90,.5);}50%{background:rgba(255,90,90,.7);border-color:var(--red);}}
@@ -4600,6 +4607,7 @@ async function renderTraineeHome(){
 
 let currentEng=null, currentEngOther=null;
 let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={}, streakInfo={count:0,danger:false,broken:false};
+let coachingDaysByDate={};   // iso -> accepted call_proposals row, single-engagement view only
 let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
 let traineeEngs=[];           // the trainee's engagement rows (merged mode)
 let engById={};               // id -> engagement (for day actions in merged mode)
@@ -4768,6 +4776,20 @@ async function renderEngagement(){
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
+  /* Accepted coaching calls, single-engagement view only — this concept
+     needs one specific counterpart, same reasoning as the scheduling
+     card itself. An accepted call REPLACES the normal workout/rest
+     coloring for that date in the cell loop below, per the explicit ask:
+     "instead of a training day the calendar will depict a Coaching day". */
+  coachingDaysByDate={};
+  if(!traineeMerged){
+    try{
+      const { data, error } = await store._sb.from("call_proposals").select("*")
+        .eq("engagement_id",currentEng.id).eq("status","accepted");
+      if(error) throw error;
+      for(const p of (data||[])) coachingDaysByDate[p.proposed_date]=p;
+    }catch(e){ console.error("coaching days load (run migrations_scheduled_calls.sql)",e); }
+  }
   // macro logs indexed by date — trainee reads own; coach reads this trainee's (RLS-permitted on active engagements)
   logsByDate={};
   {
@@ -4817,6 +4839,19 @@ async function renderEngagement(){
   for(let d=1;d<=days;d++){
     const iso=engCalYear+"-"+pad2(engCalMonth+1)+"-"+pad2(d);
     const wl=engAssignedByDate[iso]||[];
+    /* Item G: an accepted coaching call fully replaces this day's normal
+       rendering, for either role, per the explicit ask — checked first
+       and unconditionally, same pattern as the pause check below it. */
+    if(coachingDaysByDate[iso]){
+      const p=coachingDaysByDate[iso];
+      const cell=document.createElement("div");
+      cell.className="cal-day cal-tap cal-coaching"+(iso===today?" cal-today":"");
+      cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🎥</div>`;
+      cell.title="Coaching call · "+fmtTimeRange(p.start_time,p.end_time);
+      cell.addEventListener("click",()=>toast("Coaching call · "+fmtTimeRange(p.start_time,p.end_time),3000));
+      grid.appendChild(cell);
+      continue;
+    }
     let cls="cal-rest",badge="",missed=false;
     /* Items M/N: checked first and unconditionally — the common case during
        a pause is an ordinary EMPTY day (nothing assigned at all), which the
@@ -5401,27 +5436,31 @@ async function renderCallScheduling(el){
     }
     return;
   }
-  // No live proposal, or the last one expired unanswered — the opening
-  // proposal is trainee-initiated, matching the spec exactly; a coach
-  // still reaches "propose" symmetrically via the counter path once
-  // there's something pending to respond to.
-  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${isExpired?"The last proposal expired without a response.":"No call scheduled yet."}</div>
-    ${!iAmCoachHere?`<button class="btn sm" id="call-propose" style="margin:0">📅 Propose a time</button>`:`<div style="font-size:12px;color:var(--faint)">Waiting for your trainee to propose a time.</div>`}`;
-  $("#call-propose")?.addEventListener("click",()=>openProposeCallSheet(false,null,el));
+  // No live proposal, or the last one expired unanswered. Item G, revised:
+  // the coach initiates from the calendar day-tap now (same interaction
+  // as assigning a workout), not from a button in this card — this card
+  // is a status display for whichever role didn't just act, plus a
+  // pointer for the coach back to where proposing actually happens.
+  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${isExpired?"The last proposal expired without a response. ":""}${iAmCoachHere?"Tap a free day on the calendar above to propose a coaching call.":"Your coach can propose a coaching call from your calendar — you'll see it here to accept or suggest another time."}</div>`;
 }
 /* Shared sheet for both an opening proposal and a counter — the only
    difference is which RPC gets called at the end. Overlap is computed
    client-side from both parties' declared blocks for the chosen date's
    weekday; the server re-validates independently in propose_call, so an
    empty/incorrect client computation can only under-offer, never let an
-   invalid time actually get sent. */
-function openProposeCallSheet(isCounter,counterOfId,refreshEl){
+   invalid time actually get sent. presetDate skips the date picker
+   entirely when the caller already has a specific date in hand — the
+   coach tapping a calendar day, not choosing one inside this sheet. */
+function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate){
   const body=$("#sheet-body");body.innerHTML="";
-  $("#sheet-lib").querySelector("h3").textContent=isCounter?"Propose a different time":"Propose a time";
+  $("#sheet-lib").querySelector("h3").textContent=isCounter?"Propose a different time":"Propose a coaching call";
   $("#sheet-add").style.display="none";
   const wrap=document.createElement("div");
-  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Pick a date — the windows shown are hours you and ${escapeHtml(currentEngOther.display_name||"they")} have both declared as available.</div>
-    <div class="field"><label for="pc-date">Date</label><input id="pc-date" type="date" min="${todayISO()}"></div>
+  const dateFieldHtml = presetDate
+    ? `<div class="field"><label>Date</label><div style="height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);display:flex;align-items:center;padding:0 14px;font-size:15px">${escapeHtml(fmtDay(presetDate))}</div></div>`
+    : `<div class="field"><label for="pc-date">Date</label><input id="pc-date" type="date" min="${todayISO()}"></div>`;
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">${presetDate?"":"Pick a date — "}the windows shown are hours you and ${escapeHtml(currentEngOther.display_name||"they")} have both declared as available.</div>
+    ${dateFieldHtml}
     <div id="pc-overlap" style="margin-top:6px"></div>
     <button class="btn primary" id="pc-send" style="margin-top:16px" disabled>Send proposal</button>`;
   body.appendChild(wrap);
@@ -5431,8 +5470,7 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl){
   const iAmCoachHere=(currentEng.coach_id===ME.id);
   const otherId=iAmCoachHere?currentEng.trainee_id:currentEng.coach_id;
 
-  $("#pc-date").addEventListener("change",async e=>{
-    const dateStr=e.target.value;
+  const computeOverlap=async(dateStr)=>{
     const overlapEl=$("#pc-overlap");
     chosen=null; $("#pc-send").disabled=true;
     if(!dateStr){ overlapEl.innerHTML=""; return; }
@@ -5463,10 +5501,12 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl){
         $("#pc-send").disabled=false;
       }));
     }catch(err){ console.error("overlap check",err); overlapEl.innerHTML=`<div style="font-size:12px;color:var(--red)">Couldn't check availability.</div>`; }
-  });
+  };
+  if(presetDate){ computeOverlap(presetDate); }
+  else{ $("#pc-date").addEventListener("change",e=>computeOverlap(e.target.value)); }
 
   $("#pc-send").addEventListener("click",async()=>{
-    const dateStr=$("#pc-date").value;
+    const dateStr=presetDate||$("#pc-date")?.value;
     if(!dateStr||!chosen){ toast("Pick a date and a window"); return; }
     const btn=$("#pc-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
     try{
@@ -5481,18 +5521,43 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl){
       }
       toast("Proposal sent ✓");
       closeSheet();
-      if(refreshEl) renderCallScheduling(refreshEl);
+      // Always a full refresh, not a narrow renderCallScheduling(refreshEl)
+      // — the calendar-tap entry point has no existing card to target
+      // (refreshEl is null there), and a full re-render correctly updates
+      // the calendar, dashboard, and the status card uniformly regardless
+      // of which entry point sent this proposal.
+      renderEngagement();
     }catch(err){ console.error("propose call (run migrations_scheduled_calls.sql)",err); toast(err.message||"Couldn't send that proposal",4000); btn.disabled=false; btn.textContent=o; }
   });
 }
 
+/* Item G: the coach's own choice when tapping an otherwise-empty day —
+   assign a workout (existing), or propose a coaching call for that exact
+   date (new). Reuses the standard sheet chrome rather than a bespoke
+   dialog, matching every other choice sheet in this app. */
+function openCoachDayChoice(iso){
+  const body=$("#sheet-body");body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`
+    <button class="btn" id="choice-workout" style="width:100%;margin-bottom:10px">▤ Assign a workout</button>
+    <button class="btn ghost" id="choice-call" style="width:100%">🎥 Propose a coaching call</button>`;
+  body.appendChild(wrap);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  $("#choice-workout").addEventListener("click",()=>{ closeSheet(); assignWorkoutFlow(iso); });
+  $("#choice-call").addEventListener("click",()=>{ closeSheet(); openProposeCallSheet(false,null,null,iso); });
+}
 async function openEngDay(iso){
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const wl=engAssignedByDate[iso]||[];
   if(iAmCoach){
     if(!wl.length){
       if(currentEng.status!=="active"){toast("This engagement isn't active");return;}
-      assignWorkoutFlow(iso); return;
+      /* Item G: a coach's empty-day tap now branches, same interaction
+         model as assigning a workout — this is the requested entry point
+         for proposing a coaching call, not a separate settings screen. */
+      openCoachDayChoice(iso); return;
     }
     // missed day (past, still-assigned) → coach sheet with video reply + modify
     const today=todayISO();

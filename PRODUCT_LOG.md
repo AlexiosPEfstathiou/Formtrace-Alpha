@@ -1285,6 +1285,34 @@ for it to lead. See the open questions below for the WebRTC-vs-provider
 tradeoff, which is a separate decision from the scheduling layer that's
 now built.
 
+**REVISED AGAIN, 2026-08-17 — initiation direction reversed to match how
+workouts are already assigned.** The coach now picks the date and starts
+the proposal, not the trainee. This reverses the earlier trainee-proposes
+model, not adds a second path alongside it.
+
+Nothing changed on the SERVER for this — `propose_call`/
+`respond_to_call_proposal` were already written to check "which party is
+this" rather than assume one specific role on either side, so the
+reversal is a client-and-placement change, not a schema or function one.
+What moved:
+- **Entry point**: a coach's tap on an otherwise-empty calendar day now
+  offers a choice — assign a workout (existing) or propose a coaching
+  call (new) — instead of jumping straight to the workout assigner. The
+  chosen date pre-fills the propose sheet, skipping its date picker
+  entirely; only the overlap-window step remains.
+- The old bottom-of-screen "Video call" card lost its own "propose"
+  button and is now purely a status display — waiting, needs your
+  response with the 24h countdown, or a plain hint pointing the coach
+  back to the calendar when there's nothing pending. Accept/counter for
+  whichever party didn't just act still lives there, unchanged.
+- **Calendar visual, new**: an ACCEPTED coaching call now replaces that
+  date's normal rendering entirely, for either role — a solid blue fill
+  (`cal-coaching`), same visual weight as the gold "complete day"
+  treatment but a distinct hue, so a coaching day reads as its own
+  category rather than a variant of workout/streak coloring. Checked
+  first and unconditionally in the cell loop, same priority as the pause
+  check beside it.
+
 ---
 
 # Open questions
