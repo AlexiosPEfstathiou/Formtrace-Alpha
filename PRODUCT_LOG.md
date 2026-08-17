@@ -4,7 +4,7 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
-## Trainee calendar: three different "done" states currently look identical
+## W. Trainee calendar: three different "done" states currently look identical
 
 Two related asks, both about the gold "complete day" star on the
 trainee's own calendar — checked the actual rendering logic before
@@ -87,7 +87,7 @@ as a rendering glitch, not a deliberate design.
 
 ---
 
-## Voice-over videos should adopt rotation corrections
+## X. Voice-over videos should adopt rotation corrections
 
 If a clip is badly oriented and someone corrects it (the existing
 per-path rotation fix, "one correction propagates everywhere the clip
@@ -126,7 +126,7 @@ a clip that actually needed correcting.
 
 ---
 
-## Voice-over: extra time to wrap up after the clip ends
+## Y. Voice-over: extra time to wrap up after the clip ends
 
 Recording currently stops the instant the clip finishes playing
 (`vid.addEventListener("ended", stopRecording)`), cutting the coach off
@@ -186,7 +186,7 @@ its own duration every 800ms for the rest of playback.
 
 ---
 
-## "Increase reps" / "Increase weight" reminder buttons on review — DONE 2026-08-11
+## Z. "Increase reps" / "Increase weight" reminder buttons on review — DONE 2026-08-11
 
 While reviewing a set, the coach gets two buttons — "Increase reps" and
 "Increase weight." Tapping either means the trainee sees a reminder to do
@@ -222,7 +222,7 @@ change needed — same reasoning as item U's persistence.
 
 ---
 
-## Voice-over preview: no sound, and no way to visually confirm it recorded
+## AA. Voice-over preview: no sound, and no way to visually confirm it recorded
 
 Reported by the coach: previewing a just-recorded voice-over produces no
 audible sound. Requested fix: an obvious volume meter during preview, so
@@ -353,7 +353,7 @@ mechanism is fixed either way.
 
 ---
 
-## Graphical and aesthetic improvements
+## AB. Graphical and aesthetic improvements
 
 Logged as-is — genuinely open-ended, not a specific feature to size.
 Nothing wrong identified, nothing broken; just a category to come back to
@@ -366,7 +366,7 @@ consistent with rather than introduce a second style alongside.
 
 ---
 
-## Latency optimization — trainee homepage DONE 2026-08-11
+## AC. Latency optimization — trainee homepage DONE 2026-08-11
 
 Logged as-is. Some of this ground is already covered — item S found and
 fixed two real bottlenecks on the coach homepage (four notification
@@ -403,7 +403,7 @@ intact.
 
 ---
 
-## Make the app downloadable and installable — DONE 2026-08-11 (installability only)
+## AD. Make the app downloadable and installable — DONE 2026-08-11 (installability only)
 
 Logged as-is — this is PWA support (installable to a home screen,
 launches like a native app), and checked before writing this down: there
@@ -455,7 +455,7 @@ needs) with the SVG kept as a scalable fallback entry alongside them.
 
 ---
 
-## NFC "Friendlist"
+## AE. NFC "Friendlist"
 
 Logged as-is, and flagged honestly: unclear what this refers to exactly,
 not guessed at here. Two real possibilities that would lead to very
@@ -471,7 +471,7 @@ add a friend — needs a fallback for iOS and desktop regardless of what
 
 ---
 
-## Running exercises with flexibility (walking/running alternations, specific durations)
+## AF. Running exercises with flexibility (walking/running alternations, specific durations) — DONE 2026-08-11
 
 Logged as-is. Worth naming plainly: this is a structurally different kind
 of exercise from everything built so far, not a variant of one. Every
@@ -530,7 +530,7 @@ session:
 
 ---
 
-## Partial workout management
+## AG. Partial workout management — DONE 2026-08-11
 
 A trainee who completes 6 of 7 exercises has no way to submit what they
 did — the workout just sits unsubmitted until the due date passes, at
@@ -590,7 +590,7 @@ trainee-facing gap here also makes those other two signals more honest.
 
 ---
 
-## The pose overlay sometimes doesn't appear, cause unknown
+## AH. The pose overlay sometimes doesn't appear, cause unknown
 
 Reported as-is: sometimes the camera doesn't produce the skeleton lines,
 reason not yet known. Checked the actual detection loop before logging
@@ -669,7 +669,7 @@ waiting for that confirmation first.
 
 ---
 
-## Wildcard picker: trainees could never read a coach's exercise library — DONE 2026-08-11
+## AI. Wildcard picker: trainees could never read a coach's exercise library — DONE 2026-08-11
 
 Reported as "wildcard slot says the coach hasn't added exercises, but the
 library has two." Traced live, step by step, rather than guessed at:
