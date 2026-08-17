@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
+<!-- PWA installability. Deliberately scoped narrow — see sw.js for why this
+     stops at "installable" and doesn't attempt offline caching. -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B0E11" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="FormTrace" />
+<!-- Real, honest gap: iOS's home-screen icon needs a PNG, not SVG, for
+     reliable rendering — no image-generation tool was available to produce
+     one. Linked anyway since there's no downside (iOS falls back to its own
+     default if this doesn't render), but a real square logo PNG (any size,
+     ideally 180×180 or larger) would be a small, worthwhile follow-up. -->
+<link rel="apple-touch-icon" href="icon.svg" />
 <title>FormTrace Coach</title>
 <style>
   :root{
@@ -8577,6 +8589,16 @@ $("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;closeRecor
     $("#app-loading").innerHTML=`<div style="text-align:center;padding:0 30px"><div style="font-size:14px;color:var(--red);font-weight:700;margin-bottom:8px">Couldn't start</div><div style="font-size:13px;color:var(--muted);line-height:1.5">${escapeHtml(e.message||"Check config.js and your connection.")}</div></div>`;
   }
 })();
+</script>
+<script>
+  // Registered after everything else, on window load, so it never competes
+  // with the app's own startup for bandwidth or priority. See sw.js for
+  // why this is a pass-through, not a cache.
+  if("serviceWorker" in navigator){
+    window.addEventListener("load",()=>{
+      navigator.serviceWorker.register("sw.js").catch(e=>console.error("sw register",e));
+    });
+  }
 </script>
 </body>
 </html>

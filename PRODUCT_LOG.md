@@ -320,7 +320,7 @@ intact.
 
 ---
 
-## Make the app downloadable and installable
+## Make the app downloadable and installable — DONE 2026-08-11 (installability only)
 
 Logged as-is — this is PWA support (installable to a home screen,
 launches like a native app), and checked before writing this down: there
@@ -340,6 +340,26 @@ picked up, "installable" and "works offline" should probably be treated
 as two separate decisions, not one — the first is cheap and safe, the
 second needs real design thought about what's safe to cache and what
 never should be.
+
+**Built exactly that split, deliberately not the offline piece.**
+`manifest.json` (name, icons, standalone display, dark theme colour) plus
+`sw.js` — a service worker that exists purely to satisfy install criteria
+some platforms check for, with a `fetch` handler that's a pure pass-
+through to the network. No caching at all; every request behaves exactly
+as if the service worker didn't exist. `apple-mobile-web-app-*` meta tags
+extended (one, `-capable`, already existed) so a saved iOS icon launches
+full-screen with a dark status bar and the right home-screen label.
+
+**A real, honest gap, not silently worked around: no image-generation
+tool was available to produce actual icon files, and none existed in the
+repo already.** Built a simple code-drawn SVG (`icon.svg` — dark square,
+"FT" in the app's own lime) that satisfies the manifest's icon
+requirement on Android/Chrome. iOS specifically needs a PNG for its
+home-screen icon to render reliably, not SVG — linked the SVG as the
+`apple-touch-icon` anyway since there's no downside (iOS just falls back
+to its own default if it doesn't render), but a real square logo PNG,
+any reasonable size, would be a small, worthwhile follow-up whenever one
+exists.
 
 ---
 

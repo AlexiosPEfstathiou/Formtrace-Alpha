@@ -1,0 +1,14 @@
+{
+  "name": "FormTrace",
+  "short_name": "FormTrace",
+  "description": "Fitness coaching between trainees and coaches — assigned workouts, form review, and progress tracking.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0E11",
+  "theme_color": "#0B0E11",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
