@@ -491,6 +491,16 @@
     background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.32);color:#fff;font-size:20px;
     line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
   .vo-playbtn:active{transform:translate(-50%,-50%) scale(.92);}
+  /* volume meter — same look for the live (recording) and playback cases;
+     the overlay variant sits on top of buildSyncPlayer's video/audio box */
+  .vo-meter-wrap{margin-top:10px;}
+  .vo-meter-overlay{position:absolute;left:10px;right:10px;bottom:10px;margin-top:0;
+    background:rgba(0,0,0,.5);border-radius:10px;padding:7px 10px;backdrop-filter:blur(2px);}
+  .vo-meter-lab{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+  .vo-meter-overlay .vo-meter-lab{color:rgba(255,255,255,.65);}
+  .vo-meter-track{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;}
+  .vo-meter-overlay .vo-meter-track{background:rgba(255,255,255,.18);}
+  .vo-meter-fill{height:100%;width:0%;background:var(--lime);border-radius:5px;transition:width .08s linear;}
   .vid-rot:disabled{opacity:.5;}
   /* on the full-screen player, sit clear of the native control bar */
   #r-rot{width:40px;height:40px;font-size:19px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 78px);z-index:7;}
@@ -6647,6 +6657,10 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     <video id="vo-vid" muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:280px" src="${url}"></video>
     <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
     <button class="btn primary" id="vo-record">🎤 Start recording</button>
+    <div id="vo-meter-wrap" class="vo-meter-wrap" style="display:none">
+      <div class="vo-meter-lab">Mic level</div>
+      <div class="vo-meter-track"><div class="vo-meter-fill" id="vo-meter-fill"></div></div>
+    </div>
     <div id="vo-review" style="display:none;margin-top:14px">
       <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Preview — plays your voice over the clip:</div>
       <div id="vo-preview-slot"></div>
@@ -6659,11 +6673,48 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   const vid=$("#vo-vid"), status=$("#vo-status"), recordBtn=$("#vo-record"), reviewBox=$("#vo-review");
   let stream=null, recorder=null, chunks=[], resultBlob=null;
 
-  const cleanupStream=()=>{ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } voState=null; };
+  const cleanupStream=()=>{
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    stopMeter();
+    voState=null;
+  };
+
+  /* Item: volume meter. Reads the LIVE mic signal via an AnalyserNode — a
+     dead end, never connected to audioCtx.destination, so the coach's own
+     voice is never fed back through their speakers while recording. This
+     catches a dead/misrouted mic in the moment, before they even finish
+     talking, rather than only discovering it silently at preview time. */
+  let meterCtx=null, meterRAF=null;
+  const stopMeter=()=>{
+    if(meterRAF){ cancelAnimationFrame(meterRAF); meterRAF=null; }
+    if(meterCtx){ meterCtx.close().catch(()=>{}); meterCtx=null; }
+    $("#vo-meter-wrap").style.display="none";
+    $("#vo-meter-fill").style.width="0%";
+  };
+  const startMeter=liveStream=>{
+    try{
+      meterCtx=new (window.AudioContext||window.webkitAudioContext)();
+      const src=meterCtx.createMediaStreamSource(liveStream);
+      const analyser=meterCtx.createAnalyser();
+      analyser.fftSize=256;
+      src.connect(analyser);   // dead end — deliberately not connected onward
+      const data=new Uint8Array(analyser.frequencyBinCount);
+      const fill=$("#vo-meter-fill");
+      $("#vo-meter-wrap").style.display="";
+      const tick=()=>{
+        analyser.getByteFrequencyData(data);
+        const avg=data.reduce((a,b)=>a+b,0)/data.length;
+        fill.style.width=Math.min(100,Math.round((avg/90)*100))+"%";
+        meterRAF=requestAnimationFrame(tick);
+      };
+      tick();
+    }catch(e){ console.error("voiceover meter",e); }   // meter is a diagnostic, never blocks recording
+  };
 
   const startRecording=async()=>{
     try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
     catch(e){ console.error("voiceover mic",e); toast("Microphone access is needed to record a voice-over",4000); return; }
+    startMeter(stream);
     chunks=[];
     const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||"";
     recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
@@ -6723,23 +6774,56 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
    visible) plus the coach's recorded audio, kept in sync. One play/pause
    button drives both; a periodic correction re-aligns audio to the video's
    currentTime if they drift, rather than trusting two independent clocks
-   to stay matched over a whole clip. */
+   to stay matched over a whole clip.
+   Also drives a level meter off the ACTUAL played-back audio (not the raw
+   file) — this is the requested "prove it recorded" signal, and it's
+   visible everywhere this player is used: the coach's own preview right
+   after recording, and anyone viewing a saved voice-over later. Real
+   gotcha handled here: createMediaElementSource() REROUTES the element's
+   output through the Web Audio graph — connecting the analyser as a dead
+   end (as the live-recording meter correctly does) would silence this
+   audio entirely. It must be wired IN-LINE to destination: source →
+   analyser → destination, so the meter reads the signal without ever
+   cutting it off. */
 function buildSyncPlayer(videoUrl,audioUrl){
   const box=document.createElement("div");box.style.cssText="position:relative";
   box.innerHTML=`<video muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:240px" src="${videoUrl}"></video>
     <audio src="${audioUrl}" style="display:none"></audio>
-    <button class="vo-playbtn" type="button">▶</button>`;
+    <button class="vo-playbtn" type="button">▶</button>
+    <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
+      <div class="vo-meter-track"><div class="vo-meter-fill"></div></div></div>`;
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
-  let syncInt=null;
+  const meterFill=box.querySelector(".vo-meter-fill");
+  let syncInt=null, meterCtx=null, meterRAF=null, meterWired=false;
   const stopSync=()=>{ if(syncInt){ clearInterval(syncInt); syncInt=null; } };
+  const wireMeter=()=>{
+    if(meterWired)return; meterWired=true;   // createMediaElementSource can only run once per element
+    try{
+      meterCtx=new (window.AudioContext||window.webkitAudioContext)();
+      const src=meterCtx.createMediaElementSource(a);
+      const analyser=meterCtx.createAnalyser();
+      analyser.fftSize=256;
+      src.connect(analyser);
+      analyser.connect(meterCtx.destination);   // IN-LINE, not a dead end — this is what keeps sound audible
+      const data=new Uint8Array(analyser.frequencyBinCount);
+      const tick=()=>{
+        analyser.getByteFrequencyData(data);
+        const avg=data.reduce((x,y)=>x+y,0)/data.length;
+        meterFill.style.width=Math.min(100,Math.round((avg/90)*100))+"%";
+        meterRAF=requestAnimationFrame(tick);
+      };
+      tick();
+    }catch(e){ console.error("playback meter",e); }   // meter is a diagnostic, never blocks playback
+  };
   const play=()=>{
+    wireMeter();
     v.currentTime=a.currentTime;
     Promise.all([v.play(),a.play()]).catch(()=>{});
     btn.textContent="⏸";
     stopSync();
     syncInt=setInterval(()=>{ if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime; },800);
   };
-  const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); };
+  const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); if(meterRAF){cancelAnimationFrame(meterRAF);meterRAF=null;} meterFill.style.width="0%"; };
   btn.addEventListener("click",()=>{ v.paused?play():pause(); });
   a.addEventListener("ended",pause);
   v.addEventListener("ended",pause);

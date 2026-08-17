@@ -4,6 +4,169 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## Voice-over preview: no sound, and no way to visually confirm it recorded
+
+Reported by the coach: previewing a just-recorded voice-over produces no
+audible sound. Requested fix: an obvious volume meter during preview, so
+whether the voice was actually captured can be confirmed by eye rather
+than by ear alone.
+
+**Checked the actual preview code before logging this.** `showPreview()`
+(inside `openVoiceoverRecorder`) creates a fresh blob URL from the
+just-recorded audio and hands it to `buildSyncPlayer()`, which builds a
+real `<audio src="...">` element and calls `.play()` on it directly from
+a button tap — a genuine user gesture, so browser autoplay restrictions
+shouldn't be blocking it. Nothing in this code path explicitly mutes or
+zeroes the audio element's volume. On paper it should produce sound; not
+reproducible without a device to test on, so the actual cause isn't
+confirmed here, only narrowed down.
+
+**Candidates worth checking first, in rough likelihood order:**
+1. **Mobile audio-session routing.** A real, well-known quirk on both
+   iOS and Android web views: recording through `getUserMedia` can leave
+   the browser's audio output routed strangely afterward (e.g. through
+   the earpiece rather than the main speaker) until something explicitly
+   resets it for playback. Would produce exactly this symptom — a
+   correctly-built player that's technically playing but inaudible.
+2. **Genuinely silent capture.** The recording settings
+   (`echoCancellation`, `noiseSuppression`, `autoGainControl`, all on)
+   are reasonable defaults but can occasionally over-suppress a quiet or
+   poorly-positioned mic to the point of near-silence, especially
+   combined with a device where the mic permission was granted but the
+   OS-level input is muted or misrouted.
+3. Less likely, but real: a MediaRecorder codec (`audio/webm;codecs=opus`
+   preferred, falling back to `audio/webm`/`audio/mp4`) that recorded
+   fine but the specific device's `<audio>` element can't decode cleanly.
+
+**The requested volume meter is the right diagnostic regardless of which
+of these turns out to be true**, and is concretely buildable: a Web
+Audio API `AnalyserNode` can tap either the live mic stream while
+recording (catching a dead mic in the moment, before the coach even
+finishes) or the recorded blob during preview via a
+`MediaElementAudioSourceNode` on the `<audio>` element (confirming the
+played-back level, which is specifically what was asked for — visual
+proof during preview, not just during capture). Worth building both: a
+live meter while recording would have caught this before the coach ever
+got to preview at all.
+
+**DONE 2026-08-11 — both meters built, as recommended above.** A live
+meter shows during recording, reading the raw mic stream via an
+`AnalyserNode` — deliberately wired as a dead end (never connected to
+`audioCtx.destination`), so the coach's own voice is never fed back
+through their speakers while they're talking. A second meter reacts to
+the ACTUAL played-back audio in `buildSyncPlayer()` — the shared player
+used both for the coach's own preview and anyone viewing a saved
+voice-over afterward — so it's visible everywhere this feature is used,
+not just the one screen that was reported.
+
+**The real risk in building this, handled deliberately:**
+`createMediaElementSource()` reroutes an `<audio>` element's output
+through the Web Audio graph — connecting the analyser as a dead end (the
+correct approach for the LIVE mic case) would have silenced the played-
+back audio entirely, adding a second, worse silence bug on top of the one
+being diagnosed. Wired in-line instead — source → analyser → destination
+— so the meter reads the signal without ever being able to cut it off.
+
+**Still true, not resolved by building the meter:** the underlying cause
+of the original "no sound" report is not confirmed. The three candidates
+above are still just candidates. What this actually gives is the tool to
+tell them apart — if the coach records again and the live meter never
+moves, the mic itself is dead or misrouted (candidates 2/3); if the meter
+moves fine live but the PREVIEW meter stays flat, the issue is specific
+to played-back audio (candidate 1, the mobile routing quirk). Worth
+retesting with the meters in place before assuming this is closed.
+
+---
+
+## Graphical and aesthetic improvements
+
+Logged as-is — genuinely open-ended, not a specific feature to size.
+Nothing wrong identified, nothing broken; just a category to come back to
+with concrete direction (which screens, what feels off, what the bar is)
+whenever that's ready to give. Not starting from a blank slate: the app
+already has an established dark-UI visual language (lime/amber/violet
+accents, the gold streak-chain styling, the calm blue treatment vacation
+mode got instead of urgent red) that any future pass should stay
+consistent with rather than introduce a second style alongside.
+
+---
+
+## Latency optimization
+
+Logged as-is. Some of this ground is already covered — item S found and
+fixed two real bottlenecks on the coach homepage (four notification
+loaders running in series instead of parallel, and an N+1 profile query
+per trainee) — so there's a working pattern and a precedent for how this
+kind of audit gets done here.
+
+**One concrete, already-identified candidate for next time this is
+picked up:** the trainee's own homepage (`renderHome()`'s non-coach
+branch) has the identical shape of problem — nine separate card renders
+(today's workout, milestone, streak-risk, vacation, reviews, postpone,
+macro, macro-gaps, check-in, measurements) awaited one after another
+rather than run together. Flagged when item S shipped, deliberately left
+untouched since only the coach side was asked for at the time.
+
+---
+
+## Make the app downloadable and installable
+
+Logged as-is — this is PWA support (installable to a home screen,
+launches like a native app), and checked before writing this down: there
+is currently no web manifest and no service worker anywhere in the app.
+Confirmed this directly while investigating an unrelated bug earlier —
+so this is a real, clean gap, not something partially there already.
+
+**Worth flagging honestly rather than sizing this as small:** the
+manifest and "Add to Home Screen" piece is genuinely straightforward. A
+FULL offline-capable service worker is a much bigger, riskier undertaking
+for an app like this specifically — nearly everything here is a live
+Supabase query (assigned workouts, streaks, offers, payment cycles), and
+a naive cache-everything service worker risks serving stale data for
+exactly the things that most need to be current (has this been reviewed
+yet, is this goal still active, did the coach just decline). If this is
+picked up, "installable" and "works offline" should probably be treated
+as two separate decisions, not one — the first is cheap and safe, the
+second needs real design thought about what's safe to cache and what
+never should be.
+
+---
+
+## NFC "Friendlist"
+
+Logged as-is, and flagged honestly: unclear what this refers to exactly,
+not guessed at here. Two real possibilities that would lead to very
+different builds: (a) this is the mechanism for populating the
+already-logged Team tab (item F) — tap phones to add a training partner
+— in which case it's a FEATURE of that larger item, not a separate one;
+or (b) a standalone contacts/friends feature unrelated to Team. NFC itself
+(Web NFC) is also a real constraint worth knowing going in: browser
+support is narrow (Chrome on Android only, as of this app's knowledge),
+so whatever this turns out to mean, it likely can't be the only way to
+add a friend — needs a fallback for iOS and desktop regardless of what
+"Friendlist" itself turns out to mean.
+
+---
+
+## Running exercises with flexibility (walking/running alternations, specific durations)
+
+Logged as-is. Worth naming plainly: this is a structurally different kind
+of exercise from everything built so far, not a variant of one. Every
+recording flow in this app — the camera, the pose overlay, `countReps()`,
+the whole rep-vs-target comparison — is built around discrete,
+REP-counted movements. A walk/run interval ("walk 2 min, run 1 min,
+repeat 5×") isn't reps at all, it's DURATION-based, and pose detection
+has no obvious role in tracking it — nobody needs a skeleton overlay to
+confirm someone is walking.
+
+Building this well likely means a genuinely separate exercise type
+(alongside the existing rep-based one) with its own recording flow — a
+timer/interval structure, not the camera+pose pipeline — rather than
+trying to force it through the existing rep-counting UI. Not sized
+further here since that's a real design decision, not a small addition.
+
+---
+
 ## Partial workout management
 
 A trainee who completes 6 of 7 exercises has no way to submit what they
