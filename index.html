@@ -462,6 +462,11 @@
      it reads as an achievement to chase, not an instruction to follow */
   .prev-note.pb-note{background:rgba(245,197,66,.10);border-color:rgba(245,197,66,.34);}
   .prev-note.pb-note .pn-h{color:#F5C542;}
+  /* increase-reps/weight: violet, distinct from lime (tags), amber (coach
+     note), and gold (personal best) — an instruction, not a celebration */
+  .prev-note.directive-note{background:rgba(167,139,250,.10);border-color:rgba(167,139,250,.34);}
+  .prev-note.directive-note .pn-h{color:var(--violet);}
+  .directive-pill.on{background:var(--violet);color:#fff;border-color:var(--violet);}
   .pb-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
   .pb-row:last-child{border-bottom:none;}
   .pb-row .pb-ex{font-weight:700;color:var(--ink);flex-shrink:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -5707,7 +5712,7 @@ async function loadPrevSeries(a){
       const s=series[k].status;
       if(s==="submitted"||s==="reviewed"){ prev=series[k]; break; }
     }
-    prevSeries={ordinal,total:series.length,prev:null,notes:{},reps:{},grades:{},on:null,prevName:null};
+    prevSeries={ordinal,total:series.length,prev:null,notes:{},reps:{},grades:{},directives:{},on:null,prevName:null};
     if(!prev)return;
     prevSeries.prev=prev; prevSeries.on=dateOf(prev);
     // the name it had THEN, not what the plan is called now
@@ -5731,6 +5736,7 @@ async function loadPrevSeries(a){
           if(!p||!p.exercise)continue;
           if(p.comment&&!prevSeries.notes[p.exercise]) prevSeries.notes[p.exercise]=p.comment;
           if(p.grade!=null&&p.set!=null) prevSeries.grades[p.exercise+"#"+(p.set-1)]=p.grade;
+          if(Array.isArray(p.directives)&&p.directives.length&&!prevSeries.directives[p.exercise]) prevSeries.directives[p.exercise]=p.directives;
         }
       }
     }
@@ -5805,6 +5811,14 @@ function renderAssignedWorkout(){
         const pbTxt=pb.weight_kg!=null?`${pb.reps} reps at ${pb.weight_kg} kg`:`${pb.reps} reps`;
         inner+=`<div class="prev-note pb-note"><div class="pn-h">🏆 Personal best</div><div class="pn-b">Your personal best for this exercise is ${escapeHtml(pbTxt)}. Can you beat it?</div></div>`;
       }
+    }
+    // Increase reps/weight reminder: its own look, not folded into the
+    // amber coach note — the whole point of a dedicated button over a
+    // free-text comment is that it doesn't need reading to register.
+    const directives=prevSeries&&prevSeries.directives[it.name];
+    if(directives&&directives.length){
+      const dTxt=directives.map(d=>d==="reps"?"more reps":"more weight").join(" and ");
+      inner+=`<div class="prev-note directive-note"><div class="pn-h">⬆ From your coach</div><div class="pn-b">Aim for ${escapeHtml(dTxt)} on this exercise today.</div></div>`;
     }
     const nextUndone=results.findIndex(x=>!x);
     for(let s=0;s<it.sets;s++){
@@ -6531,6 +6545,25 @@ async function openReview(assignedId,readonly=false){
         });
         tWrap.appendChild(pills);
         div.appendChild(tWrap);
+        // "Increase reps"/"Increase weight" reminders — a plain nudge, not
+        // a specific target number (a coach wanting an exact figure can
+        // still say so in the comment below); independently toggleable,
+        // since a coach might reasonably want both at once.
+        const dWrap=document.createElement("div");dWrap.style.cssText="margin-bottom:12px;display:flex;gap:8px";
+        const liveDirectives=(reviewState.per_set[key]||{}).directives;
+        const savedDirectives=savedEntry?.directives||[];
+        const curD=new Set(liveDirectives||savedDirectives);
+        [["reps","⬆ More reps"],["weight","⬆ More weight"]].forEach(([dKey,dLabel])=>{
+          const p=document.createElement("button");p.type="button";p.className="pill directive-pill";p.textContent=dLabel;p.style.flex="1";
+          if(curD.has(dKey))p.classList.add("on");
+          p.addEventListener("click",()=>{
+            p.classList.toggle("on");
+            if(p.classList.contains("on")) curD.add(dKey); else curD.delete(dKey);
+            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,directives:[...curD],item_index:ii,set_index:si};
+          });
+          dWrap.appendChild(p);
+        });
+        div.appendChild(dWrap);
         // per-set comment
         const ci=document.createElement("input");ci.type="text";ci.placeholder="Note for this set (optional)";ci.style.cssText="width:100%;height:42px;margin-top:10px;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:0 12px;outline:none;font-size:14px";
         ci.value=(reviewState.per_set[key]||{}).comment||"";

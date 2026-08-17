@@ -103,7 +103,7 @@ its own duration every 800ms for the rest of playback.
 
 ---
 
-## "Increase reps" / "Increase weight" reminder buttons on review
+## "Increase reps" / "Increase weight" reminder buttons on review — DONE 2026-08-11
 
 While reviewing a set, the coach gets two buttons — "Increase reps" and
 "Increase weight." Tapping either means the trainee sees a reminder to do
@@ -121,22 +121,21 @@ there either), so a new `directive` key alongside the existing `label`/
 `comment`/`voiceover_path` fields is the natural fit, read into a new
 `prevSeries.directives[exerciseName]` map the same way notes already are.
 
-**Two things worth deciding before building, not decided here:**
-1. **Generic nudge, or a specific target?** As asked, these read as a
-   plain binary signal ("do more") — not "aim for 12 reps" or "aim for
-   25kg" with an actual number attached. Worth confirming that's the
-   intent, since a coach typing a target via the existing free-text
-   comment already sort of covers the specific-number case today; the
-   value of dedicated buttons is presumably the visibility/prominence a
-   plain comment doesn't get, not a new capability comments couldn't
-   already express.
-2. **Visual treatment.** The personal-best note got its own distinct gold
-   styling, separate from the coach's ordinary amber note, specifically
-   so an achievement reads differently from an instruction. This should
-   probably get its own similarly distinct look too, rather than folding
-   into the existing free-text note and losing the prominence that's
-   presumably the whole point of making it a button instead of a
-   sentence.
+**Proceeded with stated defaults on both open questions, since neither
+was answered before this was picked up:**
+1. **Plain nudge, not a specific target.** Matches the literal ask —
+   just "increase," no number. A coach wanting an exact figure still has
+   the existing free-text comment for that.
+2. **Its own distinct look, not folded into the coach's amber note.**
+   Violet — already an established accent colour in this app (macros,
+   weight) — distinct from lime (tags), amber (ordinary comment), and
+   gold (personal best). An instruction reads differently from an
+   achievement or a plain note.
+
+Buttons are independently toggleable (a coach can flag both reps and
+weight on the same set), stored as `directives: string[]` alongside the
+existing tags/comment on the same `reviews.per_set` entry. No schema
+change needed — same reasoning as item U's persistence.
 
 ---
 
