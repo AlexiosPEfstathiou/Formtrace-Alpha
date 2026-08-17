@@ -11,12 +11,12 @@
 <meta name="theme-color" content="#0B0E11" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="FormTrace" />
-<!-- Real, honest gap: iOS's home-screen icon needs a PNG, not SVG, for
-     reliable rendering — no image-generation tool was available to produce
-     one. Linked anyway since there's no downside (iOS falls back to its own
-     default if this doesn't render), but a real square logo PNG (any size,
-     ideally 180×180 or larger) would be a small, worthwhile follow-up. -->
-<link rel="apple-touch-icon" href="icon.svg" />
+<!-- Real PNG icons now exist (rendered locally via .NET's drawing library,
+     since no AI image-generation tool was available) — this replaces the
+     earlier SVG-only fallback, which very likely explains why Chrome's
+     Install app option wasn't appearing: its actual installability check
+     wants real PNG icons at specific sizes, not just a spec-valid SVG. -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <title>FormTrace Coach</title>
 <style>
   :root{

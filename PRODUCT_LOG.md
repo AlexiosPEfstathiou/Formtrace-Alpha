@@ -350,16 +350,25 @@ as if the service worker didn't exist. `apple-mobile-web-app-*` meta tags
 extended (one, `-capable`, already existed) so a saved iOS icon launches
 full-screen with a dark status bar and the right home-screen label.
 
-**A real, honest gap, not silently worked around: no image-generation
-tool was available to produce actual icon files, and none existed in the
-repo already.** Built a simple code-drawn SVG (`icon.svg` — dark square,
-"FT" in the app's own lime) that satisfies the manifest's icon
-requirement on Android/Chrome. iOS specifically needs a PNG for its
-home-screen icon to render reliably, not SVG — linked the SVG as the
-`apple-touch-icon` anyway since there's no downside (iOS just falls back
-to its own default if it doesn't render), but a real square logo PNG,
-any reasonable size, would be a small, worthwhile follow-up whenever one
-exists.
+**The SVG-only icon gap turned out to be a real functional bug, not just
+a cosmetic shortfall — found when Android Chrome only offered "Create
+shortcut," never "Install app."** Chrome's actual installability check is
+stricter than the general manifest spec: it wants real PNG icons at
+specific sizes (192×192, 512×512), and a spec-valid SVG-only icon set
+doesn't reliably satisfy it. Without a qualifying icon, Chrome falls back
+to the plain bookmark-shortcut option instead of the real, standalone-app
+install flow — which is the actual difference between a genuine PWA
+install and just a home-screen link to the page.
+
+**Fixed properly, not worked around.** No AI image-generation tool was
+available, but Windows ships with .NET's drawing library, which is
+enough to render real PNGs directly — no new software needed. Generated
+`icon-192.png`, `icon-512.png`, and a 180px `apple-touch-icon.png`
+locally via PowerShell driving `System.Drawing`, same dark-and-lime "FT"
+mark as the SVG, then verified by actually viewing the rendered image
+before wiring it in rather than trusting the "file written" confirmation
+alone. Manifest now lists the PNGs first (what Chrome's check actually
+needs) with the SVG kept as a scalable fallback entry alongside them.
 
 ---
 
