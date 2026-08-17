@@ -910,6 +910,31 @@
   .pcg-fig{fill:rgba(200,255,61,.06);stroke:rgba(200,255,61,.85);stroke-width:2.2;stroke-dasharray:7 6;stroke-linejoin:round;
     filter:drop-shadow(0 0 3px rgba(0,0,0,.85));}
   .pcg-aid{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:3 7;}
+  /* Item: timed interval exercises. Full-screen mode, same tier as
+     #photocap/#rec — no camera here, just a timer + GPS distance, so the
+     background is a plain dark panel rather than a video feed. */
+  #s-interval{position:absolute;inset:0;z-index:91;background:var(--bg);display:none;flex-direction:column;}
+  #s-interval.on{display:flex;}
+  .iv-top{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 14px) 18px 12px;}
+  .iv-top .close{width:34px;height:34px;border-radius:10px;background:var(--panel2);border:none;color:var(--ink);font-size:16px;cursor:pointer;}
+  .iv-top .ttl{font-size:15px;font-weight:700;}
+  .iv-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 30px;text-align:center;}
+  .iv-round{font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+  /* run reads urgent (amber), walk reads calm (lime) — a glance should tell
+     which phase is active without reading the word */
+  .iv-type{font-size:34px;font-weight:800;margin-top:10px;color:var(--lime);}
+  .iv-type.run{color:var(--amber);}
+  .iv-time{font-size:88px;font-weight:800;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+  .iv-dist{font-size:18px;color:var(--muted);margin-top:18px;font-variant-numeric:tabular-nums;}
+  .iv-dist span{color:var(--ink);font-weight:800;}
+  .iv-gpswarn{font-size:12.5px;color:var(--amber);margin-top:16px;line-height:1.5;max-width:280px;}
+  .iv-summary-h{font-size:22px;font-weight:800;}
+  .iv-summary-stats{display:flex;gap:16px;margin-top:20px;}
+  .iv-stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 22px;}
+  .iv-stat b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .iv-stat span{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;}
+  .iv-rnd-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);padding:6px 0;border-top:1px solid var(--line);width:100%;max-width:280px;}
+  .iv-rnd-row:first-child{border-top:none;}
   /* timelapse play button on the dashboard check-in card */
   .tl-play{background:var(--lime);color:var(--lime-ink);border:none;border-radius:9px;padding:6px 11px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:none;cursor:pointer;flex-shrink:0;}
   .tl-play:active{transform:scale(.96);}
@@ -1093,11 +1118,19 @@
     <div class="body">
       <div class="field"><label>Exercise name</label><input id="in-name" placeholder="e.g. Back squat" autocomplete="off"></div>
       <div class="field">
+        <label>Type</label>
+        <div class="pill-row">
+          <span class="pill" id="in-kind-reps" data-kind="reps">Reps &amp; sets</span>
+          <span class="pill" id="in-kind-interval" data-kind="interval">Timed intervals</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">Timed intervals is for walk/run alternations — tracks duration and GPS distance instead of counting reps. The actual walk/run mix is chosen when you add this to a workout, same as sets and reps.</div>
+      </div>
+      <div class="field">
         <label for="in-mg">Muscle group</label>
         <select id="in-mg"></select>
         <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">Lets you filter your library when building a workout, and lets trainees fill a "Wildcard" slot from this group.</div>
       </div>
-      <div class="field">
+      <div class="field" id="ex-ref-field">
         <label>Correct form reference</label>
         <div class="card" style="margin:0;">
           <div class="ex-top">
@@ -1109,7 +1142,7 @@
           <button class="btn sm" style="margin-top:10px" id="btn-record-ref">● Record reference</button>
         </div>
       </div>
-      <p style="font-size:12px;color:var(--faint);line-height:1.5;margin-top:4px;padding:0 2px;">Sets and reps aren't set here — you'll choose those when you add this exercise to a workout.</p>
+      <p style="font-size:12px;color:var(--faint);line-height:1.5;margin-top:4px;padding:0 2px;" id="ex-sets-hint">Sets and reps aren't set here — you'll choose those when you add this exercise to a workout.</p>
     </div>
     <div class="fab-row">
       <button class="btn ghost sm" style="flex:0 0 auto;width:52px;color:var(--red)" id="ex-delete" title="Delete">🗑</button>
@@ -1567,6 +1600,35 @@
 
   <!-- shared 3-2-1 countdown (above the recorder AND the check-in camera) -->
   <div id="countdown"><div class="cd-n" id="cd-n">3</div><div class="cd-s" id="cd-s"></div><button class="cd-x" id="cd-cancel">Cancel</button></div>
+
+  <!-- Item: timed interval exercises (walk/run, GPS distance). A full-screen
+       overlay outside the normal .screen navigation stack, same pattern as
+       #photocap/#rec — this is a distinct MODE, not a page in the app's
+       usual back-stack. No camera, no pose overlay: just a timer and a
+       live distance readout. -->
+  <div id="s-interval">
+    <div class="iv-top">
+      <button class="close" id="iv-close">✕</button>
+      <div class="ttl" id="iv-exname">Interval</div>
+      <div style="width:34px"></div>
+    </div>
+    <div class="iv-body" id="iv-run-body">
+      <div class="iv-round" id="iv-round">Round 1 of 5</div>
+      <div class="iv-type" id="iv-type">Walk</div>
+      <div class="iv-time" id="iv-time">2:00</div>
+      <div class="iv-dist"><span id="iv-dist">0.00</span> km</div>
+      <div class="iv-gpswarn" id="iv-gpswarn" style="display:none">⚠ GPS isn't available — time is still tracked, but distance won't be.</div>
+    </div>
+    <div class="iv-body" id="iv-summary-body" style="display:none">
+      <div class="iv-summary-h">Interval complete</div>
+      <div class="iv-summary-stats">
+        <div class="iv-stat"><b id="iv-sum-time">0:00</b><span>total time</span></div>
+        <div class="iv-stat"><b id="iv-sum-dist">0.00 km</b><span>total distance</span></div>
+      </div>
+      <div id="iv-sum-rounds"></div>
+      <button class="btn primary" id="iv-sum-done" style="margin-top:18px">✓ Done</button>
+    </div>
+  </div>
 
   <!-- streak celebration: tap the flame badge -->
   <div id="streakburst">
@@ -3641,7 +3703,7 @@ function renderLibraryInto(el,list){
       <div class="ex-info"><h3>${escapeHtml(ex.name)}</h3>
         <div class="ex-tags">
           ${mg?`<span class="mg-tag">${escapeHtml(mg)}</span>`:`<span class="mg-tag none">No muscle group</span>`}
-          <span class="ref-tag ${hasRef(ex)?"ref-yes":"ref-no"}">${hasRef(ex)?"✓ correct form set":"● no reference"}</span>
+          ${ex.kind==="interval"?`<span class="mg-tag" style="background:rgba(90,176,255,.14);border-color:rgba(90,176,255,.3);color:var(--blue)">🏃 interval</span>`:`<span class="ref-tag ${hasRef(ex)?"ref-yes":"ref-no"}">${hasRef(ex)?"✓ correct form set":"● no reference"}</span>`}
         </div></div></div>`;
     div.addEventListener("click",()=>openExEditor(ex.id));
     el.appendChild(div);
@@ -3671,7 +3733,7 @@ function renderWorkoutsInto(el,wos,exs){
 /* =========================================================================
    9. Exercise editor   (ref video -> Storage path; landmarks -> jsonb)
    ========================================================================= */
-let editingExId=null, pendingRef=null; // pendingRef={frames,fps,reps,blob}
+let editingExId=null, pendingRef=null, editingExKind="reps"; // pendingRef={frames,fps,reps,blob}
 async function openExEditor(id){
   editingExId=id; pendingRef=null;
   const ex=id?await store.exercises.get(id):null;
@@ -3683,6 +3745,23 @@ async function openExEditor(id){
       +MUSCLE_GROUPS.map(([k,l])=>`<option value="${k}">${escapeHtml(l)}</option>`).join("");
     mg.value=(ex&&ex.muscle_group)||"";
   }
+  /* Item: timed interval exercises. The kind pill toggles which fields make
+     sense — a walk/run exercise has no form to reference (no pose overlay
+     has any role here) and no per-set sets/reps hint, since its actual
+     structure is chosen at the workout-builder step, same place sets/reps
+     already are for a reps exercise. */
+  editingExKind=(ex&&ex.kind)||"reps";
+  const applyKindUI=()=>{
+    $("#in-kind-reps").classList.toggle("on",editingExKind==="reps");
+    $("#in-kind-interval").classList.toggle("on",editingExKind==="interval");
+    $("#ex-ref-field").style.display=editingExKind==="interval"?"none":"";
+    $("#ex-sets-hint").textContent=editingExKind==="interval"
+      ? "Walk/run durations and rounds aren't set here — you'll choose those when you add this exercise to a workout."
+      : "Sets and reps aren't set here — you'll choose those when you add this exercise to a workout.";
+  };
+  $("#in-kind-reps").onclick=()=>{ editingExKind="reps"; applyKindUI(); };
+  $("#in-kind-interval").onclick=()=>{ editingExKind="interval"; applyKindUI(); };
+  applyKindUI();
   $("#ex-delete").style.display=ex?"flex":"none";
   await updateRefCard(ex);
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-ex-edit").classList.add("active");
@@ -3738,11 +3817,11 @@ $("#ex-save").addEventListener("click",async()=>{
       landmarks={frames:pendingRef.frames,fps:pendingRef.fps,reps:pendingRef.reps};
     }
     if(editingExId){
-      const patch={name,muscle_group:($("#in-mg")?.value||null)||null};
+      const patch={name,muscle_group:($("#in-mg")?.value||null)||null,kind:editingExKind};
       if(pendingRef){patch.ref_video_path=ref_video_path;patch.landmarks=landmarks;}
       await store.exercises.update(editingExId,patch);
     }else{
-      await store.exercises.add({coach_id:ME.id,name,muscle_group:($("#in-mg")?.value||null)||null,ref_video_path:ref_video_path||null,landmarks:landmarks||null});
+      await store.exercises.add({coach_id:ME.id,name,muscle_group:($("#in-mg")?.value||null)||null,ref_video_path:ref_video_path||null,landmarks:landmarks||null,kind:editingExKind});
     }
     toast("Saved to library"); go("coach");
   }catch(err){console.error(err);toast(err.message||"Couldn't save",4000);}
@@ -3799,6 +3878,27 @@ function renderBuilderItems(){
       wrap.appendChild(row);
       return;
     }
+    /* Item: timed interval exercises. Structure (walk/run seconds, rounds)
+       is chosen HERE, at build time — same place sets/reps already live for
+       a reps exercise — not fixed on the exercise itself. */
+    if(ex&&ex.kind==="interval"){
+      row.innerHTML=`
+        <div class="hd">
+          <div class="ex-thumb" style="font-size:22px;display:flex;align-items:center;justify-content:center">🏃</div>
+          <h4>${escapeHtml(ex.name)} <span class="wild-chip" style="background:rgba(90,176,255,.16);color:var(--blue)">interval</span></h4>
+          <button class="rm" data-rm="${idx}">✕</button>
+        </div>
+        <div class="sr">
+          <div class="blk"><div class="l">Walk (sec)</div>
+            <div class="mini-stepper"><button data-b="walk_seconds" data-d="-15" data-i="${idx}">−</button><span id="fv-walk_seconds-${idx}">${it.walk_seconds}</span><button data-b="walk_seconds" data-d="15" data-i="${idx}">+</button></div></div>
+          <div class="blk"><div class="l">Run (sec)</div>
+            <div class="mini-stepper"><button data-b="run_seconds" data-d="-15" data-i="${idx}">−</button><span id="fv-run_seconds-${idx}">${it.run_seconds}</span><button data-b="run_seconds" data-d="15" data-i="${idx}">+</button></div></div>
+          <div class="blk"><div class="l">Rounds</div>
+            <div class="mini-stepper"><button data-b="rounds" data-d="-1" data-i="${idx}">−</button><span id="fv-rounds-${idx}">${it.rounds}</span><button data-b="rounds" data-d="1" data-i="${idx}">+</button></div></div>
+        </div>`;
+      wrap.appendChild(row);
+      return;
+    }
     row.innerHTML=`
       <div class="hd">
         <div class="ex-thumb">${exThumb(ex)}</div>
@@ -3808,18 +3908,22 @@ function renderBuilderItems(){
       ${hasRef(ex)?"":'<div class="ref-tag ref-no" style="margin-top:10px">● no reference — won\'t be graded</div>'}
       <div class="sr">
         <div class="blk"><div class="l">Sets</div>
-          <div class="mini-stepper"><button data-b="sets" data-d="-1" data-i="${idx}">−</button><span id="sv-${idx}">${it.sets}</span><button data-b="sets" data-d="1" data-i="${idx}">+</button></div></div>
+          <div class="mini-stepper"><button data-b="sets" data-d="-1" data-i="${idx}">−</button><span id="fv-sets-${idx}">${it.sets}</span><button data-b="sets" data-d="1" data-i="${idx}">+</button></div></div>
         <div class="blk"><div class="l">Reps / set</div>
-          <div class="mini-stepper"><button data-b="reps" data-d="-1" data-i="${idx}">−</button><span id="rv-${idx}">${it.reps}</span><button data-b="reps" data-d="1" data-i="${idx}">+</button></div></div>
+          <div class="mini-stepper"><button data-b="reps" data-d="-1" data-i="${idx}">−</button><span id="fv-reps-${idx}">${it.reps}</span><button data-b="reps" data-d="1" data-i="${idx}">+</button></div></div>
       </div>`;
     wrap.appendChild(row);
   });
   wrap.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{builder.items.splice(+b.getAttribute("data-rm"),1);renderBuilderItems();}));
+  /* Uniform stepper wiring across all five possible fields (sets, reps,
+     walk_seconds, run_seconds, rounds) — each with its own sane bounds,
+     rather than the two-field special case this used to be. */
+  const FIELD_BOUNDS={sets:[1,20],reps:[1,100],walk_seconds:[10,900],run_seconds:[10,900],rounds:[1,30]};
   wrap.querySelectorAll("[data-b]").forEach(b=>b.addEventListener("click",()=>{
     const i=+b.getAttribute("data-i"),field=b.getAttribute("data-b"),d=+b.getAttribute("data-d");
-    const min=1,max=field==="sets"?20:100;
+    const [min,max]=FIELD_BOUNDS[field]||[1,999];
     builder.items[i][field]=Math.max(min,Math.min(max,builder.items[i][field]+d));
-    $((field==="sets"?"#sv-":"#rv-")+i).textContent=builder.items[i][field];
+    $("#fv-"+field+"-"+i).textContent=builder.items[i][field];
   }));
   hydrateVideos(wrap);
 }
@@ -3854,7 +3958,15 @@ $("#wo-add-wild")?.addEventListener("click",()=>{
 $("#wo-save").addEventListener("click",async()=>{
   const name=$("#in-wo-name").value.trim()||"Untitled workout";
   if(!builder.items.length){toast("Add at least one exercise");return;}
-  const items=builder.items.map(i=>({exercise_id:i.exercise_id||null,wildcard_mg:i.wildcard_mg||null,sets:i.sets,reps:i.reps}));
+  /* Real bug caught while adding interval items: this used to rebuild each
+     item as exactly {exercise_id, wildcard_mg, sets, reps} — correct for a
+     reps/wildcard item, but it would have silently discarded
+     walk_seconds/run_seconds/rounds/kind on an interval item the moment the
+     workout was saved, even though the builder held them correctly in
+     memory right up until this line. Spreading the item preserves whatever
+     shape it actually has, rather than hardcoding one shape for all three
+     item kinds this builder now needs to support. */
+  const items=builder.items.map(i=>({...i,exercise_id:i.exercise_id||null,wildcard_mg:i.wildcard_mg||null}));
   if(builder.isNew) await store.workouts.add({coach_id:ME.id,name,items});
   else await store.workouts.update(builder.id,{name,items});
   toast("Workout saved"); go("coach");
@@ -3933,7 +4045,11 @@ $("#sheet-scrim").addEventListener("click",closeSheet);
 $("#sheet-add").addEventListener("click",()=>{
   if(measureDate){ saveMeasurements(measureDate); return; }
   if(macroLogDate){ saveMacroLog(); return; }
-  for(const id of sheetSel) builder.items.push({exercise_id:id,sets:3,reps:10});
+  for(const id of sheetSel){
+    const ex=libCache.find(x=>x.id===id);
+    if(ex&&ex.kind==="interval") builder.items.push({exercise_id:id,kind:"interval",walk_seconds:120,run_seconds:60,rounds:5});
+    else builder.items.push({exercise_id:id,sets:3,reps:10});
+  }
   closeSheet(); renderBuilderItems();
 });
 
@@ -5674,6 +5790,14 @@ async function doAssign(w,targetDate){
         sets:it.sets||null,reps:it.reps||null,ref_video_path:null,landmarks:null};
     }
     const ex=exMap[it.exercise_id]||{};
+    // Interval exercises carry their own shape into the snapshot — no
+    // reference video/landmarks exist for these (nothing to grade form
+    // against), and sets/reps mean nothing here; the durations/rounds
+    // chosen at build time are what actually needs to freeze.
+    if(ex.kind==="interval"||it.kind==="interval"){
+      return {exercise_id:it.exercise_id,kind:"interval",name:ex.name||"(removed)",
+        walk_seconds:it.walk_seconds,run_seconds:it.run_seconds,rounds:it.rounds};
+    }
     return {exercise_id:it.exercise_id,name:ex.name||"(removed)",sets:it.sets,reps:it.reps,
       ref_video_path:ex.ref_video_path||null, landmarks:ex.landmarks||null};
   });
@@ -5721,7 +5845,7 @@ async function openAssigned(id){
   // mark opened so the trainee's "new" glisten stops (best-effort; column may not exist)
   if(!currentAssigned.opened){ try{ await store.assignedWorkouts.update(id,{opened:true}); currentAssigned.opened=true; }catch(e){} }
   // restore results: reviewed/submitted → from the submission; in-progress → from the saved draft
-  localResults=items.map(it=>Array(it.sets).fill(null));
+  localResults=items.map(it=>Array(it.kind==="interval"?1:it.sets).fill(null));
   try{
     if(currentAssigned.status==="assigned"){
       // in-progress draft (recorded sets not yet submitted)
@@ -5755,7 +5879,7 @@ async function loadMyPBs(){
 }
 /* make a stored results array fit the current items/sets shape */
 function reshapeResults(src,items){
-  return items.map((it,i)=>{ const arr=Array(it.sets).fill(null); const s=src[i]||[]; for(let k=0;k<it.sets;k++)arr[k]=s[k]||null; return arr; });
+  return items.map((it,i)=>{ const n=it.kind==="interval"?1:it.sets; const arr=Array(n).fill(null); const s=src[i]||[]; for(let k=0;k<n;k++)arr[k]=s[k]||null; return arr; });
 }
 /* ---- comparison against the previous run of the same workout ----
    Keyed on workout_id so renaming the plan doesn't restart the count.
@@ -5820,7 +5944,11 @@ function renderAssignedWorkout(){
   const snap=a.snapshot, items=snap.items||[];
   $("#tw-title").textContent=snap.name||"Workout";
   let total=0,done=0,repTotal=0;
-  items.forEach((it,i)=>{total+=it.sets;(localResults[i]||[]).forEach(r=>{if(r){done++;repTotal+=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:(r.reps||0);}});});
+  // An interval item has no sets — treated as ONE unit toward the totals,
+  // matching how its result is stored as a single localResults[i][0] entry
+  // rather than a per-set array. Explicit here rather than leaning on
+  // Array(undefined)'s accidental single-element behavior elsewhere.
+  items.forEach((it,i)=>{const n=it.kind==="interval"?1:it.sets;total+=n;(localResults[i]||[]).forEach(r=>{if(r){done++;repTotal+=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:(r.reps||0);}});});
   const ord=(prevSeries&&prevSeries.ordinal>1)?`${ordinalWord(prevSeries.ordinal)} time · `:"";
   $("#tw-sub").textContent=`${ord}${items.length} exercises · ${total} sets`;
   $("#tw-progress-txt").textContent=`${done} / ${total} sets`;
@@ -5858,6 +5986,31 @@ function renderAssignedWorkout(){
           <div class="ex-thumb wild-ic" style="opacity:.5">★</div>
           <div class="ex-info"><h3>Wildcard · ${escapeHtml(mgLabel(it.wildcard_mg)||it.wildcard_mg)}</h3>
             <div class="ex-meta"><div style="color:var(--faint)">skipped</div></div></div></div>`;
+      wrap.appendChild(card);
+      return;
+    }
+    /* Item: timed interval exercise. Treated as ONE unit (localResults[i][0]),
+       not per-set — there's no camera, no pose overlay, no form to grade;
+       just a timer through the walk/run sequence and a GPS distance total. */
+    if(it.kind==="interval"){
+      const r=results[0];
+      card.className="card";
+      if(r){
+        card.innerHTML=`<div class="ex-top" style="margin-bottom:6px">
+            <div class="ex-thumb" style="font-size:22px;display:flex;align-items:center;justify-content:center">🏃</div>
+            <div class="ex-info"><h3>${escapeHtml(it.name)}</h3>
+              <div class="ex-meta">${r.skipped
+                ? `<div style="color:var(--faint)">skipped</div>`
+                : `<div><b>${fmt(r.total_seconds||0)}</b></div><div><b>${((r.total_distance_m||0)/1000).toFixed(2)} km</b></div>`}</div></div></div>`;
+      }else{
+        card.innerHTML=`<div class="ex-top" style="margin-bottom:6px">
+            <div class="ex-thumb" style="font-size:22px;display:flex;align-items:center;justify-content:center">🏃</div>
+            <div class="ex-info"><h3>${escapeHtml(it.name)}</h3>
+              <div class="ex-meta"><div>${it.rounds}× walk ${it.walk_seconds}s / run ${it.run_seconds}s</div></div></div></div>
+          ${locked?"":`<div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn sm" data-interval-start="${i}" style="flex:1">▶ Start</button>
+            <button class="btn sm ghost" data-interval-skip="${i}" style="flex:0 0 auto">Skip</button></div>`}`;
+      }
       wrap.appendChild(card);
       return;
     }
@@ -5946,6 +6099,17 @@ function renderAssignedWorkout(){
     localResults[ii][si]={reps:0,skipped:true,video_path:null,weight_kg:null,reps_label:null,reps_corrected:null};
     saveWorkoutDraft();
     renderAssignedWorkout();
+  }));
+  wrap.querySelectorAll("[data-interval-skip]").forEach(b=>b.addEventListener("click",()=>{
+    const ii=+b.getAttribute("data-interval-skip");
+    localResults[ii]=localResults[ii]||[];
+    localResults[ii][0]={skipped:true,total_seconds:0,total_distance_m:0,rounds:[]};
+    saveWorkoutDraft();
+    renderAssignedWorkout();
+  }));
+  wrap.querySelectorAll("[data-interval-start]").forEach(b=>b.addEventListener("click",()=>{
+    const ii=+b.getAttribute("data-interval-start");
+    startIntervalExercise(ii);
   }));
   wrap.querySelectorAll("[data-ref]").forEach(t=>t.addEventListener("click",e=>{ if(e.target.closest("video"))return; previewReference(+t.getAttribute("data-ref")); }));
   // submit button: enabled when all sets done and not yet submitted
@@ -6176,6 +6340,143 @@ function startTraineeSet(itemIndex,setIndex){
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
   });
 }
+
+/* =========================================================================
+   Item: timed interval exercises (walk/run alternations, GPS distance).
+   No camera, no pose overlay — a timer through the segment sequence and a
+   live distance readout via watchPosition. Treated as ONE result per item
+   (localResults[i][0]), not per-set, since there's no discrete "set" here.
+   ========================================================================= */
+function haversineMeters(lat1,lon1,lat2,lon2){
+  const R=6371000, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+let ivState=null;
+function buildIntervalSegments(it){
+  const segs=[];
+  for(let r=0;r<(it.rounds||1);r++){
+    segs.push({type:"walk",seconds:it.walk_seconds});
+    segs.push({type:"run",seconds:it.run_seconds});
+  }
+  return segs;
+}
+function startIntervalExercise(itemIndex){
+  const it=currentAssigned.snapshot.items[itemIndex];
+  const segments=buildIntervalSegments(it);
+  ivState={
+    itemIndex, segments, segIdx:0, remaining:segments[0].seconds,
+    totalSeconds:0, totalDistanceM:0, segDistances:segments.map(()=>0),
+    lastPos:null, watchId:null, timerInt:null
+  };
+  $("#iv-exname").textContent=it.name||"Interval";
+  $("#iv-run-body").style.display=""; $("#iv-summary-body").style.display="none";
+  $("#iv-gpswarn").style.display="none";
+  updateIntervalDisplay();
+  $("#s-interval").classList.add("on");
+  startIntervalGPS();
+  ivState.timerInt=setInterval(ivTick,1000);
+}
+function startIntervalGPS(){
+  if(!navigator.geolocation){
+    $("#iv-gpswarn").style.display="";
+    return;
+  }
+  ivState.watchId=navigator.geolocation.watchPosition(pos=>{
+    if(!ivState)return;   // a stray callback landing after close/finish
+    const {latitude,longitude}=pos.coords;
+    const now=Date.now();
+    if(ivState.lastPos){
+      const d=haversineMeters(ivState.lastPos.lat,ivState.lastPos.lon,latitude,longitude);
+      const dt=(now-ivState.lastPos.t)/1000;
+      // Speed-based filter, not a flat distance cap: GPS noise (multipath,
+      // a stale/jumped fix) can produce an implausible spike regardless of
+      // the interval between fixes, and a flat per-ping cap would either
+      // block real fast running or let a noisy jump through on a longer
+      // gap. 12 m/s is ~43 km/h — well above sustainable running speed,
+      // generous enough not to reject genuine sprinting.
+      if(dt>0 && (d/dt)<=12){
+        ivState.totalDistanceM+=d;
+        ivState.segDistances[ivState.segIdx]+=d;
+      }
+    }
+    ivState.lastPos={lat:latitude,lon:longitude,t:now};
+    updateIntervalDisplay();
+  }, err=>{
+    console.error("interval GPS",err);
+    $("#iv-gpswarn").textContent="⚠ Couldn't get your location — time is still tracked, but distance won't be.";
+    $("#iv-gpswarn").style.display="";
+  }, {enableHighAccuracy:true,maximumAge:2000,timeout:15000});
+}
+function ivTick(){
+  if(!ivState)return;
+  ivState.remaining--; ivState.totalSeconds++;
+  if(ivState.remaining<=0){
+    ivState.segIdx++;
+    if(ivState.segIdx>=ivState.segments.length){ finishInterval(); return; }
+    ivState.remaining=ivState.segments[ivState.segIdx].seconds;
+    if(navigator.vibrate) navigator.vibrate(300);   // best-effort cue at the transition; silently absent where unsupported
+  }
+  updateIntervalDisplay();
+}
+function updateIntervalDisplay(){
+  if(!ivState)return;
+  const seg=ivState.segments[ivState.segIdx];
+  const typeEl=$("#iv-type");
+  typeEl.textContent=seg.type==="walk"?"Walk":"Run";
+  typeEl.classList.toggle("run",seg.type==="run");
+  $("#iv-time").textContent=fmt(ivState.remaining);
+  $("#iv-round").textContent=`Round ${Math.floor(ivState.segIdx/2)+1} of ${ivState.segments.length/2}`;
+  $("#iv-dist").textContent=(ivState.totalDistanceM/1000).toFixed(2);
+}
+function stopIntervalTracking(){
+  if(!ivState)return;
+  if(ivState.timerInt){ clearInterval(ivState.timerInt); ivState.timerInt=null; }
+  if(ivState.watchId!=null && navigator.geolocation){ navigator.geolocation.clearWatch(ivState.watchId); ivState.watchId=null; }
+}
+function finishInterval(){
+  stopIntervalTracking();
+  $("#iv-run-body").style.display="none"; $("#iv-summary-body").style.display="";
+  $("#iv-sum-time").textContent=fmt(ivState.totalSeconds);
+  $("#iv-sum-dist").textContent=(ivState.totalDistanceM/1000).toFixed(2)+" km";
+  const roundsEl=$("#iv-sum-rounds"); roundsEl.innerHTML="";
+  ivState.segments.forEach((seg,idx)=>{
+    roundsEl.insertAdjacentHTML("beforeend",
+      `<div class="iv-rnd-row"><span>${seg.type==="walk"?"Walk":"Run"} · ${fmt(seg.seconds)}</span><span>${(ivState.segDistances[idx]/1000).toFixed(2)} km</span></div>`);
+  });
+}
+function saveIntervalResult(){
+  if(!ivState)return;
+  const result={
+    skipped:false,
+    total_seconds:ivState.totalSeconds,
+    total_distance_m:Math.round(ivState.totalDistanceM),
+    rounds:ivState.segments.map((seg,idx)=>({type:seg.type,seconds:seg.seconds,distance_m:Math.round(ivState.segDistances[idx])}))
+  };
+  const ii=ivState.itemIndex;
+  localResults[ii]=localResults[ii]||[];
+  localResults[ii][0]=result;
+  saveWorkoutDraft();
+  closeIntervalScreen();
+  renderAssignedWorkout();
+}
+function closeIntervalScreen(){
+  stopIntervalTracking();
+  $("#s-interval").classList.remove("on");
+  ivState=null;
+}
+$("#iv-sum-done").addEventListener("click",saveIntervalResult);
+$("#iv-close").addEventListener("click",async()=>{
+  // Mid-run exit needs confirmation — closing without it would silently
+  // discard GPS distance and elapsed time already tracked. Once finished
+  // (the summary is showing), closing this way is equivalent to walking
+  // away without saving, so it gets the same guard rather than a quieter
+  // exception for that state.
+  const ok=await openConfirm({title:"Stop this interval?",body:"Your progress so far won't be saved.",confirmLabel:"Stop",cancelLabel:"Keep going",danger:true});
+  if(ok) closeIntervalScreen();
+});
+
 async function runAnalysis(itemIndex,setIndex,capture){
   const it=currentAssigned.snapshot.items[itemIndex];
   const A=$("#analyze");A.classList.add("on");const ring=$("#an-ring");
@@ -6449,6 +6750,7 @@ async function openReview(assignedId,readonly=false){
   if(!readonly){
     const missing=[];
     (rep.items||[]).forEach((item,ii)=>{
+      if(item.kind==="interval")return;   // set_labels is rep-grading data; an interval result has nothing to grade
       (item.results||[]).forEach((r,si)=>{
         if(!r||labelBy[ii+"-"+si])return;
         missing.push({
@@ -6533,6 +6835,38 @@ async function openReview(assignedId,readonly=false){
   const body=$("#review-body");body.innerHTML="";
   const notedItems=new Set();
   (rep.items||[]).forEach((item,ii)=>{
+    /* Item: timed interval exercises. No sets, no video, no form to grade —
+       a coach's review of this is just a summary readout plus their own
+       optional comment. Rendered as its own simple card, entirely bypassing
+       the per-set tag/video/PB/directive machinery below, none of which
+       applies to a result that's a total time and a GPS distance rather
+       than a rep count. */
+    if(item.kind==="interval"){
+      const r=(item.results||[])[0];
+      if(!r)return;
+      const div=document.createElement("div");div.className="review-set";
+      div.innerHTML=`<div class="rs-h"><h3 style="font-size:15px;font-weight:700">🏃 ${escapeHtml(item.name)}</h3></div>
+        ${r.skipped
+          ? `<div style="font-size:13px;color:var(--faint)">Skipped</div>`
+          : `<div style="display:flex;gap:20px;margin-bottom:10px">
+              <div><div style="font-size:20px;font-weight:800">${fmt(r.total_seconds||0)}</div><div style="font-size:10.5px;color:var(--faint);text-transform:uppercase">total time</div></div>
+              <div><div style="font-size:20px;font-weight:800">${((r.total_distance_m||0)/1000).toFixed(2)} km</div><div style="font-size:10.5px;color:var(--faint);text-transform:uppercase">distance</div></div>
+            </div>`}`;
+      const key=ii+"-0";
+      if(roleOf()==="coach"){
+        const ci=document.createElement("input");ci.type="text";ci.placeholder="Note for this exercise (optional)";
+        ci.style.cssText="width:100%;height:42px;margin-top:6px;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:0 12px;outline:none;font-size:14px";
+        const savedEntry=(existing&&existing.per_set||[]).find(p=>p.exercise===item.name);
+        ci.value=(reviewState.per_set[key]||{}).comment??(savedEntry?.comment||"");
+        ci.addEventListener("input",()=>{ reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:1,exercise:item.name,comment:ci.value.trim()}; });
+        div.appendChild(ci);
+      }else{
+        const savedEntry=(existing&&existing.per_set||[]).find(p=>p.exercise===item.name);
+        if(savedEntry&&savedEntry.comment) div.insertAdjacentHTML("beforeend",`<p style="font-size:14px;color:var(--muted);line-height:1.5;margin-top:8px">${escapeHtml(savedEntry.comment)}</p>`);
+      }
+      body.appendChild(div);
+      return;
+    }
     (item.results||[]).forEach((r,si)=>{
       if(!r)return;
       /* Coach's own last comment on this exercise, shown once before its

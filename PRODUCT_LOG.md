@@ -488,6 +488,46 @@ timer/interval structure, not the camera+pose pipeline — rather than
 trying to force it through the existing rep-counting UI. Not sized
 further here since that's a real design decision, not a small addition.
 
+**DECIDED: GPS + distance, the bigger of the two options offered.** Built
+in full — this touched more of the app than any other single item this
+session:
+
+- `exercises.kind` (`'reps'` or `'interval'`) — a coach picks the type
+  when creating an exercise; an interval exercise skips the reference-
+  video step entirely (no pose overlay has any role here) both in the
+  editor and in the library list, which previously showed every exercise
+  as "no reference — won't be graded" regardless of kind.
+- The actual walk/run/rounds structure is chosen at the WORKOUT-BUILDER
+  step, same place sets/reps already live for a reps exercise — not fixed
+  on the exercise itself, so one "Interval Run" exercise can be assigned
+  differently each time.
+- **A real bug caught mid-build, not after:** the workout-save handler
+  explicitly rebuilt each item as exactly `{exercise_id, wildcard_mg,
+  sets, reps}` — correct for the two kinds it knew about, but it would
+  have silently discarded every interval field the moment a workout was
+  saved, even though the builder held them correctly in memory right up
+  until that line. Fixed to preserve whatever shape an item actually has.
+- **Two more found the same way** — `total` (progress count) and the
+  `localResults`/`reshapeResults` array sizing all assumed `it.sets` was
+  a number; an interval item's `undefined` sets would have produced
+  `NaN` progress or relied on an accidental (and fragile) JS quirk to
+  behave correctly. Made explicit rather than left to luck.
+- A genuinely new full-screen flow (`#s-interval`) — a timer counting
+  down through the walk/run sequence, live GPS distance via
+  `watchPosition`, a Haversine distance calculation, and a SPEED-based
+  filter (not a flat per-ping cap) to reject GPS noise without rejecting
+  real fast running. Vibration cue at each segment transition where
+  supported. A confirm-before-discard on exit, since closing mid-run
+  would otherwise silently lose already-tracked time and distance.
+- Treated as ONE result per item (`localResults[i][0]`), not per-set —
+  there's no discrete "set" in an interval, so it reuses the app's
+  existing skip/submit/draft-save machinery rather than needing its own.
+- Review screen: a coach sees a summary card (total time, total
+  distance, optional comment) instead of the rep-tag/video/PB/directive
+  UI, none of which applies to a result that's a duration and a distance
+  rather than a rep count. Explicitly excluded from the `set_labels`
+  backfill too — that table is rep-grading data specifically.
+
 ---
 
 ## Partial workout management
