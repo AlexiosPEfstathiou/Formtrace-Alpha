@@ -6654,24 +6654,40 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   const wrap=document.createElement("div");
   wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5">
       Talk over the trainee's own clip as it plays — this records your voice only, not a new video.</div>
-    <video id="vo-vid" muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:280px" src="${url}"></video>
-    <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
-    <button class="btn primary" id="vo-record">🎤 Start recording</button>
-    <div id="vo-meter-wrap" class="vo-meter-wrap" style="display:none">
-      <div class="vo-meter-lab">Mic level</div>
-      <div class="vo-meter-track"><div class="vo-meter-fill" id="vo-meter-fill"></div></div>
+    <div id="vo-check">
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        Check your microphone before recording — confirm the level moves when you talk, and that you can hear the test sound.</div>
+      <div class="field"><label for="vo-mic-select">Microphone</label>
+        <select class="sel" id="vo-mic-select"><option value="">Default</option></select></div>
+      <div id="vo-meter-wrap" class="vo-meter-wrap">
+        <div class="vo-meter-lab">Mic level</div>
+        <div class="vo-meter-track"><div class="vo-meter-fill" id="vo-meter-fill"></div></div>
+      </div>
+      <div class="field" style="margin-top:12px" id="vo-speaker-field"><label for="vo-speaker-select">Speaker / output</label>
+        <select class="sel" id="vo-speaker-select"><option value="">Default</option></select>
+        <div id="vo-speaker-unsupported" style="display:none;font-size:11.5px;color:var(--faint);margin-top:5px">
+          This browser doesn't support choosing an output device — the test sound plays through whatever's currently active.</div>
+      </div>
+      <button class="btn sm" id="vo-test-sound" style="margin-top:10px">🔊 Play test sound</button>
+      <button class="btn primary" id="vo-check-continue" style="margin-top:14px" disabled>Continue to recording</button>
+      <div id="vo-check-status" style="font-size:12px;color:var(--faint);margin-top:8px;text-align:center">Requesting microphone…</div>
     </div>
-    <div id="vo-review" style="display:none;margin-top:14px">
-      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Preview — plays your voice over the clip:</div>
-      <div id="vo-preview-slot"></div>
-      <div style="display:flex;gap:10px;margin-top:12px">
-        <button class="btn sm" id="vo-redo" style="flex:1">Re-record</button>
-        <button class="btn primary sm" id="vo-save" style="flex:1">Save voice-over</button>
+    <div id="vo-main" style="display:none">
+      <video id="vo-vid" muted playsinline style="width:100%;border-radius:12px;background:#000;max-height:280px" src="${url}"></video>
+      <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
+      <button class="btn primary" id="vo-record">🎤 Start recording</button>
+      <div id="vo-review" style="display:none;margin-top:14px">
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Preview — plays your voice over the clip:</div>
+        <div id="vo-preview-slot"></div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn sm" id="vo-redo" style="flex:1">Re-record</button>
+          <button class="btn primary sm" id="vo-save" style="flex:1">Save voice-over</button>
+        </div>
       </div>
     </div>`;
   body.appendChild(wrap);
   const vid=$("#vo-vid"), status=$("#vo-status"), recordBtn=$("#vo-record"), reviewBox=$("#vo-review");
-  let stream=null, recorder=null, chunks=[], resultBlob=null;
+  let stream=null, recorder=null, chunks=[], resultBlob=null, selectedMicId="";
 
   const cleanupStream=()=>{
     if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
@@ -6681,17 +6697,18 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
 
   /* Item: volume meter. Reads the LIVE mic signal via an AnalyserNode — a
      dead end, never connected to audioCtx.destination, so the coach's own
-     voice is never fed back through their speakers while recording. This
-     catches a dead/misrouted mic in the moment, before they even finish
-     talking, rather than only discovering it silently at preview time. */
+     voice is never fed back through their speakers while recording. Runs
+     continuously from the mic-check step through actual recording — one
+     instance, not restarted, so switching devices during the check is the
+     only time it's ever rebuilt. */
   let meterCtx=null, meterRAF=null;
   const stopMeter=()=>{
     if(meterRAF){ cancelAnimationFrame(meterRAF); meterRAF=null; }
     if(meterCtx){ meterCtx.close().catch(()=>{}); meterCtx=null; }
-    $("#vo-meter-wrap").style.display="none";
-    $("#vo-meter-fill").style.width="0%";
+    const fill=$("#vo-meter-fill"); if(fill) fill.style.width="0%";
   };
   const startMeter=liveStream=>{
+    stopMeter();   // guards against double-wiring if a device is switched mid-check
     try{
       meterCtx=new (window.AudioContext||window.webkitAudioContext)();
       const src=meterCtx.createMediaStreamSource(liveStream);
@@ -6700,25 +6717,124 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
       src.connect(analyser);   // dead end — deliberately not connected onward
       const data=new Uint8Array(analyser.frequencyBinCount);
       const fill=$("#vo-meter-fill");
-      $("#vo-meter-wrap").style.display="";
       const tick=()=>{
         analyser.getByteFrequencyData(data);
         const avg=data.reduce((a,b)=>a+b,0)/data.length;
-        fill.style.width=Math.min(100,Math.round((avg/90)*100))+"%";
+        if(fill) fill.style.width=Math.min(100,Math.round((avg/90)*100))+"%";
         meterRAF=requestAnimationFrame(tick);
       };
       tick();
     }catch(e){ console.error("voiceover meter",e); }   // meter is a diagnostic, never blocks recording
   };
 
-  const startRecording=async()=>{
-    try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
-    catch(e){ console.error("voiceover mic",e); toast("Microphone access is needed to record a voice-over",4000); return; }
+  /* Mic check: acquires the stream ONCE here and it's reused directly for
+     actual recording rather than re-requested — this is what guarantees
+     the device the coach confirms working is the one actually recorded
+     from, rather than the browser silently defaulting to something else
+     a second time. */
+  const acquireStream=async deviceId=>{
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+    const constraints={audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}};
+    if(deviceId) constraints.audio.deviceId={exact:deviceId};
+    stream=await navigator.mediaDevices.getUserMedia(constraints);
+    // Set as soon as the stream exists, not only once actual recording
+    // starts — the mic-check step alone acquires a live mic well before
+    // "Start recording" is ever tapped, and closeSheet() only knows to
+    // tear down a stream it can see here. Without this, backing out
+    // during the check step (X, tap outside) would leave the mic running.
+    voState={stream,recorder:null};
     startMeter(stream);
+    return stream;
+  };
+  const populateDeviceLists=async()=>{
+    let devices=[];
+    try{ devices=await navigator.mediaDevices.enumerateDevices(); }catch(e){ console.error("enumerateDevices",e); return; }
+    const micSel=$("#vo-mic-select"), spkSel=$("#vo-speaker-select");
+    const mics=devices.filter(d=>d.kind==="audioinput");
+    const speakers=devices.filter(d=>d.kind==="audiooutput");
+    micSel.innerHTML=`<option value="">Default</option>`+mics.map((d,i)=>`<option value="${d.deviceId}">${escapeHtml(d.label||"Microphone "+(i+1))}</option>`).join("");
+    // setSinkId is Chrome/Edge/Android-Chrome only — genuinely unsupported on
+    // Safari/iOS. Detected, not assumed, and the UI says so rather than
+    // silently offering a control that can't do anything on that device.
+    const sinkSupported=typeof HTMLMediaElement!=="undefined" && "setSinkId" in HTMLMediaElement.prototype;
+    if(sinkSupported && speakers.length){
+      spkSel.innerHTML=`<option value="">Default</option>`+speakers.map((d,i)=>`<option value="${d.deviceId}">${escapeHtml(d.label||"Speaker "+(i+1))}</option>`).join("");
+    }else{
+      $("#vo-speaker-field").querySelector("select").style.display="none";
+      $("#vo-speaker-unsupported").style.display="";
+    }
+  };
+  const initMicCheck=async()=>{
+    const statusEl=$("#vo-check-status"), continueBtn=$("#vo-check-continue");
+    try{
+      await acquireStream("");
+      statusEl.textContent="Talk normally — the bar above should move.";
+      continueBtn.disabled=false;
+      await populateDeviceLists();
+    }catch(e){
+      console.error("voiceover mic check",e);
+      statusEl.textContent="Microphone access is needed to record a voice-over.";
+      toast("Microphone access is needed to record a voice-over",4000);
+    }
+  };
+  $("#vo-mic-select").addEventListener("change",async e=>{
+    selectedMicId=e.target.value;
+    $("#vo-check-status").textContent="Switching microphone…";
+    try{ await acquireStream(selectedMicId); $("#vo-check-status").textContent="Talk normally — the bar above should move."; }
+    catch(err){ console.error("mic switch",err); toast("Couldn't switch to that microphone",3500); }
+  });
+  let testAudioEl=null;
+  $("#vo-test-sound").addEventListener("click",async()=>{
+    const btn=$("#vo-test-sound");
+    try{
+      // A short synthesised tone rather than a shipped audio file — one
+      // fewer asset, and pitch/length are trivial to tune here.
+      const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.frequency.value=440; gain.gain.value=0.001;
+      osc.connect(gain);
+      const spkId=$("#vo-speaker-select").value;
+      if(spkId && !testAudioEl){
+        // Routing a synthesised tone to a chosen output needs a real
+        // <audio>/<video> element to call setSinkId on — a bare
+        // AudioContext has no sink-selection API of its own.
+        const dest=ctx.createMediaStreamDestination();
+        gain.connect(dest);
+        testAudioEl=new Audio(); testAudioEl.srcObject=dest.stream;
+      }
+      if(testAudioEl && spkId){
+        try{ await testAudioEl.setSinkId(spkId); }catch(e){ console.error("setSinkId",e); }
+        await testAudioEl.play();
+      }else{
+        gain.connect(ctx.destination);
+      }
+      gain.gain.linearRampToValueAtTime(0.15,ctx.currentTime+0.05);
+      osc.start();
+      gain.gain.linearRampToValueAtTime(0,ctx.currentTime+0.5);
+      osc.stop(ctx.currentTime+0.55);
+      btn.textContent="🔊 Played — hear it?";
+      setTimeout(()=>{ btn.textContent="🔊 Play test sound"; },1800);
+    }catch(e){ console.error("test sound",e); toast("Couldn't play the test sound",3000); }
+  });
+  $("#vo-check-continue").addEventListener("click",()=>{
+    $("#vo-check").style.display="none";
+    $("#vo-main").style.display="";
+  });
+  initMicCheck();
+
+  const startRecording=async()=>{
+    // stream already exists from the mic-check step (and carries the
+    // exact device the coach confirmed working) — recording reuses it
+    // directly rather than requesting a fresh one and risking the browser
+    // silently picking something else the second time.
+    if(!stream){
+      try{ await acquireStream(selectedMicId); }
+      catch(e){ console.error("voiceover mic",e); toast("Microphone access is needed to record a voice-over",4000); return; }
+    }
     chunks=[];
     const mime=["audio/webm;codecs=opus","audio/webm","audio/mp4"].find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||"";
     recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
-    voState={stream,recorder};   // so closeSheet() can tear this down if the sheet closes mid-recording
+    voState={stream,recorder};   // stream was already tracked from the mic-check step; this adds the recorder
     recorder.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
     recorder.onstop=()=>{
       resultBlob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});

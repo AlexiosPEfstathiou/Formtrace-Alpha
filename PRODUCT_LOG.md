@@ -76,6 +76,38 @@ moves fine live but the PREVIEW meter stays flat, the issue is specific
 to played-back audio (candidate 1, the mobile routing quirk). Worth
 retesting with the meters in place before assuming this is closed.
 
+**Reported still not working after the meter fix — added a mic-check
+step BEFORE recording, 2026-08-11.** The meter told us whether audio was
+present; it couldn't fix a wrong device being selected in the first
+place. New pre-recording step: input device selector, the live meter
+(reused, now shown here instead of only during recording), an output
+device selector, and a "play test sound" button — all before the actual
+"Start recording" button becomes reachable. The stream acquired during
+this check is the SAME stream reused for actual recording, not
+re-requested — this is what guarantees the device confirmed working in
+the check is the one that's actually recorded from, rather than the
+browser silently defaulting to something else a second time.
+
+**Output device selection has a real, unavoidable platform gap:**
+`setSinkId()` is Chrome/Edge/Android-Chrome only — genuinely absent on
+Safari and iOS. Detected at runtime, not assumed; the speaker dropdown
+hides itself and says so plainly on a device where it can't work, rather
+than offering a control that silently does nothing. Given voice-over
+recording happens on a phone, an iPhone user will only ever get the mic
+selector and test tone (still useful — confirms sound plays at all) —
+worth knowing before expecting the output picker to be the fix on iOS
+specifically.
+
+**A gap caught before shipping, not after:** the mic-check step acquires
+a live microphone stream much earlier than recording used to — as soon as
+the sheet opens, not only once "Start recording" is tapped. `closeSheet()`
+only knows to release a stream it can see in a shared tracking variable,
+which was previously only set once actual recording began. Left as
+written, backing out during the check step (the X button, tapping
+outside) would have left the microphone running invisibly. Fixed by
+tracking the stream from the moment it's acquired, not from the moment
+recording starts.
+
 ---
 
 ## Graphical and aesthetic improvements
