@@ -283,7 +283,7 @@ consistent with rather than introduce a second style alongside.
 
 ---
 
-## Latency optimization
+## Latency optimization — trainee homepage DONE 2026-08-11
 
 Logged as-is. Some of this ground is already covered — item S found and
 fixed two real bottlenecks on the coach homepage (four notification
@@ -293,11 +293,30 @@ kind of audit gets done here.
 
 **One concrete, already-identified candidate for next time this is
 picked up:** the trainee's own homepage (`renderHome()`'s non-coach
-branch) has the identical shape of problem — nine separate card renders
+branch) has the identical shape of problem — ten separate card renders
 (today's workout, milestone, streak-risk, vacation, reviews, postpone,
 macro, macro-gaps, check-in, measurements) awaited one after another
 rather than run together. Flagged when item S shipped, deliberately left
 untouched since only the coach side was asked for at the time.
+
+**Built — but checked for a real hazard first, not just copy-pasted the
+coach-side fix.** The coach side's four cards were safe to blindly
+parallelize because they were genuinely independent. The trainee side
+isn't quite that simple: `renderHomeMilestone` sets a shared
+`milestoneShowing` flag that other cards read to enforce the one-high-
+priority-notification rule, and blindly running everything at once risks
+a card reading that flag before milestone has actually set it. Checked
+every one of the ten calls for a reference to that flag rather than
+assume independence — exactly two read it (`renderHomeStreakRisk`,
+`renderHomeCheckin`); the other eight don't touch it at all.
+
+Built as two phases: milestone runs alongside `renderHomeToday` first
+(the two don't depend on each other), then the remaining eight run
+together once milestone has genuinely finished and the flag is settled.
+Cuts ten sequential round trips down to roughly two — one for whichever
+of the first pair is slower, one for whichever of the remaining eight is
+slowest — while the ordering the priority system actually needs stays
+intact.
 
 ---
 

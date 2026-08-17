@@ -2815,16 +2815,29 @@ async function renderHome(){
     // Welcome + today's program + unviewed reviews + yesterday's macro nudge
     $("#home-h").innerHTML=`Welcome back <span class="g">${firstName}</span>.`;
     $("#home-p").style.display="none";
-    await renderHomeToday(engs, todayEl);
-    await renderHomeMilestone($("#home-milestone"));
-    await renderHomeStreakRisk($("#home-streakrisk"), engs);
-    await renderHomeVacation($("#home-vacation"));
-    await renderHomeReviews(engs, reviewsEl);
-    await renderHomePostpone(engs, $("#home-postpone"));
-    await renderHomeMacro(macroEl);
-    await renderHomeMacroGaps($("#home-macrogaps"));
-    await renderHomeCheckin(checkinEl);
-    await renderHomeMeasure(measureEl);
+    /* Latency: same shape of fix as item S's coach-side batching, applied
+       here after checking (not assuming) the one real ordering hazard —
+       renderHomeMilestone sets milestoneShowing, which renderHomeStreakRisk
+       and renderHomeCheckin read to enforce the one-high-priority-notification
+       rule. Confirmed by checking every call in this branch for a reference
+       to that flag: those two are the only readers: milestone must fully
+       resolve before them, but nothing else in this branch touches it.
+       renderHomeToday has no such coupling with milestone, so it joins that
+       first phase instead of waiting on it needlessly. */
+    await Promise.all([
+      renderHomeToday(engs, todayEl),
+      renderHomeMilestone($("#home-milestone"))
+    ]);
+    await Promise.all([
+      renderHomeStreakRisk($("#home-streakrisk"), engs),
+      renderHomeVacation($("#home-vacation")),
+      renderHomeReviews(engs, reviewsEl),
+      renderHomePostpone(engs, $("#home-postpone")),
+      renderHomeMacro(macroEl),
+      renderHomeMacroGaps($("#home-macrogaps")),
+      renderHomeCheckin(checkinEl),
+      renderHomeMeasure(measureEl)
+    ]);
   }else{
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
