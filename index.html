@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -24,7 +24,15 @@
     --bg:#0B0E11; --bg2:#10151A; --panel:#151B21; --panel2:#1B232B;
     --line:#232C35; --line2:#2E3944;
     --ink:#EEF3F6; --muted:#8593A0; --faint:#5B6773;
-    --lime:#C8FF3D; --lime-dim:#8Fb82c; --lime-ink:#0E1206;
+    /* Theme refresh, 2026-08-17: primary accent moved from lime to a warm
+       yellow, chosen from a set of colorblind-safe candidates specifically
+       to avoid colliding with the calendar's gold achievement colors while
+       still being clearly distinguishable from blue/red/violet elsewhere.
+       --lime-light is new — the lighter gradient stop for the pill-button
+       treatment — kept as a real variable (not a hardcoded hex in .btn)
+       specifically so colorblind mode's override further below still
+       correctly reaches every place this gradient is used. */
+    --lime:#F0D231; --lime-light:#FBE577; --lime-dim:#B8A030; --lime-ink:#2c2400;
     --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF; --violet:#B79CFF;
     --shadow:0 12px 40px rgba(0,0,0,.5);
     --frame-outer:#0d1116; --frame-ring:#1c242c; --frame-bg:#05070A;
@@ -34,31 +42,35 @@
     --ch-1:#FF5A5A; --ch-2:#8BD742; --ch-3:#FFC24A; --ch-4:#B79CFF; --ch-weight:#B79CFF;
     --ch-1-ink:#2b0505; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
     /* tinted "accent" surface (lime-highlighted cards) */
-    --accent-surface:linear-gradient(120deg,#1a2410,#141a10); --accent-border:#2f3d18;
+    --accent-surface:linear-gradient(120deg,#241f0a,#1a1608); --accent-border:#4a3f14;
     /* goal/offer status accents — active = green (dark), inactive = grey */
-    --goal-active:#C8FF3D; --goal-active-tint:rgba(200,255,61,.09); --goal-inactive:#5B6773; --goal-inactive-tint:rgba(91,103,115,.10);
+    --goal-active:#F0D231; --goal-active-tint:rgba(240,210,49,.09); --goal-inactive:#5B6773; --goal-inactive-tint:rgba(91,103,115,.10);
   }
   html[data-theme="light"]{
     --bg:#F4F6F8; --bg2:#EBEEF1; --panel:#FFFFFF; --panel2:#EEF1F4;
     --line:#DDE3E8; --line2:#C6CFD6;
     --ink:#131A20; --muted:#5A6672; --faint:#8C98A3;
-    --lime:#5B8C00; --lime-dim:#6f9e1f; --lime-ink:#FFFFFF;
+    --lime:#B8960A; --lime-light:#D4AF1F; --lime-dim:#8f7508; --lime-ink:#FFFFFF;
     --red:#D64545; --amber:#B7791F; --blue:#0072B2; --violet:#7A5CC4;
     --shadow:0 12px 36px rgba(20,30,40,.18);
     --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
     --ch-1:#C62828; --ch-2:#3F7D18; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#FFFFFF; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
-    --accent-surface:linear-gradient(120deg,#EDF6DC,#F3F8E8); --accent-border:#C4DE8F;
+    --accent-surface:linear-gradient(120deg,#F6F0DC,#F8F3E8); --accent-border:#DEC98F;
     --goal-active:#0072B2; --goal-active-tint:rgba(0,114,178,.08); --goal-inactive:#8C98A3; --goal-inactive-tint:rgba(140,152,163,.12);
   }
-  /* ---- COLORBLIND-SAFE (Wong palette) — applies over either theme ---- */
+  /* ---- COLORBLIND-SAFE (Wong palette) — applies over either theme ----
+     Deliberately left as its own distinct teal, not switched to match the
+     new warm-yellow default: this is a dedicated accessibility path a
+     person opts into, not just "the old accent" that needs updating in
+     lockstep with the general theme refresh. */
   html[data-cb="1"]{
-    --blue:#0072B2; --amber:#E69F00; --red:#D55E00; --violet:#CC79A7; --lime:#009E73;
+    --blue:#0072B2; --amber:#E69F00; --red:#D55E00; --violet:#CC79A7; --lime:#009E73; --lime-light:#33B592;
     --ch-1:#0072B2; --ch-2:#E69F00; --ch-3:#D55E00; --ch-4:#CC79A7; --ch-weight:#CC79A7;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#1a1200; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
   }
-  html[data-cb="1"][data-theme="light"]{ --lime:#0A7A5C; --lime-ink:#FFFFFF; --lime-dim:#0A7A5C; }
-  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-dim:#1f9e78; --lime-ink:#04120c; --goal-active:#2BD4A0; --goal-active-tint:rgba(43,212,160,.10); }
+  html[data-cb="1"][data-theme="light"]{ --lime:#0A7A5C; --lime-light:#3FA383; --lime-ink:#FFFFFF; --lime-dim:#0A7A5C; }
+  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-light:#5CE8BE; --lime-dim:#1f9e78; --lime-ink:#04120c; --goal-active:#2BD4A0; --goal-active-tint:rgba(43,212,160,.10); }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;background:var(--frame-bg);color:var(--ink);
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;
@@ -113,7 +125,7 @@
   .ht-card-top{display:flex;align-items:center;gap:10px;}
   .ht-wname{flex:1;min-width:0;font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;}
   .ht-chip{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:20px;background:var(--panel2);color:var(--muted);}
-  .ht-chip.reviewed{background:rgba(200,255,61,.16);color:var(--lime);}
+  .ht-chip.reviewed{background:rgba(240, 210, 49,.16);color:var(--lime);}
   .ht-chip.submitted{background:rgba(90,176,255,.16);color:var(--blue);}
   .ht-go{flex-shrink:0;width:40px;height:40px;border-radius:12px;border:none;background:var(--lime);color:var(--lime-ink);font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .ht-go:active{transform:scale(.94);}
@@ -205,7 +217,7 @@
   .nw-row:active{transform:scale(.995);}
   .nw-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--panel2);}
   .nw-ic.nw-missed{background:rgba(255,90,90,.16);}
-  .nw-ic.nw-done{background:rgba(200,255,61,.16);}
+  .nw-ic.nw-done{background:rgba(240, 210, 49,.16);}
   .nw-ic.nw-photo{background:rgba(90,176,255,.16);}
   .nw-ic.nw-macro{background:rgba(183,156,255,.16);}
   .nw-main{flex:1;min-width:0;}
@@ -241,7 +253,7 @@
   .ex-meta div{font-size:12px;color:var(--muted);}
   .ex-meta b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:700;}
   .ref-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;margin-top:8px;padding:3px 8px;border-radius:7px;}
-  .ref-yes{background:rgba(200,255,61,.12);color:var(--lime);}
+  .ref-yes{background:rgba(240, 210, 49,.12);color:var(--lime);}
   .ref-no{background:rgba(255,90,90,.1);color:var(--red);}
 
   .setrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);}
@@ -264,15 +276,22 @@
   /* item U: badge shows tag chips instead of a 1-10 score */
   .grade-badge.tags{flex-wrap:wrap;justify-content:flex-end;max-width:60%;}
   .ftag-chip{font-size:10px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:3px 9px;
-    background:rgba(200,255,61,.14);color:var(--lime-dim);border:1px solid rgba(200,255,61,.32);white-space:nowrap;}
+    background:rgba(240, 210, 49,.14);color:var(--lime-dim);border:1px solid rgba(240, 210, 49,.32);white-space:nowrap;}
 
-  .btn{width:100%;height:52px;border-radius:15px;font-size:15px;font-weight:700;cursor:pointer;
+  .btn{width:100%;height:52px;border-radius:26px;font-size:15px;font-weight:700;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line);
-    background:var(--panel2);color:var(--ink);transition:transform .1s,background .15s;}
+    background:var(--panel2);color:var(--ink);transition:transform .1s,background .15s,box-shadow .15s;}
   .btn:active{transform:scale(.98);}
-  .btn.primary{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  /* Theme refresh: pill shape + a gradient fill with a subtle glow, instead
+     of the old flat single-color fill with no shadow at all. */
+  .btn.primary{background:linear-gradient(180deg,var(--lime-light),var(--lime));color:var(--lime-ink);
+    border:none;box-shadow:0 4px 14px rgba(240,210,49,.28);}
   .btn.ghost{background:transparent;}
-  .btn.sm{height:44px;font-size:14px;border-radius:12px;}
+  /* Secondary/ghost buttons stay quiet at rest — all the accent energy is
+     reserved for primary — but get a subtle lime border+glow specifically
+     on press, so a tap still gets a moment of feedback. */
+  .btn.ghost:active{border-color:var(--lime);background:rgba(240,210,49,.06);box-shadow:0 0 12px rgba(240,210,49,.22);}
+  .btn.sm{height:44px;font-size:14px;border-radius:22px;}
   .btn:disabled{opacity:.4;cursor:default;}
   /* "glisten" — attention shine for the Submit-new-Goal CTA */
   .btn.glisten{position:relative;overflow:hidden;isolation:isolate;
@@ -283,7 +302,7 @@
     animation:glisten-sweep 2.6s ease-in-out infinite;}
   .btn.glisten > *{position:relative;z-index:2;}
   @keyframes glisten-sweep{0%{left:-70%;}55%{left:130%;}100%{left:130%;}}
-  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}50%{box-shadow:0 0 22px 1px rgba(200,255,61,.55);}}
+  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(240, 210, 49,0);}50%{box-shadow:0 0 22px 1px rgba(240, 210, 49,.55);}}
   html[data-theme="light"] .btn.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
   @keyframes glisten-pulse-lt{0%,100%{box-shadow:0 0 0 0 rgba(91,140,0,0);}50%{box-shadow:0 0 20px 1px rgba(91,140,0,.4);}}
   @media(prefers-reduced-motion:reduce){.btn.glisten,.btn.glisten::after,.role.glisten,.role.glisten::after{animation:none;}}
@@ -641,15 +660,15 @@
   .pill{padding:8px 14px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;}
   .pill.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
   .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:.03em;text-transform:uppercase;}
-  .badge.coach{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.coach{background:rgba(240, 210, 49,.14);color:var(--lime);}
   .badge.trainee{background:rgba(90,176,255,.14);color:var(--blue);}
   .badge.admin{background:rgba(255,194,74,.16);color:var(--amber);}
   .badge.pending{background:rgba(255,194,74,.14);color:var(--amber);}
-  .badge.approved{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.approved{background:rgba(240, 210, 49,.14);color:var(--lime);}
   .badge.rejected{background:rgba(255,90,90,.12);color:var(--red);}
   .badge.open{background:rgba(90,176,255,.14);color:var(--blue);}
-  .badge.accepted{background:rgba(200,255,61,.14);color:var(--lime);}
-  .badge.active{background:rgba(200,255,61,.14);color:var(--lime);}
+  .badge.accepted{background:rgba(240, 210, 49,.14);color:var(--lime);}
+  .badge.active{background:rgba(240, 210, 49,.14);color:var(--lime);}
   .badge.completed{background:rgba(139,184,44,.18);color:var(--lime-dim);}
   .avatar{width:46px;height:46px;border-radius:13px;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:var(--lime);flex-shrink:0;letter-spacing:.02em;}
   .avatar.lg{width:66px;height:66px;border-radius:18px;font-size:23px;}
@@ -735,13 +754,13 @@
   .offer-row.goal-declined .or-av{color:var(--faint);}
   .offer-row.goal-declined .or-t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line2);}
   .or-tag{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;border-radius:20px;padding:2px 7px;margin-left:6px;text-decoration:none;display:inline-block;vertical-align:middle;}
-  .or-tag-acc{background:rgba(200,255,61,.16);color:var(--lime-dim);}
+  .or-tag-acc{background:rgba(240, 210, 49,.16);color:var(--lime-dim);}
   .or-tag-dec{background:rgba(255,90,90,.12);color:var(--red);}
   .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--faint);}
   /* Pending flashes regardless of viewed state — per spec, "pending" itself
      is the signal, not whether it's been glanced at. */
-  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
-  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
+  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(240, 210, 49,.6);animation:glisten 1.8s ease-out infinite;}
+  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(240, 210, 49,.55);}70%{box-shadow:0 0 0 9px rgba(240, 210, 49,0);}100%{box-shadow:0 0 0 0 rgba(240, 210, 49,0);}}
   .offer-expanded{position:relative;background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
   /* collapse control lives top-right on the card itself, not a button at
      the bottom — reachable the instant the card opens, no scrolling needed */
@@ -769,7 +788,7 @@
   .cal-empty{background:transparent;}
   .cal-rest{background:var(--panel);color:var(--faint);}
   .cal-rest .dn{font-weight:500;color:var(--faint);}
-  .cal-workout{background:var(--lime);color:var(--lime-ink);cursor:pointer;box-shadow:0 4px 14px rgba(200,255,61,.22);}
+  .cal-workout{background:var(--lime);color:var(--lime-ink);cursor:pointer;box-shadow:0 4px 14px rgba(240, 210, 49,.22);}
   .cal-workout .dn{color:var(--lime-ink);}
   .cal-workout:active{transform:scale(.95);}
   .cal-done{background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.35);color:var(--blue);cursor:pointer;}
@@ -794,7 +813,7 @@
   .cal-tap:active{transform:scale(.95);}
   .cal-add-plus{font-size:14px;font-weight:700;color:var(--faint);line-height:1;opacity:.45;}
   .cal-log-dot{position:absolute;left:4px;bottom:4px;width:6px;height:6px;border-radius:50%;background:var(--violet);}
-  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--lime),0 0 12px rgba(200,255,61,.35);}
+  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--lime),0 0 12px rgba(240, 210, 49,.35);}
   .cal-glisten::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.7) 50%,transparent 68%);background-size:230% 100%;animation:calglisten 2.2s linear infinite;pointer-events:none;}
   @keyframes calglisten{0%{background-position:130% 0;}100%{background-position:-130% 0;}}
   /* split day: two triangles (top=macros, bottom=workout) */
@@ -823,7 +842,7 @@
      This combined selector wins the cascade back for the ring, keeping the
      gold FILL (background/border, untouched, still !important) but making
      the attention signal unmistakable rather than accidentally diluted. */
-  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--lime),0 0 16px rgba(200,255,61,.5);}
+  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--lime),0 0 16px rgba(240, 210, 49,.5);}
   /* Item: completed-workout-awaiting-review — same gold family, visibly
      quieter than a fully resolved day, since nobody's looked at it yet
      but it's also not something the TRAINEE needs to act on right now. */
@@ -857,7 +876,7 @@
   #confirm-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);z-index:80;width:calc(100% - 56px);max-width:320px;
     background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:24px 22px;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 20px 60px rgba(0,0,0,.5);}
   #confirm-box.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
-  #confirm-box .cf-ic{width:52px;height:52px;border-radius:50%;background:rgba(200,255,61,.14);color:var(--lime);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;}
+  #confirm-box .cf-ic{width:52px;height:52px;border-radius:50%;background:rgba(240, 210, 49,.14);color:var(--lime);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px;}
   #confirm-box.danger .cf-ic{background:rgba(255,90,90,.14);color:var(--red);}
   #confirm-box h3{font-size:18px;font-weight:800;margin:0 0 8px;}
   #confirm-box p{font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 20px;}
@@ -914,7 +933,7 @@
   .pc-guide{position:absolute;inset:0;z-index:2;pointer-events:none;display:flex;align-items:center;justify-content:center;padding:10% 12%;box-sizing:border-box;}
   .pc-guide svg{width:100%;height:100%;}
   .pc-guide.off{display:none;}
-  .pcg-fig{fill:rgba(200,255,61,.06);stroke:rgba(200,255,61,.85);stroke-width:2.2;stroke-dasharray:7 6;stroke-linejoin:round;
+  .pcg-fig{fill:rgba(240, 210, 49,.06);stroke:rgba(240, 210, 49,.85);stroke-width:2.2;stroke-dasharray:7 6;stroke-linejoin:round;
     filter:drop-shadow(0 0 3px rgba(0,0,0,.85));}
   .pcg-aid{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:3 7;}
   /* Item: timed interval exercises. Full-screen mode, same tier as
@@ -1028,7 +1047,7 @@
   .lang-suggest button:hover,.lang-suggest button:active{background:var(--panel2);}
   .lang-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
   .lang-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--lime-dim);
-    background:rgba(200,255,61,.10);border:1px solid rgba(200,255,61,.28);border-radius:20px;padding:5px 6px 5px 12px;}
+    background:rgba(240, 210, 49,.10);border:1px solid rgba(240, 210, 49,.28);border-radius:20px;padding:5px 6px 5px 12px;}
   .lang-chip button{background:transparent;border:none;color:var(--faint);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;}
   .lang-chip button:hover{color:var(--red);}
   .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
@@ -1502,7 +1521,7 @@
   <div id="analyze">
     <svg class="ring" viewBox="0 0 100 100">
       <circle cx="50" cy="50" r="42" fill="none" stroke="#232C35" stroke-width="6"/>
-      <circle id="an-ring" cx="50" cy="50" r="42" fill="none" stroke="#C8FF3D" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/>
+      <circle id="an-ring" cx="50" cy="50" r="42" fill="none" stroke="#F0D231" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/>
     </svg>
     <div><div class="m" id="an-msg">Analyzing your set…</div><div class="s" id="an-sub">Counting repetitions</div></div>
   </div>
@@ -1733,7 +1752,7 @@ window.addEventListener("unhandledrejection",e=>{
   };
 })();
 function fmt(sec){const m=Math.floor(sec/60),s=Math.floor(sec%60);return m+":"+String(s).padStart(2,"0");}
-function gradeColor(g){ if(g>=8)return "#C8FF3D"; if(g>=6)return "#B6E84A"; if(g>=4)return "#FFC24A"; return "#FF5A5A"; }
+function gradeColor(g){ if(g>=8)return "#F0D231"; if(g>=6)return "#B6E84A"; if(g>=4)return "#FFC24A"; return "#FF5A5A"; }
 function gradeWord(g){ return ["","Way off","Needs work","Rough","Getting there","Halfway","Decent","Solid","Strong","Great","Textbook"][g]||""; }
 function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -1945,7 +1964,7 @@ function streakDates(){
 function sbConfetti(){
   const box=$("#sb-confetti"); if(!box)return;
   box.innerHTML="";
-  const cols=["#FFC24A","#FF7A2F","#C8FF3D","#FF5A5A","#FFFFFF"];
+  const cols=["#FFC24A","#FF7A2F","#F0D231","#FF5A5A","#FFFFFF"];
   for(let i=0;i<70;i++){
     const c=document.createElement("i");
     c.style.left=(Math.random()*100)+"%";
@@ -2477,7 +2496,7 @@ function countingDown(){ return !!cdTimer; }
    ========================================================================= */
 const P={nose:0,Leye:2,Reye:5,Lear:7,Rear:8,Lsh:11,Rsh:12,Lel:13,Rel:14,Lwr:15,Rwr:16,
   Lpinky:17,Rpinky:18,Lindex:19,Rindex:20,Lthumb:21,Rthumb:22,Lhip:23,Rhip:24,Lknee:25,Rknee:26,Lank:27,Rank:28,Ltoe:31,Rtoe:32};
-const STROKE="#C8FF3D",FILL="rgba(200,255,61,0.12)",HEAD_FILL="rgba(200,255,61,0.10)",MIN_VIS=0.5;
+const STROKE="#F0D231",FILL="rgba(240, 210, 49,0.12)",HEAD_FILL="rgba(240, 210, 49,0.10)",MIN_VIS=0.5;
 const Vec={add:(a,b)=>({x:a.x+b.x,y:a.y+b.y}),sub:(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mul:(a,s)=>({x:a.x*s,y:a.y*s}),
   mid:(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}),len:a=>Math.hypot(a.x,a.y),norm:a=>{const l=Math.hypot(a.x,a.y)||1;return{x:a.x/l,y:a.y/l};},perp:a=>({x:-a.y,y:a.x}),dist:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
 
@@ -5185,7 +5204,7 @@ function renderDashboard(container, iAmCoach){
 
   // theme-aware chart colors (read once from CSS vars)
   const cs=getComputedStyle(document.documentElement);
-  const C={ p:(cs.getPropertyValue("--ch-1")||"#5AB0FF").trim(), c:(cs.getPropertyValue("--ch-2")||"#C8FF3D").trim(), f:(cs.getPropertyValue("--ch-3")||"#FFC24A").trim(),
+  const C={ p:(cs.getPropertyValue("--ch-1")||"#5AB0FF").trim(), c:(cs.getPropertyValue("--ch-2")||"#F0D231").trim(), f:(cs.getPropertyValue("--ch-3")||"#FFC24A").trim(),
     pInk:(cs.getPropertyValue("--ch-1-ink")||"#fff").trim(), cInk:(cs.getPropertyValue("--ch-2-ink")||"#000").trim(), fInk:(cs.getPropertyValue("--ch-3-ink")||"#000").trim(),
     weight:(cs.getPropertyValue("--ch-weight")||"#B79CFF").trim(),
     ink:(cs.getPropertyValue("--ink")||"#eee").trim(), faint:(cs.getPropertyValue("--faint")||"#5B6773").trim(),
@@ -7761,7 +7780,7 @@ $("#confirm-cancel").addEventListener("click",()=>closeConfirm(false));
 $("#confirm-scrim").addEventListener("click",()=>closeConfirm(false));
 
 /* ---- celebration ---- */
-const CFCOLORS=['#C8FF3D','#FFC24A','#B79CFF','#ffffff','#7ee0a0'];
+const CFCOLORS=['#F0D231','#FFC24A','#B79CFF','#ffffff','#7ee0a0'];
 function celebrationStats(eng){
   // duration in weeks from started_at→completed_at (or now)
   const start=eng.started_at?new Date(eng.started_at):null;
@@ -8340,7 +8359,7 @@ async function renderProfile(){
         html+=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
             <div style="min-width:0;flex:1"><div style="font-weight:700">${escapeHtml(e.goal_title||"Goal")}</div>
               <div style="font-size:12px;color:var(--muted);margin-top:3px">${e.completed_at?new Date(e.completed_at).toLocaleDateString():""}</div></div>
-            <span class="badge" style="background:${onTime?'rgba(200,255,61,.14)':e.outcome==='late'?'rgba(255,194,74,.16)':'var(--panel2)'};color:${col}">${lab}</span></div></div>`;
+            <span class="badge" style="background:${onTime?'rgba(240, 210, 49,.14)':e.outcome==='late'?'rgba(255,194,74,.16)':'var(--panel2)'};color:${col}">${lab}</span></div></div>`;
       }
     }
   }catch(e){console.error("completed goals",e);}
