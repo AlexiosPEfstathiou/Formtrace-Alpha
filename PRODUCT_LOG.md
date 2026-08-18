@@ -427,6 +427,20 @@ charts (macros) confirmed already flat and glow-free, left untouched.
   every mode, or an unseen-review glow would be invisible against a
   yellow button, the same class of problem already caught once this
   session.
+- **A genuine pre-existing logic bug, not related to the theme work
+  itself — just surfaced because the visual changes prompted a closer
+  look.** The weight chart's delta ("+3.7 kg") was computed as the last
+  bucket minus the very first one, always — correct for week/day mode,
+  wrong specifically in goal mode, where the chart deliberately shows a
+  week of pre-goal context before the goal's own start ("week before
+  shown unshaded"). The first bucket there is that context point, not the
+  weight on the day the goal actually began, so the delta silently
+  measured from the wrong moment — exactly the reported symptom, sign
+  flip included, since the pre-goal week can run in the opposite
+  direction from the goal itself. The correct reference point already
+  existed elsewhere in the same function, for the comparison line drawn
+  on the chart — computed once, earlier, and reused for both rather than
+  duplicated.
 
 **Calendar, the largest single piece**: gold's achievement-day color was
 never actually broken in the real app (only in my own mockup previews,
