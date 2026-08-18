@@ -490,6 +490,28 @@ diagnostic for the regression above: if the button never appears after
 several real visits, that confirms the engagement heuristic (or
 something else) rather than a code defect.
 
+**Confirmed with a real test, 2026-08-17: "not offered yet" on a genuine
+first-time check.** This exposed a real, hard platform limit, not a bug —
+Chrome's engagement heuristic is deliberate, documented behavior, and no
+client-side code can make `beforeinstallprompt` fire before Chrome
+decides to. iOS has no such gate at all (Safari's Add to Home Screen is
+available on a first visit, already covered), but a brand-new Android
+Chrome user genuinely cannot get a real standalone-app install on day
+one through this mechanism — worse, their FIRST visit's menu typically
+only offers a plain shortcut (opens in a regular tab, address bar and
+all), not even a real install.
+
+**Option added, not yet decided or started: a native app wrapper.**
+Package this same web app via Android's Trusted Web Activity (or a
+framework like Capacitor) for real Play Store / App Store distribution,
+side-stepping Chrome's engagement gate entirely since installation then
+happens through the store, not through PWA heuristics. Genuinely
+different and much larger in scope than anything built for AD so far —
+developer accounts, store review processes, a separate build pipeline to
+maintain going forward. Worth being explicit that this is a real decision
+to make deliberately, not a small follow-on to the work already done
+here.
+
 ---
 
 ## AE. NFC "Friendlist"
