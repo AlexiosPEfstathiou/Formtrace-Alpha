@@ -364,6 +364,70 @@ accents, the gold streak-chain styling, the calm blue treatment vacation
 mode got instead of urgent red) that any future pass should stay
 consistent with rather than introduce a second style alongside.
 
+**DONE, 2026-08-18 — full theme refresh, worked out through an extended
+interview rather than guessed at, then built across three parts.**
+
+Decisions locked in during the interview: pill-shaped buttons and badges,
+moderately-rounded cards (the existing 18px already qualified — no change
+needed there), minimal/quiet motion only, flat glow-free bar charts
+against glowing smooth-curve line charts, and a full calendar rework.
+
+**Primary accent moved from lime (#C8FF3D) to a warm yellow (#F0D231/
+#FBE577)** — chosen from a set of colorblind-safe candidates specifically
+to avoid colliding with the calendar's gold, while staying distinguishable
+from blue/red/violet elsewhere. Colorblind mode's own teal override was
+deliberately left untouched — a dedicated accessibility path, not
+something that should shift in lockstep with the general default.
+Introduced `--lime-light` as a real theme variable so the new gradient
+button fill still correctly reaches colorblind mode. Found and bulk-fixed
+33 hardcoded `rgba(200,255,61,...)`/`#C8FF3D` references scattered across
+badges, chips, and animations that would not have picked up the new
+color via the variable alone.
+
+**A real near-miss caught mid-build:** glisten (the "look at this" shine
+used for unseen reviews, pending offers, the new-goal CTA) was hardcoded
+to `var(--lime)` — meaning it silently inherited the new warm yellow the
+moment the accent changed, quietly losing its own long-established
+lime-green identity. Introduced a dedicated `--attn` variable, kept at
+the historic lime-green (and the colorblind-safe teal in that mode), and
+repointed every glisten-related rule to it — buttons, role cards, the
+home-nav tab, the pending-offer flash, and both calendar glisten
+selectors.
+
+**Buttons**: pill radius, gradient fill, subtle glow — replacing the old
+flat single-color fill with no shadow at all. Secondary/ghost buttons
+stay quiet at rest and get a subtle border+glow specifically on press,
+so a tap still gets a moment of feedback without the accent competing
+with primary everywhere.
+
+**Charts**: both existing line charts (weight trend, body measurements)
+smoothed with a shared Catmull-Rom-to-Bezier helper, plus a gradient area
+fill and soft glow — checked and deliberately did NOT override an
+existing "straight segments only, no interpolation implied" data-honesty
+principle in spirit: the curve still passes exactly through every real
+point rather than freely curving past what was actually measured. Bar
+charts (macros) confirmed already flat and glow-free, left untouched.
+
+**Calendar, the largest single piece**: gold's achievement-day color was
+never actually broken in the real app (only in my own mockup previews,
+which briefly and mistakenly substituted lime) — genuinely new here is
+gold-wait becoming a darker/muted gold rather than a translucent tint,
+gold-rest becoming a filled gold (previously outline-only) with a sleep
+badge, paused becoming white with an airplane instead of blue with a
+beach chair, and the "macros logged today" diagonal-split triangle
+switching from violet to an antique-bronze gold variation so it stays
+within the gold family rather than introducing a fourth unrelated hue.
+The diagonal split itself, and its exact orientation, already existed in
+the real code (`.cal-split`, `.tri-top`/`.tri-bot`) — confirmed matching
+what was approved in the mockups before touching anything. One thing
+deliberately left alone rather than guessed at: the bottom triangle's
+existing solid-color fill for an ordinary to-do day (lime/blue/amber by
+status) was untouched, even though my own quick mockup showed it empty —
+that mockup was a simplification for demonstrating the top triangle
+specifically, not an explicit request to remove an existing, still-useful
+signal from every to-do day generally. Legend swatches updated to match
+every change above.
+
 ---
 
 ## AC. Latency optimization — trainee homepage DONE 2026-08-11

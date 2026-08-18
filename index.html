@@ -33,6 +33,14 @@
        specifically so colorblind mode's override further below still
        correctly reaches every place this gradient is used. */
     --lime:#F0D231; --lime-light:#FBE577; --lime-dim:#B8A030; --lime-ink:#2c2400;
+    /* Dedicated "look at this" attention color for glisten (unseen review,
+       pending-offer flash, new-goal CTA) — kept as its own historic
+       lime-green, deliberately NOT tied to --lime anymore now that --lime
+       means "primary accent" and has its own separate identity (warm
+       yellow). Before this, glisten silently inherited whatever --lime
+       happened to be, which is how it briefly became yellow by accident
+       during the accent color swap. */
+    --attn:#C8FF3D;
     --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF; --violet:#B79CFF;
     --shadow:0 12px 40px rgba(0,0,0,.5);
     --frame-outer:#0d1116; --frame-ring:#1c242c; --frame-bg:#05070A;
@@ -51,6 +59,7 @@
     --line:#DDE3E8; --line2:#C6CFD6;
     --ink:#131A20; --muted:#5A6672; --faint:#8C98A3;
     --lime:#B8960A; --lime-light:#D4AF1F; --lime-dim:#8f7508; --lime-ink:#FFFFFF;
+    --attn:#8FB82C;
     --red:#D64545; --amber:#B7791F; --blue:#0072B2; --violet:#7A5CC4;
     --shadow:0 12px 36px rgba(20,30,40,.18);
     --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
@@ -69,8 +78,8 @@
     --ch-1:#0072B2; --ch-2:#E69F00; --ch-3:#D55E00; --ch-4:#CC79A7; --ch-weight:#CC79A7;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#1a1200; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
   }
-  html[data-cb="1"][data-theme="light"]{ --lime:#0A7A5C; --lime-light:#3FA383; --lime-ink:#FFFFFF; --lime-dim:#0A7A5C; }
-  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-light:#5CE8BE; --lime-dim:#1f9e78; --lime-ink:#04120c; --goal-active:#2BD4A0; --goal-active-tint:rgba(43,212,160,.10); }
+  html[data-cb="1"][data-theme="light"]{ --lime:#0A7A5C; --lime-light:#3FA383; --lime-ink:#FFFFFF; --lime-dim:#0A7A5C; --attn:#0A7A5C; }
+  html[data-cb="1"]:not([data-theme="light"]){ --lime:#2BD4A0; --lime-light:#5CE8BE; --lime-dim:#1f9e78; --lime-ink:#04120c; --attn:#2BD4A0; --goal-active:#2BD4A0; --goal-active-tint:rgba(43,212,160,.10); }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;background:var(--frame-bg);color:var(--ink);
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;
@@ -302,9 +311,9 @@
     animation:glisten-sweep 2.6s ease-in-out infinite;}
   .btn.glisten > *{position:relative;z-index:2;}
   @keyframes glisten-sweep{0%{left:-70%;}55%{left:130%;}100%{left:130%;}}
-  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(240, 210, 49,0);}50%{box-shadow:0 0 22px 1px rgba(240, 210, 49,.55);}}
+  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}50%{box-shadow:0 0 22px 1px rgba(200,255,61,.55);}}
   html[data-theme="light"] .btn.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
-  @keyframes glisten-pulse-lt{0%,100%{box-shadow:0 0 0 0 rgba(91,140,0,0);}50%{box-shadow:0 0 20px 1px rgba(91,140,0,.4);}}
+  @keyframes glisten-pulse-lt{0%,100%{box-shadow:0 0 0 0 rgba(143,184,44,0);}50%{box-shadow:0 0 20px 1px rgba(143,184,44,.4);}}
   @media(prefers-reduced-motion:reduce){.btn.glisten,.btn.glisten::after,.role.glisten,.role.glisten::after{animation:none;}}
   /* glisten variant for role cards (home hub) */
   .role.glisten{position:relative;overflow:hidden;isolation:isolate;
@@ -330,7 +339,7 @@
   .tabbar.home-nav button{flex-direction:column;gap:3px;height:auto;padding:8px 2px;min-width:0;font-size:10.5px;letter-spacing:0;line-height:1.15;text-align:center;}
   .tabbar.home-nav button .i{font-size:19px;}
   .tabbar.home-nav button > span:not(.i){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-  .tabbar.home-nav button.glisten{color:var(--lime);animation:glisten-pulse 2.6s ease-in-out infinite;}
+  .tabbar.home-nav button.glisten{color:var(--attn);animation:glisten-pulse 2.6s ease-in-out infinite;}
   html[data-theme="light"] .tabbar.home-nav button.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
   .with-tabs{padding-bottom:190px;}
   /* persistent app-level bottom navigation (sits above screens, below modals) */
@@ -759,8 +768,8 @@
   .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--faint);}
   /* Pending flashes regardless of viewed state — per spec, "pending" itself
      is the signal, not whether it's been glanced at. */
-  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(240, 210, 49,.6);animation:glisten 1.8s ease-out infinite;}
-  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(240, 210, 49,.55);}70%{box-shadow:0 0 0 9px rgba(240, 210, 49,0);}100%{box-shadow:0 0 0 0 rgba(240, 210, 49,0);}}
+  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--attn);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
+  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
   .offer-expanded{position:relative;background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
   /* collapse control lives top-right on the card itself, not a button at
      the bottom — reachable the instant the card opens, no scrolling needed */
@@ -800,7 +809,7 @@
   .cal-missed{background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4);color:var(--red);}
   /* items M/N: deliberately calm and distinct — a pause is neither an
      achievement (gold) nor a lapse (red) */
-  .cal-paused{background:rgba(90,176,255,.08);border-color:rgba(90,176,255,.3);color:#5AB0FF;}
+  .cal-paused{background:#F4F2EA;border-color:#F4F2EA;color:#2A2A2A;}
   .cal-paused .cal-badge{filter:grayscale(.2);}
   .cal-missed .dn{color:#ffb3b3;text-decoration:line-through;}
   .cal-today{outline:2px solid var(--ink);outline-offset:1px;}
@@ -813,7 +822,7 @@
   .cal-tap:active{transform:scale(.95);}
   .cal-add-plus{font-size:14px;font-weight:700;color:var(--faint);line-height:1;opacity:.45;}
   .cal-log-dot{position:absolute;left:4px;bottom:4px;width:6px;height:6px;border-radius:50%;background:var(--violet);}
-  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--lime),0 0 12px rgba(240, 210, 49,.35);}
+  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--attn),0 0 12px rgba(200,255,61,.35);}
   .cal-glisten::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.7) 50%,transparent 68%);background-size:230% 100%;animation:calglisten 2.2s linear infinite;pointer-events:none;}
   @keyframes calglisten{0%{background-position:130% 0;}100%{background-position:-130% 0;}}
   /* split day: two triangles (top=macros, bottom=workout) */
@@ -842,19 +851,21 @@
      This combined selector wins the cascade back for the ring, keeping the
      gold FILL (background/border, untouched, still !important) but making
      the attention signal unmistakable rather than accidentally diluted. */
-  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--lime),0 0 16px rgba(240, 210, 49,.5);}
+  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--attn),0 0 16px rgba(200,255,61,.5);}
   /* Item: completed-workout-awaiting-review — same gold family, visibly
      quieter than a fully resolved day, since nobody's looked at it yet
      but it's also not something the TRAINEE needs to act on right now. */
-  .cal-gold-wait{background:linear-gradient(135deg,rgba(245,197,66,.42),rgba(224,168,30,.42))!important;
-    border-color:rgba(245,197,66,.55)!important;box-shadow:0 2px 8px rgba(245,197,66,.16);}
-  .cal-gold-wait .dn{color:#5a4614!important;font-weight:700;}
-  .cal-gold-wait .cal-badge{color:#5a4614;}
-  /* Item: a pure rest day — nothing was ever due, so it shouldn't look like
-     an achievement. An outline only, no fill, reading as "fine, nothing
-     happened here" rather than "something was completed". */
-  .cal-gold-rest{background:var(--panel)!important;border:1.5px solid rgba(245,197,66,.38)!important;box-shadow:none;}
-  .cal-gold-rest .dn{color:var(--faint)!important;font-weight:500;}
+  .cal-gold-wait{background:linear-gradient(180deg,#8A6B1E,#5C4712)!important;
+    border-color:#5C4712!important;box-shadow:none;}
+  .cal-gold-wait .dn{color:#D9C68A!important;font-weight:700;}
+  .cal-gold-wait .cal-badge{color:#D9C68A;}
+  /* Item: a pure rest day — nothing was ever due. Theme refresh, confirmed
+     in the aesthetic interview: same bright gold FILL as a genuine complete
+     day (not an outline, that was the pre-refresh treatment) but no glow —
+     the absence of glow is what distinguishes "nothing happened, fine" from
+     "something was achieved", carried by the sleep badge in JS too. */
+  .cal-gold-rest{background:linear-gradient(135deg,#F5C542,#E0A81E)!important;border-color:#F5C542!important;box-shadow:none;}
+  .cal-gold-rest .dn{color:#3a2c00!important;font-weight:600;}
   /* Item G: an accepted coaching call replaces the normal day coloring
      entirely, per the explicit ask — a solid fill, same visual weight as
      the gold "complete day" treatment, but blue so it reads as its own
@@ -4973,7 +4984,7 @@ async function renderEngagement(){
        branch (as first written) only caught the rarer edge case of a
        workout that happened to still be due during the pause. */
     if(isPausedOn(iso)){
-      cls="cal-paused"; badge="🏖";
+      cls="cal-paused"; badge="✈️";
     }else if(wl.length){
       const toDo=wl.some(a=>a.status==="assigned");
       const reviewed=wl.some(a=>a.status==="reviewed");
@@ -5017,7 +5028,13 @@ async function renderEngagement(){
         : cls==="cal-workout" ? "var(--lime)"
         : cls==="cal-reviewed" ? "rgba(255,194,74,.6)"
         : "rgba(90,176,255,.55)";
-      const macroColor = logged ? "var(--violet)" : "transparent";
+      /* Theme refresh: was --violet — changed to a gold-family variation
+         (antique bronze) per the confirmed calendar direction, so the top
+         triangle stays within the gold theme rather than introducing a
+         fourth unrelated hue for this one indicator. The bottom triangle's
+         existing workoutColor logic (lime for to-do, etc.) is untouched —
+         only the macro-logged color itself was discussed and confirmed. */
+      const macroColor = logged ? "#B8935A" : "transparent";
       /* Item: which gold sub-state applies. Uses only wl, already in hand —
          within complete && !paused, wl (if nonempty) can only ever contain
          'submitted'/'reviewed' items, never 'assigned' (dayComplete/dayState
@@ -5044,12 +5061,12 @@ async function renderEngagement(){
       }
       cell.className="cal-day cal-split cal-tap"+goldCls+(danger?" cal-danger":"")+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"")+(paused?" cal-paused":"");
       if(paused){
-        cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🏖</div>`;
+        cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">✈️</div>`;
       }else if(complete){
-        // rest: no badge at all — nothing happened, nothing to show.
+        // rest: sleep icon — nothing happened, not an achievement.
         // wait: an hourglass, distinct from the star, signalling "waiting
         // on someone else" rather than "you did this and it's resolved".
-        const badgeChar = goldVariant==="rest" ? "" : goldVariant==="wait" ? "⏳" : "★";
+        const badgeChar = goldVariant==="rest" ? "😴" : goldVariant==="wait" ? "⏳" : "★";
         cell.innerHTML=`<div class="dn">${d}</div>${badgeChar?`<div class="cal-badge">${badgeChar}</div>`:""}`;
       }else{
         cell.innerHTML=`
@@ -5076,11 +5093,12 @@ async function renderEngagement(){
       <div class="leg-item"><span class="leg-sw" style="background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.4)"></span>Submitted</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Reviewed by coach</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4)"></span>Missed — locked</div>
-      <div class="leg-item"><span class="leg-sw" style="background:var(--violet)"></span>Macros logged (top)</div>
+      <div class="leg-item"><span class="leg-sw" style="background:#B8935A"></span>Macros logged (top, today only)</div>
       <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Complete day ★ (streak)</div>
-      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E);box-shadow:0 0 0 2px var(--lime)"></span>Reviewed, not yet seen</div>
-      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,rgba(245,197,66,.42),rgba(224,168,30,.42))"></span>Awaiting coach review ⏳</div>
-      <div class="leg-item"><span class="leg-sw" style="background:var(--panel);border-color:rgba(245,197,66,.5)"></span>Rest day — nothing due</div>
+      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E);box-shadow:0 0 0 2px var(--attn)"></span>Reviewed, not yet seen</div>
+      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(180deg,#8A6B1E,#5C4712)"></span>Awaiting coach review ⏳</div>
+      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Rest day 😴 — nothing due</div>
+      <div class="leg-item"><span class="leg-sw" style="background:#F4F2EA;border-color:#F4F2EA"></span>Paused ✈️</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
 
