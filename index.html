@@ -4945,7 +4945,16 @@ async function openEngagement(id){
 async function renderEngagement(){
  try{
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
-  const body=$("#engagement-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  const body=$("#engagement-body");
+  /* Real bug caught while re-parenting the fab-row below: body.innerHTML=
+     on the next line destroys ALL child nodes, including fabRow once a
+     prior render has already moved it inside body — silently breaking
+     every render after the first with a null #eng-fab-row reference.
+     Moved back out to its static, always-safe parent first, every time,
+     before body gets cleared. */
+  const fabRowGuard=$("#eng-fab-row");
+  if(fabRowGuard && fabRowGuard.parentElement===body) $("#s-engagement").appendChild(fabRowGuard);
+  body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
   await loadActivePauses();   // items M/N — refreshed on every open, not just at boot
   // gather assigned workouts — merged (all trainee engagements) or single engagement
   let assigned=[];
@@ -5243,6 +5252,23 @@ async function renderEngagement(){
     }
     else { fabRow.classList.add("hidden"); }
   }else fabRow.classList.add("hidden");
+  /* Real bug fix: this fab-row is position:absolute/bottom:0 (the shared
+     .fab-row class, also used by #coach-fab-row — a genuinely floating
+     "create" button elsewhere that SHOULD stay fixed, so the class itself
+     can't change) — meaning it stayed pinned to the bottom of the screen
+     through every scroll position instead of behaving like an ordinary
+     final action. This is the exact same principle already applied to
+     the vacation pause-all button above, just never extended to this one.
+     Re-parented here, after every other section has already been
+     appended to body, with its positioning overridden inline (inline
+     always wins over the shared class, no !important involved) so it
+     becomes ordinary content at the very end of the scroll — only
+     visible once someone has actually scrolled all the way down. Moving
+     an already-hidden element is harmless; it just won't render either way. */
+  fabRow.style.position="static";
+  fabRow.style.left=""; fabRow.style.right=""; fabRow.style.bottom="";
+  fabRow.style.padding="0"; fabRow.style.marginTop="22px";
+  body.appendChild(fabRow);
  }catch(err){
   console.error("renderEngagement failed",err);
   $("#engagement-body").innerHTML=`<div class="empty" style="padding:40px 20px"><div class="ic">⚠</div><p style="color:var(--red)">Couldn't load the calendar.<br><span style="font-size:12px;color:var(--muted)">${escapeHtml(err&&err.message||String(err))}</span></p></div>`;

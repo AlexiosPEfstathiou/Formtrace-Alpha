@@ -4,6 +4,39 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AK. Engagement fab (Complete goal, etc.) floats over scrolling content — DONE 2026-08-18
+
+Reported specifically for the coach's "Goal complete" button, but the
+underlying bug is shared across every state this same fab-row shows —
+the trainee's own "Mark goal complete", and the post-completion "Rate
+your coach/trainee" prompt all use the identical element. Checked before
+assuming this was new: a near-identical fix was already made once, for
+vacation's "Pause all" control — moved from a floating overlay to
+ordinary in-flow content — but that fix was never extended to this fab,
+despite a comment nearby that read as if it had been.
+
+`#eng-fab-row` is `position:absolute; bottom:0` via the shared `.fab-row`
+class — also used by `#coach-fab-row`, a genuinely floating "create"
+button elsewhere that should stay fixed, so the class itself couldn't be
+changed globally. Re-parented `#eng-fab-row` into the scrollable body,
+after every other section, with its positioning overridden inline
+(inline wins over the shared class without needing `!important`) — it's
+now ordinary content, only visible once someone has actually scrolled
+all the way down, not hovering permanently over everything else. Applies
+uniformly to all three states this fab shows, not just the one reported.
+
+**A real bug caught before it shipped, not after:** the very next line
+in `renderEngagement()` sets `body.innerHTML` to a loading spinner on
+every render — which destroys all child nodes, including the fab-row
+itself once a prior render has already moved it inside that body. Left
+as-is, every render after the first would have silently broken with a
+null `#eng-fab-row` reference. Fixed by moving the fab-row back out to
+its original static parent first, every time, before the body gets
+cleared — checked for and caught during the same pass, not discovered
+by testing afterward.
+
+---
+
 ## AJ. Postponement requests should land on a coach's homepage — DONE 2026-08-18
 
 Checked the existing system before building anything, rather than
