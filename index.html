@@ -1134,6 +1134,7 @@
       <div id="home-callproposal" class="home-reviews" style="display:none"></div>
       <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
       <div id="home-declined" class="home-checkin" style="display:none"></div>
+      <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
       <div id="home-macro" class="home-macro" style="display:none"></div>
@@ -2991,6 +2992,7 @@ async function renderHome(){
     await Promise.all([
       renderHomeReviewDue($("#home-reviewdue")),
       renderHomeDeclined($("#home-declined")),
+      renderHomePostponeRequests($("#home-postponerequests")),
       renderCoachHome(todayEl),
       renderCoachTrainees(coachEl,newsEl),
       renderHomeVacation($("#home-vacation")),
@@ -3337,6 +3339,56 @@ async function renderHomeReviewDue(el){
     <div class="ci-arw">›</div>`;
   el.style.display="";
   el.onclick=()=>go("coach");
+}
+/* Coach homepage: pending postpone requests, previously only surfaced as
+   one line buried in the general activity feed (sharing the same "missed
+   workout" icon category, no less) rather than a real, actionable
+   notification — a genuine gap, not a small polish. Same batched-fetch
+   pattern as renderHomeReviewDue. Jumps straight to the approve/decline
+   sheet in one tap rather than leaving the coach to find the specific
+   workout themselves once on their homepage. */
+async function renderHomePostponeRequests(el){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME||roleOf()!=="coach")return;
+  let pending=[];
+  try{
+    const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
+    const traineeIds=[...new Set(engs.map(e=>e.trainee_id))];
+    const [awLists,profRes]=await Promise.all([
+      Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id}))),
+      store._sb.from("profiles").select("id,display_name").in("id",traineeIds)
+    ]);
+    const profs={}; for(const p of (profRes.data||[])) profs[p.id]=p;
+    engs.forEach((e,i)=>{
+      const name=profs[e.trainee_id]?.display_name||"a trainee";
+      for(const a of awLists[i]){
+        if(a.postpone_status==="pending" && a.postpone_to){
+          pending.push({a, engId:e.id, name});
+        }
+      }
+    });
+  }catch(err){ console.error("renderHomePostponeRequests",err); return; }
+  if(!pending.length)return;
+  if(milestoneShowing)return;   // same one-high-priority rule as elsewhere
+  const n=pending.length;
+  const names=[...new Set(pending.map(p=>p.name))];
+  el.classList.add("ci-urgent");
+  el.innerHTML=`<div class="ci-ic">⏳</div>
+    <div class="ci-main"><div class="t">Postpone request${n===1?"":"s"} waiting</div>
+      <div class="s">${n} request${n===1?"":"s"} from ${escapeHtml(names.join(", "))} — approve or decline whenever you're ready.</div></div>
+    <div class="ci-arw">›</div>`;
+  el.style.display="";
+  // One-tap path to the actual approve/decline sheet: navigate to the right
+  // engagement first (openCoachModify's sheet relies on that context being
+  // set, same as it would be if the coach had tapped their way there
+  // normally), then open the request itself. Only jumps to the first one
+  // if several are pending — the notification names all of them, but one
+  // tap can only lead to one sheet.
+  el.onclick=async()=>{
+    const first=pending[0];
+    await openEngagement(first.engId);
+    openCoachModify(first.a);
+  };
 }
 /* Same math as cycle_payment_date() in migrations_payment_ledger_v2.sql —
    Monday of the workout's week, +13 days. Duplicated deliberately: this is

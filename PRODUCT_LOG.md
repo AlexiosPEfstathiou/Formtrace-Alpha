@@ -4,6 +4,33 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AJ. Postponement requests should land on a coach's homepage — DONE 2026-08-18
+
+Checked the existing system before building anything, rather than
+assuming it didn't exist — it did, partially. A trainee's postpone
+request was already visible to the coach in exactly one place: buried as
+a single line inside the general activity feed (`renderCoachTrainees`'s
+news section), sharing the same "missed workout" icon category as an
+actual missed workout — genuinely easy to miss, not a dedicated,
+actionable notification. The actual approve/decline UI already existed
+too (`openCoachModify`'s sheet, calling the existing `decide_postpone`
+RPC), just with no direct path TO it from the homepage — a coach would
+need to already know which specific workout had a pending request and
+navigate there themselves.
+
+Built `renderHomePostponeRequests`, following the same batched-fetch
+pattern already established for `renderHomeReviewDue` (one parallel
+fetch per engagement plus a single batched profiles query, not N+1).
+Jumps straight to the real approve/decline sheet in one tap — navigates
+to the correct engagement first, since that sheet relies on the same
+context being set that normal navigation would set, then opens the
+specific request. If several are pending across different trainees, the
+notification names all of them but the tap leads to the first — a
+genuine, small tradeoff of "one notification, one action," not
+something worth a more complex multi-target tap for.
+
+---
+
 ## W. Trainee calendar: three different "done" states currently look identical
 
 Two related asks, both about the gold "complete day" star on the
