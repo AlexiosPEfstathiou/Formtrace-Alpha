@@ -408,6 +408,26 @@ principle in spirit: the curve still passes exactly through every real
 point rather than freely curving past what was actually measured. Bar
 charts (macros) confirmed already flat and glow-free, left untouched.
 
+**Follow-up fixes, 2026-08-18, both from direct testing feedback:**
+- **A third weight chart, missed entirely in the original pass.** The
+  homepage sparkline and the measurements chart were both found and
+  updated, but a third, much more elaborate weight chart inside
+  `renderDashboard()` — the one actually shown on the Training tab, with
+  value-pill labels, gridlines, and a whole separate goal-progress-band
+  overlay — was missed. Same Catmull-Rom smoothing, gradient fill, and
+  glow applied, built carefully around the existing goal-band comparison
+  logic rather than disturbing it.
+- **Colorblind mode's own accent reversed back to yellow, on request** —
+  the earlier decision to leave it as its own teal was deliberate at the
+  time but wasn't what was wanted once seen in practice. Uses the actual
+  Wong-palette yellow (#F0E442), not the same hex as the regular-mode
+  warm yellow, since this is a genuine accessibility palette rather than
+  a general look. `--attn` (glisten) stays teal in this mode regardless —
+  it has to read as distinct from whatever the primary accent is, in
+  every mode, or an unseen-review glow would be invisible against a
+  yellow button, the same class of problem already caught once this
+  session.
+
 **Calendar, the largest single piece**: gold's achievement-day color was
 never actually broken in the real app (only in my own mockup previews,
 which briefly and mistakenly substituted lime) — genuinely new here is
