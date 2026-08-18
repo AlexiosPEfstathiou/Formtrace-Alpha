@@ -441,6 +441,18 @@ charts (macros) confirmed already flat and glow-free, left untouched.
   existed elsewhere in the same function, for the comparison line drawn
   on the chart — computed once, earlier, and reused for both rather than
   duplicated.
+- **Macro bar chart refined — corners and colors both, per direct
+  feedback.** Top-segment rounding increased from 3px to 6px, kept modest
+  since a large radius on a narrow bar segment starts to look like a
+  pill, which isn't the intent for this chart. Colors refined toward
+  less saturated, more cohesive tones — same hue family (red=protein,
+  green=carbs, amber=fat) kept for anyone who's already learned the
+  association, just less basic/neon. Fat shifted slightly more orange
+  than before, deliberately away from the new primary accent's own
+  yellow, so the two don't read as the same hue in different contexts.
+  Left the underlying pattern-fill system (dot texture for protein,
+  stripe for fat) untouched — that's a distinguishability mechanism,
+  not something the color refresh should risk disturbing.
 
 **Calendar, the largest single piece**: gold's achievement-day color was
 never actually broken in the real app (only in my own mockup previews,

@@ -47,7 +47,13 @@
     /* chart series (dark). ch-1 protein = red, ch-2 carbs = green, ch-3 fat = yellow.
        Red/green is unreadable for red-green colour blindness, so the cb palette
        below deliberately overrides these — the pattern fills also distinguish them. */
-    --ch-1:#FF5A5A; --ch-2:#8BD742; --ch-3:#FFC24A; --ch-4:#B79CFF; --ch-weight:#B79CFF;
+    /* Theme refresh: refined toward less saturated, more cohesive tones —
+       same hue family (red=protein, green=carbs, amber=fat) for anyone
+       who's already learned the association, just less "basic"/neon.
+       Fat shifted slightly more orange than before, away from the new
+       primary accent's own yellow, so the two don't read as the same hue
+       in different contexts. */
+    --ch-1:#F0655C; --ch-2:#6FC94A; --ch-3:#F5A03C; --ch-4:#B79CFF; --ch-weight:#B79CFF;
     --ch-1-ink:#2b0505; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
     /* tinted "accent" surface (lime-highlighted cards) */
     --accent-surface:linear-gradient(120deg,#241f0a,#1a1608); --accent-border:#4a3f14;
@@ -63,7 +69,7 @@
     --red:#D64545; --amber:#B7791F; --blue:#0072B2; --violet:#7A5CC4;
     --shadow:0 12px 36px rgba(20,30,40,.18);
     --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
-    --ch-1:#C62828; --ch-2:#3F7D18; --ch-3:#B7791F; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
+    --ch-1:#C4453F; --ch-2:#4F8A2C; --ch-3:#A8681A; --ch-4:#7A5CC4; --ch-weight:#7A5CC4;
     --ch-1-ink:#FFFFFF; --ch-2-ink:#FFFFFF; --ch-3-ink:#FFFFFF; --ch-4-ink:#FFFFFF;
     --accent-surface:linear-gradient(120deg,#F6F0DC,#F8F3E8); --accent-border:#DEC98F;
     --goal-active:#0072B2; --goal-active-tint:rgba(0,114,178,.08); --goal-inactive:#8C98A3; --goal-inactive-tint:rgba(140,152,163,.12);
@@ -5330,7 +5336,10 @@ function renderDashboard(container, iAmCoach){
     const topIdx=(hF>0)?2:(hC>0)?1:(hP>0)?0:-1;
     segs.forEach(([k,h,fill,val,ink],si)=>{
       if(h<=0)return; y-=h;
-      const round=si===topIdx?3:0;
+      /* Theme refresh: was 3px, felt sharp-edged against the rest of the
+       now-more-rounded app. Kept modest — a large radius on a narrow bar
+       segment starts to look like a pill, which isn't the intent here. */
+    const round=si===topIdx?6:0;
       svg+=`<path d="M${x} ${(y+h).toFixed(1)} L${x} ${(y+round).toFixed(1)} Q${x} ${y} ${x+round} ${y} L${x+bw-round} ${y} Q${x+bw} ${y} ${x+bw} ${(y+round).toFixed(1)} L${x+bw} ${(y+h).toFixed(1)} Z" fill="${fill}"/>`;
       // only label a segment when it's tall enough to hold text cleanly
       if(h>=16) svg+=`<text x="${x+bw/2}" y="${y+h/2+3.5}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${ink}">${val}</text>`;
