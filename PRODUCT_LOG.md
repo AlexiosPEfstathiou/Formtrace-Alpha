@@ -1271,12 +1271,25 @@ computation can only ever under-offer valid times, never let an invalid
 one through, even if its own logic were wrong.
 
 Built on Profile: an availability editor (day + start + end, add/remove).
-Built on the engagement screen (single-goal view only — scheduling needs
-one specific counterpart, so it has no place in the merged multi-goal
-calendar): a live proposal state (pending/accepted/expired), a trainee's
-"propose a time" flow that computes real overlap for a chosen date and
-only offers genuinely valid windows, and a coach's accept-or-counter
-choice with the 24-hour deadline shown plainly.
+Built on the engagement screen (proposing itself is single-goal only —
+overlap needs one specific counterpart, so there's no place to propose
+FROM the merged multi-goal calendar): a live proposal state (pending/
+accepted/expired), a trainee's "propose a time" flow that computes real
+overlap for a chosen date and only offers genuinely valid windows, and a
+coach's accept-or-counter choice with the 24-hour deadline shown plainly.
+
+**Reported bug, FIXED 2026-08-17: an accepted call didn't show on the
+calendar at all.** Root cause was a real design mistake I made, not a
+one-off glitch — the coaching-day calendar lookup was gated to the
+single-engagement view on the reasoning that "call scheduling needs one
+specific counterpart." True for PROPOSING a call, wrong to also apply to
+DISPLAYING one that's already accepted — an accepted call has a definite
+`engagement_id` and can be attributed to a date exactly like a workout
+already is on the merged calendar. Any trainee with multiple active
+goals, whose default view is that merged calendar, would never have seen
+an accepted coaching day at all. Fixed to aggregate across every active
+engagement when merged, the same pattern `engAssignedByDate` already
+uses for workouts.
 
 **Still genuinely open, not decided here:** the video call technology
 itself. An accepted proposal currently just displays as a confirmed time
@@ -1284,6 +1297,22 @@ itself. An accepted proposal currently just displays as a confirmed time
 for it to lead. See the open questions below for the WebRTC-vs-provider
 tradeoff, which is a separate decision from the scheduling layer that's
 now built.
+
+**NEW REQUIREMENT, 2026-08-17 — the call must happen INSIDE the app.**
+Stated reason: so coaches and trainees can maintain the relationship
+without ever exchanging social media or personal contact info. This
+meaningfully narrows the earlier open question rather than leaving it
+fully open — it rules out the simplest "just hand them a Zoom/Meet link"
+approach outright, since that would require exchanging an external
+account or contact detail exactly like the constraint says not to. What
+it leaves standing: WebRTC embedded directly in the app (no third party
+sees the call at all, more build effort, no per-minute cost), or a
+provider's SDK embedded in-app rather than linked out to (Daily, Twilio,
+Whereby all offer this — the account/contact stays external to the
+person, only the SDK is inside the app, but a processor still handles
+the actual media). Both satisfy "no social media exchanged"; they differ
+on cost, build time, and whether a third party's infrastructure ever
+touches the call.
 
 **REVISED AGAIN, 2026-08-17 — initiation direction reversed to match how
 workouts are already assigned.** The coach now picks the date and starts

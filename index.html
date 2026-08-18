@@ -4819,20 +4819,23 @@ async function renderEngagement(){
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
-  /* Accepted coaching calls, single-engagement view only — this concept
-     needs one specific counterpart, same reasoning as the scheduling
-     card itself. An accepted call REPLACES the normal workout/rest
-     coloring for that date in the cell loop below, per the explicit ask:
-     "instead of a training day the calendar will depict a Coaching day". */
+  /* Reported bug fix: this used to only load in the single-engagement
+     view, on the reasoning that call scheduling needs one specific
+     counterpart — true for PROPOSING (you can't check overlap against a
+     merged set of people), but wrong to also apply to DISPLAYING an
+     already-accepted call, which has a definite engagement_id and can be
+     attributed to a date exactly like workouts already are on the merged
+     calendar. A trainee with multiple active goals whose default/primary
+     view IS the merged calendar would never have seen an accepted
+     coaching day at all under the old gate. */
   coachingDaysByDate={};
-  if(!traineeMerged){
-    try{
-      const { data, error } = await store._sb.from("call_proposals").select("*")
-        .eq("engagement_id",currentEng.id).eq("status","accepted");
-      if(error) throw error;
-      for(const p of (data||[])) coachingDaysByDate[p.proposed_date]=p;
-    }catch(e){ console.error("coaching days load (run migrations_scheduled_calls.sql)",e); }
-  }
+  try{
+    const engIds = traineeMerged ? traineeEngs.map(e=>e.id) : [currentEng.id];
+    const { data, error } = await store._sb.from("call_proposals").select("*")
+      .in("engagement_id",engIds).eq("status","accepted");
+    if(error) throw error;
+    for(const p of (data||[])) coachingDaysByDate[p.proposed_date]=p;
+  }catch(e){ console.error("coaching days load (run migrations_scheduled_calls.sql)",e); }
   // macro logs indexed by date — trainee reads own; coach reads this trainee's (RLS-permitted on active engagements)
   logsByDate={};
   {
