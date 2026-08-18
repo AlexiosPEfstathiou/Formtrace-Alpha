@@ -252,7 +252,7 @@
   .ex-meta{display:flex;gap:14px;margin-top:5px;flex-wrap:wrap;}
   .ex-meta div{font-size:12px;color:var(--muted);}
   .ex-meta b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:700;}
-  .ref-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;margin-top:8px;padding:3px 8px;border-radius:7px;}
+  .ref-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;margin-top:8px;padding:3px 8px;border-radius:10px;}
   .ref-yes{background:rgba(240, 210, 49,.12);color:var(--lime);}
   .ref-no{background:rgba(255,90,90,.1);color:var(--red);}
 
@@ -613,7 +613,7 @@
   .wild-note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px;}
   .wild-chip{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle;
     background:rgba(255,194,74,.18);color:var(--amber);border-radius:20px;padding:2px 7px;margin-left:6px;}
-  .gs-chip{flex:1;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
+  .gs-chip{flex:1;min-width:0;height:38px;border-radius:19px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-variant-numeric:tabular-nums;}
   .gs-chip:active{transform:scale(.95);}
   .gs-chip.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
   .dial-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
@@ -657,9 +657,9 @@
   .field textarea{width:100%;min-height:84px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);font-size:15px;padding:13px 15px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;transition:border-color .15s;}
   .field textarea:focus{border-color:var(--lime-dim);}
   .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
-  .pill{padding:8px 14px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;}
+  .pill{padding:8px 14px;border-radius:16px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;}
   .pill.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
-  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:.03em;text-transform:uppercase;}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:11px;letter-spacing:.03em;text-transform:uppercase;}
   .badge.coach{background:rgba(240, 210, 49,.14);color:var(--lime);}
   .badge.trainee{background:rgba(90,176,255,.14);color:var(--blue);}
   .badge.admin{background:rgba(255,194,74,.16);color:var(--amber);}
@@ -3053,8 +3053,27 @@ async function renderHomeToday(engs, el){
     openAssigned(node.getAttribute("data-open"));
   }));
 }
+/* Theme refresh: Catmull-Rom -> cubic Bezier conversion. Smooths the
+   TRANSITION between points without inventing data between them — the
+   curve still passes exactly through every real point, unlike a freehand
+   smooth that could bulge past what was actually measured. Kept general
+   (not weight-specific) since more than one chart wants this treatment. */
+function catmullRomPath(pts){
+  if(pts.length<2) return "";
+  if(pts.length===2) return `M${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)} L${pts[1].x.toFixed(1)} ${pts[1].y.toFixed(1)}`;
+  let d=`M${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)} `;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=`C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
+  }
+  return d;
+}
 /* Small inline weight sparkline (last few entries) for the trainee homepage.
-   Straight segments only — no interpolation implied. Returns "" if <2 points. */
+   Theme refresh: smooth Catmull-Rom curve (still passes through every real
+   point — see catmullRomPath), a gradient area fill fading to transparent,
+   and a soft glow on the line + endpoint. Returns "" if <2 points. */
 function weightSparkline(wpts){
   if(!wpts || wpts.length<2) return "";
   const cs=getComputedStyle(document.documentElement);
@@ -3065,15 +3084,29 @@ function weightSparkline(wpts){
   const ws=wpts.map(p=>p.w); const lo=Math.min(...ws), hi=Math.max(...ws); const span=(hi-lo)||1;
   const X=i=>padX+(i/(wpts.length-1))*(W-padX*2);
   const Y=w=>padY+(1-(w-lo)/span)*(H-padY*2);
-  let line=""; wpts.forEach((p,i)=>{ line+=(i===0?"M":"L")+X(i).toFixed(1)+" "+Y(p.w).toFixed(1)+" "; });
-  const lastX=X(wpts.length-1), lastY=Y(wpts[wpts.length-1].w);
+  const pts=wpts.map((p,i)=>({x:X(i),y:Y(p.w)}));
+  const line=catmullRomPath(pts);
+  const lastX=pts[pts.length-1].x, lastY=pts[pts.length-1].y;
+  const areaPath=`${line} L${lastX.toFixed(1)} ${H} L${pts[0].x.toFixed(1)} ${H} Z`;
+  const uid="wsp"+Math.random().toString(36).slice(2,8);
   const first=wpts[0].w, last=wpts[wpts.length-1].w, delta=last-first;
   const deltaTxt=(delta>0?"+":"")+delta.toFixed(1)+" kg";
   const deltaCol = delta<=0 ? "var(--lime)" : "var(--amber)";
   return `<div class="htw-head"><span class="htw-lab">Weight trend</span><span class="htw-delta" style="color:${deltaCol}">${deltaTxt}</span></div>
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px">
-      <path d="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3.4" fill="${col}"/>
+      <defs>
+        <linearGradient id="${uid}fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${col}" stop-opacity="0.30"/>
+          <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="${uid}glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.6" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="${areaPath}" fill="url(#${uid}fill)"/>
+      <path d="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#${uid}glow)"/>
+      <circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3.6" fill="${col}" filter="url(#${uid}glow)"/>
     </svg>
     <div class="htw-foot"><span>${wpts.length} entries</span><span>latest <b style="color:${ink}">${last}</b> kg</span></div>`;
 }
@@ -3608,10 +3641,25 @@ function measureMini(label,pts){
     const vs=pts.map(p=>p.v);const lo=Math.min(...vs),hi=Math.max(...vs);const span=(hi-lo)||1;
     const X=i=>pad+(i/(pts.length-1))*(W-pad*2);
     const Y=v=>pad+(1-(v-lo)/span)*(H-pad*2);
-    let d="";pts.forEach((p,i)=>{ d+=(i===0?"M":"L")+X(i).toFixed(1)+" "+Y(p.v).toFixed(1)+" "; });
+    const svgPts=pts.map((p,i)=>({x:X(i),y:Y(p.v)}));
+    const d=catmullRomPath(svgPts);
+    const lastPt=svgPts[svgPts.length-1];
+    const areaPath=`${d} L${lastPt.x.toFixed(1)} ${H} L${svgPts[0].x.toFixed(1)} ${H} Z`;
+    const uid="msp"+Math.random().toString(36).slice(2,8);
     svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px">
-      <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${X(pts.length-1).toFixed(1)}" cy="${Y(last).toFixed(1)}" r="2.6" fill="${col}"/></svg>`;
+      <defs>
+        <linearGradient id="${uid}fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${col}" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="${uid}glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="${areaPath}" fill="url(#${uid}fill)"/>
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#${uid}glow)"/>
+      <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="2.8" fill="${col}" filter="url(#${uid}glow)"/></svg>`;
   }else{
     svg=`<div class="ms-single">single entry</div>`;
   }
