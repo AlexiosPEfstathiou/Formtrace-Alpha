@@ -3824,6 +3824,22 @@ async function renderCoachPayments(el){
 }
 function money(cents){ return "$"+((cents||0)/100).toFixed(2); }
 
+/* Item: the default Interval Running exercise (coach_id null, a genuine
+   shared global row per migrations_default_interval_exercise.sql) needs
+   to appear in every coach's own library alongside their own exercises.
+   The generic table() helper only does exact-match .eq(), so this goes
+   through the raw _sb escape hatch for a real .or() filter rather than
+   two separate queries merged client-side. Top-level, not nested in any
+   one screen's render function, since multiple separate places need it. */
+async function loadCoachExerciseLibrary(coachId){
+  try{
+    const { data, error } = await store._sb.from("exercises").select("*")
+      .or(`coach_id.eq.${coachId},coach_id.is.null`);
+    if(error) throw error;
+    return data||[];
+  }catch(e){ console.error("loadCoachExerciseLibrary (run migrations_default_interval_exercise.sql)",e); return await store.exercises.list({coach_id:coachId}); }
+}
+
 $$(".tabbar button[data-tab]").forEach(b=>b.addEventListener("click",()=>{coachTab=b.getAttribute("data-tab");$$(".tabbar button[data-tab]").forEach(x=>x.classList.toggle("on",x===b));renderCoach();}));
 $("#coach-fab").addEventListener("click",()=>{ if(coachTab==="library")go("ex-edit-new"); else go("wo-build-new"); });
 
@@ -3832,7 +3848,7 @@ async function renderCoach(){
   if(coachTab==="library"){
     $("#coach-title").textContent="Exercise library";
     $("#coach-fab").textContent="+ Add exercise";
-    const list=await store.exercises.list({coach_id:ME.id});
+    const list=await loadCoachExerciseLibrary(ME.id);
     $("#coach-sub").textContent=list.length?`${list.length} exercise${list.length>1?"s":""} saved`:"Record your first exercise";
     renderLibraryInto($("#coach-body"),list);
   }else if(coachTab==="payments"){
@@ -3842,7 +3858,7 @@ async function renderCoach(){
   }else{
     $("#coach-title").textContent="Workouts";
     $("#coach-fab").textContent="+ New workout";
-    const [wos,exs]=await Promise.all([store.workouts.list({coach_id:ME.id}),store.exercises.list({coach_id:ME.id})]);
+    const [wos,exs]=await Promise.all([store.workouts.list({coach_id:ME.id}),loadCoachExerciseLibrary(ME.id)]);
     $("#coach-sub").textContent=wos.length?`${wos.length} workout${wos.length>1?"s":""}`:"Assemble a day from your library";
     renderWorkoutsInto($("#coach-body"),wos,exs);
   }
@@ -4034,7 +4050,7 @@ $("#btn-record-ref").addEventListener("click",()=>{
    ========================================================================= */
 let builder=null, libCache=[];
 async function openBuilder(id){
-  libCache=await store.exercises.list({coach_id:ME.id});
+  libCache=await loadCoachExerciseLibrary(ME.id);
   const w=id?await store.workouts.get(id):null;
   builder=w?{id:w.id,name:w.name,items:(w.items||[]).map(i=>({...i})),isNew:false}
            :{id:null,name:"",items:[],isNew:true};
@@ -6822,11 +6838,26 @@ function haversineMeters(lat1,lon1,lat2,lon2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 let ivState=null;
+/* Theme/feature expansion: interval exercises used to be exactly one
+   fixed shape (N rounds of walk-then-run, both durations uniform across
+   every round). Extended to arbitrary segment sequences, each
+   independently time-based, distance-based, or distance-based-with-a-
+   displayed-pace-target, plus a wholly separate "free run" mode with no
+   pre-set structure at all — just a total distance goal.
+   Backward compatible: an item with it.segments already built uses that
+   directly; an older item with only walk_seconds/run_seconds/rounds
+   still expands exactly as before, so nothing already assigned breaks. */
 function buildIntervalSegments(it){
+  if(it.interval_mode==="free"){
+    return [{type:"free",mode:"distance",meters:it.free_meters||1000}];
+  }
+  if(Array.isArray(it.segments) && it.segments.length){
+    return it.segments;
+  }
   const segs=[];
   for(let r=0;r<(it.rounds||1);r++){
-    segs.push({type:"walk",seconds:it.walk_seconds});
-    segs.push({type:"run",seconds:it.run_seconds});
+    segs.push({type:"walk",mode:"time",seconds:it.walk_seconds});
+    segs.push({type:"run",mode:"time",seconds:it.run_seconds});
   }
   return segs;
 }
