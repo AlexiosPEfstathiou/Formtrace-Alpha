@@ -8270,6 +8270,16 @@ async function renderProfile(){
         <span class="switch"><input type="checkbox" id="cb-switch" ${curCb?"checked":""}><span class="track"></span></span>
       </label>
     </div>`;
+  /* Explicit install control — Chrome's own menu turned out to be a real
+     discoverability problem (it only offers a real install once ITS OWN
+     engagement heuristic is satisfied, with no visible signal why), and
+     iOS has no programmatic install API at all, so this branches into
+     three states rather than being a single button: already installed
+     (nothing to show), iOS (instructions, since nothing can trigger it),
+     or Chromium (a real button once the browser has actually signalled
+     it's ready). */
+  html+=`<div class="section-h"><div class="eyebrow">Install FormTrace</div></div>
+    <div class="card" id="install-card" style="margin:0 0 12px"></div>`;
   /* Item G: declared weekly availability, the input both a trainee's own
      proposal and a coach's response need to check against. Recurring
      (day-of-week + time range), not per-date — the only realistic reading
@@ -8346,12 +8356,47 @@ async function renderProfile(){
   }));
   $("#cb-switch")?.addEventListener("change",e=>setColorblind(e.target.checked));
   wireSocialProfile();
+  updateInstallUI();
   wireAvailability();
   wireDangerZone();
   $("#apply-card")?.addEventListener("click",()=>go("coach-apply"));
   $("#pause-all-card")?.addEventListener("click",openPauseAllSheet);
 }
 const DOW_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+/* Explicit install control, three states — see the section-h comment
+   above for why this exists instead of relying purely on the browser's
+   own menu. Global so beforeinstallprompt's listener (registered at the
+   very bottom of the page, long before this ever runs) can call it the
+   moment Chrome actually signals readiness, on whatever screen happens
+   to be open at the time. */
+function updateInstallUI(){
+  const card=$("#install-card"); if(!card)return;
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
+  if(isStandalone){
+    card.innerHTML=`<div style="font-size:13px;color:var(--lime);font-weight:700">✓ Already installed</div>`;
+    return;
+  }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if(isIOS){
+    card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.6">iOS doesn't allow a website to trigger this directly. Tap the <b>Share</b> icon in Safari, then <b>Add to Home Screen</b>.</div>`;
+    return;
+  }
+  if(window.deferredInstallPrompt){
+    card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">Installs FormTrace as its own app — no browser bar, launches like anything else on your home screen.</div>
+      <button class="btn" id="do-install-btn" style="width:100%">⬇ Install FormTrace</button>`;
+    $("#do-install-btn").addEventListener("click",async()=>{
+      const btn=$("#do-install-btn");btn.disabled=true;btn.textContent="Installing…";
+      try{ window.deferredInstallPrompt.prompt(); await window.deferredInstallPrompt.userChoice; }
+      catch(e){ console.error("install prompt",e); }
+      window.deferredInstallPrompt=null;
+      updateInstallUI();
+    });
+    return;
+  }
+  // Honest, diagnostic messaging rather than hiding this silently — this
+  // IS the answer to "why don't I see Install app" for whoever's looking.
+  card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.6">Not offered yet by your browser. Chrome and similar browsers only offer this once they judge you've visited enough — try revisiting a few times, then check back here.</div>`;
+}
 /* Item G: a person's own recurring availability. Plain CRUD, not routed
    through a function — unlike proposals, there's no cross-party business
    logic to enforce here (the "manage own availability" policy already
@@ -9306,6 +9351,24 @@ $("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;closeRecor
       navigator.serviceWorker.register("sw.js").catch(e=>console.error("sw register",e));
     });
   }
+  /* Explicit in-app install button (Settings), since relying purely on
+     Chrome's own menu turned out to be a real discoverability problem —
+     it only offers this once ITS OWN engagement heuristic is satisfied,
+     with no visible signal to the user about why. Capturing the event
+     here, globally and early, is required: it can fire at any point after
+     load, on any screen, and preventDefault() is what suppresses Chrome's
+     own mini-infobar so this app's own button is the single way to
+     trigger it instead of two competing prompts. */
+  window.deferredInstallPrompt = null;
+  window.addEventListener("beforeinstallprompt",(e)=>{
+    e.preventDefault();
+    window.deferredInstallPrompt = e;
+    if(typeof updateInstallUI === "function") updateInstallUI();
+  });
+  window.addEventListener("appinstalled",()=>{
+    window.deferredInstallPrompt = null;
+    if(typeof updateInstallUI === "function") updateInstallUI();
+  });
 </script>
 </body>
 </html>

@@ -453,6 +453,43 @@ before wiring it in rather than trusting the "file written" confirmation
 alone. Manifest now lists the PNGs first (what Chrome's check actually
 needs) with the SVG kept as a scalable fallback entry alongside them.
 
+**REGRESSION REPORTED, 2026-08-17 — a real contradiction, not yet
+reconciled.** Reported as still not actually working, despite the above
+and despite "Install app" having been confirmed appearing correctly on
+Android Chrome with real icons earlier this session. Genuinely
+unconfirmed whether this means: install still isn't offered at all,
+install works but the installed app itself is broken somehow, or
+something else entirely. Not investigated further per an explicit pause
+— worth real priority whenever work resumes here, since it underlies why
+item AE/F was also paused (NFC's browser-support story is complicated
+enough without an unreliable PWA install on top of it).
+
+**Concrete symptom reported: Chrome only offers a shortcut/bookmark, not
+a real install.** Verified everything server-side is correct — manifest
+served with the right content-type, valid JSON, service worker correctly
+registered — so this isn't a deployment or file problem. Two remaining,
+well-documented Chrome behaviors likely explain it, neither verifiable
+remotely: Chrome's own engagement heuristic (it withholds the real
+install option until it judges the user has visited enough — an
+anti-spam measure), or stale cached installability state from visiting
+this exact page before the manifest/service worker existed.
+
+**BUILT 2026-08-17 — an explicit in-app install control, Settings.**
+Rather than only relying on Chrome's own menu (opaque about why it's
+withholding the option), this captures `beforeinstallprompt` globally the
+moment the browser fires it — which only happens once Chrome's own
+criteria, heuristic included, are actually satisfied — and shows a real
+"Install FormTrace" button the app controls directly. Three states, not
+one button: already installed (a plain confirmation, detected via the
+`display-mode: standalone` media query), iOS (instructions, since iOS has
+no programmatic install API at all — nothing can trigger it from a
+website), or Chromium not yet ready (honest, diagnostic messaging rather
+than hiding this silently, since "not offered yet, try revisiting" IS the
+actual answer to why this doesn't appear yet). Doubles as a live
+diagnostic for the regression above: if the button never appears after
+several real visits, that confirms the engagement heuristic (or
+something else) rather than a code defect.
+
 ---
 
 ## AE. NFC "Friendlist"
@@ -468,6 +505,22 @@ support is narrow (Chrome on Android only, as of this app's knowledge),
 so whatever this turns out to mean, it likely can't be the only way to
 add a friend — needs a fallback for iOS and desktop regardless of what
 "Friendlist" itself turns out to mean.
+
+**RESOLVED, 2026-08-17 — this IS item F's connection mechanism, and the
+earlier fallback assumption was wrong.** F's scope is narrowed to exactly
+this: a friend/connection system working exclusively via NFC — no iOS or
+desktop fallback wanted, despite the real browser-support gap flagged
+above (Chrome/Android only). That gap doesn't go away; it's now an
+accepted constraint rather than something to design around. Challenges
+(the other half of F) are explicitly out of scope for now — this is
+connections only.
+
+**PAUSED, 2026-08-17, alongside item G.** Not started. Paused specifically
+because item AD (PWA installability) was reported as still not actually
+working, despite being marked DONE and confirmed live earlier this
+session — worth flagging directly rather than quietly accepted: this is a
+real contradiction with an earlier verification, not yet reconciled. See
+AD below.
 
 ---
 
@@ -927,6 +980,13 @@ Needs a social graph — friend requests, membership, challenge definitions,
 shared progress. Large. Also the surface where the wellbeing concerns around
 comparison are sharpest; challenges should be built on consistency and
 effort, not body outcomes.
+
+**RESOLVED/NARROWED, 2026-08-17 — see item AE.** The connection half of
+this (friend requests, membership) turned out to be exactly what AE's
+"NFC Friendlist" already meant — scoped down to an NFC-exclusive
+connection system, no fallback. Challenges are explicitly out of scope
+for now. **PAUSED** alongside AE and G, pending the AD (PWA) regression
+being reconciled first.
 
 ---
 
