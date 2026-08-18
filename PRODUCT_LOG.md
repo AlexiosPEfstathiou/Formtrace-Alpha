@@ -1313,6 +1313,51 @@ What moved:
   first and unconditionally in the cell loop, same priority as the pause
   check beside it.
 
+**Reported bugs, not yet investigated (2026-08-17):**
+1. Availability times can be duplicated — nothing stops adding the same
+   day and time range more than once.
+   **FIXED 2026-08-17.** Checked for genuine overlap before inserting
+   (start < existing end AND end > existing start), not just an exact-
+   match duplicate — two blocks like 18:00–20:00 and 19:00–21:00 aren't
+   identical but are exactly the redundant clutter this was about. Clear
+   toast naming the conflicting block on rejection.
+2. Coach UI reportedly still shows "No call scheduled yet. Waiting for
+   your trainee to propose a time." even after availability has been
+   declared. Logged exactly as reported — worth noting honestly, not
+   glossed over: that exact wording matches the PRE-reversal coach
+   messaging, from before initiation moved to the coach.
+   **CHECKED — ruled out as a current code issue.** Searched the live
+   codebase directly for that exact string: zero matches, cleanly, not an
+   ambiguous or partial result. This was very likely an observation made
+   before the coach-initiated redesign had actually deployed, not a bug
+   in what's live now.
+3. No notification anywhere for a pending proposal — homepage, badge, or
+   otherwise. A trainee (or coach, for a counter) only ever sees one by
+   navigating to that specific goal and landing on the status card.
+   Flagged as a real gap when this was first placed, not new information,
+   but now explicitly logged as its own item — worth real weight given
+   there's an actual 24-hour clock running against silence.
+   **BUILT 2026-08-17.** `renderHomeCallProposal`, role-agnostic (unlike
+   the postpone/reviewdue cards, which are single-role) — shows ONLY the
+   "needs your response" case, not "you're waiting," since there's
+   nothing actionable in waiting and the engagement's own status card
+   already covers it for anyone who visits. Wired into both homepage
+   render batches, in the already-independent group with no ordering
+   dependency on milestoneShowing.
+4. Reported: a trainee doesn't see a proposal a coach sent, with a guess
+   that deployment might be lagging. **Checked directly — it isn't.** The
+   live site is confirmed running the exact commit with the coach-
+   initiated flow (`openCoachDayChoice`, `cal-coaching`, `presetDate` all
+   present and live). Deployment lag is ruled out as the cause; something
+   else is behind this report. Needs a genuine end-to-end test — one
+   account proposing, a second account checking the trainee-side card
+   directly — to actually diagnose, not further guessing. Possibilities
+   not yet distinguished: the proposal never actually got created (an
+   error at `propose_call` that wasn't surfaced clearly), the two
+   accounts don't share the engagement being checked, a real fetch/
+   display bug on the trainee's card, or the browser's own cache serving
+   a stale copy of the page independent of server deployment.
+
 ---
 
 # Open questions

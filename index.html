@@ -1092,6 +1092,7 @@
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
+      <div id="home-callproposal" class="home-reviews" style="display:none"></div>
       <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
       <div id="home-declined" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
@@ -2938,21 +2939,23 @@ async function renderHome(){
       renderHomeMacro(macroEl),
       renderHomeMacroGaps($("#home-macrogaps")),
       renderHomeCheckin(checkinEl),
-      renderHomeMeasure(measureEl)
+      renderHomeMeasure(measureEl),
+      renderHomeCallProposal($("#home-callproposal"))
     ]);
   }else{
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
-    /* These four don't depend on each other's output and each writes to
+    /* These don't depend on each other's output and each writes to
        its own DOM node, so running them in series (as this did before) pays
-       the SUM of four round trips. Promise.all cuts that to roughly the
+       the SUM of round trips. Promise.all cuts that to roughly the
        slowest single one. */
     await Promise.all([
       renderHomeReviewDue($("#home-reviewdue")),
       renderHomeDeclined($("#home-declined")),
       renderCoachHome(todayEl),
       renderCoachTrainees(coachEl,newsEl),
-      renderHomeVacation($("#home-vacation"))
+      renderHomeVacation($("#home-vacation")),
+      renderHomeCallProposal($("#home-callproposal"))
     ]);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
@@ -3171,6 +3174,46 @@ async function renderHomePostpone(engs, el){
     try{ await store._sb.rpc("ack_postpone",{p_assigned:id}); }
     catch(e){ console.error("ack_postpone",e); }
     openAssigned(id);
+  }));
+}
+/* Item G, closing the "no notification anywhere" gap. Role-agnostic —
+   unlike renderHomePostpone (trainee-only) or renderHomeReviewDue
+   (coach-only), a pending call proposal needing a response can land on
+   either side depending on who initiated. Deliberately shows ONLY the
+   "needs your response" case, not "you're waiting" — there's nothing
+   actionable in waiting, and the engagement's own status card already
+   covers that state adequately for anyone who visits it. This is
+   specifically for surfacing something with a real 24-hour clock against
+   it before that window closes unseen. */
+async function renderHomeCallProposal(el){
+  el.style.display="none"; el.innerHTML="";
+  if(!ME)return;
+  const active=(await store.engagements.list({coach_id:ME.id}).catch(()=>[]))
+    .concat(await store.engagements.list({trainee_id:ME.id}).catch(()=>[]))
+    .filter(e=>e.status==="active");
+  if(!active.length)return;
+  let mine=[];
+  try{
+    const { data, error } = await store._sb.from("call_proposals").select("*,engagement_id")
+      .in("engagement_id",active.map(e=>e.id)).eq("status","pending");
+    if(error) throw error;
+    const now=new Date();
+    mine=(data||[]).filter(p=>p.proposed_by!==ME.id && new Date(p.expires_at)>now);
+  }catch(e){ console.error("home call proposal (run migrations_scheduled_calls.sql)",e); return; }
+  if(!mine.length)return;
+  const engById={}; active.forEach(e=>engById[e.id]=e);
+  const chips=mine.map(p=>{
+    const eng=engById[p.engagement_id];
+    const otherName=eng?(eng.coach_id===ME.id?"your trainee":"your coach"):"someone";
+    return `<button class="rv-chip" data-callprop-eng="${p.engagement_id}">
+        <span class="rv-ic">🎥</span>
+        <span class="rv-tx"><b>Call proposed by ${otherName}</b><span>${escapeHtml(fmtDay(p.proposed_date))} · ${fmtTimeRange(p.start_time,p.end_time)}</span></span>
+      </button>`;
+  }).join("");
+  el.innerHTML=`<div class="rv-title">Respond within 24 hours</div><div class="rv-row">${chips}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-callprop-eng]").forEach(b=>b.addEventListener("click",()=>{
+    openEngagement(b.getAttribute("data-callprop-eng"));
   }));
 }
 /* Coach homepage: 24h advance warning that a review window is about to
@@ -8338,6 +8381,18 @@ function wireAvailability(){
     if(!start||!end||end<=start){ toast("End time must be after start time",3000); return; }
     const btn=$("#avail-add");btn.disabled=true;
     try{
+      /* Reported bug fix: nothing stopped adding the same, or an
+         overlapping, block twice. Checked for genuine overlap (start <
+         existing end AND end > existing start), not just an exact-match
+         duplicate — two entries like 18:00-20:00 and 19:00-21:00 aren't
+         identical but are exactly the kind of redundant clutter the
+         report was about. */
+      const existing=await loadAvailability();
+      const clash=existing.find(r=>r.day_of_week===day && start<r.end_time.slice(0,5) && end>r.start_time.slice(0,5));
+      if(clash){
+        toast(`Overlaps an existing block: ${DOW_NAMES[day]} ${clash.start_time.slice(0,5)}–${clash.end_time.slice(0,5)}`,4000);
+        btn.disabled=false; return;
+      }
       await store._sb.from("availability_blocks").insert({user_id:ME.id,day_of_week:day,start_time:start,end_time:end});
       renderAvailabilityList();
     }catch(e){ console.error("add availability (run migrations_scheduled_calls.sql)",e); toast(e.message||"Couldn't add that",4000); }
