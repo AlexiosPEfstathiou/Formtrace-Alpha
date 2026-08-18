@@ -4083,9 +4083,12 @@ function renderBuilderItems(){
       wrap.appendChild(row);
       return;
     }
-    /* Item: timed interval exercises. Structure (walk/run seconds, rounds)
-       is chosen HERE, at build time — same place sets/reps already live for
-       a reps exercise — not fixed on the exercise itself. */
+    /* Item: timed interval exercises. Structure is chosen HERE, at build
+       time — same place sets/reps already live for a reps exercise — not
+       fixed on the exercise itself. Expanded from three inline steppers
+       (walk/run/rounds, one fixed shape) to arbitrary segment sequences —
+       too much to fit inline, so this is now a summary plus a button that
+       opens the full editor sheet. */
     if(ex&&ex.kind==="interval"){
       row.innerHTML=`
         <div class="hd">
@@ -4093,14 +4096,8 @@ function renderBuilderItems(){
           <h4>${escapeHtml(ex.name)} <span class="wild-chip" style="background:rgba(90,176,255,.16);color:var(--blue)">interval</span></h4>
           <button class="rm" data-rm="${idx}">✕</button>
         </div>
-        <div class="sr">
-          <div class="blk"><div class="l">Walk (sec)</div>
-            <div class="mini-stepper"><button data-b="walk_seconds" data-d="-15" data-i="${idx}">−</button><span id="fv-walk_seconds-${idx}">${it.walk_seconds}</span><button data-b="walk_seconds" data-d="15" data-i="${idx}">+</button></div></div>
-          <div class="blk"><div class="l">Run (sec)</div>
-            <div class="mini-stepper"><button data-b="run_seconds" data-d="-15" data-i="${idx}">−</button><span id="fv-run_seconds-${idx}">${it.run_seconds}</span><button data-b="run_seconds" data-d="15" data-i="${idx}">+</button></div></div>
-          <div class="blk"><div class="l">Rounds</div>
-            <div class="mini-stepper"><button data-b="rounds" data-d="-1" data-i="${idx}">−</button><span id="fv-rounds-${idx}">${it.rounds}</span><button data-b="rounds" data-d="1" data-i="${idx}">+</button></div></div>
-        </div>`;
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${escapeHtml(summarizeInterval(it))}</div>
+        <button class="btn sm ghost" data-iv-edit="${idx}" style="margin:0">Edit intervals</button>`;
       wrap.appendChild(row);
       return;
     }
@@ -4130,7 +4127,165 @@ function renderBuilderItems(){
     builder.items[i][field]=Math.max(min,Math.min(max,builder.items[i][field]+d));
     $("#fv-"+field+"-"+i).textContent=builder.items[i][field];
   }));
+  wrap.querySelectorAll("[data-iv-edit]").forEach(b=>b.addEventListener("click",()=>{
+    openIntervalEditor(+b.getAttribute("data-iv-edit"));
+  }));
   hydrateVideos(wrap);
+}
+/* Short, human-readable description of an interval item's current
+   structure, shown inline instead of the old three steppers (which don't
+   scale to an arbitrary segment list). Falls through buildIntervalSegments
+   for the legacy walk/run/rounds shape so an old item reads sensibly too. */
+function summarizeInterval(it){
+  if(it.interval_mode==="free") return `Free run — ${((it.free_meters||1000)/1000).toFixed(1)} km, trainee sets their own pace`;
+  const segs=(Array.isArray(it.segments)&&it.segments.length)?it.segments:buildIntervalSegments(it);
+  if(!segs.length) return "No segments yet — tap Edit intervals to build it";
+  const fmtSeg=s=>{
+    const label=s.type==="walk"?"Walk":"Run";
+    if(s.mode==="distance"){
+      const distTxt=s.meters<1000?s.meters+"m":(s.meters/1000).toFixed(1)+"km";
+      const paceTxt=s.target_seconds?` in ${Math.round(s.target_seconds/60)}min`:"";
+      return `${label} ${distTxt}${paceTxt}`;
+    }
+    return `${label} ${s.seconds>=60?Math.round(s.seconds/60)+"min":s.seconds+"s"}`;
+  };
+  const parts=segs.map(fmtSeg);
+  return parts.length<=4 ? parts.join(" → ") : `${parts[0]} → ${parts[1]} → … → ${parts[parts.length-1]} (${parts.length} segments)`;
+}
+let ivEdDraft=null, ivEdIdx=null;
+/* Full segment editor, replacing the old fixed walk/run/rounds shape.
+   Edits a local draft, not builder.items[idx] directly, so cancelling
+   (closing the sheet without saving) leaves the real item untouched. */
+function openIntervalEditor(idx){
+  ivEdIdx=idx;
+  const it=builder.items[idx];
+  ivEdDraft={
+    interval_mode: it.interval_mode==="free" ? "free" : "segments",
+    segments: (Array.isArray(it.segments)&&it.segments.length) ? JSON.parse(JSON.stringify(it.segments)) : buildIntervalSegments(it).map(s=>({...s})),
+    free_meters: it.free_meters||1000,
+    addType:"run", addMode:"time", addSeconds:60, addMeters:1000, addTargetSeconds:null
+  };
+  $("#sheet-lib").querySelector("h3").textContent="Edit intervals";
+  const addBtn=$("#sheet-add");
+  addBtn.style.display=""; addBtn.disabled=false; addBtn.textContent="Save intervals";
+  renderIvEditor();
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+function renderIvEditor(){
+  const body=$("#sheet-body");
+  const d=ivEdDraft;
+  let html=`<div class="seg" style="width:100%;margin-bottom:16px">
+      <button data-iv-mode="segments" class="${d.interval_mode==="segments"?"on":""}">Structured</button>
+      <button data-iv-mode="free" class="${d.interval_mode==="free"?"on":""}">Free run</button>
+    </div>`;
+  if(d.interval_mode==="free"){
+    html+=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">The trainee runs and walks however they like — no pre-set structure — until they've covered this total distance.</div>
+      <div class="blk"><div class="l">Total distance (km)</div>
+        <div class="mini-stepper"><button data-iv-free-d="-0.5">−</button><span id="iv-free-km">${(d.free_meters/1000).toFixed(1)}</span><button data-iv-free-d="0.5">+</button></div></div>`;
+  }else{
+    html+=`<div id="iv-ed-list" style="margin-bottom:14px">`;
+    if(!d.segments.length){
+      html+=`<div style="font-size:12.5px;color:var(--faint);padding:10px 0">No segments yet — add the first one below.</div>`;
+    }else{
+      d.segments.forEach((s,i)=>{
+        const label=s.type==="walk"?"Walk":"Run";
+        const valTxt = s.mode==="distance"
+          ? `${s.meters<1000?s.meters+" m":(s.meters/1000).toFixed(1)+" km"}${s.target_seconds?` in ${Math.round(s.target_seconds/60)} min`:""}`
+          : `${s.seconds>=60?Math.round(s.seconds/60)+" min":s.seconds+" s"}`;
+        html+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i===0?"":"border-top:1px solid var(--line);"}">
+            <span style="font-size:13px;font-weight:700;flex:1">${i+1}. ${label} — ${escapeHtml(valTxt)}</span>
+            <button class="rm" data-iv-rm="${i}" style="position:static">✕</button>
+          </div>`;
+      });
+    }
+    html+=`</div>
+      <div style="border-top:1px solid var(--line);padding-top:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px">Add a segment</div>
+        <div class="seg" style="width:100%;margin-bottom:10px">
+          <button data-iv-addtype="walk" class="${d.addType==="walk"?"on":""}">Walk</button>
+          <button data-iv-addtype="run" class="${d.addType==="run"?"on":""}">Run</button>
+        </div>
+        <div class="seg" style="width:100%;margin-bottom:12px">
+          <button data-iv-addmode="time" class="${d.addMode==="time"?"on":""}">Time</button>
+          <button data-iv-addmode="distance" class="${d.addMode==="distance"?"on":""}">Distance</button>
+        </div>`;
+    if(d.addMode==="time"){
+      html+=`<div class="blk"><div class="l">Duration</div>
+          <div class="mini-stepper"><button data-iv-addsec="-15">−</button><span id="iv-add-sec">${fmt(d.addSeconds)}</span><button data-iv-addsec="15">+</button></div></div>`;
+    }else{
+      html+=`<div class="blk"><div class="l">Distance (km)</div>
+          <div class="mini-stepper"><button data-iv-addmeters="-100">−</button><span id="iv-add-meters">${(d.addMeters/1000).toFixed(1)}</span><button data-iv-addmeters="100">+</button></div></div>
+        <label class="cb-toggle" for="iv-add-pace-cb" style="margin-top:10px">
+          <div style="flex:1"><div style="font-size:13px;font-weight:700">Add a pace target</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Shown during the segment as a goal — doesn't end it early or late.</div></div>
+          <span class="switch"><input type="checkbox" id="iv-add-pace-cb" ${d.addTargetSeconds!=null?"checked":""}><span class="track"></span></span>
+        </label>`;
+      if(d.addTargetSeconds!=null){
+        html+=`<div class="blk" style="margin-top:10px"><div class="l">Target time</div>
+            <div class="mini-stepper"><button data-iv-addtarget="-30">−</button><span id="iv-add-target">${fmt(d.addTargetSeconds)}</span><button data-iv-addtarget="30">+</button></div></div>`;
+      }
+    }
+    html+=`<button class="btn sm" id="iv-add-seg-btn" style="width:100%;margin-top:14px">+ Add segment</button>
+      </div>`;
+  }
+  body.innerHTML=html;
+  wireIvEditor();
+}
+function wireIvEditor(){
+  const body=$("#sheet-body");
+  body.querySelectorAll("[data-iv-mode]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.interval_mode=b.getAttribute("data-iv-mode"); renderIvEditor();
+  }));
+  body.querySelectorAll("[data-iv-free-d]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.free_meters=Math.max(100,ivEdDraft.free_meters+(+b.getAttribute("data-iv-free-d"))*1000);
+    $("#iv-free-km").textContent=(ivEdDraft.free_meters/1000).toFixed(1);
+  }));
+  body.querySelectorAll("[data-iv-rm]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.segments.splice(+b.getAttribute("data-iv-rm"),1); renderIvEditor();
+  }));
+  body.querySelectorAll("[data-iv-addtype]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.addType=b.getAttribute("data-iv-addtype"); renderIvEditor();
+  }));
+  body.querySelectorAll("[data-iv-addmode]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.addMode=b.getAttribute("data-iv-addmode"); renderIvEditor();
+  }));
+  body.querySelectorAll("[data-iv-addsec]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.addSeconds=Math.max(10,Math.min(3600,ivEdDraft.addSeconds+(+b.getAttribute("data-iv-addsec"))));
+    $("#iv-add-sec").textContent=fmt(ivEdDraft.addSeconds);
+  }));
+  body.querySelectorAll("[data-iv-addmeters]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.addMeters=Math.max(50,ivEdDraft.addMeters+(+b.getAttribute("data-iv-addmeters")));
+    $("#iv-add-meters").textContent=(ivEdDraft.addMeters/1000).toFixed(1);
+  }));
+  body.querySelectorAll("[data-iv-addtarget]").forEach(b=>b.addEventListener("click",()=>{
+    ivEdDraft.addTargetSeconds=Math.max(30,(ivEdDraft.addTargetSeconds||0)+(+b.getAttribute("data-iv-addtarget")));
+    $("#iv-add-target").textContent=fmt(ivEdDraft.addTargetSeconds);
+  }));
+  $("#iv-add-pace-cb")?.addEventListener("change",e=>{
+    ivEdDraft.addTargetSeconds=e.target.checked?300:null; renderIvEditor();
+  });
+  $("#iv-add-seg-btn")?.addEventListener("click",()=>{
+    const seg=ivEdDraft.addMode==="time"
+      ? {type:ivEdDraft.addType,mode:"time",seconds:ivEdDraft.addSeconds}
+      : {type:ivEdDraft.addType,mode:"distance",meters:ivEdDraft.addMeters,target_seconds:ivEdDraft.addTargetSeconds||null};
+    ivEdDraft.segments.push(seg);
+    renderIvEditor();
+  });
+}
+function saveIntervalEditor(){
+  const it=builder.items[ivEdIdx];
+  it.interval_mode=ivEdDraft.interval_mode;
+  if(ivEdDraft.interval_mode==="free"){
+    it.free_meters=ivEdDraft.free_meters;
+    delete it.segments;
+  }else{
+    if(!ivEdDraft.segments.length){ toast("Add at least one segment first",3500); return; }
+    it.segments=ivEdDraft.segments;
+  }
+  // clear the legacy fields so summarizeInterval/buildIntervalSegments always read the new shape
+  delete it.walk_seconds; delete it.run_seconds; delete it.rounds;
+  closeSheet();
+  renderBuilderItems();
 }
 $("#wo-add-ex").addEventListener("click",openSheet);
 /* Wildcard slots: the coach chooses a muscle group, the trainee chooses the
@@ -4185,7 +4340,8 @@ function openSheet(){
   sheetFilterMG="";
   // belt and braces: make sure the footer is visible even if a previous sheet
   // hid it and was dismissed without going through closeSheet()
-  $("#sheet-add").style.display="";
+  $("#sheet-add").style.display=""; $("#sheet-add").disabled=false;
+  ivEdIdx=null;   // same belt-and-braces guard against a stale interval-edit index
   $("#sheet-lib").querySelector("h3").textContent="Add from library";
   renderSheetLibrary();
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
@@ -4231,7 +4387,7 @@ let measureDate=null;
    button. Reset it here so a hidden footer can never outlive its own sheet. */
 function closeSheet(){
   $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on");
-  macroLogDate=null; measureDate=null;
+  macroLogDate=null; measureDate=null; ivEdIdx=null;
   // Item V: if a voice-over recording is in progress when the sheet closes
   // (X, scrim tap, or navigating away), the mic stream and recorder are
   // otherwise orphaned — nothing else references them once this function's
@@ -4248,11 +4404,25 @@ function closeSheet(){
 $("#sheet-close").addEventListener("click",closeSheet);
 $("#sheet-scrim").addEventListener("click",closeSheet);
 $("#sheet-add").addEventListener("click",()=>{
+  /* Real bug caught before shipping: this button is reused across several
+     sheets already (measureDate, macroLogDate below), each guarded by its
+     own flag at the top of this SAME handler — the established pattern
+     here, not a separate .onclick= per sheet. Setting .onclick directly
+     for the interval editor would have run ALONGSIDE this addEventListener
+     forever after, not replaced it, so every later normal "add exercises"
+     click would have also silently re-run saveIntervalEditor against a
+     stale index. Follows the same guard convention instead. */
+  if(ivEdIdx!=null){ saveIntervalEditor(); return; }
   if(measureDate){ saveMeasurements(measureDate); return; }
   if(macroLogDate){ saveMacroLog(); return; }
   for(const id of sheetSel){
     const ex=libCache.find(x=>x.id===id);
-    if(ex&&ex.kind==="interval") builder.items.push({exercise_id:id,kind:"interval",walk_seconds:120,run_seconds:60,rounds:5});
+    /* Default new interval items to a reasonable structured starting point,
+       in the new segment shape — not the legacy walk_seconds/run_seconds/
+       rounds fields, so summarizeInterval and the tracker only ever have
+       to reason about one shape for anything created from today onward. */
+    if(ex&&ex.kind==="interval") builder.items.push({exercise_id:id,kind:"interval",interval_mode:"segments",
+      segments:[{type:"walk",mode:"time",seconds:120},{type:"run",mode:"time",seconds:60}]});
     else builder.items.push({exercise_id:id,sets:3,reps:10});
   }
   closeSheet(); renderBuilderItems();

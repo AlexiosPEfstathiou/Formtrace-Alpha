@@ -4,6 +4,57 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AL. Interval Running: default library exercise + arbitrary segment builder — IN PROGRESS, part 2 of several, 2026-08-18
+
+Genuinely one of the largest single features this session. Asked one
+clarifying question before building anything: for a "1km in 10 min"
+segment, does the distance or the time actually end it? Confirmed
+distance — time is a displayed pace target only, which meaningfully
+simplified the data model (distance and "time+distance" collapse into
+one mode, distinguished only by whether a target_seconds is also set).
+
+**Part 1 (previous entry) covered the migration and the backward-
+compatible data model. This part covers the actual builder UI a coach
+uses to construct a sequence, replacing the old fixed walk/run/rounds
+steppers entirely.**
+
+New segment editor sheet, reusing the existing generic sheet mechanism
+rather than building a new modal: a Structured/Free-run toggle at the
+top; in Structured mode, a list of the item's current segments with
+delete buttons, plus an add-a-segment sub-form (walk/run, time/distance,
+the appropriate value inputs, and an optional pace-target toggle only
+shown in distance mode); in Free-run mode, a single total-distance
+input. `summarizeInterval()` gives the inline workout-builder row a
+short, human-readable description of whatever's currently built, since
+there's no longer room for the old three-stepper layout inline.
+
+**Two real bugs caught and fixed in the same pass, before either
+shipped:**
+1. The sheet's "Add"/"Save" button is already reused across several
+   existing flows (measurements, macro logging), each guarded by a flag
+   checked at the top of one shared `addEventListener` handler — the
+   established pattern here. Initially wired the interval editor's save
+   action via a direct `.onclick=` assignment instead, which would have
+   run *alongside* that existing listener forever after, not replaced
+   it — meaning every later, completely unrelated "add exercises" click
+   would have also silently re-run the interval save against a stale
+   index. Fixed by following the same guard-flag convention already
+   established for the other two flows, not inventing a new one.
+2. That guard flag (`ivEdIdx`) needed resetting in every path that closes
+   or reopens the shared sheet — including cancelling the interval editor
+   without saving — or a stale value would incorrectly trigger the same
+   bug the next time the button was used for something else entirely.
+   Added to `closeSheet()` and `openSheet()` alongside the other two
+   flags they already reset, matching what's already there.
+
+**Still not built:** the tracker screen still only knows how to count
+down a timer to zero. It doesn't yet know how to end a segment when a
+GPS distance target is hit instead, display a pace target for a
+distance segment, or execute the free-run mode's simpler "just
+accumulate total distance" flow at all.
+
+---
+
 ## AK. Engagement fab (Complete goal, etc.) floats over scrolling content — DONE 2026-08-18
 
 Reported specifically for the coach's "Goal complete" button, but the
