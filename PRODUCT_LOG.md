@@ -144,7 +144,7 @@ pattern needing further fixes elsewhere.
 
 ---
 
-## AL. Interval Running: default library exercise + arbitrary segment builder — DONE 2026-08-18, audio cues on segment changes still open (see below)
+## AL. Interval Running: default library exercise + arbitrary segment builder — DONE 2026-08-18, everything, including audio cues, now done
 
 Genuinely one of the largest single features this session. Asked one
 clarifying question before building anything: for a "1km in 10 min"
@@ -243,7 +243,7 @@ best-effort vibration (`navigator.vibrate(300)`), silent and easy to
 miss mid-run, especially for anyone running with headphones in rather
 than watching the screen. Wants a spoken or tonal announcement
 specifically when a segment changes — "switching to run", or similar —
-not just at the very end of the whole exercise. Not started.
+not just at the very end of the whole exercise. **BUILT 2026-08-19.** Uses the standard Web Speech API (SpeechSynthesisUtterance) for a spoken announcement rather than a generic tone, since the request was specifically for an ANNOUNCEMENT of what changed, not just a signal that something did. Speaks Walk/Run on each transition and Workout complete at the end, with a distinct longer vibration pattern for the finish so it doesn't feel identical to a mid-workout transition. Vibration kept as a redundant complement, not replaced - speech synthesis being unavailable or inaudible (silent mode, unsupported browser) still leaves the original cue working on its own. Cancels any still-speaking prior announcement before starting a new one, so a fast segment doesn't queue announcements up behind each other.
 
 ---
 

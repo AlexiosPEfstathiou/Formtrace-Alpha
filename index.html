@@ -7170,7 +7170,26 @@ function advanceToNextSegment(){
   const seg=ivState.segments[ivState.segIdx];
   ivState.remaining = seg.mode==="time" ? seg.seconds : null;
   if(navigator.vibrate) navigator.vibrate(300);   // best-effort cue at the transition; silently absent where unsupported
+  announceSegment(seg.type==="walk"?"Walk":"Run");
   updateIntervalDisplay();
+}
+/* Item AL's remaining sub-item: audio cue on transitions, for headphones
+   users — the only prior cue was this same silent vibration, easy to
+   miss mid-run without watching the screen. Uses the standard Web Speech
+   API rather than a generic tone, since the actual request was for an
+   ANNOUNCEMENT (what changed), not just a signal that something did.
+   Vibration stays as a redundant complement, not replaced by this — some
+   devices/situations won't have speech synthesis available or audible
+   (silent mode, no speaker, unsupported browser), and vibration already
+   worked reliably on its own before this. */
+function announceSegment(text){
+  if(!window.speechSynthesis)return;   // graceful no-op where unsupported — vibration still covers the cue
+  try{
+    speechSynthesis.cancel();   // don't let a still-speaking prior announcement queue up behind a fast transition
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=1.05; u.volume=1;
+    speechSynthesis.speak(u);
+  }catch(e){ console.error("interval announce",e); }
 }
 function startIntervalGPS(){
   if(!navigator.geolocation){
@@ -7275,6 +7294,8 @@ function stopIntervalTracking(){
 }
 function finishInterval(){
   stopIntervalTracking();
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);   // a distinct pattern from the mid-workout single buzz, so "finished" doesn't feel identical to "next segment"
+  announceSegment("Workout complete");
   $("#iv-run-body").style.display="none"; $("#iv-summary-body").style.display="";
   $("#iv-sum-time").textContent=fmt(ivState.totalSeconds);
   $("#iv-sum-dist").textContent=(ivState.totalDistanceM/1000).toFixed(2)+" km";
