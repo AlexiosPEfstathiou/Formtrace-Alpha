@@ -388,7 +388,7 @@ a clip that actually needed correcting.
 
 ---
 
-## Y. Voice-over: extra time to wrap up after the clip ends
+## Y. Voice-over: extra time to wrap up after the clip ends - DONE (verified 2026-08-19: manual Stop-recording button already exists - recordBtn toggles onclick to stopRecording - and buildSyncPlayer already keys pause off audio's own ended event, not video's, exactly matching the approach just chosen)
 
 Recording currently stops the instant the clip finishes playing
 (`vid.addEventListener("ended", stopRecording)`), cutting the coach off
