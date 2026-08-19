@@ -1665,6 +1665,9 @@
       <div class="iv-type" id="iv-type">Walk</div>
       <div class="iv-time" id="iv-time">2:00</div>
       <div class="iv-dist"><span id="iv-dist">0.00</span> km</div>
+      <div id="iv-segprogress" style="display:none;font-size:13px;color:var(--muted);margin-top:6px;font-weight:600"></div>
+      <div id="iv-pace" style="display:none;font-size:12px;color:var(--faint);margin-top:2px"></div>
+      <button class="btn ghost sm" id="iv-free-toggle" style="display:none;margin-top:18px;width:auto;padding:0 20px">Mark as Walking</button>
       <div class="iv-gpswarn" id="iv-gpswarn" style="display:none">⚠ GPS isn't available — time is still tracked, but distance won't be.</div>
     </div>
     <div class="iv-body" id="iv-summary-body" style="display:none">
@@ -7034,9 +7037,15 @@ function buildIntervalSegments(it){
 function startIntervalExercise(itemIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
   const segments=buildIntervalSegments(it);
+  const first=segments[0];
   ivState={
-    itemIndex, segments, segIdx:0, remaining:segments[0].seconds,
+    itemIndex, segments, segIdx:0,
+    remaining: first.mode==="time" ? first.seconds : null,
     totalSeconds:0, totalDistanceM:0, segDistances:segments.map(()=>0),
+    // free-run only: which mode the trainee has self-reported, and how much
+    // total time logged against each — doesn't affect completion at all,
+    // that's purely the total-distance check below. Purely their own record.
+    freeRunSelf:"run", freeRunTime:{run:0,walk:0},
     lastPos:null, watchId:null, timerInt:null
   };
   $("#iv-exname").textContent=it.name||"Interval";
@@ -7046,6 +7055,18 @@ function startIntervalExercise(itemIndex){
   $("#s-interval").classList.add("on");
   startIntervalGPS();
   ivState.timerInt=setInterval(ivTick,1000);
+}
+/* Shared by both completion paths — a time segment ending in ivTick, or a
+   distance segment (including the single free-run "segment") ending here
+   in the GPS callback. One place for the transition cue and the
+   end-of-sequence check, rather than duplicating both in two places. */
+function advanceToNextSegment(){
+  ivState.segIdx++;
+  if(ivState.segIdx>=ivState.segments.length){ finishInterval(); return; }
+  const seg=ivState.segments[ivState.segIdx];
+  ivState.remaining = seg.mode==="time" ? seg.seconds : null;
+  if(navigator.vibrate) navigator.vibrate(300);   // best-effort cue at the transition; silently absent where unsupported
+  updateIntervalDisplay();
 }
 function startIntervalGPS(){
   if(!navigator.geolocation){
@@ -7068,6 +7089,14 @@ function startIntervalGPS(){
       if(dt>0 && (d/dt)<=12){
         ivState.totalDistanceM+=d;
         ivState.segDistances[ivState.segIdx]+=d;
+        // Distance-triggered completion — the whole point of a distance or
+        // free-run segment. A pace target (time+distance mode) never ends
+        // the segment itself; confirmed explicitly before building this —
+        // it's a displayed goal only, shown in updateIntervalDisplay.
+        const curSeg=ivState.segments[ivState.segIdx];
+        if(curSeg && curSeg.mode==="distance" && ivState.segDistances[ivState.segIdx]>=curSeg.meters){
+          advanceToNextSegment();
+        }
       }
     }
     ivState.lastPos={lat:latitude,lon:longitude,t:now};
@@ -7080,25 +7109,61 @@ function startIntervalGPS(){
 }
 function ivTick(){
   if(!ivState)return;
-  ivState.remaining--; ivState.totalSeconds++;
-  if(ivState.remaining<=0){
-    ivState.segIdx++;
-    if(ivState.segIdx>=ivState.segments.length){ finishInterval(); return; }
-    ivState.remaining=ivState.segments[ivState.segIdx].seconds;
-    if(navigator.vibrate) navigator.vibrate(300);   // best-effort cue at the transition; silently absent where unsupported
+  ivState.totalSeconds++;
+  const seg=ivState.segments[ivState.segIdx];
+  if(seg.type==="free"){
+    ivState.freeRunTime[ivState.freeRunSelf]++;
+  }else if(seg.mode==="time"){
+    ivState.remaining--;
+    if(ivState.remaining<=0){ advanceToNextSegment(); return; }
   }
+  // distance-mode, non-free segments: nothing to decrement here at all —
+  // completion is entirely GPS-driven, above.
   updateIntervalDisplay();
 }
 function updateIntervalDisplay(){
   if(!ivState)return;
   const seg=ivState.segments[ivState.segIdx];
-  const typeEl=$("#iv-type");
+  const typeEl=$("#iv-type"), roundEl=$("#iv-round"), timeEl=$("#iv-time");
+  const progEl=$("#iv-segprogress"), paceEl=$("#iv-pace"), freeBtn=$("#iv-free-toggle");
+  $("#iv-dist").textContent=(ivState.totalDistanceM/1000).toFixed(2);
+  if(seg.type==="free"){
+    roundEl.style.display="none";
+    typeEl.textContent="Free run"; typeEl.classList.remove("run");
+    timeEl.textContent=fmt(ivState.totalSeconds);
+    progEl.style.display="";
+    progEl.textContent=`${(ivState.segDistances[0]/1000).toFixed(2)} / ${(seg.meters/1000).toFixed(1)} km`;
+    paceEl.style.display="none";
+    freeBtn.style.display="";
+    freeBtn.textContent = ivState.freeRunSelf==="run" ? "Mark as Walking" : "Mark as Running";
+    return;
+  }
+  freeBtn.style.display="none";
+  roundEl.style.display="";
+  // "Segment" not "Round" — the old wording assumed paired walk/run
+  // (segIdx/2), which no longer holds for an arbitrary sequence.
+  roundEl.textContent=`Segment ${ivState.segIdx+1} of ${ivState.segments.length}`;
   typeEl.textContent=seg.type==="walk"?"Walk":"Run";
   typeEl.classList.toggle("run",seg.type==="run");
-  $("#iv-time").textContent=fmt(ivState.remaining);
-  $("#iv-round").textContent=`Round ${Math.floor(ivState.segIdx/2)+1} of ${ivState.segments.length/2}`;
-  $("#iv-dist").textContent=(ivState.totalDistanceM/1000).toFixed(2);
+  if(seg.mode==="distance"){
+    timeEl.textContent=fmt(ivState.totalSeconds);   // elapsed, not a countdown — there's nothing to count down to
+    progEl.style.display="";
+    progEl.textContent=`${(ivState.segDistances[ivState.segIdx]/1000).toFixed(2)} / ${(seg.meters/1000).toFixed(1)} km`;
+    if(seg.target_seconds){
+      paceEl.style.display="";
+      paceEl.textContent=`Target: ${fmt(seg.target_seconds)} — a pace goal, doesn't end the segment`;
+    }else paceEl.style.display="none";
+  }else{
+    timeEl.textContent=fmt(ivState.remaining);
+    progEl.style.display="none";
+    paceEl.style.display="none";
+  }
 }
+$("#iv-free-toggle")?.addEventListener("click",()=>{
+  if(!ivState)return;
+  ivState.freeRunSelf = ivState.freeRunSelf==="run" ? "walk" : "run";
+  updateIntervalDisplay();
+});
 function stopIntervalTracking(){
   if(!ivState)return;
   if(ivState.timerInt){ clearInterval(ivState.timerInt); ivState.timerInt=null; }
@@ -7110,18 +7175,30 @@ function finishInterval(){
   $("#iv-sum-time").textContent=fmt(ivState.totalSeconds);
   $("#iv-sum-dist").textContent=(ivState.totalDistanceM/1000).toFixed(2)+" km";
   const roundsEl=$("#iv-sum-rounds"); roundsEl.innerHTML="";
-  ivState.segments.forEach((seg,idx)=>{
+  if(ivState.segments[0].type==="free"){
     roundsEl.insertAdjacentHTML("beforeend",
-      `<div class="iv-rnd-row"><span>${seg.type==="walk"?"Walk":"Run"} · ${fmt(seg.seconds)}</span><span>${(ivState.segDistances[idx]/1000).toFixed(2)} km</span></div>`);
-  });
+      `<div class="iv-rnd-row"><span>Self-reported running</span><span>${fmt(ivState.freeRunTime.run)}</span></div>
+       <div class="iv-rnd-row"><span>Self-reported walking</span><span>${fmt(ivState.freeRunTime.walk)}</span></div>`);
+  }else{
+    ivState.segments.forEach((seg,idx)=>{
+      const label=seg.type==="walk"?"Walk":"Run";
+      const valTxt=seg.mode==="distance"
+        ? (seg.meters<1000?seg.meters+" m":(seg.meters/1000).toFixed(1)+" km")
+        : fmt(seg.seconds);
+      roundsEl.insertAdjacentHTML("beforeend",
+        `<div class="iv-rnd-row"><span>${label} · ${valTxt}</span><span>${(ivState.segDistances[idx]/1000).toFixed(2)} km</span></div>`);
+    });
+  }
 }
 function saveIntervalResult(){
   if(!ivState)return;
+  const isFree=ivState.segments[0].type==="free";
   const result={
     skipped:false,
     total_seconds:ivState.totalSeconds,
     total_distance_m:Math.round(ivState.totalDistanceM),
-    rounds:ivState.segments.map((seg,idx)=>({type:seg.type,seconds:seg.seconds,distance_m:Math.round(ivState.segDistances[idx])}))
+    rounds:ivState.segments.map((seg,idx)=>({type:seg.type,mode:seg.mode,seconds:seg.seconds||null,meters:seg.meters||null,distance_m:Math.round(ivState.segDistances[idx])})),
+    free_run_split: isFree ? {run_seconds:ivState.freeRunTime.run, walk_seconds:ivState.freeRunTime.walk} : null
   };
   const ii=ivState.itemIndex;
   localResults[ii]=localResults[ii]||[];

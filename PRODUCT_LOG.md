@@ -47,11 +47,32 @@ shipped:**
    Added to `closeSheet()` and `openSheet()` alongside the other two
    flags they already reset, matching what's already there.
 
-**Still not built:** the tracker screen still only knows how to count
-down a timer to zero. It doesn't yet know how to end a segment when a
-GPS distance target is hit instead, display a pace target for a
-distance segment, or execute the free-run mode's simpler "just
-accumulate total distance" flow at all.
+**DONE, 2026-08-18, part 3 — the tracker screen itself.** Extracted a
+shared `advanceToNextSegment()`, called from both completion paths: a
+time segment ending in the existing per-second tick, or a distance
+segment (including the single "segment" that represents the whole
+free-run mode) ending in the GPS callback once its target is reached.
+A pace target on a distance segment is confirmed display-only, per the
+clarifying question asked before any of this was built — shown as a
+goal, never triggers completion itself.
+
+Display branches on the current segment's mode: a time segment still
+counts down as before; a distance segment shows elapsed time plus a
+progress readout (covered/target) instead of a countdown, since there's
+nothing to count down to; free-run mode drops the segment/round concept
+entirely and shows total progress toward the one distance goal, with an
+optional self-toggle ("Mark as Walking"/"Mark as Running") purely for
+the trainee's own record — it doesn't affect completion, which is
+distance-only. The summary screen and saved result both branch the same
+way, including a separate run/walk time split specifically for free-run
+results, and the review screen's own display was checked and needed no
+change, since it only ever reads the unchanged top-level totals, never
+the per-segment shape directly.
+
+**All three parts of this feature are now complete**: the shared library
+exercise, the full segment builder, and tracker execution across every
+mode (time, distance, distance-with-pace-target, and free-run). Only
+the audio-cues addition below remains open.
 
 **Added to scope, 2026-08-18: audio cues on interval changes, for
 headphones users.** Currently the only transition cue at all is a
