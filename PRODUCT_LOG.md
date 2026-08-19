@@ -1,4 +1,4 @@
-# FormTrace — Product Log
+﻿# FormTrace — Product Log
 
 Opened 2026-08-07. Ordered by dependency, not by size.
 
@@ -1182,7 +1182,7 @@ going through a checked function rather than a raw column grant.
 
 ---
 
-## A. Public coach profiles  ← STARTING HERE
+## A. Public coach profiles - DONE (verified 2026-08-19: badges, sub-ratings, all-time stats, expertise, languages, bio all present in renderCoachProfile/coach_public_profile)
 
 Reachable by tapping a coach's name anywhere they appear — offers, the
 marketplace, an engagement header. Viewable by any signed-in user.
@@ -1353,7 +1353,7 @@ what actually recovers the streak; there is no separate "un-miss" step.
 
 ---
 
-## D. Muscle-group labels on exercises  ← STARTING HERE
+## D. Muscle-group labels on exercises - DONE (verified 2026-08-19: muscle_group field present throughout exercise editor and library filtering)
 
 Coach labels each exercise with a muscle group. Filter the library by muscle
 group when building a workout.
@@ -1362,7 +1362,7 @@ Small, self-contained, and a **prerequisite for E**. Good first build.
 
 ---
 
-## E. Wildcard muscle-group slots in workouts
+## E. Wildcard muscle-group slots in workouts - DONE (verified 2026-08-19: coach picks group, trainee picks exercise, wired in the workout builder)
 
 A workout can contain a slot like "Wildcard Abs" instead of a named
 exercise. The trainee taps it, sees every Abs-labelled exercise in their
@@ -1413,7 +1413,7 @@ profile.
 
 ---
 
-## I. Age displayed on profiles
+## I. Age displayed on profiles - DONE (verified 2026-08-19: coach_public_profile computes and returns it, DOB stays private)
 
 **DECIDED 2026-08-07:** age is visible on all profiles. The consent notice is
 updated to say so and `CONSENT_VERSION` bumped, which re-prompts every
@@ -1425,7 +1425,7 @@ never exposed — a coach's exact DOB is not derivable from their profile.
 
 ---
 
-## J. Find a coach — offers grouped by goal
+## J. Find a coach - offers grouped by goal - DONE (verified 2026-08-19: auto-decline confirmation text and Archive section both present)
 
 The current screen mixes every offer regardless of goal or status. Rework so a
 trainee can tell at a glance what they're working on versus deciding on.
@@ -1630,7 +1630,7 @@ of thing.
 
 ---
 
-## P. "The Journey" — goal-completion recap
+## P. The Journey - goal-completion recap - DONE (verified 2026-08-19: full screen with timelapse, weight chart, streak overview, share button all present)
 
 When a goal completes and its final review is submitted, replace the current
 thin recap with a richer summary of the whole goal:
@@ -1913,7 +1913,7 @@ lettered features:
 
 ---
 
-## R. Personal bests per exercise
+## R. Personal bests per exercise - DONE (verified 2026-08-19: personal_bests_in_range/my_personal_bests/recompute_personal_best all wired)
 
 Each trainee gets a best-ever record per exercise: reps, weight (null for
 bodyweight movements like push-ups), and when it was set. Shown before the
