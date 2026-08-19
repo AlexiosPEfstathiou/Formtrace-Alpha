@@ -349,7 +349,7 @@ as a rendering glitch, not a deliberate design.
 
 ---
 
-## X. Voice-over videos should adopt rotation corrections
+## X. Voice-over videos should adopt rotation corrections - DONE 2026-08-11 (see body below - heading was never updated to match)
 
 If a clip is badly oriented and someone corrects it (the existing
 per-path rotation fix, "one correction propagates everywhere the clip
