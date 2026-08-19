@@ -4,7 +4,7 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
-## AP. Tapping a photo (check-in or profile) should expand to full view
+## AP. Tapping a photo (check-in or profile) should expand to full view - DONE 2026-08-19
 
 Checked before writing this down: no lightbox/zoom/fullscreen mechanism
 exists anywhere in the app currently — confirmed via a direct search,
@@ -26,6 +26,22 @@ following the same visual treatment for consistency between the two.
 Given the app has no existing full-screen photo viewer at all, this is
 a real, if fairly contained, new UI pattern — not a small tweak to
 something that already half-exists elsewhere.
+
+**Built as planned above.** One shared `openPhotoLightbox(url)`/
+`closePhotoLightbox()` pair — a centered, full-bleed overlay, deliberately
+its own thing rather than a sheet variant, since a sheet stays anchored
+to the bottom and a photo wants to be centered and as large as the
+screen allows in both directions. Wired into `hydrateAvatars()` itself
+(covers every profile picture in the app at once — offer rows, coach
+profiles, anywhere else the attribute gets used going forward, with no
+per-screen wiring needed) and separately into the check-in photo strip,
+the only other place in the app using `data-photo` — confirmed via a
+direct search before finishing, not assumed. Both only wire the tap
+once a real photo has actually resolved; an initials-only fallback or a
+missing photo has nothing to expand into. Dismisses on tap anywhere in
+the overlay, including the photo itself — a simple tap-to-expand,
+tap-to-dismiss pattern, not a pinch-zoom viewer, matching what was
+actually asked for.
 
 ---
 

@@ -426,6 +426,16 @@
   /* library picker sheet */
   .sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s;}
   .sheet-scrim.on{opacity:1;pointer-events:auto;}
+  /* Item AP: centered, full-bleed photo view — deliberately its own overlay
+     rather than a sheet variant, since a sheet stays anchored to the
+     bottom and a photo wants to be centered and as large as the screen
+     allows in both directions. Same show/hide mechanics as the sheet
+     scrim (opacity + pointer-events), just centered content instead of a
+     bottom-anchored panel. */
+  .photo-lightbox{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.92);
+    display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .photo-lightbox.on{opacity:1;pointer-events:auto;}
+  .photo-lightbox img{max-width:92%;max-height:92%;object-fit:contain;border-radius:8px;}
   .sheet{position:absolute;left:0;right:0;bottom:0;z-index:31;background:var(--bg2);border-radius:24px 24px 0 0;
     border-top:1px solid var(--line2);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
     max-height:82%;display:flex;flex-direction:column;padding-bottom:calc(env(safe-area-inset-bottom) + 14px);}
@@ -1603,6 +1613,11 @@
 
   <!-- ============ LIBRARY PICKER SHEET ============ -->
   <div class="sheet-scrim" id="sheet-scrim"></div>
+  <!-- Item AP: shared full-view photo lightbox, deliberately its own simple
+       overlay rather than reusing the sheet mechanism above — a sheet
+       slides up and stays anchored to the bottom, which fights a photo
+       that wants to be centered and as large as the screen allows. -->
+  <div class="photo-lightbox" id="photo-lightbox"><img id="photo-lightbox-img" src="" alt=""></div>
   <div class="sheet" id="sheet-lib">
     <div class="sh-h"><h3>Add from library</h3><button class="x" id="sheet-close">✕</button></div>
     <div class="sh-body" id="sheet-body"></div>
@@ -2308,6 +2323,15 @@ async function hydrateAvatars(root){
       el.style.backgroundSize="cover";
       el.style.backgroundPosition="center";
       el.textContent="";
+      /* Item AP: every profile picture in the app runs through this one
+         hydration function, so wiring the tap-to-expand here covers every
+         screen that shows one at once — offer rows, coach profiles, and
+         anywhere else this attribute gets used going forward — without
+         needing a separate click handler wired per screen. Only added
+         once a real photo actually loaded; an initials-only fallback has
+         nothing to expand into. */
+      el.style.cursor="pointer";
+      el.addEventListener("click",()=>openPhotoLightbox(url));
     }
   }
 }
@@ -4454,6 +4478,20 @@ function closeSheet(){
   if(add){ add.style.display=""; add.disabled=false; add.textContent="Add selected"; }
   $("#sheet-lib").querySelector("h3").textContent="Add from library";
 }
+/* Item AP: shared full-view photo lightbox. One function, called from
+   anywhere a real, already-resolved photo URL exists — the avatar
+   hydration path and the check-in photo strip both call this directly
+   rather than each building their own overlay. */
+function openPhotoLightbox(url){
+  if(!url)return;
+  $("#photo-lightbox-img").src=url;
+  $("#photo-lightbox").classList.add("on");
+}
+function closePhotoLightbox(){
+  $("#photo-lightbox").classList.remove("on");
+  $("#photo-lightbox-img").src="";   // stop holding the (possibly large, now full-quality) image in memory once dismissed
+}
+$("#photo-lightbox").addEventListener("click",closePhotoLightbox);
 $("#sheet-close").addEventListener("click",closeSheet);
 $("#sheet-scrim").addEventListener("click",closeSheet);
 $("#sheet-add").addEventListener("click",()=>{
@@ -5862,7 +5900,14 @@ function renderDashboard(container, iAmCoach){
       for(const el of box.querySelectorAll("[data-photo]")){
         const path=el.getAttribute("data-photo");
         const url=await playable(path);
-        if(url) el.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+        if(url){
+          el.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+          // Item AP: same shared lightbox as profile pictures — only wired
+          // once a real photo actually resolved, matching the same guard
+          // used there.
+          el.style.cursor="pointer";
+          el.addEventListener("click",()=>openPhotoLightbox(url));
+        }
         else el.innerHTML=`<span class="ph" style="color:var(--faint);font-size:10px">n/a</span>`;
       }
     }catch(e){ console.error("checkins",e); const box=$("#dash-checkins"); if(box)box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load check-ins.</div>`; }
