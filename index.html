@@ -1824,11 +1824,23 @@ function dayState(iso, awMap){
    trainee's active goals is paused for it. Fine for calendar colouring;
    the actual streak number always comes from the server. */
 let activePauses=[];
-async function loadActivePauses(){
+/* Real bug fix: this used to always store EVERY active pause the RPC
+   returns for the signed-in user — correct for a trainee (every result
+   is their own goal), but wrong for a coach with more than one trainee,
+   since my_active_pauses() returns pauses across ALL that coach's
+   engagements. A coach viewing trainee B's calendar was seeing trainee
+   A's vacation too, because isPausedOn() below has no engagement
+   awareness at all — it just checks activePauses as a flat, unscoped
+   list. Optional engIds narrows what gets stored to exactly the
+   engagement(s) relevant to whichever screen is loading it; omitted
+   entirely (the boot-time and My-Goals call sites) keeps the original,
+   correct-for-those-cases full-list behavior, since both of those are
+   genuinely "all of this one person's own data", never another person's. */
+async function loadActivePauses(engIds){
   try{
     const { data, error } = await store._sb.rpc("my_active_pauses");
     if(error) throw error;
-    activePauses=data||[];
+    activePauses = engIds ? (data||[]).filter(p=>engIds.includes(p.engagement_id)) : (data||[]);
   }catch(e){ console.error("loadActivePauses (run migrations_vacation.sql)",e); activePauses=[]; }
 }
 function isPausedOn(iso){
@@ -5182,7 +5194,7 @@ async function renderEngagement(){
   const fabRowGuard=$("#eng-fab-row");
   if(fabRowGuard && fabRowGuard.parentElement===body) $("#s-engagement").appendChild(fabRowGuard);
   body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
-  await loadActivePauses();   // items M/N — refreshed on every open, not just at boot
+  await loadActivePauses(traineeMerged ? traineeEngs.map(e=>e.id) : [currentEng.id]);   // items M/N — refreshed on every open, not just at boot; scoped to THIS screen's engagement(s) — see loadActivePauses' own comment
   // gather assigned workouts — merged (all trainee engagements) or single engagement
   let assigned=[];
   if(traineeMerged){

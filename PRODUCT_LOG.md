@@ -4,6 +4,46 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AN. A trainee's calendar showed a DIFFERENT trainee's vacation — DONE 2026-08-19
+
+Serious data-isolation bug, reported by a coach with two trainees: one
+took a vacation, and the other trainee's calendar showed it too.
+
+Traced to `isPausedOn()`, which checks a date against the entire
+module-level `activePauses` array with no engagement awareness at all —
+just a flat, unscoped list. `activePauses` itself is populated from
+`my_active_pauses()`, which returns every active pause across ALL of
+the calling user's engagements. For a trainee that's harmless — every
+result is their own goal. For a coach with more than one trainee, it
+returns pauses across entirely different people, and nothing filtered
+that back down before the calendar rendered.
+
+The function's own comment already explained the "any known range"
+approximation clearly and correctly — but that reasoning was written
+for a trainee's own multi-goal merged view (all the same person's
+data), and never accounted for the coach-with-multiple-trainees case,
+where the same array spans unrelated people entirely. A reasonable,
+documented tradeoff in one context was a real privacy/correctness bug
+in the other.
+
+Fixed at the source rather than threading a new parameter through the
+whole dependent chain (`dayState`, `dayComplete`, `dayMissedWorkout`,
+the gold-connector checks, several more) — too large and risky a
+refactor for what the bug actually needed. `loadActivePauses()` now
+takes an optional engagement-id list and filters the RPC's result down
+to just those before storing it; every downstream reader is unaffected
+and automatically correct once the data itself is properly scoped.
+The engagement screen's own call now passes exactly the engagement(s)
+relevant to whichever screen is open (all of a trainee's own goals when
+merged, or just the one engagement otherwise). The two other call sites
+(app boot's streak-badge refresh, and the trainee's own "My Goals" list)
+were checked and left passing no filter at all deliberately — both are
+genuinely "all of one person's own data" already, never another
+person's, so narrowing them would have fixed nothing and risked
+breaking something that already worked.
+
+---
+
 ## AM. Vacation-pause homepage notification: text fractured into a column one word wide — DONE 2026-08-19
 
 Reported with a screenshot showing the "Resume" button apparently
