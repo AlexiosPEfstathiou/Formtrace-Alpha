@@ -4,6 +4,31 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AP. Tapping a photo (check-in or profile) should expand to full view
+
+Checked before writing this down: no lightbox/zoom/fullscreen mechanism
+exists anywhere in the app currently — confirmed via a direct search,
+not assumed. Every photo the app shows is a fixed-size thumbnail with no
+tap behavior at all, whether it's a weekly check-in photo or a profile
+picture.
+
+Worth noting for whoever builds this: profile pictures aren't one
+one-off element — they're all filled through a shared `data-avatar`
+hydration mechanism (`hydrateAvatars`-style, matching the existing
+`hydrateVideos` pattern for rotation), already reused across several
+screens (offer rows, coach profiles, presumably more). A fix built once
+into that shared mechanism would cover every profile picture in the app
+at once, rather than needing to be wired individually per screen.
+Check-in photos are a separate display path (the measurements/timelapse
+screen) and would need their own, similarly-shared tap handler, ideally
+following the same visual treatment for consistency between the two.
+
+Given the app has no existing full-screen photo viewer at all, this is
+a real, if fairly contained, new UI pattern — not a small tweak to
+something that already half-exists elsewhere.
+
+---
+
 ## AO. Check-in photos and exercise video quality — checked, then changed on request — DONE 2026-08-19
 
 Asked whether the noticeably lower quality on both was intentional.
