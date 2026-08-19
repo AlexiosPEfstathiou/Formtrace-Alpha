@@ -47,6 +47,29 @@ shipped:**
    Added to `closeSheet()` and `openSheet()` alongside the other two
    flags they already reset, matching what's already there.
 
+**A second real schema gap found running the migration, not caught by
+review.** First run failed on `exercises.kind` not existing at all — the
+original interval-exercises migration from earlier this session had
+apparently never actually been applied to the live database, meaning
+the whole feature (including the version built before this one) may
+never have worked in production. Fixed by running that migration first.
+Second run then failed on `coach_id`'s NOT NULL constraint, which this
+migration's whole premise — and the pre-existing `loadCoachExerciseLibrary()`
+code it was written for — had assumed away without ever checking the
+real schema. Revised to relax that constraint explicitly as its own
+step, and made the policy-creation step drop-then-create rather than a
+bare create, since it was genuinely unknown whether that part had
+already succeeded before the insert failed separately.
+
+**Editor refinements, 2026-08-19, from direct feedback:** up/down
+reorder buttons on each segment row (previously delete-and-re-add was
+the only way to fix an ordering mistake), and typed minutes+seconds
+fields replacing the +/- steppers for duration and pace-target — reaching
+an arbitrary value like 1:47 by clicking 15-second increments was slow.
+First typed number input anywhere in this app; confirmed the existing
+`.field input` CSS already covers `type=number` with no exclusion, so no
+new styling was needed.
+
 **DONE, 2026-08-18, part 3 — the tracker screen itself.** Extracted a
 shared `advanceToNextSegment()`, called from both completion paths: a
 time segment ending in the existing per-second tick, or a distance

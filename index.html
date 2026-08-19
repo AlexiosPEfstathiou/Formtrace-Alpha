@@ -4195,8 +4195,11 @@ function renderIvEditor(){
         const valTxt = s.mode==="distance"
           ? `${s.meters<1000?s.meters+" m":(s.meters/1000).toFixed(1)+" km"}${s.target_seconds?` in ${Math.round(s.target_seconds/60)} min`:""}`
           : `${s.seconds>=60?Math.round(s.seconds/60)+" min":s.seconds+" s"}`;
-        html+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;${i===0?"":"border-top:1px solid var(--line);"}">
+        const isFirst=i===0, isLast=i===d.segments.length-1;
+        html+=`<div style="display:flex;align-items:center;gap:6px;padding:9px 0;${isFirst?"":"border-top:1px solid var(--line);"}">
             <span style="font-size:13px;font-weight:700;flex:1">${i+1}. ${label} — ${escapeHtml(valTxt)}</span>
+            <button class="rm" data-iv-up="${i}" ${isFirst?"disabled":""} style="position:static;opacity:${isFirst?".3":"1"}">↑</button>
+            <button class="rm" data-iv-down="${i}" ${isLast?"disabled":""} style="position:static;opacity:${isLast?".3":"1"}">↓</button>
             <button class="rm" data-iv-rm="${i}" style="position:static">✕</button>
           </div>`;
       });
@@ -4213,8 +4216,10 @@ function renderIvEditor(){
           <button data-iv-addmode="distance" class="${d.addMode==="distance"?"on":""}">Distance</button>
         </div>`;
     if(d.addMode==="time"){
-      html+=`<div class="blk"><div class="l">Duration</div>
-          <div class="mini-stepper"><button data-iv-addsec="-15">−</button><span id="iv-add-sec">${fmt(d.addSeconds)}</span><button data-iv-addsec="15">+</button></div></div>`;
+      html+=`<div style="display:flex;gap:10px">
+          <div class="field" style="flex:1"><label>Minutes</label><input type="number" inputmode="numeric" min="0" max="59" id="iv-add-min" value="${Math.floor(d.addSeconds/60)}"></div>
+          <div class="field" style="flex:1"><label>Seconds</label><input type="number" inputmode="numeric" min="0" max="59" id="iv-add-sec" value="${d.addSeconds%60}"></div>
+        </div>`;
     }else{
       html+=`<div class="blk"><div class="l">Distance (km)</div>
           <div class="mini-stepper"><button data-iv-addmeters="-100">−</button><span id="iv-add-meters">${(d.addMeters/1000).toFixed(1)}</span><button data-iv-addmeters="100">+</button></div></div>
@@ -4224,8 +4229,10 @@ function renderIvEditor(){
           <span class="switch"><input type="checkbox" id="iv-add-pace-cb" ${d.addTargetSeconds!=null?"checked":""}><span class="track"></span></span>
         </label>`;
       if(d.addTargetSeconds!=null){
-        html+=`<div class="blk" style="margin-top:10px"><div class="l">Target time</div>
-            <div class="mini-stepper"><button data-iv-addtarget="-30">−</button><span id="iv-add-target">${fmt(d.addTargetSeconds)}</span><button data-iv-addtarget="30">+</button></div></div>`;
+        html+=`<div style="display:flex;gap:10px;margin-top:10px">
+            <div class="field" style="flex:1"><label>Target minutes</label><input type="number" inputmode="numeric" min="0" max="180" id="iv-add-target-min" value="${Math.floor(d.addTargetSeconds/60)}"></div>
+            <div class="field" style="flex:1"><label>Target seconds</label><input type="number" inputmode="numeric" min="0" max="59" id="iv-add-target-sec" value="${d.addTargetSeconds%60}"></div>
+          </div>`;
       }
     }
     html+=`<button class="btn sm" id="iv-add-seg-btn" style="width:100%;margin-top:14px">+ Add segment</button>
@@ -4246,24 +4253,47 @@ function wireIvEditor(){
   body.querySelectorAll("[data-iv-rm]").forEach(b=>b.addEventListener("click",()=>{
     ivEdDraft.segments.splice(+b.getAttribute("data-iv-rm"),1); renderIvEditor();
   }));
+  body.querySelectorAll("[data-iv-up]").forEach(b=>b.addEventListener("click",()=>{
+    const i=+b.getAttribute("data-iv-up");
+    if(i>0){ const s=ivEdDraft.segments; [s[i-1],s[i]]=[s[i],s[i-1]]; renderIvEditor(); }
+  }));
+  body.querySelectorAll("[data-iv-down]").forEach(b=>b.addEventListener("click",()=>{
+    const i=+b.getAttribute("data-iv-down");
+    const s=ivEdDraft.segments;
+    if(i<s.length-1){ [s[i],s[i+1]]=[s[i+1],s[i]]; renderIvEditor(); }
+  }));
   body.querySelectorAll("[data-iv-addtype]").forEach(b=>b.addEventListener("click",()=>{
     ivEdDraft.addType=b.getAttribute("data-iv-addtype"); renderIvEditor();
   }));
   body.querySelectorAll("[data-iv-addmode]").forEach(b=>b.addEventListener("click",()=>{
     ivEdDraft.addMode=b.getAttribute("data-iv-addmode"); renderIvEditor();
   }));
-  body.querySelectorAll("[data-iv-addsec]").forEach(b=>b.addEventListener("click",()=>{
-    ivEdDraft.addSeconds=Math.max(10,Math.min(3600,ivEdDraft.addSeconds+(+b.getAttribute("data-iv-addsec"))));
-    $("#iv-add-sec").textContent=fmt(ivEdDraft.addSeconds);
-  }));
+  /* Typed minutes+seconds instead of a +/- stepper — reaching an arbitrary
+     value like 1:47 by clicking 15s increments was slow and imprecise.
+     addSeconds stays the single source of truth; these two fields just
+     read/write it combined, clamped so an out-of-range typed value (blank,
+     negative, 90 in a "seconds" field) can't desync the two apart. */
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,Number(v)||0));
+  $("#iv-add-min")?.addEventListener("input",e=>{
+    const secPart=ivEdDraft.addSeconds%60;
+    ivEdDraft.addSeconds=Math.max(10,clamp(e.target.value,0,59)*60+secPart);
+  });
+  $("#iv-add-sec")?.addEventListener("input",e=>{
+    const minPart=Math.floor(ivEdDraft.addSeconds/60);
+    ivEdDraft.addSeconds=Math.max(10,minPart*60+clamp(e.target.value,0,59));
+  });
   body.querySelectorAll("[data-iv-addmeters]").forEach(b=>b.addEventListener("click",()=>{
     ivEdDraft.addMeters=Math.max(50,ivEdDraft.addMeters+(+b.getAttribute("data-iv-addmeters")));
     $("#iv-add-meters").textContent=(ivEdDraft.addMeters/1000).toFixed(1);
   }));
-  body.querySelectorAll("[data-iv-addtarget]").forEach(b=>b.addEventListener("click",()=>{
-    ivEdDraft.addTargetSeconds=Math.max(30,(ivEdDraft.addTargetSeconds||0)+(+b.getAttribute("data-iv-addtarget")));
-    $("#iv-add-target").textContent=fmt(ivEdDraft.addTargetSeconds);
-  }));
+  $("#iv-add-target-min")?.addEventListener("input",e=>{
+    const secPart=(ivEdDraft.addTargetSeconds||0)%60;
+    ivEdDraft.addTargetSeconds=Math.max(30,clamp(e.target.value,0,180)*60+secPart);
+  });
+  $("#iv-add-target-sec")?.addEventListener("input",e=>{
+    const minPart=Math.floor((ivEdDraft.addTargetSeconds||0)/60);
+    ivEdDraft.addTargetSeconds=Math.max(30,minPart*60+clamp(e.target.value,0,59));
+  });
   $("#iv-add-pace-cb")?.addEventListener("change",e=>{
     ivEdDraft.addTargetSeconds=e.target.checked?300:null; renderIvEditor();
   });
