@@ -53,6 +53,14 @@ GPS distance target is hit instead, display a pace target for a
 distance segment, or execute the free-run mode's simpler "just
 accumulate total distance" flow at all.
 
+**Added to scope, 2026-08-18: audio cues on interval changes, for
+headphones users.** Currently the only transition cue at all is a
+best-effort vibration (`navigator.vibrate(300)`), silent and easy to
+miss mid-run, especially for anyone running with headphones in rather
+than watching the screen. Wants a spoken or tonal announcement
+specifically when a segment changes — "switching to run", or similar —
+not just at the very end of the whole exercise. Not started.
+
 ---
 
 ## AK. Engagement fab (Complete goal, etc.) floats over scrolling content — DONE 2026-08-18
@@ -732,6 +740,13 @@ developer accounts, store review processes, a separate build pipeline to
 maintain going forward. Worth being explicit that this is a real decision
 to make deliberately, not a small follow-on to the work already done
 here.
+
+**Re-raised, 2026-08-18: "a wrapped app that everybody can download
+regardless of browser."** Same option as above, not a separate ask —
+logged here rather than as a duplicate entry so this doesn't fragment
+across two places. Worth noting as a genuine signal of priority now that
+it's come up a second time, independently of the specific Android-Chrome
+symptom that first surfaced it.
 
 ---
 
