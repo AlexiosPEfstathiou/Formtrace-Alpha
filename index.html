@@ -191,7 +191,15 @@
   .vac-main{flex:1;font-size:13px;line-height:1.5;}
   .vac-msg{font-size:12px;color:var(--muted);margin-top:3px;font-style:italic;}
   .vac-who{font-size:11px;color:var(--faint);margin-top:3px;}
-  .vac-resume{margin:0;flex-shrink:0;width:auto;padding:0 14px;height:36px;}
+  /* Real bug, not cosmetic: .btn's own width:100% (defined later in this
+   stylesheet) beats a same-specificity single-class .vac-resume rule on
+   source order alone, regardless of which one reads as "more specific"
+   to a person. The button was winning the whole row's width, squeezing
+   vac-main down to almost nothing — that's the entire cause of the
+   severe word-by-word wrapping, not a text-sizing issue. Compound
+   selector guarantees this wins outright rather than depending on
+   staying below .btn's own rule in source order. */
+.btn.vac-resume{margin:0;flex-shrink:0;width:auto;padding:0 14px;height:36px;}
   /* trainee homepage: unviewed form-review chips */
   .home-reviews{margin-top:18px;}
   .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}

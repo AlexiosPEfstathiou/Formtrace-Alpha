@@ -4,6 +4,32 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AM. Vacation-pause homepage notification: text fractured into a column one word wide — DONE 2026-08-19
+
+Reported with a screenshot showing the "Resume" button apparently
+consuming nearly the whole row, with the pause message wrapping one
+word per line. Traced it to a real CSS specificity conflict, not a
+sizing or text-length issue: `.vac-resume{width:auto;...}` and the
+generic `.btn{width:100%;...}` are both single-class selectors, so
+they carry equal specificity — and `.btn` is defined later in the
+stylesheet (line 299 vs. `.vac-resume`'s 194), which means it won the
+tie on source order alone, silently overriding the button's own
+intended `width:auto`. The button was taking the whole row's width,
+squeezing the text column (which does have `flex:1`) down to almost
+nothing — that's the entire cause of the word-by-word wrapping, not a
+message-length or font-size problem.
+
+Fixed with a compound selector, `.btn.vac-resume`, which has higher
+specificity than either single-class rule and wins outright regardless
+of where either rule sits in the stylesheet — not just re-ordering the
+two rules, which would have been fragile against a future edit moving
+things around again. Checked every other `width:auto`/fixed-width rule
+defined earlier in the stylesheet for the same trap; none of the others
+are also classed with `.btn`, so this was an isolated case, not a
+pattern needing further fixes elsewhere.
+
+---
+
 ## AL. Interval Running: default library exercise + arbitrary segment builder — IN PROGRESS, part 2 of several, 2026-08-18
 
 Genuinely one of the largest single features this session. Asked one
