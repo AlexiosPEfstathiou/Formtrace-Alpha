@@ -245,6 +245,23 @@ than watching the screen. Wants a spoken or tonal announcement
 specifically when a segment changes — "switching to run", or similar —
 not just at the very end of the whole exercise. **BUILT 2026-08-19.** Uses the standard Web Speech API (SpeechSynthesisUtterance) for a spoken announcement rather than a generic tone, since the request was specifically for an ANNOUNCEMENT of what changed, not just a signal that something did. Speaks Walk/Run on each transition and Workout complete at the end, with a distinct longer vibration pattern for the finish so it doesn't feel identical to a mid-workout transition. Vibration kept as a redundant complement, not replaced - speech synthesis being unavailable or inaudible (silent mode, unsupported browser) still leaves the original cue working on its own. Cancels any still-speaking prior announcement before starting a new one, so a fast segment doesn't queue announcements up behind each other.
 
+**A real open question, deliberately deferred rather than chased now:**
+asked whether browser autoplay policy or iOS silent mode could silently
+block these announcements. Honest answer given: probably not — the
+"Start" tap that begins the exercise is itself the genuine user gesture
+most autoplay policies require, and speech synthesis specifically tends
+to be less strictly gated than `<audio>`/`<video>` autoplay — but this
+session already found one real case (the voice-over meter) where audio
+that should have worked was silently swallowed by a suspended
+`AudioContext`, so "probably fine in theory" isn't the same as
+confirmed. **Decision: not worth chasing further right now** — once the
+native app wrapper (already logged as an open option under item AD)
+becomes the primary way to use FormTrace, native contexts don't carry
+the same browser-specific autoplay/silent-mode quirks a web tab does,
+which may make this whole question moot on its own. Revisit only if it
+turns out to still matter once that decision is made, rather than
+building a fallback for a browser constraint that might not need one.
+
 ---
 
 ## AK. Engagement fab (Complete goal, etc.) floats over scrolling content — DONE 2026-08-18
