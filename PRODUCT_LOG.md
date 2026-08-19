@@ -103,7 +103,7 @@ pattern needing further fixes elsewhere.
 
 ---
 
-## AL. Interval Running: default library exercise + arbitrary segment builder — IN PROGRESS, part 2 of several, 2026-08-18
+## AL. Interval Running: default library exercise + arbitrary segment builder — DONE 2026-08-18, audio cues on segment changes still open (see below)
 
 Genuinely one of the largest single features this session. Asked one
 clarifying question before building anything: for a "1km in 10 min"
@@ -266,7 +266,7 @@ something worth a more complex multi-target tap for.
 
 ---
 
-## W. Trainee calendar: three different "done" states currently look identical
+## W. Trainee calendar: three different "done" states currently look identical — DONE 2026-08-18
 
 Two related asks, both about the gold "complete day" star on the
 trainee's own calendar — checked the actual rendering logic before
@@ -615,7 +615,7 @@ mechanism is fixed either way.
 
 ---
 
-## AB. Graphical and aesthetic improvements
+## AB. Graphical and aesthetic improvements — DONE 2026-08-18 (see the full theme-refresh entries below)
 
 Logged as-is — genuinely open-ended, not a specific feature to size.
 Nothing wrong identified, nothing broken; just a category to come back to
