@@ -1,110 +1,197 @@
-# FormTrace Coach — Alpha
+# FormTrace Coach
 
-Two-sided (coach ↔ trainee) alpha: single-page app on **GitHub Pages**,
-data + auth + video on **Supabase**.
+A two-sided fitness coaching app connecting **coaches** and **trainees** —
+coaches build and review workouts with real form feedback; trainees train,
+log progress, and see exactly what they're paying for and why.
 
-## What's in this folder
+Single-file Progressive Web App (`index.html`, no build step), backed by
+Supabase (auth, database, storage), hosted on GitHub Pages.
 
-| File | Purpose |
-|---|---|
-| `index.html` | The app. (Copy your latest `coachtrace.html` here — see step 4.) |
-| `store.supabase.js` | Data layer: auth, tables, video upload/playback, realtime. Exposes `window.store`. |
-| `config.js` | Your Supabase URL + anon key. **Edit this.** |
-| `config.example.js` | Template for the above. |
-| `supabase/schema.sql` | Entire database: tables, security policies, storage bucket. Paste once. |
-
-## Roles model
-
-Everyone signs up as a **trainee**. In their profile they tap **Apply for Coach
-profile**, fill a short form → row in `coach_applications` (status `pending`).
-An **admin** approves it, which flips their `profiles.role` to `coach`. Approval
-runs through the `approve_coach_application` SQL function (admin-only, enforced
-server-side).
+**Live:** https://alexiospefstathiou.github.io/Formtrace-Alpha/
 
 ---
 
-## Setup — do these in order
+## What it does
+
+### Finding a coach and getting started
+- A trainee posts a **goal listing**; coaches send **offers** with a rate,
+  workouts/week, and a video pitch — every pitch is recorded in-app, never
+  a file upload.
+- Offers are shown **grouped by goal**, with pending/accepted separated from
+  a completed **Archive**, and an explicit confirmation before accepting one
+  offer auto-declines every other offer on that same goal.
+- **Public coach profiles** show badges (Verified / Professional / Certified
+  Professional), all-time stats (trainees, goals, goals completed, workouts
+  reviewed), sub-ratings (Professionalism, Communication, Motivation, Price,
+  Instructions — not a single compressed star score), expertise, languages,
+  age, and bio.
+- Everyone signs up as a trainee; applying to become a coach goes through an
+  admin-approval flow.
+
+### Building and assigning workouts
+- A coach's **exercise library** is labelled by muscle group, with per-exercise
+  reference videos recorded in-app.
+- **Wildcard slots** let a coach assign "any Chest exercise" and leave the
+  specific choice, sets, and reps to the trainee.
+- **Interval Running** is its own exercise type with a full segment builder:
+  any sequence of run/walk segments, each independently timed, distance-based
+  (tracked live via GPS), or distance-with-a-displayed-pace-target, plus a
+  separate **Free run** mode (just a total distance goal, no fixed structure).
+  It's a shared exercise available in every coach's library automatically,
+  not something each coach has to build themselves.
+- Partial workouts, wildcard fills, and postponement requests (with a real
+  coach approve/decline flow, not a silent auto-accept) are all handled
+  explicitly rather than as edge cases bolted on afterward.
+
+### Training and feedback
+- Every performed set is **video-recorded and pose-graded** — per-rep form
+  scoring against the coach's own reference recording, not a generic model.
+- A coach can **voice-over** a trainee's submitted video directly, narrating
+  over the footage rather than typing separate notes.
+- Grading uses multi-select tags rather than a single numeric score, since a
+  single number compresses too much real signal about what actually needs
+  work.
+
+### Progress tracking
+- **Weekly check-in photos**, captured at full camera resolution, with a
+  timelapse view across a goal.
+- **Body measurements** and a **weight trend chart** — smoothed, with a
+  gradient fill, and a genuine goal-progress comparison (current weight
+  against the weight on the day the goal actually started, not an
+  arbitrary earlier date).
+- **Personal bests** per exercise, tracked automatically and celebrated with
+  a milestone notification the moment one is beaten.
+- **Streaks**, computed server-side, with reschedule-to-protect logic so a
+  trainee who moves a missed workout doesn't just avoid a future miss but
+  genuinely recovers the streak.
+- **The Journey** — a full recap once a goal completes: a photo timelapse,
+  weight change over the goal's whole span, the highest streak reached, and
+  a trainee-only share button.
+- Tapping any check-in photo or profile picture expands it to a full-screen
+  view.
+
+### Staying connected
+- **Scheduled video calls** — each person declares recurring weekly
+  availability, either side can propose a specific time (only genuinely
+  overlapping windows are ever offered), and the other side accepts,
+  declines, or counters. Calls happen entirely within the app.
+- **Vacation mode**, initiated by either a trainee or a coach, freezes the
+  goal's calendar and streak rather than penalizing a planned break — shown
+  clearly on the calendar, distinct from a genuine missed workout.
+- Homepage notifications surface exactly what needs attention — a review
+  that's due soon, a postponement request waiting on a decision, a call
+  proposal, a pending offer — rather than requiring anyone to go looking.
+- Admin tooling flags coach inactivity and missed review windows before they
+  become a trainee's problem.
+
+### Payments — visibility built, settlement not yet wired
+- Payment is **periodic, tied to review**, never for merely performing a
+  workout — a trainee can stop at any point owing nothing for work not yet
+  reviewed.
+- A coach sees, per trainee: the agreed rate, the workouts/week cap (so
+  billing can never exceed what was actually agreed to), the reviewed-and-
+  pending count, and the computed total — with a real, hard review deadline
+  that protects trainees from ever being charged for a workout nobody
+  looked at.
+- This phase is **display and accounting only** — the app computes and shows
+  exactly what's owed, to whom, and why. No money actually moves yet; that's
+  a separate, later piece of work once a payment provider is chosen.
+
+### The app itself
+- Installable as a PWA, with an explicit in-app "Install" control (Chrome's
+  own install prompt is gated by an engagement heuristic outside any app's
+  control, so this gives a clear, direct path instead of leaving it to
+  chance).
+- A full visual theme — warm-yellow accent, a distinct gold family for
+  calendar achievement states, smooth glowing line charts, and a dedicated
+  Wong-palette colorblind mode that swaps every relevant color, not just
+  the accent.
+- Every camera/microphone flow (reference videos, submissions, voice-overs,
+  check-in photos) is built in-app; nothing here is a file picker.
+
+---
+
+## Architecture
+
+| Piece | What it is |
+|---|---|
+| `index.html` | The entire app — single file, no build step, no framework. |
+| `store.supabase.js` | Data layer: auth, tables, video upload/playback, realtime. Exposes `window.store`. |
+| `config.js` | Supabase project URL + anon key (not committed — see `config.example.js`). |
+| `supabase/*.sql` | Every schema and migration, applied directly through the Supabase SQL editor. |
+| `sw.js` / `manifest.json` | PWA service worker and manifest. |
+| `tools/check.mjs` | A smoke test — parses the app, checks every referenced element ID exists, every navigation target resolves, every RPC the app calls is at least referenced. Run before every deploy. |
+
+Hosted on GitHub Pages; backend on Supabase (Postgres + Row Level Security,
+Storage for video/photos, realtime subscriptions).
+
+## What isn't built yet
+
+- **Payment settlement** — no provider chosen, no money actually moves (see
+  above). This app currently answers "what's owed," not "how does it get
+  paid."
+- **A downloadable, store-distributed app** — currently a browser-installed
+  PWA only. An Android package (via Trusted Web Activity) is a planned,
+  not-yet-started option; iOS is explicitly out of scope for now.
+- **A social/friends layer** — an NFC-based trainee-to-trainee connection
+  system is designed but paused, pending the installability question above.
+- The actual video-calling technology (WebRTC vs. a hosted provider) — the
+  scheduling layer around it is built; what actually carries the call once
+  proposed isn't decided yet.
+
+---
+
+## Setup (for a fresh instance)
 
 ### 1. Create the Supabase project
-1. Go to supabase.com → **New project**. Pick a name, a strong DB password, a region near your testers.
-2. Wait for it to finish provisioning (~2 min).
+Go to supabase.com → **New project**. Pick a name, a strong DB password, a
+region near your users.
 
-### 2. Run the schema
-1. Left sidebar → **SQL Editor** → **New query**.
-2. Open `supabase/schema.sql`, copy **everything**, paste, click **Run**.
-3. You should see "Success. No rows returned." That created every table, all
-   security policies, and the private `videos` storage bucket.
+### 2. Apply the schema and migrations
+**SQL Editor → New query.** Run `supabase/schema.sql` first, then every file
+in `supabase/migrations_*.sql`, in the order they were added (check file
+timestamps, or `PRODUCT_LOG.md` for the feature each one belongs to).
 
-### 3. Get your keys into config.js
-1. Left sidebar → **Project Settings** → **API**.
-2. Copy **Project URL** → paste into `SUPABASE_URL` in `config.js`.
-3. Copy **anon public** key → paste into `SUPABASE_ANON_KEY` in `config.js`.
-   - The anon key is meant to live in client code; RLS is your real protection.
-   - Do **not** use the `service_role` key here.
+### 3. Configure `config.js`
+Copy `config.example.js` to `config.js`. Fill in your project's **Project URL**
+and **anon public** key from Project Settings → API. Never put the
+`service_role` key here — RLS policies are the real protection layer.
 
-### 4. Wire the app to Supabase
-Your app currently uses IndexedDB via its internal `store`. For the alpha:
-1. Copy your latest `coachtrace.html` into this folder as **`index.html`**.
-2. In `index.html`, just before the app's own `<script>`, add these three lines
-   (order matters):
-   ```html
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-   <script src="config.js"></script>
-   <script src="store.supabase.js"></script>
-   ```
-3. Replace the app's IndexedDB `store` calls with the new `window.store` surface.
-   This is the real porting work; we'll do it together, screen by screen, after
-   you confirm the site loads and sign-up works. (Auth + a first coach approval
-   are the first things to test.)
-
-### 5. Push to GitHub
+### 4. Push to GitHub and enable Pages
 ```bash
-cd "formtrace-alpha"
 git init
 git add .
-git commit -m "FormTrace alpha scaffold"
+git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/YOUR-USER/formtrace-alpha.git
+git remote add origin https://github.com/YOUR-USER/YOUR-REPO.git
 git push -u origin main
 ```
-(Create the empty repo on github.com first, then run the above.)
+Repo → **Settings → Pages** → Source: Deploy from a branch → `main`, `/ (root)`.
+HTTPS here is required for camera/microphone access to work at all.
 
-### 6. Enable GitHub Pages (HTTPS — required for camera)
-1. Repo → **Settings** → **Pages**.
-2. **Source**: Deploy from a branch. **Branch**: `main`, folder `/ (root)`. Save.
-3. Wait ~1 min. Your app is at `https://YOUR-USER.github.io/formtrace-alpha/`.
-   HTTPS here is what lets MediaPipe and the camera recorder work.
+### 5. Make yourself admin
+Sign up in the live app first (creates your profile), then in Supabase's
+SQL Editor:
+```sql
+update public.profiles set is_admin = true
+where id = (select id from auth.users where email = 'you@example.com');
+```
 
-### 7. Make yourself admin (one time)
-1. Open the site, **sign up** with your email. That creates your profile.
-2. Back in Supabase → **SQL Editor**, run (with your email):
-   ```sql
-   update public.profiles set is_admin = true
-   where id = (select id from auth.users where email = 'you@example.com');
-   ```
-3. You can now approve coach applications from the in-app admin view
-   (we'll build/verify that view during the port).
+### 6. Verify before you rely on it
+```bash
+node tools/check.mjs
+```
+This catches broken IDs, dead navigation targets, and RPC calls the schema
+doesn't yet support — run it after any change, before deploying.
 
 ---
 
-## Test plan for the alpha (after the port)
-1. Sign up two accounts (two browsers / a phone + laptop): a trainee and a would-be coach.
-2. Would-be coach applies; you (admin) approve; confirm their role flips to coach.
-3. Trainee posts a goal listing.
-4. Coach sends an offer **with a recorded video pitch**; trainee sees it play back.
-5. Trainee accepts → engagement created → coach assigns a workout →
-   trainee submits a performed workout → coach reviews → both rate at completion.
+## Security notes
 
-Each of those maps to a table in `schema.sql`; if something fails, the failing
-step tells us which policy or call to check.
-
-## Security notes (read before inviting testers)
-- **Email confirmation**: by default Supabase emails a confirmation link. For a
-  fast alpha you can turn this off in Authentication → Providers → Email
-  ("Confirm email" off), but turn it back on before any wider release.
-- **Video bucket** is private; the app reads via short-lived signed URLs. The
-  alpha lets any signed-in user request a signed URL — fine for trusted testers,
-  tighten to engagement-scoped access before a public beta.
-- **Vouchers**: the $20 renewal voucher must be validated server-side before it
-  can affect any real payment. No payments are wired in this alpha; treat the
-  voucher as display-only until we add an Edge Function to redeem it.
+- **Email confirmation** is on by default in Supabase Auth — leave it on for
+  anything beyond local testing.
+- The **video/photo storage bucket** is private; the app always reads
+  through short-lived signed URLs, never a public path.
+- Payments are currently **display-only** — no voucher, rate, or balance
+  shown in the app has any effect on real money until a settlement provider
+  is integrated and wired server-side.
