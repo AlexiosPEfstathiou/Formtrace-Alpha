@@ -4859,9 +4859,34 @@ async function renderMarket(){
   const pitchedIds=new Set(stillPitching.map(o=>o.listing_id));
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
+  /* Item: open goals display first, sent offers second - reversed from the
+     prior order. Restructured as two independent sections rather than just
+     moving code around, since the old shape had a real gap: the "Open
+     goals" label only ever got appended INSIDE the sentOutcomes branch, so
+     a coach with zero sent-offer outcomes saw no section header at all
+     before the listing cards, and the old early-return on !open.length
+     would have skipped the sent-offers section entirely for a coach with
+     real offer outcomes but no currently-open listings left to show. Both
+     sections are now unconditional and independent of each other. */
+  body.appendChild(Object.assign(document.createElement("div"),{className:"eyebrow",style:"margin:2px 2px 10px",textContent:"Open goals"}));
+  if(!open.length){
+    body.appendChild(Object.assign(document.createElement("div"),{className:"empty",style:"padding:40px 20px",innerHTML:`<div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p>`}));
+  }
+  for(const l of open){
+    const pitched=pitchedIds.has(l.id);
+    const div=document.createElement("div");div.className="card";
+    div.innerHTML=`<h3 style="font-size:17px;font-weight:800">${escapeHtml(l.title)}</h3>
+      <div style="margin:6px 0 12px"><span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
+      <div class="video-card" data-video="${l.pitch_video_path}"></div>
+      ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
+      ${pitched
+        ? `<div class="pitched-tag">✓ Pitched</div>`
+        : `<button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`}`;
+    body.appendChild(div);
+  }
   // --- Your sent offers (outcomes for offers whose listing is no longer open) ---
   if(sentOutcomes.length){
-    const wrap=document.createElement("div");wrap.style.marginBottom="8px";
+    const wrap=document.createElement("div");wrap.style.marginTop="24px";
     wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your sent offers</div>`;
     const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Expired"};
     const statusClass={pending:"pending",accepted:"accepted",rejected:"rejected",expired:"rejected"};
@@ -4875,20 +4900,6 @@ async function renderMarket(){
       wrap.appendChild(row);
     }
     body.appendChild(wrap);
-    body.appendChild(Object.assign(document.createElement("div"),{className:"eyebrow",style:"margin:20px 2px 10px",textContent:"Open goals"}));
-  }
-  if(!open.length){ const e=document.createElement("div");e.className="empty";e.style.padding="40px 20px";e.innerHTML=`<div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p>`; body.appendChild(e); return; }
-  for(const l of open){
-    const pitched=pitchedIds.has(l.id);
-    const div=document.createElement("div");div.className="card";
-    div.innerHTML=`<h3 style="font-size:17px;font-weight:800">${escapeHtml(l.title)}</h3>
-      <div style="margin:6px 0 12px"><span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
-      <div class="video-card" data-video="${l.pitch_video_path}"></div>
-      ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
-      ${pitched
-        ? `<div class="pitched-tag">✓ Pitched</div>`
-        : `<button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`}`;
-    body.appendChild(div);
   }
   body.querySelectorAll("[data-offer]").forEach(b=>b.addEventListener("click",()=>openOffer(b.getAttribute("data-offer"))));
   hydrateVideos(body);

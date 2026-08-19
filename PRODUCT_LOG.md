@@ -4,6 +4,32 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AQ. Coach's Open goals tab: open goals first, sent offers second - DONE 2026-08-19
+
+Investigated before assuming this was a simple reorder. First finding was
+wrong and worth naming honestly: an initial code search for `renderMarket`
+came back empty, which read as the whole screen being orphaned - reachable
+via the bottom nav tab (already correctly wired, `data-go="market"`,
+labeled "Open goals"), but with nothing populating its body and no render
+function at all. Re-checked before reporting that conclusion, since the
+scale of "unbuilt screen" versus "reorder two sections" are very different
+tasks - a second, more careful search found `renderMarket` already fully
+written a few hundred lines away. The first search result was a tool
+glitch, not a real gap.
+
+The actual function was already complete and working, just showing "Your
+sent offers" before "Open goals" - the opposite of what was asked. Fixed
+by restructuring into two independent, unconditional sections rather than
+just swapping code order, since the old shape had two real bugs riding
+along with the ordering: the "Open goals" header only ever got appended
+INSIDE the sent-offers branch, so a coach with no sent-offer outcomes yet
+saw no section label at all above the listing cards; and the old
+early-return on zero open listings would have skipped the sent-offers
+section entirely for a coach whose offers all belong to now-closed
+listings. Both fixed as part of the same restructure.
+
+---
+
 ## AP. Tapping a photo (check-in or profile) should expand to full view - DONE 2026-08-19
 
 Checked before writing this down: no lightbox/zoom/fullscreen mechanism
