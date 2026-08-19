@@ -4,6 +4,39 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AO. Check-in photos and exercise video quality — checked, then changed on request — DONE 2026-08-19
+
+Asked whether the noticeably lower quality on both was intentional.
+Traced both, found they were both deliberate but documented very
+differently. Videos: capped at 1280x720, re-encoded through the
+pose-overlay canvas at 1.6 Mbps, with an explicit comment already
+justifying it ("~1.6 Mbps is ample for a short pose-overlay clip and
+cuts upload size ~4x vs 6 Mbps") — these are short clips whose real job
+is pose-detection accuracy, not visual showcase. Check-in photos: capped
+at 1080px on the longer side and saved at 0.82 JPEG quality, with no
+comment explaining why — read as a reasonable default rather than a
+specifically reasoned choice, unlike the video setting.
+
+Decision: keep the video policy exactly as it is, raise check-in photos
+to maximum possible quality. Three changes, check-in capture only:
+- `getUserMedia`'s width/height "ideal" raised from 1080/1440 to 4096/4096
+  — still just a hint the browser negotiates down to whatever the actual
+  camera supports, not a guarantee, but now asking for the device's own
+  ceiling rather than an arbitrary target.
+- The 1080px downscale cap in the capture canvas removed entirely, not
+  just raised — captures now use the video stream's own native
+  `videoWidth`/`videoHeight` directly. Removed rather than raised
+  specifically because any fixed cap re-introduces the same tradeoff
+  this request was about moving away from.
+- JPEG quality raised from 0.82 to 1 (`toBlob`'s max).
+
+Checked whether the file-picker fallback (when camera access fails or
+isn't available) had its own separate resize logic that would need the
+same change — it doesn't; that path has no dimension handling of its
+own to update.
+
+---
+
 ## AN. A trainee's calendar showed a DIFFERENT trainee's vacation — DONE 2026-08-19
 
 Serious data-isolation bug, reported by a coach with two trainees: one

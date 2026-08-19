@@ -6251,7 +6251,14 @@ $("#pc-guide-toggle").addEventListener("click",()=>{
 async function pcOpenCam(){
   try{
     if(pcStream)pcStream.getTracks().forEach(t=>t.stop());
-    pcStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:pcFacing,width:{ideal:1080},height:{ideal:1440}},audio:false});
+    /* Item: check-in photos at maximum possible quality, on request -
+       explicitly the opposite tradeoff from the video recorder just above,
+       which deliberately stays capped for upload size. A high "ideal" here
+       is still just a hint (getUserMedia negotiates down to whatever the
+       actual camera supports), not a guarantee of any specific resolution -
+       but it asks for the device's own ceiling rather than an arbitrary
+       1080 target. */
+    pcStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:pcFacing,width:{ideal:4096},height:{ideal:4096}},audio:false});
     const v=$("#pc-video");v.srcObject=pcStream;v.classList.toggle("mirror",pcFacing==="user");
     await v.play().catch(()=>{});
     $("#pc-tools").style.display="flex"; syncCaptureTools();
@@ -6295,10 +6302,12 @@ $("#pc-close").addEventListener("click",()=>{ pcStopCam(); $("#photocap").classL
 $("#pc-flip").addEventListener("click",()=>{ pcFacing=pcFacing==="user"?"environment":"user"; pcOpenCam(); });
 $("#pc-shoot").addEventListener("click",()=>{
   const v=$("#pc-video"); if(!v.videoWidth)return;
-  // downscale to <=1080px on the long side to keep check-in photos light
-  const MAXDIM=1080;
-  const scale=Math.min(1, MAXDIM/Math.max(v.videoWidth,v.videoHeight));
-  const cw=Math.round(v.videoWidth*scale), ch=Math.round(v.videoHeight*scale);
+  /* Captured at the camera stream's own native size — no downscale cap at
+     all, per the explicit request for maximum possible quality here. Was
+     capped at 1080px on the longer side; removed entirely rather than
+     just raised, since any fixed cap re-introduces the same tradeoff this
+     was meant to move away from. */
+  const cw=v.videoWidth, ch=v.videoHeight;
   const c=$("#pc-canvas");c.width=cw;c.height=ch;
   const ctx=c.getContext("2d");
   if(pcFacing==="user"){ ctx.save();ctx.translate(cw,0);ctx.scale(-1,1);ctx.drawImage(v,0,0,cw,ch);ctx.restore(); }
@@ -6309,7 +6318,7 @@ $("#pc-shoot").addEventListener("click",()=>{
     $("#pc-ctrls").style.display="none";$("#pc-review").style.display="flex";
     $("#pc-guide").classList.add("off");
     $("#pc-tools").style.display="none";
-  },"image/jpeg",0.82);
+  },"image/jpeg",1);
 });
 $("#pc-retake").addEventListener("click",()=>{
   pcBlob=null;$("#pc-still").style.display="none";$("#pc-video").style.display="block";
