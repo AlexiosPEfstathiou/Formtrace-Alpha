@@ -1280,7 +1280,7 @@ badge — a coach cannot be Certified without being Professional first.
 
 ---
 
-## B. Make the payment cadence visible (lower first commitment)  ← NEXT
+## B. Make the payment cadence visible (lower first commitment) - DONE (verified 2026-08-19: coach_payment_summary RPC, cycle_payment_date math, workouts_per_week cap, and per-trainee totals all present and wired; the provider/settlement piece remains deliberately deferred, matching this item's own stated scope - display and accounting only)
 
 Accepting an offer is not a lump sum. Payment is periodic, tied to review,
 so a trainee can stop at any point without owing the remainder of the goal.
@@ -2028,7 +2028,7 @@ ledger, workout status) being server-checked rather than client-writable.
 
 ---
 
-## S. Make coach notifications load faster
+## S. Make coach notifications load faster - DONE (verified 2026-08-19: N+1 query eliminated in renderCoachTrainees, batched profile lookups)
 
 Checked the actual coach homepage load path before writing this down.
 Two real, well-defined bottlenecks; two other parts of the same path are
