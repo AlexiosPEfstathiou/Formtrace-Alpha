@@ -4,6 +4,47 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AR. Calendar month navigation sometimes hangs or fails with "statement timeout" - DONE 2026-08-20
+
+Reported: clicking the calendar's month arrows sometimes does nothing, or
+loads forever and then shows "Couldn't load the calendar - canceling
+statement due to statement timeout" - a genuine Postgres-side timeout,
+not a client display bug.
+
+Traced to the actual cause rather than guessed at a workaround. The
+month-prev/next buttons called `renderEngagement()` again in full on
+every single click - re-fetching assigned workouts, pauses, logs, and
+call proposals from scratch, every time, none of which depend on which
+month is actually being viewed. The assigned-workouts query in particular
+has no date-range filter at all - it's every workout ever assigned to
+the engagement, unconditionally. For a long-running engagement this
+grows without bound, so the exact same click that was instant on a fresh
+goal keeps getting slower over months of accumulated history, until it
+occasionally crosses the database's own statement timeout - matching the
+intermittent, not-every-time nature of what was reported exactly.
+
+Fixed by giving `renderEngagement` an optional `skipFetch` flag, passed
+only by the two month-nav click handlers. With it set, the function skips
+straight to re-rendering the calendar grid from whatever's already been
+loaded into memory - the underlying data never depended on the visible
+month, so nothing there needs to change between months anyway. Every
+other call site (opening the engagement screen fresh) still fetches
+normally and unconditionally, so nothing here trades correctness for
+speed - it just stops re-fetching data a click never needed in the first
+place.
+
+**Worth knowing, not chased further right now:** the initial fetch itself
+(on first opening the screen) still has no date-range bound - it's now
+one fetch per screen-open instead of one per click, which should make
+timeouts far rarer, but a coach with a very long-running trainee
+relationship could still theoretically hit this on that first load.
+Scoping the initial fetch to a bounded window would be a separate, larger
+change - the streak calculation in particular may need history beyond
+the visible month, so it isn't a simple date filter to bolt on without
+checking what actually needs the full history versus just this month.
+
+---
+
 ## AQ. Coach's Open goals tab: open goals first, sent offers second - DONE 2026-08-19
 
 Investigated before assuming this was a simple reorder. First finding was

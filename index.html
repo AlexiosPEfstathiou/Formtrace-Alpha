@@ -5230,7 +5230,7 @@ async function openEngagement(id){
   await renderEngagement();
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
 }
-async function renderEngagement(){
+async function renderEngagement(skipFetch){
  try{
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
   const body=$("#engagement-body");
@@ -5243,6 +5243,22 @@ async function renderEngagement(){
   const fabRowGuard=$("#eng-fab-row");
   if(fabRowGuard && fabRowGuard.parentElement===body) $("#s-engagement").appendChild(fabRowGuard);
   body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  /* Reported bug: month navigation (eng-cal-prev/next below) used to call
+     this whole function again unconditionally — re-fetching assigned
+     workouts, pauses, logs, and call proposals from scratch on every
+     single click, none of which depend on which month is being viewed.
+     For a long-running engagement this grows without bound (every workout
+     ever assigned, not just the visible month), so the same click that
+     was instant on a fresh goal gets slower over months of history —
+     matching exactly the intermittent "statement timeout" reported: not a
+     one-time failure, but a query that keeps getting more expensive as
+     more data accumulates, until it occasionally crosses the server's
+     timeout. skipFetch, passed only by the prev/next handlers, skips
+     straight to re-rendering the calendar grid from whatever was already
+     loaded — the underlying data never depended on which month is on
+     screen, so nothing here needs to change between months. Every other
+     call site (opening the screen fresh) still fetches normally. */
+  if(!skipFetch){
   await loadActivePauses(traineeMerged ? traineeEngs.map(e=>e.id) : [currentEng.id]);   // items M/N — refreshed on every open, not just at boot; scoped to THIS screen's engagement(s) — see loadActivePauses' own comment
   // gather assigned workouts — merged (all trainee engagements) or single engagement
   let assigned=[];
@@ -5281,6 +5297,7 @@ async function renderEngagement(){
   // discipline streak (trainee only)
   streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
   if(!iAmCoach){ updateStreakBadge(streakInfo); serverStreak().then(v=>{ if(v!=null){ streakInfo.count=v; updateStreakBadge(streakInfo); } }); }
+  }
   body.innerHTML="";
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
@@ -5501,8 +5518,8 @@ async function renderEngagement(){
     }
   }
 
-  $("#eng-cal-prev").onclick=()=>{engCalMonth--;if(engCalMonth<0){engCalMonth=11;engCalYear--;}renderEngagement();};
-  $("#eng-cal-next").onclick=()=>{engCalMonth++;if(engCalMonth>11){engCalMonth=0;engCalYear++;}renderEngagement();};
+  $("#eng-cal-prev").onclick=()=>{engCalMonth--;if(engCalMonth<0){engCalMonth=11;engCalYear--;}renderEngagement(true);};
+  $("#eng-cal-next").onclick=()=>{engCalMonth++;if(engCalMonth>11){engCalMonth=0;engCalYear++;}renderEngagement(true);};
 
   // FAB: coach completes only via trainee side; either side rates when complete
   const fabRow=$("#eng-fab-row"),fab=$("#eng-fab");
