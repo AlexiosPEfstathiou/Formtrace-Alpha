@@ -8,11 +8,13 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 Requested: the streak animation should accurately show the streak - the
 first and the last day always visible. Reported: on a 15-day streak the
-animation shows only the last 6 days. Scaling rule:
-- up to 30 days: one square per day, every day shown;
-- over 30 and up to 120 days: one square per week, with a clear start date
-  and current date;
-- over 120 days: one square per month.
+animation shows only the last 6 days. Scaling rule (revised 2026-09-07 -
+the unit follows the length, so the day-vs-week question below is
+answered by the streak itself, not by a mode):
+- under 3 weeks: one square per DAY, every day shown;
+- 3 weeks up to 3 months: one square per WEEK, with a clear start date and
+  current date;
+- 3 months and beyond: one square per MONTH.
 
 Where it lives (checked): the squares come from `streakDates()` (walks back
 day by day from today, collecting the run) feeding `openStreakBurst()`,
@@ -23,13 +25,14 @@ markup may cap how many squares fit. Neither is the requested behaviour.
 
 **Reconcile with item AT before building:** the streak is being redefined
 in WEEKS (`week_streak_count`, live since AT step 1; the day-based badge
-is retired at AT step 5). Under that model "15-day streak" becomes e.g.
-"3-week streak", and the natural unit is already a week - so the three
-tiers should be re-expressed in weeks (e.g. one square per week up to
-~26 weeks, then per month), with the start date being the Monday of the
-first complete week and the current square being this week. Building this
-against the day-based streak first and then porting it would be double
-work; build it once, on the week model, as part of AT step 4/5.
+is retired at AT step 5). The revised rule above already resolves this: a
+streak under 3 weeks is shown in days regardless of how the streak is
+COUNTED, so under the week model the day squares are the actual training
+days within the completed weeks (the calendar has them - gold cells),
+and from 3 weeks the unit is the week itself. The start square is the
+first day (or first week's Monday) of the run; the current square is
+today (or this week). Still best built once, on the week model, as part
+of AT step 4/5.
 
 Not started.
 
