@@ -5118,10 +5118,10 @@ async function renderTraineeHome(){
     const offerIds=[...new Set(active.filter(e=>e.offer_id).map(e=>e.offer_id))];
     const [r1,r2]=await Promise.all([
       store._sb.from("assigned_workouts").select("engagement_id,status").in("engagement_id",active.map(e=>e.id)).eq("week_start",thisMon),
-      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap").in("id",offerIds) : Promise.resolve({data:[]})
+      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap,sessions_text").in("id",offerIds) : Promise.resolve({data:[]})
     ]);
     for(const r of (r1.data||[])){ const o=wkByEng[r.engagement_id]||(wkByEng[r.engagement_id]={n:0,done:0}); o.n++; if(r.status!=="assigned") o.done++; }
-    const capByOffer=Object.fromEntries((r2.data||[]).map(o=>[o.id,o.workouts_per_week_cap]));
+    const capByOffer=Object.fromEntries((r2.data||[]).map(o=>[o.id,offerCap(o)]));
     for(const e of active) capByEng[e.id]=e.offer_id?capByOffer[e.offer_id]:null;
   }
   const engCard=(e)=>{
@@ -5344,6 +5344,15 @@ async function openEngagement(id){
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
 }
 /* ---- Item AT: week model helpers (trainee calendar, step 2) ---- */
+/* The agreed weekly number for an offer. Older offers (before the payment
+   ledger v2 migration) only carry it as free text, "3 / week" - fall back to
+   parsing that so a null cap never blanks the week slots again. */
+function offerCap(o){
+  if(!o) return null;
+  if(o.workouts_per_week_cap!=null) return o.workouts_per_week_cap;
+  const m=/^\s*(\d+)/.exec(o.sessions_text||""); const v=m?Number(m[1]):0;
+  return v>0?v:null;
+}
 function weekLabel(monISO){
   const m=new Date(monISO+"T00:00:00"), s=new Date(m); s.setDate(s.getDate()+6);
   const mo=d=>CAL_MONTHS[d.getMonth()].slice(0,3);
@@ -5565,11 +5574,11 @@ async function renderEngagement(skipFetch){
     const offerIds=[...new Set(engObjs.filter(e=>e.status==="active"&&e.offer_id).map(e=>e.offer_id))];
     const [clRes,capRes]=await Promise.all([
       store._sb.from("week_closures").select("*").in("engagement_id",atEngIds),
-      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap").in("id",offerIds) : Promise.resolve({data:[]})
+      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap,sessions_text").in("id",offerIds) : Promise.resolve({data:[]})
     ]);
     if(clRes.error) console.error("week_closures load",clRes.error);
     for(const c of (clRes.data||[])){ (weekClosures[c.week_start]=weekClosures[c.week_start]||[]).push(c); }
-    const caps=(capRes.data||[]).map(o=>o.workouts_per_week_cap).filter(v=>v!=null);
+    const caps=(capRes.data||[]).map(offerCap).filter(v=>v!=null);
     weekCap = caps.length ? caps.reduce((s,v)=>s+v,0) : null;
   }
   /* Reported bug fix: this used to only load in the single-engagement

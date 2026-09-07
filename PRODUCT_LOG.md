@@ -406,6 +406,20 @@ trainee-side bug found while diagnosing it. Needs
   permitted way to stamp the day they trained. New `start_session(uuid)`,
   SECURITY DEFINER, scoped to own engagement + still 'assigned' + today
   only (records what happened, never schedules). `startSession()` calls it.
+- **"Only one slot" - REAL CAUSE, and it was never a limit.** The screenshot
+  showed a single "Session 1 + Assign" and no planned count: that is what
+  renders when the agreed weekly number can't be found (`weekCap` null) -
+  the fallback of one empty slot so a coach can at least start. The offers
+  table originally stored the weekly number only as free text
+  (`sessions_text`, "3 / week"); when `migrations_payment_ledger_v2` added
+  the integer `workouts_per_week_cap` it never backfilled it, so every
+  offer accepted before that migration has a null cap - and, consequence
+  worth noting, the payment ledger's "agreed" denominator was null for
+  those same engagements too. Fixed both ways: a one-line backfill parsing
+  the leading integer (`migrations_offer_cap_backfill.sql`), and an
+  `offerCap(o)` client fallback that parses `sessions_text` when the cap
+  is null, used everywhere the cap is read. This also explains the
+  earlier "2 planned, then 1" - same null, falling back to assigned-so-far.
 
 ---
 
