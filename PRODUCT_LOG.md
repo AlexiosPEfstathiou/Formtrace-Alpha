@@ -4,6 +4,37 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AY. Replace availability-based call scheduling with propose → accept → call in-app
+
+Requested: the current way of setting up a video call - each side
+declaring recurring weekly availability windows, and proposals only being
+allowed inside the overlap - is not user friendly. Replace it with the
+simplest possible flow: one of the two proposes a call (a specific date and
+time), the other accepts, and the call happens inside the app.
+
+**What already exists (checked, not assumed):** `call_proposals` with
+accept / decline / counter, the homepage "call proposal needs your
+response" card, and accepted calls rendered on the calendar. The part
+being removed is the `availability_blocks` layer in front of proposing -
+the recurring-window declaration, the overlap computation, and the
+"only overlapping windows are ever offered" rule from item G. Proposing
+becomes: pick a date and time, send. The receiving side's accept / decline
+/ counter is already built and stays.
+
+**The part that is NOT small:** "they have a video call in the app" is the
+same open decision item G has been paused on - WebRTC (peer-to-peer,
+needs a signalling channel and ideally a TURN server for reliability on
+mobile networks) versus a hosted provider SDK (simpler, reliable, but a
+third party and usually a cost). The scheduling simplification can ship
+on its own and is worth doing first; the call itself waits on that
+decision, and the in-app-only requirement from G still stands (no
+external meeting links).
+
+Not started. Supersedes the scheduling half of item G; G's call-technology
+question remains open and becomes this item's second step.
+
+---
+
 ## AX. Weekly nutrition goals: coach sets calories + protein, trainee sees % on logging - DONE 2026-09-07
 
 Requested: a weekly task for the coach to set a caloric and protein goal
