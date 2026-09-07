@@ -5350,7 +5350,7 @@ function weekLabel(monISO){
   return m.getMonth()===s.getMonth() ? `${m.getDate()}–${s.getDate()} ${mo(s)}` : `${m.getDate()} ${mo(m)} – ${s.getDate()} ${mo(s)}`;
 }
 function weekHeaderEl(monISO, iAmCoach){
-  const el=document.createElement("div"); el.className="cal-week";
+  const el=document.createElement("div"); el.className="cal-week"; el.dataset.week=monISO;
   const rows=[...(weekRows[monISO]||[])].sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   const isDone=a=>a.status==="submitted"||a.status==="reviewed";
   const assigned=rows.length, done=rows.filter(isDone).length;
@@ -5374,7 +5374,12 @@ function weekHeaderEl(monISO, iAmCoach){
     const target = weekCap!=null ? weekCap : assigned;
     cls="wk-current"; n=`${done}/${target}`; sub=(target&&done>=target)?"complete ✓":"this week";
   }else{
-    cls="wk-neutral"; n=assigned?`${assigned}`:""; sub=assigned?(assigned===1?"session planned":"sessions planned"):"";
+    /* "Planned" is the AGREED weekly number from the accepted offer, not however
+       many the coach has assigned so far - that number must not fluctuate week
+       to week. The assigned-so-far count is shown alongside when it differs. */
+    const planned = weekCap!=null ? weekCap : assigned;
+    cls="wk-neutral"; n=planned?`${planned}`:"";
+    sub=planned?((planned===1?"session planned":"sessions planned")+(weekCap!=null&&assigned!==planned?` · ${assigned} assigned`:"")):"";
   }
   el.classList.add(cls);
   el.innerHTML=`<div class="wk-head"><span>${weekLabel(monISO)}</span><span><span class="wk-n">${n}</span>${sub?` <span style="font-weight:600">${sub}</span>`:""}</span></div>`;
@@ -5405,7 +5410,7 @@ function weekHeaderEl(monISO, iAmCoach){
           s.addEventListener("click",async()=>{
             const ok=await openConfirm({title:`Remove Session ${i+1}?`,body:`"${(a.snapshot&&a.snapshot.name)||"This workout"}" hasn't been started. Removing it frees the slot.`,confirmLabel:"Remove",cancelLabel:"Keep",danger:true});
             if(!ok)return;
-            try{ await store.assignedWorkouts.remove(a.id); toast("Removed",1500); await renderEngagement(); }catch(e){ console.error("remove session",e); toast("Couldn't remove it",3500); }
+            try{ await store.assignedWorkouts.remove(a.id); toast("Removed",1500); weekRows[monISO]=(weekRows[monISO]||[]).filter(x=>x.id!==a.id); refreshWeekUI(monISO); }catch(e){ console.error("remove session",e); toast("Couldn't remove it",3500); }
           });
         }else if(current){
           s.classList.add("filled","tap"); s.innerHTML=label+name+`<br><span style="color:var(--lime);font-weight:800">Start ▸</span>`;
@@ -5450,6 +5455,43 @@ async function openWeekPool(pool){
   }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
+/* Item AT: "This week" card - the trainee's primary action under the week model;
+   for the coach, the same numbers with an assign action. Built by a function so
+   it can be redrawn in place after an assign/remove without re-rendering the
+   whole screen (refreshWeekUI below). */
+function thisWeekCardEl(iAmCoach){
+    const thisMon=weekStartISO(new Date());
+    const rows=weekRows[thisMon]||[];
+    const pool=rows.filter(a=>a.status==="assigned");
+    const done=rows.filter(a=>a.status==="submitted"||a.status==="reviewed").length;
+    const target = weekCap!=null ? weekCap : (pool.length+done);
+    const sunday=new Date(thisMon+"T00:00:00"); sunday.setDate(sunday.getDate()+6);
+    const daysLeft=Math.max(0,Math.round((sunday-new Date(todayISO()+"T00:00:00"))/86400000));
+    const card=document.createElement("div");card.className="card";card.id="wk-card";
+    const paused=isPausedOn(todayISO());
+    card.innerHTML=`<div class="wk-card">
+        <div style="flex:1">
+          <div class="eyebrow">This week</div>
+          <div class="wk-big" style="margin-top:6px">${done} <span style="font-size:14px;color:var(--muted);font-weight:700">of ${target} done</span></div>
+          <div class="wk-sub">${paused?"On a break - this week doesn't count":(pool.length?`${pool.length} left · week closes ${daysLeft===0?"today":daysLeft===1?"tomorrow":"in "+daysLeft+" days"}`:(target>0&&done>=target?"All done this week ✓":(iAmCoach?"Nothing assigned yet — tap Assign":"Nothing assigned yet")))}</div>
+          <div class="wk-bar"><i style="width:${target?Math.min(100,Math.round(done/target*100)):0}%"></i></div>
+        </div>
+        ${iAmCoach
+          ? `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${currentEng.status==="active"?"":"disabled"}>Assign a session</button>`
+          : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`}
+      </div>`;
+    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(thisMon) : openWeekPool(pool));
+    return card;
+}
+/* Redraw just one week's header/slots (and the this-week card if it is this
+   week) from the current in-memory rows. Used after assign and remove so those
+   actions no longer flash the entire calendar through a spinner. */
+function refreshWeekUI(monISO){
+  const iAmCoach = !traineeMerged && currentEng && currentEng.coach_id===ME.id;
+  const old=document.querySelector(`.cal-week[data-week="${monISO}"]`);
+  if(old) old.replaceWith(weekHeaderEl(monISO, iAmCoach));
+  if(monISO===weekStartISO(new Date())){ const c=$("#wk-card"); if(c) c.replaceWith(thisWeekCardEl(iAmCoach)); }
+}
 async function renderEngagement(skipFetch){
  try{
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
@@ -5490,11 +5532,21 @@ async function renderEngagement(skipFetch){
   }
   // gather assigned workouts — merged (all trainee engagements) or single engagement
   let assigned=[];
-  if(traineeMerged){
-    const lists=await Promise.all(traineeEngs.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+  /* Root cause of the calendar "statement timeout": every row's snapshot carries
+     the frozen pose landmarks for every exercise - hundreds of KB per session,
+     megabytes per calendar - and nothing here ever reads them (only
+     snapshot.name and the item names/count). calendar_rows() returns the rows
+     with snapshot slimmed to exactly that, under the caller's own RLS. Falls
+     back to the old full fetch only if the function isn't installed yet. */
+  let slimOk=false;
+  try{
+    const { data, error } = await store._sb.rpc("calendar_rows",{p_engagements:atEngIds});
+    if(error) throw error;
+    assigned=data||[]; slimOk=true;
+  }catch(e){ console.error("calendar_rows (run migrations_calendar_rows.sql) - falling back to full rows",e); }
+  if(!slimOk){
+    const lists=await Promise.all(atEngIds.map(id=>store.assignedWorkouts.list({engagement_id:id})));
     assigned=lists.flat();
-  }else{
-    assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
   }
   // index assigned workouts by due_date
   engAssignedByDate={};
@@ -5568,32 +5620,7 @@ async function renderEngagement(skipFetch){
     body.appendChild(warn);
   }
 
-  // Item AT: "This week" card - the trainee's primary action under the week model;
-  // for the coach, the same numbers with an assign action instead of a start action.
-  if(WEEK_MODEL){
-    const thisMon=weekStartISO(new Date());
-    const rows=weekRows[thisMon]||[];
-    const pool=rows.filter(a=>a.status==="assigned");
-    const done=rows.filter(a=>a.status==="submitted"||a.status==="reviewed").length;
-    const target = weekCap!=null ? weekCap : (pool.length+done);
-    const sunday=new Date(thisMon+"T00:00:00"); sunday.setDate(sunday.getDate()+6);
-    const daysLeft=Math.max(0,Math.round((sunday-new Date(todayISO()+"T00:00:00"))/86400000));
-    const card=document.createElement("div");card.className="card";
-    const paused=isPausedOn(todayISO());
-    card.innerHTML=`<div class="wk-card">
-        <div style="flex:1">
-          <div class="eyebrow">This week</div>
-          <div class="wk-big" style="margin-top:6px">${done} <span style="font-size:14px;color:var(--muted);font-weight:700">of ${target} done</span></div>
-          <div class="wk-sub">${paused?"On a break - this week doesn't count":(pool.length?`${pool.length} left · week closes ${daysLeft===0?"today":daysLeft===1?"tomorrow":"in "+daysLeft+" days"}`:(target>0&&done>=target?"All done this week ✓":(iAmCoach?"Nothing assigned yet — tap Assign":"Nothing assigned yet")))}</div>
-          <div class="wk-bar"><i style="width:${target?Math.min(100,Math.round(done/target*100)):0}%"></i></div>
-        </div>
-        ${iAmCoach
-          ? `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${currentEng.status==="active"?"":"disabled"}>Assign a session</button>`
-          : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`}
-      </div>`;
-    body.appendChild(card);
-    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(thisMon) : openWeekPool(pool));
-  }
+  if(WEEK_MODEL) body.appendChild(thisWeekCardEl(iAmCoach));   // Item AT: this-week card (see thisWeekCardEl)
   // calendar
   if(engCalYear==null){const t=new Date();engCalYear=t.getFullYear();engCalMonth=t.getMonth();}
   const head=document.createElement("div");head.className="cal-head";
@@ -6910,13 +6937,21 @@ async function doAssign(w,targetDate){
     wkStart=weekStartISO(new Date((targetDate||todayISO())+"T00:00:00"));
     row.week_start=wkStart;
   }else if(targetDate) row.due_date=targetDate;
-  await store.assignedWorkouts.add(row);
+  const inserted=await store.assignedWorkouts.add(row);
   if(WEEK_MODEL && wkStart){
     // non-blocking cap notice: the coach may mean it, but should know
     const already=(weekRows[wkStart]||[]).length+1;
     if(weekCap!=null && already>weekCap) toast(`That's ${already} sessions in the week of ${weekLabel(wkStart)} — the agreed number is ${weekCap}`,5000);
   }
-  toast("Workout assigned ✓"); renderEngagement();
+  toast("Workout assigned ✓");
+  /* No full re-render (it flashed the whole screen through a spinner). The
+     inserted row comes back from add(); fold it into the local week index and
+     redraw just that week's header/slots and the this-week card. */
+  if(WEEK_MODEL && wkStart && inserted){
+    if(!inserted.week_start) inserted.week_start=wkStart;
+    (weekRows[wkStart]=weekRows[wkStart]||[]).push(inserted);
+    refreshWeekUI(wkStart);
+  }else renderEngagement();
 }
 
 /* =========================================================================

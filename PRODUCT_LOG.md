@@ -364,6 +364,33 @@ slot to start from).
 - `startSession(a)` extracted so the slot and the Start-a-session sheet
   share one path.
 
+**Step 3 fixes from live testing 2026-09-07. Needs
+`supabase/migrations_calendar_rows.sql` run.**
+1. **Statement timeout opening a trainee's calendar as coach - ROOT CAUSE
+   FOUND (also the true cause behind AR).** Every `assigned_workouts` row
+   carries `snapshot`, which freezes the reference pose LANDMARKS for every
+   exercise at assign time - tens of KB per exercise, hundreds per session
+   - and the calendar and every sheet it opens only ever read
+   `snapshot.name` and the item names/count. A calendar with 40 sessions
+   was pulling megabytes per open. New `calendar_rows(uuid[])` function
+   returns the same rows with snapshot slimmed to names only, running as
+   the caller (SECURITY INVOKER) so the table's RLS applies unchanged.
+   `to_jsonb(row) - 'snapshot'` carries every other column automatically,
+   so future columns need no change. Client falls back to the full fetch
+   only if the function isn't installed. The AR-noted "initial fetch still
+   unbounded" concern is largely moot now - the bound that mattered was
+   bytes per row, not row count.
+2. **"Sessions planned" must be the agreed frequency, not fluctuate.**
+   Future-week headers showed however many the coach had assigned so far
+   (2, then 1). Now "planned" = the accepted offer's `workouts_per_week_cap`
+   always; the assigned-so-far count is shown alongside only when it
+   differs ("3 sessions planned · 2 assigned"). Slots already used the cap.
+3. **Assigning no longer re-renders the whole screen.** `doAssign` and the
+   slot-remove action folded the change into the in-memory week index and
+   redraw just that week's header/slots and the this-week card
+   (`refreshWeekUI`; the card is now built by `thisWeekCardEl`, and each
+   `.cal-week` carries `data-week`). No spinner flash.
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20
