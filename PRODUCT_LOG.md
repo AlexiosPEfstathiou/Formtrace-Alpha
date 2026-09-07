@@ -194,6 +194,29 @@ on the day model until step 5 flips it):
 5. Flip the flag, retire day-based streak RPCs, log cleanup (W, streak
    items, postponement items marked superseded).
 
+**Step 1 written 2026-09-07 - `supabase/migrations_week_model.sql`, awaiting
+run.** Grounded against the real schema first (status set is exactly
+assigned/submitted/reviewed - skipping is item-level, not a workout
+status; the cap is `offers.workouts_per_week_cap` via `engagements.offer_id`,
+not on engagements; `due_date` was already nullable). Decisions made while
+writing, beyond the design above:
+- New streak goes in a NEW column `profiles.week_streak_count` via
+  `refresh_my_week_streak()`; `streak_count` and the day functions are
+  untouched, so both measures coexist until step 5.
+- `week_closures` is backfilled from history (assigned/completed counts per
+  engagement per week, pause overlap = neutral) so the week streak is
+  continuous at cutover instead of resetting to zero. The backfill records
+  only - it never carries or bumps, so months-old day-model leftovers are
+  NOT resurrected into anyone's current pool. The pool is strictly
+  `week_start = this Monday`, and only `close_week()` ever moves a row.
+- `close_weeks_due(engagement)` is what the client will call: walks every
+  unclosed past week in order. One lookup when nothing is due.
+- Cap bumping tracks the exact carried row ids rather than inferring from
+  created_at order (a coach can assign next week before this week), so a
+  carried session can never be the one bumped.
+- The bump cascade (bumped rows overflowing the week after) is resolved
+  one close at a time, deliberately, not recursively.
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20
