@@ -251,6 +251,37 @@ the last row's Sunday, so out-of-month days render as ordinary, muted
 cells (`cal-outside`) instead of blank fillers. A week is never shown
 partially, in either direction.
 
+**Step 3 DONE 2026-09-07 - coach side, live. Needs
+`supabase/migrations_week_start_trigger.sql` run.**
+- **Real gap found and closed:** the step-1 backfill set `week_start` once,
+  but the app's own assignment insert had never set it - every workout
+  assigned after that run had `week_start = NULL`, invisible to
+  `close_week()` (never counted, never carried). `doAssign` now sets it,
+  and a BEFORE INSERT/UPDATE trigger guarantees it on every code path,
+  plus a one-off repair of the rows created in the gap.
+- **Assigning is per week.** `doAssign` writes `week_start` (Monday of
+  whatever day the coach tapped, or of today from the header/card) and
+  leaves `due_date` null - the trainee picks the day. Tapping any day
+  still works; it just lands the session in that day's week. The picker
+  sheet is titled "Assign · week of 14-20 Sep".
+- **Week headers are the assign surface for coaches:** current and future
+  week rows show "+ Assign" and open the picker for that week. Past weeks
+  don't.
+- **Coach "This week" card** mirrors the trainee's numbers with an *Assign
+  a session* action. Non-blocking notice when an assignment takes a week
+  past the agreed cap ("That's 4 sessions ... the agreed number is 3") -
+  the coach may mean it, but should know.
+- **Unpicked sessions no longer sit on a day cell** - a session with no
+  `due_date` belongs to its week header, not to its creation day (which
+  is where the old indexing would have put it).
+- **Trainees list:** each active card shows "2/3 this week" (gold when
+  complete), from one batched query across all active engagements plus
+  one for caps - never per card.
+Known and accepted for now: the Trainees list reads live rows without
+running the week transition first, so a trainee who hasn't opened the app
+since the week rolled can show last week's unfinished sessions as still
+"this week" until either party opens that engagement's calendar.
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20

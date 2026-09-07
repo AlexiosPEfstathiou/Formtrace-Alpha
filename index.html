@@ -5098,13 +5098,27 @@ async function renderTraineeHome(){
   const past=engs.filter(e=>e.status!=="active");
   $("#tr-sub").textContent=active.length?`${active.length} active${past.length?` · ${past.length} past`:""}`:(past.length?`${past.length} past`:"No active trainees yet");
 
+  /* Item AT step 3: this-week progress per trainee, one batched query for all
+     active engagements (never per card - see items S/AS/AU). */
+  const wkByEng={}, capByEng={};
+  if(WEEK_MODEL && active.length){
+    const thisMon=weekStartISO(new Date());
+    const offerIds=[...new Set(active.filter(e=>e.offer_id).map(e=>e.offer_id))];
+    const [r1,r2]=await Promise.all([
+      store._sb.from("assigned_workouts").select("engagement_id,status").in("engagement_id",active.map(e=>e.id)).eq("week_start",thisMon),
+      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap").in("id",offerIds) : Promise.resolve({data:[]})
+    ]);
+    for(const r of (r1.data||[])){ const o=wkByEng[r.engagement_id]||(wkByEng[r.engagement_id]={n:0,done:0}); o.n++; if(r.status!=="assigned") o.done++; }
+    const capByOffer=Object.fromEntries((r2.data||[]).map(o=>[o.id,o.workouts_per_week_cap]));
+    for(const e of active) capByEng[e.id]=e.offer_id?capByOffer[e.offer_id]:null;
+  }
   const engCard=(e)=>{
     const other=profs[e.trainee_id]||{};
     const wk=weekNumber(e.started_at);
     const div=document.createElement("div");div.className="card ex-card";
     div.innerHTML=`<div class="list-row">
         <div class="avatar">${escapeHtml(other.avatar_initials||initials(other.display_name))}</div>
-        <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}</div></div>
+        <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}${(WEEK_MODEL&&e.status==="active")?(()=>{const w=wkByEng[e.id]||{n:0,done:0};const t=capByEng[e.id]??w.n;return t?` · <b style="color:${w.done>=t?"#F5C542":"var(--ink)"}">${w.done}/${t}</b> this week`:" · nothing assigned this week";})():""}</div></div>
         <span class="badge ${e.status}">${e.status}</span></div>`;
     div.addEventListener("click",()=>openEngagement(e.id));
     return div;
@@ -5339,7 +5353,9 @@ function weekHeaderEl(monISO, iAmCoach){
   }else{
     cls="wk-neutral"; n=assigned?`${assigned}`:""; sub=assigned?(assigned===1?"session planned":"sessions planned"):"";
   }
-  el.innerHTML=`<span>${weekLabel(monISO)}</span><span><span class="wk-n">${n}</span>${sub?` <span style="font-weight:600">${sub}</span>`:""}</span>`;
+  const canAssign = iAmCoach && monISO>=thisMon && (!currentEng || currentEng.status==="active");
+  el.innerHTML=`<span>${weekLabel(monISO)}</span><span><span class="wk-n">${n}</span>${sub?` <span style="font-weight:600">${sub}</span>`:""}${canAssign?` <span style="color:var(--lime);font-weight:800;margin-left:8px">+ Assign</span>`:""}</span>`;
+  if(canAssign){ el.style.cursor="pointer"; el.addEventListener("click",()=>assignWorkoutFlow(monISO)); }
   return el;
 }
 /* Start a session: list this week's remaining pool in the shared sheet. Picking
@@ -5420,7 +5436,10 @@ async function renderEngagement(skipFetch){
   }
   // index assigned workouts by due_date
   engAssignedByDate={};
-  for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
+  for(const a of assigned){
+    if(WEEK_MODEL && !a.due_date) continue;   // Item AT: unpicked sessions belong to their week header, not to a day
+    const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a);
+  }
   /* Item AT: the same rows keyed by week, plus closures and the agreed cap. */
   weekRows={}; weekClosures={}; weekCap=null;
   if(WEEK_MODEL){
@@ -5487,8 +5506,9 @@ async function renderEngagement(skipFetch){
     body.appendChild(warn);
   }
 
-  // Item AT: "This week" card - the trainee's primary action under the week model.
-  if(WEEK_MODEL && !iAmCoach){
+  // Item AT: "This week" card - the trainee's primary action under the week model;
+  // for the coach, the same numbers with an assign action instead of a start action.
+  if(WEEK_MODEL){
     const thisMon=weekStartISO(new Date());
     const rows=weekRows[thisMon]||[];
     const pool=rows.filter(a=>a.status==="assigned");
@@ -5502,13 +5522,15 @@ async function renderEngagement(skipFetch){
         <div style="flex:1">
           <div class="eyebrow">This week</div>
           <div class="wk-big" style="margin-top:6px">${done} <span style="font-size:14px;color:var(--muted);font-weight:700">of ${target} done</span></div>
-          <div class="wk-sub">${paused?"On a break - this week doesn't count":(pool.length?`${pool.length} left · week closes ${daysLeft===0?"today":daysLeft===1?"tomorrow":"in "+daysLeft+" days"}`:(target>0&&done>=target?"All done this week ✓":"Nothing assigned yet"))}</div>
+          <div class="wk-sub">${paused?"On a break - this week doesn't count":(pool.length?`${pool.length} left · week closes ${daysLeft===0?"today":daysLeft===1?"tomorrow":"in "+daysLeft+" days"}`:(target>0&&done>=target?"All done this week ✓":(iAmCoach?"Nothing assigned yet — tap Assign":"Nothing assigned yet")))}</div>
           <div class="wk-bar"><i style="width:${target?Math.min(100,Math.round(done/target*100)):0}%"></i></div>
         </div>
-        <button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>
+        ${iAmCoach
+          ? `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${currentEng.status==="active"?"":"disabled"}>Assign a session</button>`
+          : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`}
       </div>`;
     body.appendChild(card);
-    card.querySelector("#wk-start").addEventListener("click",()=>openWeekPool(pool));
+    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(thisMon) : openWeekPool(pool));
   }
   // calendar
   if(engCalYear==null){const t=new Date();engCalYear=t.getFullYear();engCalMonth=t.getMonth();}
@@ -6766,7 +6788,7 @@ async function coachCompleteGoal(){
 async function assignWorkoutFlow(targetDate){
   const wos=await store.workouts.list({coach_id:ME.id});
   if(!wos.length){toast("Build a workout in your Library first");return;}
-  const body=$("#sheet-body");body.innerHTML="";$("#sheet-lib").querySelector("h3").textContent=targetDate?("Assign · "+fmtDay(targetDate)):"Assign which workout?";$("#sheet-add").style.display="none";
+  const body=$("#sheet-body");body.innerHTML="";$("#sheet-lib").querySelector("h3").textContent=WEEK_MODEL?("Assign · week of "+weekLabel(weekStartISO(new Date((targetDate||todayISO())+"T00:00:00")))):(targetDate?("Assign · "+fmtDay(targetDate)):"Assign which workout?");$("#sheet-add").style.display="none";
   for(const w of wos){
     const row=document.createElement("div");row.className="sh-item";
     row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(w.name)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(w.items||[]).length} exercises</div></div><div style="color:var(--lime)">→</div>`;
@@ -6807,8 +6829,24 @@ async function doAssign(w,targetDate){
   });
   const snapshot={name:w.name,items:snapItems};
   const row={engagement_id:currentEng.id,workout_id:w.id,snapshot,status:"assigned"};
-  if(targetDate) row.due_date=targetDate;
+  /* Item AT step 3: under the week model a session belongs to a WEEK, and the
+     trainee chooses the day. So: week_start is the Monday of whatever day the
+     coach tapped (or of today from the header/card), and due_date is left
+     null until the trainee picks. Also closes a real gap found here: since
+     the step-1 backfill, this insert never set week_start at all, so anything
+     assigned after that run was invisible to close_week(). A DB trigger now
+     guarantees it too (migrations_week_start_trigger.sql). */
+  let wkStart=null;
+  if(WEEK_MODEL){
+    wkStart=weekStartISO(new Date((targetDate||todayISO())+"T00:00:00"));
+    row.week_start=wkStart;
+  }else if(targetDate) row.due_date=targetDate;
   await store.assignedWorkouts.add(row);
+  if(WEEK_MODEL && wkStart){
+    // non-blocking cap notice: the coach may mean it, but should know
+    const already=(weekRows[wkStart]||[]).length+1;
+    if(weekCap!=null && already>weekCap) toast(`That's ${already} sessions in the week of ${weekLabel(wkStart)} — the agreed number is ${weekCap}`,5000);
+  }
   toast("Workout assigned ✓"); renderEngagement();
 }
 
