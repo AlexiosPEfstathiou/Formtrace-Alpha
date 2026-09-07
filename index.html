@@ -5322,6 +5322,15 @@ async function openEngagement(id){
      switches immediately with a placeholder header and the body spinner
      that renderEngagement already draws, and the data fills in behind it. */
   $("#eng-title").textContent="Loading…"; $("#eng-sub").textContent="";
+  /* Regression fix (found on return from sending a review): renderEngagement
+     re-parents #eng-fab-row INTO #engagement-body at the end of every render,
+     and rescues it back out before clearing the body on the next one. The
+     spinner line below - added for instant feedback in the latency audit -
+     cleared the body BEFORE that rescue could run, destroying the fab row on
+     every second visit to an engagement, so the later fabRow.classList read
+     hit null and the whole calendar showed "Couldn't load". Same rescue,
+     applied here too, before anything is cleared. */
+  { const g=$("#eng-fab-row"), b=$("#engagement-body"); if(g && b && g.parentElement===b) $("#s-engagement").appendChild(g); }
   $("#engagement-body").innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
   currentEng=await store.engagements.get(id);
@@ -5860,6 +5869,7 @@ async function renderEngagement(skipFetch){
   body.appendChild(fabRow);
  }catch(err){
   console.error("renderEngagement failed",err);
+  { const g=$("#eng-fab-row"), b=$("#engagement-body"); if(g && b && g.parentElement===b) $("#s-engagement").appendChild(g); }   // same fab-row rescue: an error render must not eat the row and poison the next one
   $("#engagement-body").innerHTML=`<div class="empty" style="padding:40px 20px"><div class="ic">⚠</div><p style="color:var(--red)">Couldn't load the calendar.<br><span style="font-size:12px;color:var(--muted)">${escapeHtml(err&&err.message||String(err))}</span></p></div>`;
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
  }

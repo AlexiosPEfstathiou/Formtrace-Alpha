@@ -4,6 +4,29 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AV. Regression from AU: "Couldn't load the calendar - Cannot read properties of null (reading 'classList')" - DONE 2026-09-07
+
+Reported after sending a review as a coach. My own regression, from the
+latency audit (AU, signature 3): `openEngagement` was changed to show its
+spinner immediately by clearing `#engagement-body` up front - but
+`renderEngagement` re-parents `#eng-fab-row` (the Goal-complete button
+row) INTO that body at the end of every render, and its guard that
+rescues the row back out before clearing lives inside `renderEngagement`,
+which runs after. So on every SECOND visit to an engagement (open →
+review → return is exactly that), the new spinner line destroyed the fab
+row before the guard could save it, and the later `fabRow.classList` read
+hit null. The original comment on that guard warned about precisely this
+failure; I reintroduced it one function upstream.
+
+Fixed by applying the same rescue in `openEngagement` before anything is
+cleared, and in `renderEngagement`'s own catch block, which also clears
+the body and would otherwise have eaten the row on an error render and
+poisoned the next one. Lesson, recorded for next time: any new
+`#engagement-body.innerHTML =` must be preceded by the fab-row rescue -
+there are now exactly three such sites, all guarded.
+
+---
+
 ## AU. App-wide latency audit - DONE 2026-09-07
 
 Requested: scan the whole app for latency, since many buttons don't
