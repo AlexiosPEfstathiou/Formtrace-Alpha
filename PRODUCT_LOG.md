@@ -217,6 +217,32 @@ writing, beyond the design above:
 - The bump cascade (bumped rows overflowing the week after) is resolved
   one close at a time, deliberately, not recursively.
 
+**Step 1 RUN 2026-09-07** - sanity: 0 null week_starts, 37 closures
+backfilled, 1 trainee already carrying a week streak from history.
+
+**Step 2 DONE 2026-09-07 - trainee side, live.** `WEEK_MODEL=true` flag
+(additive only; nothing day-based removed yet):
+- Calendar switched to Monday-first (was Sunday-first) so grid rows line
+  up with server weeks - `CAL_DOW` and the month-offset both changed; the
+  engagement calendar was the only consumer.
+- A header row above every week of the grid: date range + count. Past
+  weeks read from `week_closures` (gold complete / red incomplete /
+  muted neutral with "on a break" or "no sessions"); the current week
+  shows done/target live; future weeks show sessions planned.
+- "This week" card for trainees above the calendar: X of N done, progress
+  bar, days until the week closes, and a single *Start a session* button.
+  N is the summed `workouts_per_week_cap` of the active engagements, or
+  the live count if no offer carries a cap.
+- *Start a session* lists the week's remaining pool in the shared sheet,
+  carried sessions first and labelled. Picking one stamps `due_date =
+  today` (that is what places it on the calendar) and hands off to the
+  existing `openAssigned` path - no second start flow.
+- `close_weeks_due` runs per engagement at the top of the calendar fetch,
+  BEFORE assigned workouts are read, since it can move rows. Non-fatal on
+  error so the day model still renders if the migration is missing.
+Coach side unchanged (step 3). Day states, postponement, day streak all
+still present (steps 4-5).
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20

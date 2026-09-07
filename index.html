@@ -817,6 +817,21 @@
   .cal-head button{width:38px;height:38px;border-radius:11px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .cal-head button:active{background:var(--panel2);}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  /* Item AT: a full-width header row above each calendar week - the week is
+     now the primary unit; day cells only show what was actually done on them. */
+  .cal-week{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-top:4px;border-radius:10px;font-size:11.5px;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--line2);}
+  .cal-week .wk-n{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .cal-week.wk-done{background:linear-gradient(135deg,rgba(245,197,66,.28),rgba(224,168,30,.28));border-color:#E0A81E;color:var(--ink);}
+  .cal-week.wk-done .wk-n{color:#F5C542;}
+  .cal-week.wk-missed{border-color:rgba(255,90,90,.55);background:rgba(255,90,90,.08);}
+  .cal-week.wk-missed .wk-n{color:var(--red);}
+  .cal-week.wk-neutral{opacity:.6;font-style:italic;}
+  .cal-week.wk-current{border-color:var(--lime-dim);}
+  .wk-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .wk-card .wk-big{font-size:22px;font-weight:800;color:var(--ink);line-height:1;}
+  .wk-card .wk-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+  .wk-bar{height:6px;border-radius:3px;background:var(--line2);margin-top:8px;overflow:hidden;}
+  .wk-bar > i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--lime-light),var(--lime));}
   .cal-dow{text-align:center;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--faint);text-transform:uppercase;padding-bottom:4px;}
   .cal-day{aspect-ratio:1/1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;font-variant-numeric:tabular-nums;border:1px solid transparent;}
   .cal-day .dn{font-size:14px;font-weight:700;line-height:1;}
@@ -1808,7 +1823,8 @@ function starsHtml(n){ n=Math.round(n||0); let h=""; for(let i=1;i<=5;i++)h+=`<s
 function timeAgo(ts){ if(!ts)return ""; const s=Math.floor((Date.now()-new Date(ts).getTime())/1000); if(s<60)return "just now"; const m=Math.floor(s/60); if(m<60)return `${m} minute${m>1?"s":""} ago`; const h=Math.floor(m/60); if(h<24)return `${h} hour${h>1?"s":""} ago`; const d=Math.floor(h/24); return `${d} day${d>1?"s":""} ago`; }
 /* ---- calendar date helpers ---- */
 const CAL_MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
-const CAL_DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const CAL_DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];   // Item AT: weeks are Monday-Sunday (matches the server's ISO date_trunc)
+const WEEK_MODEL=true;   // Item AT step 2: trainee-side week header + start-a-session card. Additive only until step 5.
 const pad2=n=>String(n).padStart(2,"0");
 const isoOf=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
 const todayISO=()=>isoOf(new Date());
@@ -5121,6 +5137,12 @@ async function renderTraineeHome(){
 let currentEng=null, currentEngOther=null;
 let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={}, streakInfo={count:0,danger:false,broken:false};
 let coachingDaysByDate={};   // iso -> accepted call_proposals row, single-engagement view only
+/* Item AT (week model). weekRows: assigned_workouts keyed by week_start Monday ISO.
+   weekClosures: closed weeks keyed by week_start (merged across the screen's
+   engagements - any non-neutral incomplete closure marks the week missed).
+   weekCap: the agreed sessions-per-week across the screen's active
+   engagements (sum of offers.workouts_per_week_cap), null if none has one. */
+let weekRows={}, weekClosures={}, weekCap=null;
 let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
 let traineeEngs=[];           // the trainee's engagement rows (merged mode)
 let engById={};               // id -> engagement (for day actions in merged mode)
@@ -5285,6 +5307,70 @@ async function openEngagement(id){
   await renderEngagement();
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
 }
+/* ---- Item AT: week model helpers (trainee calendar, step 2) ---- */
+function weekLabel(monISO){
+  const m=new Date(monISO+"T00:00:00"), s=new Date(m); s.setDate(s.getDate()+6);
+  const mo=d=>CAL_MONTHS[d.getMonth()].slice(0,3);
+  return m.getMonth()===s.getMonth() ? `${m.getDate()}–${s.getDate()} ${mo(s)}` : `${m.getDate()} ${mo(m)} – ${s.getDate()} ${mo(s)}`;
+}
+function weekHeaderEl(monISO, iAmCoach){
+  const el=document.createElement("div"); el.className="cal-week";
+  const rows=weekRows[monISO]||[];
+  const isDone=a=>a.status==="submitted"||a.status==="reviewed";
+  const assigned=rows.length, done=rows.filter(isDone).length;
+  const thisMon=weekStartISO(new Date());
+  let cls="", n="", sub="";
+  if(monISO<thisMon){
+    const cl=weekClosures[monISO]||[];
+    if(cl.length){
+      const a=cl.reduce((s,c)=>s+c.assigned_count,0), d=cl.reduce((s,c)=>s+c.completed_count,0);
+      const bad=cl.some(c=>!c.neutral&&c.completed_count<c.assigned_count);
+      const good=cl.some(c=>!c.neutral&&c.completed_count>=c.assigned_count);
+      if(bad){ cls="wk-missed"; n=`${d}/${a}`; sub="incomplete"; }
+      else if(good){ cls="wk-done"; n=`${d}/${a}`; sub="complete ✓"; }
+      else { cls="wk-neutral"; n=""; sub=cl.some(c=>c.neutral_reason==="paused")?"on a break":"no sessions"; }
+    }else if(assigned){ // closed on the server but not yet recorded here (or pre-history): judge from rows
+      if(done>=assigned){ cls="wk-done"; n=`${done}/${assigned}`; sub="complete ✓"; } else { cls="wk-missed"; n=`${done}/${assigned}`; sub="incomplete"; }
+    }else{ cls="wk-neutral"; sub="no sessions"; }
+  }else if(monISO===thisMon){
+    const target = weekCap!=null ? weekCap : assigned;
+    cls="wk-current"; n=`${done}/${target}`; sub=(target&&done>=target)?"complete ✓":"this week";
+  }else{
+    cls="wk-neutral"; n=assigned?`${assigned}`:""; sub=assigned?(assigned===1?"session planned":"sessions planned"):"";
+  }
+  el.innerHTML=`<span>${weekLabel(monISO)}</span><span><span class="wk-n">${n}</span>${sub?` <span style="font-weight:600">${sub}</span>`:""}</span>`;
+  return el;
+}
+/* Start a session: list this week's remaining pool in the shared sheet. Picking
+   one stamps today as its due_date (the day it was actually done - that's what
+   places it on the calendar) and opens it through the same openAssigned path
+   every other entry point already uses. */
+async function openWeekPool(pool){
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Start a session";
+  $("#sheet-add").style.display="none";
+  const today=todayISO();
+  const sorted=[...pool].sort((a,b)=>{ // carried (created before its week) first, then oldest
+    const ca=a.created_at&&isoOf(new Date(a.created_at))<(a.week_start||today), cb=b.created_at&&isoOf(new Date(b.created_at))<(b.week_start||today);
+    if(ca!==cb) return ca?-1:1; return String(a.created_at).localeCompare(String(b.created_at));
+  });
+  for(const a of sorted){
+    const carried=a.created_at&&a.week_start&&isoOf(new Date(a.created_at))<a.week_start;
+    const eng=(traineeEngs||[]).find(e=>e.id===a.engagement_id)||currentEng||{};
+    const row=document.createElement("div"); row.className="sh-item";
+    row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${((a.snapshot&&a.snapshot.items)||[]).length} exercises${eng.goal_title?` · ${escapeHtml(eng.goal_title)}`:""}${carried?` · <span style="color:var(--attn)">carried from last week</span>`:""}</div></div>
+      <div style="color:var(--lime)">→</div>`;
+    row.addEventListener("click",async()=>{
+      try{ await store.assignedWorkouts.update(a.id,{due_date:today}); }
+      catch(e){ console.error("stamp session day",e); toast("Couldn't start that session",3500); return; }
+      closeSheet();
+      await openAssigned(a.id);
+    });
+    body.appendChild(row);
+  }
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
 async function renderEngagement(skipFetch){
  try{
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
@@ -5315,6 +5401,14 @@ async function renderEngagement(skipFetch){
      call site (opening the screen fresh) still fetches normally. */
   if(!skipFetch){
   await loadActivePauses(traineeMerged ? traineeEngs.map(e=>e.id) : [currentEng.id]);   // items M/N — refreshed on every open, not just at boot; scoped to THIS screen's engagement(s) — see loadActivePauses' own comment
+  /* Item AT: the week transition runs BEFORE assigned workouts are read, because
+     it can move rows (carry leftovers forward, bump overflow). One lookup per
+     engagement when nothing is due. Non-fatal on error - if the migration
+     hasn't been applied somewhere, the day model below still renders. */
+  const atEngIds = traineeMerged ? traineeEngs.map(e=>e.id) : [currentEng.id];
+  if(WEEK_MODEL){
+    await Promise.all(atEngIds.map(id=>store._sb.rpc("close_weeks_due",{p_engagement:id}).then(({error})=>{ if(error) throw error; }).catch(e=>console.error("close_weeks_due (run migrations_week_model.sql)",e))));
+  }
   // gather assigned workouts — merged (all trainee engagements) or single engagement
   let assigned=[];
   if(traineeMerged){
@@ -5326,6 +5420,21 @@ async function renderEngagement(skipFetch){
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){ const d=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[d]=engAssignedByDate[d]||[]).push(a); }
+  /* Item AT: the same rows keyed by week, plus closures and the agreed cap. */
+  weekRows={}; weekClosures={}; weekCap=null;
+  if(WEEK_MODEL){
+    for(const a of assigned){ const w=a.week_start||weekStartISO(new Date((a.due_date||isoOf(new Date(a.created_at||Date.now())))+"T00:00:00")); (weekRows[w]=weekRows[w]||[]).push(a); }
+    const engObjs = traineeMerged ? traineeEngs : [currentEng];
+    const offerIds=[...new Set(engObjs.filter(e=>e.status==="active"&&e.offer_id).map(e=>e.offer_id))];
+    const [clRes,capRes]=await Promise.all([
+      store._sb.from("week_closures").select("*").in("engagement_id",atEngIds),
+      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap").in("id",offerIds) : Promise.resolve({data:[]})
+    ]);
+    if(clRes.error) console.error("week_closures load",clRes.error);
+    for(const c of (clRes.data||[])){ (weekClosures[c.week_start]=weekClosures[c.week_start]||[]).push(c); }
+    const caps=(capRes.data||[]).map(o=>o.workouts_per_week_cap).filter(v=>v!=null);
+    weekCap = caps.length ? caps.reduce((s,v)=>s+v,0) : null;
+  }
   /* Reported bug fix: this used to only load in the single-engagement
      view, on the reasoning that call scheduling needs one specific
      counterpart — true for PROPOSING (you can't check overlap against a
@@ -5377,6 +5486,29 @@ async function renderEngagement(skipFetch){
     body.appendChild(warn);
   }
 
+  // Item AT: "This week" card - the trainee's primary action under the week model.
+  if(WEEK_MODEL && !iAmCoach){
+    const thisMon=weekStartISO(new Date());
+    const rows=weekRows[thisMon]||[];
+    const pool=rows.filter(a=>a.status==="assigned");
+    const done=rows.filter(a=>a.status==="submitted"||a.status==="reviewed").length;
+    const target = weekCap!=null ? weekCap : (pool.length+done);
+    const sunday=new Date(thisMon+"T00:00:00"); sunday.setDate(sunday.getDate()+6);
+    const daysLeft=Math.max(0,Math.round((sunday-new Date(todayISO()+"T00:00:00"))/86400000));
+    const card=document.createElement("div");card.className="card";
+    const paused=isPausedOn(todayISO());
+    card.innerHTML=`<div class="wk-card">
+        <div style="flex:1">
+          <div class="eyebrow">This week</div>
+          <div class="wk-big" style="margin-top:6px">${done} <span style="font-size:14px;color:var(--muted);font-weight:700">of ${target} done</span></div>
+          <div class="wk-sub">${paused?"On a break - this week doesn't count":(pool.length?`${pool.length} left · week closes ${daysLeft===0?"today":daysLeft===1?"tomorrow":"in "+daysLeft+" days"}`:(target>0&&done>=target?"All done this week ✓":"Nothing assigned yet"))}</div>
+          <div class="wk-bar"><i style="width:${target?Math.min(100,Math.round(done/target*100)):0}%"></i></div>
+        </div>
+        <button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>
+      </div>`;
+    body.appendChild(card);
+    card.querySelector("#wk-start").addEventListener("click",()=>openWeekPool(pool));
+  }
   // calendar
   if(engCalYear==null){const t=new Date();engCalYear=t.getFullYear();engCalMonth=t.getMonth();}
   const head=document.createElement("div");head.className="cal-head";
@@ -5386,10 +5518,23 @@ async function renderEngagement(skipFetch){
   body.appendChild(dow);
   const grid=document.createElement("div");grid.className="cal-grid";grid.style.marginTop="6px";body.appendChild(grid);
 
-  const first=new Date(engCalYear,engCalMonth,1).getDay();
+  const first=(new Date(engCalYear,engCalMonth,1).getDay()+6)%7;   // Monday-first (Item AT)
   const days=new Date(engCalYear,engCalMonth+1,0).getDate();
   const today=todayISO();
-  for(let i=0;i<first;i++){const c=document.createElement("div");c.className="cal-day cal-empty";grid.appendChild(c);}
+  /* Item AT: a header row above each week of the grid. Every cell goes through
+     addCell so the header lands exactly at each row start, including the
+     leading empty cells. The row's week is the Monday of the month's 1st,
+     stepped by 7 per row. */
+  const row0Mon=weekStartISO(new Date(engCalYear,engCalMonth,1));
+  let cellIdx=0;
+  const addCell=(el)=>{
+    if(WEEK_MODEL && cellIdx%7===0){
+      const m=new Date(row0Mon+"T00:00:00"); m.setDate(m.getDate()+7*(cellIdx/7));
+      grid.appendChild(weekHeaderEl(isoOf(m), iAmCoach));
+    }
+    grid.appendChild(el); cellIdx++;
+  };
+  for(let i=0;i<first;i++){const c=document.createElement("div");c.className="cal-day cal-empty";addCell(c);}
   for(let d=1;d<=days;d++){
     const iso=engCalYear+"-"+pad2(engCalMonth+1)+"-"+pad2(d);
     const wl=engAssignedByDate[iso]||[];
@@ -5403,7 +5548,7 @@ async function renderEngagement(skipFetch){
       cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🎥</div>`;
       cell.title="Coaching call · "+fmtTimeRange(p.start_time,p.end_time);
       cell.addEventListener("click",()=>toast("Coaching call · "+fmtTimeRange(p.start_time,p.end_time),3000));
-      grid.appendChild(cell);
+      addCell(cell);
       continue;
     }
     let cls="cal-rest",badge="",missed=false;
@@ -5509,7 +5654,7 @@ async function renderEngagement(skipFetch){
       }
       cell.addEventListener("click",()=>openTraineeDay(iso));
     }
-    grid.appendChild(cell);
+    addCell(cell);
   }
 
   // legend
