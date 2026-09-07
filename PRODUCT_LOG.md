@@ -4,6 +4,60 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AT. Calendar granularity: weeks instead of days - coaches assign per week, trainees pick their own day
+
+Requested: change the whole calendar from day-level to week-level - a
+coach assigns, say, "3 sessions this week" rather than pinning each one
+to a specific day, and the trainee has the freedom to do each session
+whenever suits them within that week.
+
+Logged as-is, not sized down or reframed as smaller than it is. This is
+one of the largest-scope items in this log, because "the calendar" isn't
+one screen here - it's the load-bearing structure underneath most of the
+app, and a genuine week-level model is a different shape of data, not
+just a different grid:
+
+- **Assignment itself.** `assignedWorkouts.due_date` is a specific day
+  today. A week-based model needs something like a due_week (or a
+  week-start date) instead, with the trainee choosing which day(s) within
+  it they actually train - a real schema change, not a display tweak.
+- **Streaks are explicitly day-based**, start to finish - "missed a
+  workout," "complete tomorrow to reinstate," the whole reschedule-to-
+  protect logic (item's own migrations: streak_redefine, streak_reschedule,
+  streak_localdate) all reason in terms of a specific calendar day. A
+  week-based model needs its own, different definition of what a streak
+  even means - "every week's assigned sessions completed" is a
+  plausible replacement, but it's a genuinely different rule, not a
+  relabeling of the existing one.
+- **The calendar UI itself** - the whole gold/pending/rest-day cell system
+  built during the theme refresh - is a day-by-day grid by construction.
+  Representing "3 sessions, do them whenever this week" probably needs a
+  different visual unit entirely (a week row or card showing progress
+  through that week's sessions), not a reskin of the existing day cells.
+- **Vacation/pause mode** currently freezes specific days on the
+  calendar; would need to move to week-level freezing.
+- **Scheduled video calls** already have their own, separate day-and-time
+  scheduling (availability blocks, specific proposed dates) - probably
+  stays exactly as-is, since a call is inherently a fixed-time event even
+  in a world where workouts aren't, but worth deciding explicitly rather
+  than assuming.
+- **Payment cadence (item B)** already thinks in workouts-per-week terms,
+  not per-day - this piece may actually simplify or align well with a
+  week-based model rather than needing rework.
+- **Postponement and wildcard slots** exist specifically because a
+  session is pinned to one day today; if the day itself becomes flexible
+  within the week, postponement in particular may partly dissolve as a
+  concept rather than needing a port to the new model - worth revisiting
+  what "postpone" even means once "do it whenever this week" is already
+  the default.
+
+Not started. Worth a real design pass - deciding the actual replacement
+rule for streaks in particular - before any of this is built, rather
+than porting the day-based logic piece by piece and hoping it still
+makes sense at the end.
+
+---
+
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20
 
 Reported as the same slow-loading symptom as AR, on a different screen -
