@@ -391,6 +391,22 @@ slot to start from).
    (`refreshWeekUI`; the card is now built by `thisWeekCardEl`, and each
    `.cal-week` carries `data-week`). No spinner flash.
 
+**Follow-up 2026-09-07 - "3 planned but I can only assign 1", and a
+trainee-side bug found while diagnosing it. Needs
+`supabase/migrations_start_session.sql` run.**
+- `doAssign` had no error handling at all: a rejected insert died silently
+  inside the click handler - "Assigning…" then nothing - which is exactly
+  what "I can only assign one" looks like. It now catches and shows the
+  database's message verbatim. Diagnosis of the underlying rejection is
+  pending that message; nothing on the client limits the count.
+- **Trainee "Start ▸" was broken before anyone reached it.** Direct updates
+  on `assigned_workouts` are column-restricted to (status, draft, opened)
+  since the status/postpone enforcement migrations, and `set_due_date()` is
+  deliberately coach-only ("not your trainee") - so the trainee had NO
+  permitted way to stamp the day they trained. New `start_session(uuid)`,
+  SECURITY DEFINER, scoped to own engagement + still 'assigned' + today
+  only (records what happened, never schedules). `startSession()` calls it.
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20

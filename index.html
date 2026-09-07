@@ -5426,8 +5426,11 @@ function weekHeaderEl(monISO, iAmCoach){
 /* Trainee starts a session: stamp today as the day it was done (that is what
    places it on the calendar), then hand off to the one workout-opening path. */
 async function startSession(a){
-  try{ await store.assignedWorkouts.update(a.id,{due_date:todayISO()}); }
-  catch(e){ console.error("stamp session day",e); toast("Couldn't start that session",3500); return; }
+  /* Direct updates on assigned_workouts are column-restricted (status, draft,
+     opened) and set_due_date() is coach-only - the trainee needs their own
+     scoped function to record the day. start_session() stamps today. */
+  try{ const { error }=await store._sb.rpc("start_session",{p_assigned:a.id}); if(error) throw error; }
+  catch(e){ console.error("start_session (run migrations_start_session.sql)",e); toast("Couldn't start that session: "+(e.message||e),4500); return; }
   closeSheet();
   await openAssigned(a.id);
 }/* Start a session: list this week's remaining pool in the shared sheet. Picking
@@ -6897,6 +6900,7 @@ async function assignWorkoutFlow(targetDate){
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 async function doAssign(w,targetDate){
+ try{
   toast("Assigning…",1500);
   const exs=await store.exercises.list({coach_id:ME.id});
   const exMap=Object.fromEntries(exs.map(e=>[e.id,e]));
@@ -6952,6 +6956,13 @@ async function doAssign(w,targetDate){
     (weekRows[wkStart]=weekRows[wkStart]||[]).push(inserted);
     refreshWeekUI(wkStart);
   }else renderEngagement();
+ }catch(err){
+  /* Found while testing: with no catch here, a rejected insert died silently in
+     the click handler - "Assigning…" then nothing, which read as "I can only
+     assign one". Whatever the database says now gets shown verbatim. */
+  console.error("doAssign",err);
+  toast("Couldn't assign: "+((err&&err.message)||String(err)),6000);
+ }
 }
 
 /* =========================================================================
