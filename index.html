@@ -819,6 +819,7 @@
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
   /* Item AT: a full-width header row above each calendar week - the week is
      now the primary unit; day cells only show what was actually done on them. */
+  .cal-day.cal-outside{opacity:.42;}
   .cal-week{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-top:4px;border-radius:10px;font-size:11.5px;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--line2);}
   .cal-week .wk-n{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
   .cal-week.wk-done{background:linear-gradient(135deg,rgba(245,197,66,.28),rgba(224,168,30,.28));border-color:#E0A81E;color:var(--ink);}
@@ -5526,17 +5527,25 @@ async function renderEngagement(skipFetch){
      leading empty cells. The row's week is the Monday of the month's 1st,
      stepped by 7 per row. */
   const row0Mon=weekStartISO(new Date(engCalYear,engCalMonth,1));
-  let cellIdx=0;
+  let cellIdx=0, curOutside=false;
   const addCell=(el)=>{
+    if(curOutside) el.classList.add("cal-outside");
     if(WEEK_MODEL && cellIdx%7===0){
       const m=new Date(row0Mon+"T00:00:00"); m.setDate(m.getDate()+7*(cellIdx/7));
       grid.appendChild(weekHeaderEl(isoOf(m), iAmCoach));
     }
     grid.appendChild(el); cellIdx++;
   };
-  for(let i=0;i<first;i++){const c=document.createElement("div");c.className="cal-day cal-empty";addCell(c);}
-  for(let d=1;d<=days;d++){
-    const iso=engCalYear+"-"+pad2(engCalMonth+1)+"-"+pad2(d);
+  /* Item AT follow-up: month-edge weeks render in full. The grid iterates real
+     dates from the first row's Monday to the last row's Sunday, so the days
+     that fall outside the viewed month are drawn as ordinary cells (muted via
+     cal-outside) instead of blank fillers - a week is never shown cut off. */
+  const lastDay=new Date(engCalYear,engCalMonth+1,0);
+  const endSun=new Date(lastDay); endSun.setDate(endSun.getDate()+(6-((lastDay.getDay()+6)%7)));
+  for(let cur=new Date(row0Mon+"T00:00:00"); cur<=endSun; cur.setDate(cur.getDate()+1)){
+    const iso=isoOf(cur);
+    const d=cur.getDate();
+    curOutside = cur.getMonth()!==engCalMonth;
     const wl=engAssignedByDate[iso]||[];
     /* Item G: an accepted coaching call fully replaces this day's normal
        rendering, for either role, per the explicit ask — checked first

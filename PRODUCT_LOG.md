@@ -243,6 +243,14 @@ backfilled, 1 trainee already carrying a week streak from history.
 Coach side unchanged (step 3). Day states, postponement, day streak all
 still present (steps 4-5).
 
+**Verified live 2026-09-07:** this-week count matches, past-week headers
+read correctly against what happened. One follow-up from the check:
+month-edge weeks were cut off (the last August row showed only the 31st).
+Fixed - the grid now iterates real dates from the first row's Monday to
+the last row's Sunday, so out-of-month days render as ordinary, muted
+cells (`cal-outside`) instead of blank fillers. A week is never shown
+partially, in either direction.
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20
