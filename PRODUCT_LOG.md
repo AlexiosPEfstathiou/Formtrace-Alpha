@@ -4,7 +4,7 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
-## BB. Streak animation must show the whole streak, scaled to its length
+## BB. Streak animation must show the whole streak, scaled to its length - DONE 2026-09-07 (built inside AT step 4, see there)
 
 Requested: the streak animation should accurately show the streak - the
 first and the last day always visible. Reported: on a 15-day streak the
@@ -579,6 +579,31 @@ trainee-side bug found while diagnosing it. Needs
   permitted way to stamp the day they trained. New `start_session(uuid)`,
   SECURITY DEFINER, scoped to own engagement + still 'assigned' + today
   only (records what happened, never schedules). `startSession()` calls it.
+**Step 4 DONE 2026-09-07 - day-based pieces retired (all under the
+`WEEK_MODEL` flag; step 5 removes the day code paths and RPCs).**
+- **Streak is weeks.** `serverStreak()` calls `refresh_my_week_streak`;
+  the badge reads e.g. "3w" with a "3-week streak" tooltip. "At risk" is
+  now: sessions still owed this week AND the week closes today or
+  tomorrow (`weekRisk()`), on the badge, the calendar warning card, and
+  the homepage card - which no longer offers rescheduling (the day was
+  never fixed, so there is nothing to move; the action is to train).
+- **Calendar days.** A day shows only sessions DONE on it. No red missed
+  day (an unfinished session is still owed this week, or carried - not a
+  missed day), no gold "rest day" (a day with nothing is just a day).
+  Legend entries for both hidden.
+- **Postponement hidden:** the trainee's Postpone button, the coach's
+  "Modify the workout instead" (move/approve), and the homepage
+  postpone-requests card. Tables/RPCs untouched until step 5.
+- **BB built here, on the week model** (item BB): the streak burst picks
+  its unit from the streak's length - under 3 weeks one square per day a
+  session was done; 3 weeks to 3 months one square per completed week;
+  beyond, one per month - and always ends with a dashed "current" square
+  (today, or this week's done/target). Subtitle states unit and
+  "start → today". `weekStreakSquares()` uses calendar rows already in
+  memory and fetches light rows only when opened from the homepage.
+Known, deferred to step 5: `shareStreakStory` still draws from the day
+list; `computeStreak`/`streakDates` remain for the non-flag path.
+
 - **"Only one slot" - REAL CAUSE, and it was never a limit.** The screenshot
   showed a single "Session 1 + Assign" and no planned count: that is what
   renders when the agreed weekly number can't be found (`weekCap` null) -

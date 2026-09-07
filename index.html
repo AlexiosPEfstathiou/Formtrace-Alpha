@@ -1080,6 +1080,9 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
     opacity:0;animation:sbIgnite .55s ease forwards;}
   .sb-day .sb-dow{font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;}
+  .sb-day.sb-cur{border-style:dashed;background:transparent;}
+  .sb-day.sb-wide{width:56px;}
+  .sb-day .sb-sub{font-size:8.5px;color:rgba(255,255,255,.55);}
   .sb-day .sb-n{font-size:15px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;}
   .sb-day .sb-flame{position:absolute;top:-11px;font-size:15px;opacity:0;animation:sbFlame .5s ease forwards;animation-delay:inherit;}
   @keyframes sbIgnite{
@@ -2023,10 +2026,22 @@ function computeStreak(logsMap, awMap){
   }
   return {count, danger, broken:false};
 }
+/* Item AT step 4: "at risk" under the week model = sessions still left this week
+   with the week about to close (today or tomorrow). rows = this week's light
+   assigned rows for the trainee (any source). */
+function weekRisk(rows){
+  const thisMon=weekStartISO(new Date());
+  const left=rows.filter(a=>a.week_start===thisMon && a.status==="assigned").length;
+  if(!left) return {danger:false,left:0,daysLeft:null};
+  const sun=new Date(thisMon+"T00:00:00"); sun.setDate(sun.getDate()+6);
+  const daysLeft=Math.max(0,Math.round((sun-new Date(todayISO()+"T00:00:00"))/86400000));
+  return {danger:daysLeft<=1,left,daysLeft};
+}
 function updateStreakBadge(info){
   const b=$("#streak-badge"); if(!b)return;
   b.classList.remove("hidden","danger","zero");
-  $("#streak-count").textContent=info.count;
+  $("#streak-count").textContent = (info.unit==="week") ? `${info.count}w` : info.count;
+  b.title = (info.unit==="week") ? `${info.count}-week streak` : `${info.count}-day streak`;
   if(info.danger) b.classList.add("danger");
   else if(info.count===0) b.classList.add("zero");
 }
@@ -2065,7 +2080,61 @@ function sbConfetti(){
     box.appendChild(c);
   }
 }
-function openStreakBurst(milestone){
+/* Item BB: the streak visual, on the week model. The UNIT follows the streak's
+   length, so the whole run always fits and the first and current squares are
+   always shown:
+     under 3 weeks   -> one square per DAY a session was done (plus today);
+     3 weeks-3 months -> one square per WEEK, start and current weeks labelled;
+     3 months and up -> one square per MONTH.
+   W = completed consecutive weeks (server, week_streak_count); the current,
+   still-open week is the dashed square at the end. */
+async function weekStreakSquares(){
+  const today=todayISO(), thisMon=weekStartISO(new Date());
+  const W=Number(ME&&ME.week_streak_count)||0;
+  const startMon=addDaysISO(thisMon,-7*W);
+  let rows=Object.values(weekRows||{}).flat();
+  if(!rows.length){
+    try{ const engs=await store.engagements.list({trainee_id:ME.id}); rows=(await assignedLiteByEng(engs.filter(e=>e.status==="active"))).flat(); }catch(e){ console.error("streak squares rows",e); }
+  }
+  const doneDates=[...new Set(rows.filter(a=>a.due_date&&a.status!=="assigned"&&a.due_date>=startMon&&a.due_date<=today).map(a=>a.due_date))].sort();
+  const doneThisWeek=rows.filter(a=>a.week_start===thisMon&&a.status!=="assigned").length;
+  const targetThisWeek=weekCap!=null?weekCap:rows.filter(a=>a.week_start===thisMon).length;
+  const mo=iso=>CAL_MONTHS[Number(iso.slice(5,7))-1].slice(0,3);
+  const dayLabel=iso=>({label:String(Number(iso.slice(8,10))), sub:new Date(iso+"T00:00:00").toLocaleDateString(undefined,{weekday:"short"}).slice(0,2)});
+  let unit, squares=[];
+  if(W<3){
+    unit="day";
+    for(const d of doneDates) squares.push({...dayLabel(d),done:true,current:d===today});
+    if(!doneDates.includes(today)) squares.push({...dayLabel(today),done:false,current:true});
+  }else if(W<13){
+    unit="week";
+    for(let i=0;i<W;i++){ const m=addDaysISO(startMon,7*i); squares.push({label:String(Number(m.slice(8,10))),sub:mo(m),done:true,current:false,wide:true}); }
+    squares.push({label:`${doneThisWeek}/${targetThisWeek||"–"}`,sub:"this wk",done:false,current:true,wide:true});
+  }else{
+    unit="month";
+    const byM={}; for(let i=0;i<W;i++){ const m=addDaysISO(startMon,7*i); const k=m.slice(0,7); byM[k]=(byM[k]||0)+1; }
+    for(const k of Object.keys(byM).sort()) squares.push({label:mo(k+"-01"),sub:`${byM[k]} wk`,done:true,current:false,wide:true});
+    squares.push({label:mo(thisMon),sub:"now",done:false,current:true,wide:true});
+  }
+  const fmt=iso=>`${Number(iso.slice(8,10))} ${mo(iso)}`;
+  return {unit, squares, W, startLabel:fmt(W?startMon:(doneDates[0]||today)), currentLabel:fmt(today), doneDays:doneDates.length};
+}
+async function openStreakBurst(milestone){
+  if(WEEK_MODEL){
+    const s=await weekStreakSquares();
+    if(!s.W && !s.doneDays){ toast("Finish this week's sessions to start your streak",2800); return; }
+    sbState={count:s.W, milestone:(typeof milestone==="number"?milestone:0)};
+    $("#sb-title").textContent = sbState.milestone ? "Milestone achieved!" : (s.W? "You're on fire!" : "Streak in the making");
+    $("#sb-cal").innerHTML=s.squares.map((q,i)=>`<div class="sb-day${q.current?" sb-cur":""}${q.wide?" sb-wide":""}" style="animation-delay:${i*70}ms"><span class="sb-dow">${escapeHtml(q.sub)}</span><span class="sb-n">${escapeHtml(q.label)}</span>${q.done?`<span class="sb-flame" style="animation-delay:${i*70+220}ms">🔥</span>`:""}</div>`).join("");
+    const unitTxt = s.unit==="day" ? `${s.doneDays} training day${s.doneDays===1?"":"s"}` : s.unit==="week" ? "one square per week" : "one square per month";
+    $("#sb-sub").textContent=`${s.W}-week streak · ${unitTxt} · ${s.startLabel} → ${s.currentLabel}`;
+    const settle=s.squares.length*70+300;
+    const t=$("#sb-title"), sb=$("#sb-sub");
+    t.style.animationDelay=settle+"ms"; sb.style.animationDelay=(settle+120)+"ms";
+    $("#streakburst").classList.add("on");
+    setTimeout(sbConfetti,settle);
+    return;
+  }
   const dates=streakDates();
   const n=(streakInfo&&streakInfo.count)||dates.length;
   if(!n||!dates.length){ toast("Finish a workout to start your streak",2800); return; }
@@ -2159,6 +2228,27 @@ function dismissStreakRisk(id){
   }catch(e){}
 }
 async function renderHomeStreakRisk(el,engs){
+  /* Item AT step 4: under the week model "at risk" is sessions still owed with
+     the week closing today or tomorrow. No reschedule action any more - the
+     day was never fixed, so there is nothing to move; the action is to train. */
+  if(WEEK_MODEL){
+    if(!el) return;
+    try{
+      const active=(engs||[]).filter(e=>e.status==="active");
+      const rows=(await assignedLiteByEng(active)).flat();
+      const r=weekRisk(rows);
+      const streak=ME.week_streak_count||0;
+      if(!r.danger){ el.style.display="none"; el.innerHTML=""; return; }
+      el.innerHTML=`<div class="card" style="background:rgba(255,90,90,.1);border-color:rgba(255,90,90,.5);cursor:pointer">
+        <div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px">⚠️</div><div style="flex:1">
+          <div style="font-weight:800;color:var(--red)">${streak>0?"Streak at risk":"Week not finished"}</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45">${r.left} session${r.left===1?"":"s"} still to do · week closes ${r.daysLeft===0?"today":"tomorrow"}${streak>0?` · keeps your ${streak}-week streak`:""}</div>
+        </div><div style="color:var(--lime);font-weight:800">Train ▸</div></div></div>`;
+      el.style.display="";
+      el.firstElementChild.addEventListener("click",()=>go("trainee-home"));
+    }catch(e){ console.error("week streak risk",e); el.style.display="none"; }
+    return;
+  }
   el.style.display="none"; el.innerHTML="";
   if(!ME||roleOf()==="coach")return;
   const active=(engs||[]).filter(e=>e.status==="active");
@@ -3009,9 +3099,15 @@ async function refreshStreakBadge(){
     // The COUNT is owned by the database (single source of truth shared with
     // coaches). We recompute the danger/broken styling locally since that's a
     // UI nuance, but the number itself comes from the server.
-    streakInfo=computeStreak();
-    const serverCount=await serverStreak();
-    if(serverCount!=null) streakInfo.count=serverCount;
+    if(WEEK_MODEL){
+      const r=weekRisk(lists.flat());
+      const serverCount=await serverStreak();
+      streakInfo={count:serverCount??(ME.week_streak_count||0),unit:"week",danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft};
+    }else{
+      streakInfo=computeStreak();
+      const serverCount=await serverStreak();
+      if(serverCount!=null) streakInfo.count=serverCount;
+    }
     updateStreakBadge(streakInfo);
   }catch(e){ console.error("streak badge",e); hideStreakBadge(); }
 }
@@ -3022,10 +3118,14 @@ async function serverStreak(){
   try{
     // pass the DEVICE's date: the server's current_date is UTC, which
     // disagrees with the client's anchor day for anyone ahead of UTC
-    const { data, error } = await store._sb.rpc("refresh_my_streak",{p_today:todayISO()});
-    if(error){ console.error("refresh_my_streak",error); return null; }
+    /* Item AT step 4: under the week model the streak is counted in WEEKS by the
+       database (refresh_my_week_streak -> profiles.week_streak_count). The day
+       function stays callable until step 5 removes it. */
+    const fn = WEEK_MODEL ? "refresh_my_week_streak" : "refresh_my_streak";
+    const { data, error } = await store._sb.rpc(fn,{p_today:todayISO()});
+    if(error){ console.error(fn,error); return null; }
     const v = (typeof data==="number") ? data : (Array.isArray(data)?data[0]:null);
-    if(v!=null && ME) ME.streak_count=v;
+    if(v!=null && ME){ if(WEEK_MODEL) ME.week_streak_count=v; else ME.streak_count=v; }
     return v;
   }catch(e){ console.error("serverStreak",e); return null; }
 }
@@ -3451,6 +3551,7 @@ async function renderHomeReviewDue(el){
    sheet in one tap rather than leaving the coach to find the specific
    workout themselves once on their homepage. */
 async function renderHomePostponeRequests(el){
+  if(WEEK_MODEL){ if(el) el.style.display="none"; return; }   // Item AT step 4: postponement dissolves under the week model
   el.style.display="none"; el.innerHTML="";
   if(!ME||roleOf()!=="coach")return;
   let pending=[];
@@ -5705,7 +5806,12 @@ async function renderEngagement(skipFetch){
     try{ const logs=await store.logs.list({trainee_id:traineeId}); for(const l of logs) logsByDate[l.log_date]=l; }catch(e){console.error("logs load",e);}
   }
   // discipline streak (trainee only)
-  streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
+  if(WEEK_MODEL){
+    const r=weekRisk(assigned);
+    streakInfo = iAmCoach ? {count:0,unit:"week",danger:false,broken:false} : {count:(ME.week_streak_count||0),unit:"week",danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft};
+  }else{
+    streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
+  }
   if(!iAmCoach){ updateStreakBadge(streakInfo); serverStreak().then(v=>{ if(v!=null){ streakInfo.count=v; updateStreakBadge(streakInfo); } }); }
   }
   body.innerHTML="";
@@ -5728,7 +5834,10 @@ async function renderEngagement(skipFetch){
   // streak danger warning (trainee): one missed workout — reinstate by completing next day
   if(!iAmCoach && streakInfo.danger && streakInfo.count>0){
     const warn=document.createElement("div");warn.className="card";warn.style.cssText="background:rgba(255,90,90,.1);border-color:rgba(255,90,90,.5);margin-bottom:14px";
-    warn.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px">⚠️</div><div style="flex:1"><div style="font-weight:800;color:var(--red)">Streak at risk</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45">You missed a workout. Your ${streakInfo.count}-day streak is paused — complete tomorrow to reinstate it. Miss again and it resets to zero.</div></div></div>`;
+    const riskCopy = WEEK_MODEL
+      ? `${streakInfo.left} session${streakInfo.left===1?"":"s"} still to do and the week closes ${streakInfo.daysLeft===0?"today":"tomorrow"}. Finish ${streakInfo.left===1?"it":"them"} to keep your ${streakInfo.count}-week streak.`
+      : `You missed a workout. Your ${streakInfo.count}-day streak is paused — complete tomorrow to reinstate it. Miss again and it resets to zero.`;
+    warn.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px">⚠️</div><div style="flex:1"><div style="font-weight:800;color:var(--red)">Streak at risk</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45">${riskCopy}</div></div></div>`;
     body.appendChild(warn);
   }
 
@@ -5769,7 +5878,11 @@ async function renderEngagement(skipFetch){
     const iso=isoOf(cur);
     const d=cur.getDate();
     curOutside = cur.getMonth()!==engCalMonth;
-    const wl=engAssignedByDate[iso]||[];
+    /* Item AT step 4: under the week model a day only ever shows sessions that
+       were DONE on it. An unfinished session is not a missed day - it is still
+       owed this week (or carried) - and a day with nothing is just a day, not
+       a "rest day". */
+    const wl=WEEK_MODEL ? (engAssignedByDate[iso]||[]).filter(a=>a.status!=="assigned") : (engAssignedByDate[iso]||[]);
     /* Item G: an accepted coaching call fully replaces this day's normal
        rendering, for either role, per the explicit ask — checked first
        and unconditionally, same pattern as the pause check below it. */
@@ -5821,7 +5934,7 @@ async function renderEngagement(skipFetch){
     }else{
       // TRAINEE: split diagonally — top triangle = macros logged, bottom triangle = workout state
       const logged=macrosLogged(logsByDate[iso]);
-      const complete=dayComplete(iso);
+      const complete=WEEK_MODEL ? (wl.length>0) : dayComplete(iso);   // Item AT step 4: gold means a session was done that day, nothing else
       // items M/N: dayComplete() now correctly returns true for a paused
       // day (paused isn't a miss), but the gold-star/gold-chain styling
       // below is meant to celebrate real completed days — falling through
@@ -5899,12 +6012,12 @@ async function renderEngagement(skipFetch){
       <div class="leg-item"><span class="leg-sw" style="background:var(--lime)"></span>Workout — tap to start</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(90,176,255,.16);border-color:rgba(90,176,255,.4)"></span>Submitted</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Reviewed by coach</div>
-      <div class="leg-item"><span class="leg-sw" style="background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4)"></span>Missed — locked</div>
+      ${WEEK_MODEL?"":`<div class="leg-item"><span class="leg-sw" style="background:rgba(255,90,90,.12);border-color:rgba(255,90,90,.4)"></span>Missed — locked</div>`}
       <div class="leg-item"><span class="leg-sw" style="background:#B8935A"></span>Macros logged (top, today only)</div>
       <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Complete day ★ (streak)</div>
       <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E);box-shadow:0 0 0 2px var(--attn)"></span>Reviewed, not yet seen</div>
       <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(180deg,#8A6B1E,#5C4712)"></span>Awaiting coach review ⏳</div>
-      <div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Rest day 😴 — nothing due</div>
+      ${WEEK_MODEL?"":`<div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Rest day 😴 — nothing due</div>`}
       <div class="leg-item"><span class="leg-sw" style="background:#F4F2EA;border-color:#F4F2EA"></span>Paused ✈️</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
@@ -6643,9 +6756,11 @@ function openCoachMissedDay(iso,wl){
     catch(err){console.error(err);toast(err.message||"Couldn't send",4000);send.disabled=false;}
   });
   body.appendChild(send);
-  const mod=document.createElement("button");mod.className="btn sm";mod.textContent="Modify the workout instead";
-  mod.addEventListener("click",()=>{ closeSheet(); openCoachModify(a); });
-  body.appendChild(mod);
+  if(!WEEK_MODEL){   // Item AT step 4: moving a session to another day has no meaning once the trainee picks the day
+    const mod=document.createElement("button");mod.className="btn sm";mod.textContent="Modify the workout instead";
+    mod.addEventListener("click",()=>{ closeSheet(); openCoachModify(a); });
+    body.appendChild(mod);
+  }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 function engDayAction(a,iAmCoach){
@@ -7529,6 +7644,7 @@ function renderPostponeRow(wrap){
   }
   wrap.appendChild(box);
   $("#pp-ask")?.addEventListener("click",openPostponeSheet);
+if(WEEK_MODEL){ const pp=$("#pp-ask"); if(pp) pp.style.display="none"; }   // Item AT step 4
   $("#pp-cancel")?.addEventListener("click",async()=>{
     try{
       const { error }=await store._sb.rpc("cancel_postpone",{p_assigned:currentAssigned.id});
