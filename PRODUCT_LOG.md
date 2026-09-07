@@ -4,6 +4,34 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BA. Open goals hygiene: hide, expiry, and pitches that don't stick forever - DONE 2026-09-07
+
+Requested: coaches can hide an open goal so it stops reappearing; a
+"Pitched" goal must not sit there forever - once the trainee picks someone
+else, or the goal expires, it moves to Not selected; and goal postings
+expire after one week. Needs `supabase/migrations_open_goals_hygiene.sql`.
+
+Why the second one was happening: nothing ever expired a posting. When a
+trainee accepted a rival offer the siblings were already auto-declined and
+moved correctly; but a goal the trainee simply abandoned stayed `open`
+indefinitely, so the coach's pitch stayed pending indefinitely. The expiry
+rule is what closes that hole - it's one mechanism, not two.
+
+- `listing_hides(coach_id, listing_id)`, RLS coach-own. Hide is offered on
+  goals the coach hasn't pitched (a pitched one moves on its own); a
+  "Show N hidden goals" toggle at the bottom reveals them with Unhide. The
+  trainee's goal is untouched either way.
+- `expire_listings()`: closes `open` postings older than 7 days with
+  `closed_reason='expired'` (constraint extended) and marks their pending
+  offers `expired`. Called when the Open goals tab or the trainee's goals
+  screen loads - the same no-scheduler pattern as `close_weeks_due`. The
+  client also treats week-old postings as expired even if the call fails.
+- Expired pitches read "Not selected · goal expired" in the coach's
+  outcomes; each open card shows "expires in N days"; the trainee's goal
+  list shows an "expired" badge.
+
+---
+
 ## AZ. Recurring "statement timeout" - the landmark payload, fixed at the source - DONE 2026-09-07
 
 Kept coming back after the calendar_rows() fix. That fix cut what crossed

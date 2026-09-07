@@ -4621,14 +4621,15 @@ async function renderListings(){
   $$(".tabbar button[data-ltab]").forEach(x=>x.classList.toggle("on",x.getAttribute("data-ltab")===listingsTab));
   const body=$("#listings-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   if(listingsTab==="goals"){
+    try{ await store._sb.rpc("expire_listings"); }catch(e){ console.error("expire_listings",e); }   // Item BA: a week-old posting shows as expired here too
     const mine=await store.listings.list({trainee_id:ME.id});
     $("#listings-sub").textContent=mine.length?`${mine.length} goal${mine.length>1?"s":""} posted`:"Post a goal, receive video offers";
     body.innerHTML="";
     if(!mine.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No goals posted yet.<br>Post one and coaches will send video offers.</p></div>`; return; }
     for(const l of mine){
       const div=document.createElement("div");div.className="card";
-      const badgeCls=l.closed_reason==="cancelled"?"rejected":l.status;
-      const badgeTxt=l.closed_reason==="cancelled"?"cancelled":l.status;
+      const badgeCls=(l.closed_reason==="cancelled"||l.closed_reason==="expired")?"rejected":l.status;
+      const badgeTxt=l.closed_reason==="cancelled"?"cancelled":l.closed_reason==="expired"?"expired":l.status;
       div.innerHTML=`<div class="list-row">
           <div class="ex-thumb" style="width:52px;height:52px" ${l.pitch_video_path?`data-video="${l.pitch_video_path}"`:""}>${l.pitch_video_path?"":'<span class="ph">◉</span>'}</div>
           <div class="lr-main"><h3>${escapeHtml(l.title)}</h3><div class="sub">${escapeHtml(l.focus||"")}</div></div>
@@ -4901,10 +4902,21 @@ $("#lst-post").addEventListener("click",async()=>{
 /* coach: browse open listings */
 async function renderMarket(){
   const body=$("#market-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
-  const open=await store.listings.list({status:"open"});
-  // this coach's sent offers (for the pitched-lock AND the outcomes section)
-  const mySent=await store.offers.list({coach_id:ME.id});
-  const openIds=new Set(open.map(l=>l.id));
+  /* Item BA: expire week-old postings first (closes them, marks their pending
+     offers expired), then read. Non-fatal if the function isn't installed. */
+  try{ const { error }=await store._sb.rpc("expire_listings"); if(error) throw error; }catch(e){ console.error("expire_listings (run migrations_open_goals_hygiene.sql)",e); }
+  const [openAll,mySent,hidesRes]=await Promise.all([
+    store.listings.list({status:"open"}),
+    store.offers.list({coach_id:ME.id}),
+    store._sb.from("listing_hides").select("listing_id").eq("coach_id",ME.id)
+  ]);
+  const hidden=new Set((hidesRes.data||[]).map(h=>h.listing_id));
+  const weekAgo=Date.now()-7*86400000;
+  // belt-and-braces: a posting older than 7 days is expired even if the server call above failed
+  const openLive=openAll.filter(l=>new Date(l.created_at).getTime()>=weekAgo);
+  const open=openLive.filter(l=>marketShowHidden||!hidden.has(l.id));
+  const nHidden=openLive.filter(l=>hidden.has(l.id)).length;
+  const openIds=new Set(openLive.map(l=>l.id));   // "still open" is about the listing, not about whether this coach hid it
   /* Split on the OFFER's own status, not on whether its listing happens to
      still be open. A listing stays open until the trainee accepts someone,
      so a coach whose offer was declined while others were still pending —
@@ -4940,14 +4952,35 @@ async function renderMarket(){
       ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
       ${pitched
         ? `<div class="pitched-tag">✓ Pitched</div>`
-        : `<button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`}`;
+        : `<button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11.5px;color:var(--faint)">
+        <span>${(()=>{const d=Math.max(0,Math.ceil((new Date(l.created_at).getTime()+7*86400000-Date.now())/86400000)); return d===0?"expires today":d===1?"expires tomorrow":`expires in ${d} days`;})()}</span>
+        ${hidden.has(l.id)
+          ? `<button class="btn ghost sm" style="width:auto" data-unhide="${l.id}">Unhide</button>`
+          : (pitched?"":`<button class="btn ghost sm" style="width:auto" data-hide="${l.id}">Hide</button>`)}
+      </div>`;
     body.appendChild(div);
   }
+  /* Item BA: hide / unhide are per coach and never touch the trainee's goal. */
+  if(nHidden){
+    const t=document.createElement("button"); t.className="btn ghost sm"; t.style.cssText="width:100%;margin-top:6px";
+    t.textContent=marketShowHidden?`Hide ${nHidden} hidden goal${nHidden>1?"s":""} again`:`Show ${nHidden} hidden goal${nHidden>1?"s":""}`;
+    t.addEventListener("click",()=>{ marketShowHidden=!marketShowHidden; renderMarket(); });
+    body.appendChild(t);
+  }
+  body.querySelectorAll("[data-hide]").forEach(b=>b.addEventListener("click",async()=>{
+    try{ const { error }=await store._sb.from("listing_hides").insert({coach_id:ME.id,listing_id:b.getAttribute("data-hide")}); if(error) throw error; toast("Hidden",1500); renderMarket(); }
+    catch(e){ console.error("hide listing",e); toast("Couldn't hide it: "+(e.message||e),4000); }
+  }));
+  body.querySelectorAll("[data-unhide]").forEach(b=>b.addEventListener("click",async()=>{
+    try{ const { error }=await store._sb.from("listing_hides").delete().eq("coach_id",ME.id).eq("listing_id",b.getAttribute("data-unhide")); if(error) throw error; toast("Shown again",1500); renderMarket(); }
+    catch(e){ console.error("unhide listing",e); toast("Couldn't unhide it: "+(e.message||e),4000); }
+  }));
   // --- Your sent offers (outcomes for offers whose listing is no longer open) ---
   if(sentOutcomes.length){
     const wrap=document.createElement("div");wrap.style.marginTop="24px";
     wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your sent offers</div>`;
-    const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Expired"};
+    const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Not selected · goal expired"};
     const statusClass={pending:"pending",accepted:"accepted",rejected:"rejected",expired:"rejected"};
     for(const o of sentOutcomes){
       const row=document.createElement("div");row.className="offer-row";row.style.cursor="default";
@@ -5173,7 +5206,8 @@ let coachingDaysByDate={};   // iso -> accepted call_proposals row, single-engag
    weekCap: the agreed sessions-per-week across the screen's active
    engagements (sum of offers.workouts_per_week_cap), null if none has one. */
 let weekRows={}, weekClosures={}, weekCap=null;
-let macroGoals=[], macroGoalWeek=null, mlGoal=null;   // Item AX: nutrition goals for the screen's engagements; week being edited; goal shown in the macro-log sheet
+let macroGoals=[], macroGoalWeek=null, mlGoal=null;
+let marketShowHidden=false;   // Item BA: reveal the coach's hidden open goals   // Item AX: nutrition goals for the screen's engagements; week being edited; goal shown in the macro-log sheet
 let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
 let traineeEngs=[];           // the trainee's engagement rows (merged mode)
 let engById={};               // id -> engagement (for day actions in merged mode)
