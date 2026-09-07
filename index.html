@@ -5985,9 +5985,20 @@ function renderDashboard(container, iAmCoach){
   head.appendChild(seg);
   wrap.appendChild(head);
 
+  /* Item AX: the nutrition goal for the dashboard. The goal in force THIS week
+     is what the bars are compared against. If the only goal set is for a
+     future week (a coach setting next week ahead of time), show it as
+     upcoming rather than showing nothing - "nothing visible" was the report. */
+  const thisMonD=weekStartISO(new Date());
+  let goal = (typeof WEEK_MODEL!=="undefined" && WEEK_MODEL) ? goalForWeek(thisMonD) : null;
+  if(!goal && typeof macroGoals!=="undefined" && macroGoals.length){
+    const up=[...macroGoals].filter(g=>g.week_start>thisMonD).sort((a,b)=>a.week_start<b.week_start?-1:1)[0];
+    if(up) goal={...up, carried:false, upcoming:true};
+  }
+  const goalLine = goal ? `<div style="font-size:12px;color:var(--muted);margin:2px 0 10px">🍽 ${goal.upcoming?`Goal from ${weekLabel(goal.week_start)}:`:"Goal:"} <b style="color:var(--ink)">${fmtGoal(goal)}</b>${goal.carried?` <span style="opacity:.7">(carried)</span>`:""}${goal.upcoming?` <span style="opacity:.7">(not in force yet)</span>`:(goal.kcal?` · kcal label turns <b style="color:#F5C542">gold</b> within ±10%`:"")}</div>` : "";
   if(!logs.length){
     const em=document.createElement("div");em.className="empty";em.style.padding="30px 20px";
-    em.innerHTML=`<p>${iAmCoach?"No macro or weight logs from this trainee yet.":"Log your macros to see your dashboard build up here."}</p>`;
+    em.innerHTML=goalLine+`<p>${iAmCoach?"No macro or weight logs from this trainee yet.":"Log your macros to see your dashboard build up here."}</p>`;
     wrap.appendChild(em);
     container.appendChild(wrap);
     seg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{dashMode=b.getAttribute("data-dm");renderEngagement();}));
@@ -6068,8 +6079,8 @@ function renderDashboard(container, iAmCoach){
      loaded by renderEngagement, the only caller). Protein is the base segment of
      each bar, so a goal line on the grams axis is directly comparable to it;
      kcal has no axis here, so its per-bar label is coloured against the goal. */
-  const goal = (typeof WEEK_MODEL!=="undefined" && WEEK_MODEL) ? goalForWeek(weekStartISO(new Date())) : null;
-  const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f), goal&&goal.protein_g ? goal.protein_g*1.08 : 0);
+  const gLive = (goal && !goal.upcoming) ? goal : null;   // only a goal in force draws on the bars
+  const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f), gLive&&gLive.protein_g ? gLive.protein_g*1.08 : 0);
   const bw=Math.min(30, (W-padL-8)/buckets.length-12);
   const gap=((W-padL-8)/buckets.length);
   /* Texture carries the meaning as much as colour does. Default: protein solid,
@@ -6106,10 +6117,10 @@ function renderDashboard(container, iAmCoach){
       <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;${swF}"></span>Fat</span>
     </div>
     <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">${defs}${gridSvg}`;
-  if(goal && goal.protein_g){
-    const gy=padT+chartH-(goal.protein_g/maxG)*chartH;
+  if(gLive && gLive.protein_g){
+    const gy=padT+chartH-(gLive.protein_g/maxG)*chartH;
     svg+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-8}" y2="${gy.toFixed(1)}" stroke="${M.p.col}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".9"/>`
-       +`<text x="${W-10}" y="${(gy-4).toFixed(1)}" text-anchor="end" font-size="9" font-weight="800" fill="${M.p.col}">protein goal ${goal.protein_g} g</text>`;
+       +`<text x="${W-10}" y="${(gy-4).toFixed(1)}" text-anchor="end" font-size="9" font-weight="800" fill="${M.p.col}">protein goal ${gLive.protein_g} g</text>`;
   }
   buckets.forEach((b,i)=>{
     const x=padL+i*gap+(gap-bw)/2;
@@ -6131,12 +6142,11 @@ function renderDashboard(container, iAmCoach){
     });
     // kcal total in a soft pill above the bar
     if(tot>0){ const ty=padT+chartH-((tot/maxG)*chartH)-13;
-      const kcFill = (goal&&goal.kcal) ? (Math.abs(b.kcal/goal.kcal-1)<=0.10 ? "#F5C542" : C.ink) : C.ink;
+      const kcFill = (gLive&&gLive.kcal) ? (Math.abs(b.kcal/gLive.kcal-1)<=0.10 ? "#F5C542" : C.ink) : C.ink;
       svg+=`<text x="${x+bw/2}" y="${ty+9}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${kcFill}">${b.kcal}</text>`; }
     svg+=`<text x="${x+bw/2}" y="${H-9}" text-anchor="middle" font-size="9" fill="${C.faint}">${b.label}</text>`;
   });
   svg+=`</svg></div>`;
-  const goalLine = goal ? `<div style="font-size:12px;color:var(--muted);margin:2px 0 10px">🍽 Goal: <b style="color:var(--ink)">${fmtGoal(goal)}</b>${goal.carried?` <span style="opacity:.7">(carried)</span>`:""}${goal.kcal?` · kcal label turns <b style="color:#F5C542">gold</b> within ±10%`:""}</div>` : "";
   macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Macros (g)</div><div style="font-size:11.5px;color:var(--faint);margin-bottom:${goal?"4px":"12px"}">${dashMode==="week"?"Weekly daily-average":"Daily"} · total kcal above each bar</div>`+goalLine+svg;
   wrap.appendChild(macroCard);
 

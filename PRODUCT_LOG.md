@@ -74,7 +74,18 @@ the comparison is direct - with the axis extended to fit it; the per-bar
 kcal label turns gold when within ±10% of the calorie goal (kcal has no
 axis on a grams chart, so colour carries it); and a header line stating
 the goal, marked "(carried)" when inherited. Reads `macroGoals` already
-loaded by `renderEngagement`, the chart's only caller - no extra fetch.---## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
+loaded by `renderEngagement`, the chart's only caller - no extra fetch.
+
+Reported "nothing visible" on first try. Two reasons it could show nothing,
+both closed: the dashboard returned early with no macro logs in view,
+before the macro card (and so the goal) was ever built - the goal header
+now shows in that empty state too; and a goal set only for a FUTURE week
+(the first row with slots in the coach's screenshot was 14-20 Sep, while
+today is in the week of 7 Sep) isn't in force this week, so nothing drew -
+it now shows as "Goal from 14-20 Sep: … (not in force yet)" instead of
+being silently absent. The bar line and gold kcal colouring still only use
+a goal actually in force, since a future goal shouldn't judge this week's
+bars.---## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
 
 Not an app bug. The Supabase project's database went down at the TCP
 layer (dashboard health: "CRITICAL - Database not usable - CONNECT_TIMEOUT").
