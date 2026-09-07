@@ -116,6 +116,84 @@ rule for streaks in particular - before any of this is built, rather
 than porting the day-based logic piece by piece and hoping it still
 makes sense at the end.
 
+### Design - DECIDED 2026-09-07
+
+Four decisions taken, then the rest follows from them.
+
+**1. Streak = consecutive closed weeks in which every session belonging
+to that week was completed.** Counted in weeks, not days. The current,
+still-open week never counts yet. A week with no sessions assigned, or
+any overlap with a vacation/pause, is *neutral* - it neither extends nor
+breaks the streak, it's skipped. Any other closed week with an unfinished
+session breaks it. This replaces the day-based `refresh_my_streak` and
+retires `reschedule_for_streak` entirely - "move a missed day to protect
+the streak" has no meaning once the day was never fixed to begin with.
+
+**2. Leftovers roll over and occupy a slot; workload never grows.** The
+coach's weekly target is N (`workouts_per_week`, already on the offer
+from item B - reused, not duplicated). When a week closes with unfinished
+sessions, they carry into the next week, and that week's pool is still
+capped at N: carried sessions fill slots first, oldest first, and any of
+the coach's newly assigned sessions that no longer fit are bumped forward
+a week. So a trainee always sees at most N this week. The consequence of
+missing a session is the streak break (rule 1), never extra work. Weeks
+are Monday-Sunday.
+
+**3. Trainee picks on the day.** No pre-planning. Opening the app shows
+"This week: 2 of 3 done" and a single *Start a session* action that lists
+the week's remaining pool (carried ones first, labelled as carried).
+Choosing one stamps it with today's date and starts it. That stamped
+date is what puts it on the calendar.
+
+**4. Consequences accepted:**
+- Postponement dissolves as a feature. "Do it later this week" is the
+  default; "do it next week" is rule 2. The postpone tables and RPCs
+  (`request_postpone`, `decide_postpone`, `cancel_postpone`,
+  `ack_postpone`) go dormant; removal is a later cleanup item.
+- Explicit rest days disappear. A day with no session is just a day.
+- The red "missed day" and grey "pending on this day" calendar states
+  disappear with them; "streak at risk" becomes "X of N done - week
+  closes in Y days".
+- Vacation/pause, scheduled calls, check-ins, payments, wildcard slots:
+  unchanged mechanically. Pause maps onto weeks as neutral (rule 1).
+  Payment already reasons per week and per review, so it aligns.
+
+**Data model.** `assigned_workouts` gains `week_start date` (the Monday
+of the week it belongs to). `due_date` stays but becomes *the day it was
+actually done* - null until the trainee picks it. Backfill for existing
+rows: `week_start = Monday of due_date`, `due_date` unchanged, so every
+existing completed session lands on the right day and week with no
+visual change. New table `week_closures (engagement_id, week_start,
+assigned_count, completed_count, neutral bool, closed_at)` - the streak
+is computed from this, and it doubles as the audit trail for "why did my
+streak break". A server function `close_week(engagement_id, week_start)`,
+idempotent, does the transition: records the closure row, carries
+unfinished sessions forward (`week_start += 7`), bumps overflow new
+sessions so the new week's pool <= N. Triggered client-side on first
+load after a week boundary (same pattern `refresh_my_streak` uses
+today), not by a scheduler - nothing to run in the background.
+
+**Calendar UI.** The month grid stays - calls, check-ins and photos still
+live on days, and people know it - but the primary unit becomes a week
+header row above each week: "7-13 Sep - 2/3 sessions", gold when
+complete, neutral when paused/empty, red-marked only after it closes
+incomplete. Day cells show completed sessions on the day they were done
+(gold), and nothing else about sessions - no pending, no missed, no
+rest. Coach sees the same weekly header per trainee, and assigns per
+week ("Week of 14 Sep: 3 sessions") instead of per day.
+
+**Build order** (each step deployable on its own; the app keeps working
+on the day model until step 5 flips it):
+1. Migration: `week_start` + backfill, `week_closures`, `close_week()`,
+   new week-based streak function alongside the old one.
+2. Trainee pick-a-session flow + week header on the trainee calendar,
+   behind a flag.
+3. Coach assign-per-week flow + weekly view of trainees.
+4. Streak badge, warning copy, remove reschedule-to-protect and
+   postponement UI.
+5. Flip the flag, retire day-based streak RPCs, log cleanup (W, streak
+   items, postponement items marked superseded).
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20
