@@ -4,6 +4,44 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
+
+Not an app bug. The Supabase project's database went down at the TCP
+layer (dashboard health: "CRITICAL - Database not usable - CONNECT_TIMEOUT").
+Symptoms in order: boot hung at the splash (the first request to hit the
+dead database was the profile lookup, which never returned - and the boot
+catch only fires on a throw, not a hang, so no "Couldn't start" appeared);
+later, sign-in showed "Failed to fetch" (a Cloudflare 522 with no CORS
+headers is exactly what a browser reports that way). Resolved by
+Settings → General → Restart project. All four services confirmed 200
+afterwards; migration data intact.
+
+**How it was diagnosed, for next time** (each step ruled something out):
+1. Live file syntax-checked (`node --check` on the extracted module) - OK.
+2. Module top level executed in Node with a stubbed DOM
+   (`tools/toplevel-check.mjs`, new) - no startup throw.
+3. Probed the backend directly from the user's machine: API gateway
+   answered (401 with no key, instantly) but auth/data/storage all
+   returned 522/544 - i.e. the gateway was up and everything behind it was
+   unreachable. That pattern can only be the project's compute, not code.
+4. Dashboard health confirmed the database itself was refusing TCP.
+
+**Rule recorded:** "Failed to fetch" on sign-in, or a splash that never
+clears with NO "Couldn't start" message, means check the Supabase project
+health first - before touching the app. The two commits made just before
+the outage (AV) were inside the calendar-open function and could not have
+affected boot; I checked that before saying so.
+
+**Could today's migrations have caused it?** A TCP connect timeout means
+Postgres wasn't accepting connections at all; a bad query or trigger makes
+a database slow, not unreachable, and nothing in migrations_week_model or
+the week_start trigger loops unbounded or recurses. Still worth a glance
+at Reports → Database for a CPU spike around the outage window - if one
+shows, treat that as evidence against the new SQL first. Not verified
+from here (dashboard-only).
+
+---
+
 ## AV. Regression from AU: "Couldn't load the calendar - Cannot read properties of null (reading 'classList')" - DONE 2026-09-07
 
 Reported after sending a review as a coach. My own regression, from the
