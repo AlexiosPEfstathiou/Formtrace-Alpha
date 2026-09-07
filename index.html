@@ -5030,8 +5030,21 @@ async function renderTraineeHome(){
   // fetch counterpart names
   const ids=[...new Set(engs.map(e=>iAmCoach?e.trainee_id:e.coach_id))];
   const profs={}; for(const p of await store.coaches()) profs[p.id]=p; // coaches
-  // trainees may not be in coaches(); fetch individually via _sb
-  for(const id of ids){ if(!profs[id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",id).single(); if(data)profs[id]=data; }catch(e){} } }
+  /* Reported bug: trainees are never in coaches(), so every single one of
+     them used to fall through to its own separate, sequential
+     _sb.from("profiles")...single() call in a for-of loop - one full
+     round trip per trainee, in series, before this screen could render
+     anything. Exactly the same shape of N+1 already fixed once in
+     renderCoachTrainees (item S) - this is a second, separate instance of
+     it that slipped through that pass since it's a different function.
+     Batched into one query for every still-missing id at once. */
+  const missing=ids.filter(id=>!profs[id]);
+  if(missing.length){
+    try{
+      const {data}=await store._sb.from("profiles").select("*").in("id",missing);
+      for(const p of (data||[])) profs[p.id]=p;
+    }catch(e){ console.error("trainee profile batch load",e); }
+  }
 
   // Coach view: active engagements first, past (completed/ended) tucked into a folder.
   const active=engs.filter(e=>e.status==="active");

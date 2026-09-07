@@ -4,6 +4,30 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20
+
+Reported as the same slow-loading symptom as AR, on a different screen -
+checked whether it was the same cause, and it wasn't, though it's the
+same shape of bug. `renderTraineeHome` looks up each engagement's
+counterpart profile by first checking `store.coaches()`, then falling
+back to a direct profile lookup for anyone not found there. Trainees are
+never in `coaches()` by definition, so for a coach viewing their
+trainees, every single one of them fell through to that fallback - and
+the fallback was a for-of loop doing one separate, sequential
+`_sb.from("profiles")...single()` call per trainee, awaited in series,
+before the screen could render anything. A coach with many trainees was
+paying for that many full round trips back-to-back on every visit to
+this tab.
+
+This is the same N+1 shape already fixed once before, in
+`renderCoachTrainees` under item S - a separate instance of it, in a
+different function, that slipped through that earlier pass since nothing
+connected the two at the time. Fixed the same way: batched into a single
+`.in("id", missingIds)` query for whichever ids weren't already found via
+`coaches()`, instead of one query per id.
+
+---
+
 ## AR. Calendar month navigation sometimes hangs or fails with "statement timeout" - DONE 2026-08-20
 
 Reported: clicking the calendar's month arrows sometimes does nothing, or
