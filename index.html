@@ -833,6 +833,8 @@
   .wk-slot.missed{border-color:rgba(255,90,90,.5);color:var(--red);}
   .wk-slot.tap{cursor:pointer;}
   .wk-slot.tap:active{transform:scale(.98);}
+  .wk-nutri{margin-top:7px;display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;color:var(--muted);padding:0 2px;}
+  .wk-nutri.tap{cursor:pointer;}
   .cal-week .wk-n{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
   .cal-week.wk-done{background:linear-gradient(135deg,rgba(245,197,66,.28),rgba(224,168,30,.28));border-color:#E0A81E;color:var(--ink);}
   .cal-week.wk-done .wk-n{color:#F5C542;}
@@ -4523,7 +4525,7 @@ let measureDate=null;
    button. Reset it here so a hidden footer can never outlive its own sheet. */
 function closeSheet(){
   $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on");
-  macroLogDate=null; measureDate=null; ivEdIdx=null;
+  macroLogDate=null; measureDate=null; ivEdIdx=null; macroGoalWeek=null; mlGoal=null;
   // Item V: if a voice-over recording is in progress when the sheet closes
   // (X, scrim tap, or navigating away), the mic stream and recorder are
   // otherwise orphaned — nothing else references them once this function's
@@ -4565,6 +4567,7 @@ $("#sheet-add").addEventListener("click",()=>{
   if(ivEdIdx!=null){ saveIntervalEditor(); return; }
   if(measureDate){ saveMeasurements(measureDate); return; }
   if(macroLogDate){ saveMacroLog(); return; }
+  if(macroGoalWeek){ saveMacroGoal(); return; }
   for(const id of sheetSel){
     const ex=libCache.find(x=>x.id===id);
     /* Default new interval items to a reasonable structured starting point,
@@ -5170,6 +5173,7 @@ let coachingDaysByDate={};   // iso -> accepted call_proposals row, single-engag
    weekCap: the agreed sessions-per-week across the screen's active
    engagements (sum of offers.workouts_per_week_cap), null if none has one. */
 let weekRows={}, weekClosures={}, weekCap=null;
+let macroGoals=[], macroGoalWeek=null, mlGoal=null;   // Item AX: nutrition goals for the screen's engagements; week being edited; goal shown in the macro-log sheet
 let traineeMerged=false;      // when true, calendar aggregates ALL the trainee's engagements
 let traineeEngs=[];           // the trainee's engagement rows (merged mode)
 let engById={};               // id -> engagement (for day actions in merged mode)
@@ -5353,6 +5357,48 @@ function offerCap(o){
   const m=/^\s*(\d+)/.exec(o.sessions_text||""); const v=m?Number(m[1]):0;
   return v>0?v:null;
 }
+/* Item AX: the nutrition goal in force for a week - an exact row for that week,
+   else the latest earlier one (carried). Across engagements, the most recently
+   updated wins. */
+function goalForWeek(monISO){
+  const cands=macroGoals.filter(g=>g.week_start<=monISO).sort((a,b)=> a.week_start===b.week_start ? String(b.updated_at).localeCompare(String(a.updated_at)) : (a.week_start<b.week_start?1:-1));
+  const g=cands[0]; if(!g) return null;
+  return {...g, carried:g.week_start!==monISO};
+}
+function fmtGoal(g){ const parts=[]; if(g.kcal) parts.push(`${Number(g.kcal).toLocaleString()} kcal`); if(g.protein_g) parts.push(`${g.protein_g} g protein`); return parts.join(" · ")||"—"; }
+/* Coach sets (or adjusts) the goal for one week. Prefilled with whatever is in
+   force so "same as last week" is one tap. Saved through the shared sheet''s
+   button via the macroGoalWeek guard, like the other sheets here. */
+function openMacroGoalSheet(monISO){
+  if(!currentEng) return;
+  const cur=goalForWeek(monISO);
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Nutrition goal · week of "+weekLabel(monISO);
+  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Daily targets for this week. ${cur&&cur.carried?`Currently carried from the week of ${weekLabel(cur.week_start)}.`:(cur?"Set for this week.":"Nothing set yet.")}</div>
+    <div class="field"><label>Calories per day (kcal)</label><input id="mg-kcal" type="number" inputmode="numeric" min="1" placeholder="e.g. 2200" value="${cur&&cur.kcal?cur.kcal:""}"></div>
+    <div class="field"><label>Protein per day (g)</label><input id="mg-prot" type="number" inputmode="numeric" min="1" placeholder="e.g. 160" value="${cur&&cur.protein_g?cur.protein_g:""}"></div>`;
+  const add=$("#sheet-add"); add.style.display=""; add.disabled=false; add.textContent="Save goal";
+  macroGoalWeek=monISO;
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+}
+async function saveMacroGoal(){
+  const monISO=macroGoalWeek; if(!monISO||!currentEng) return;
+  const kcal=Number(($("#mg-kcal")?.value||"").trim())||null, protein_g=Number(($("#mg-prot")?.value||"").trim())||null;
+  if(!kcal && !protein_g){ toast("Enter a calorie or protein target",3000); return; }
+  const btn=$("#sheet-add"); btn.disabled=true; const o=btn.textContent; btn.textContent="Saving…";
+  try{
+    const { data, error } = await store._sb.from("macro_goals")
+      .upsert({engagement_id:currentEng.id,week_start:monISO,kcal,protein_g,set_by:ME.id,updated_at:new Date().toISOString()},{onConflict:"engagement_id,week_start"})
+      .select().single();
+    if(error) throw error;
+    macroGoals=macroGoals.filter(g=>!(g.engagement_id===data.engagement_id&&g.week_start===data.week_start)); macroGoals.push(data);
+    macroGoalWeek=null; closeSheet(); toast("Nutrition goal saved ✓");
+    refreshWeekUI(monISO);
+    // a goal set for this week also changes what every LATER week inherits
+    document.querySelectorAll(".cal-week[data-week]").forEach(el=>{ if(el.dataset.week>monISO) refreshWeekUI(el.dataset.week); });
+  }catch(e){ console.error("saveMacroGoal (run migrations_macro_goals.sql)",e); toast("Couldn''t save the goal: "+(e.message||e),5000); }
+  finally{ btn.disabled=false; btn.textContent=o; }
+}
 function weekLabel(monISO){
   const m=new Date(monISO+"T00:00:00"), s=new Date(m); s.setDate(s.getDate()+6);
   const mo=d=>CAL_MONTHS[d.getMonth()].slice(0,3);
@@ -5429,6 +5475,16 @@ function weekHeaderEl(monISO, iAmCoach){
       slots.appendChild(s);
     }
     el.appendChild(slots);
+  }
+  /* Item AX: the week's nutrition goal. Coach taps to set/adjust (current and
+     future weeks); trainee sees it. Carried goals say so. */
+  const g=goalForWeek(monISO);
+  if(g || (iAmCoach && !past && active)){
+    const nu=document.createElement("div"); nu.className="wk-nutri";
+    nu.innerHTML=g ? `<span>🍽 ${fmtGoal(g)}${g.carried?` <span style="font-weight:600;opacity:.7">(carried)</span>`:""}</span>${iAmCoach&&!past&&active?`<span style="color:var(--lime)">${g.carried?"Set for this week":"Adjust"}</span>`:""}`
+                     : `<span style="opacity:.7">🍽 No nutrition goal</span><span style="color:var(--lime)">+ Set goal</span>`;
+    if(iAmCoach && !past && active){ nu.classList.add("tap"); nu.addEventListener("click",()=>openMacroGoalSheet(monISO)); }
+    el.appendChild(nu);
   }
   return el;
 }
@@ -5572,11 +5628,14 @@ async function renderEngagement(skipFetch){
     for(const a of assigned){ const w=a.week_start||weekStartISO(new Date((a.due_date||isoOf(new Date(a.created_at||Date.now())))+"T00:00:00")); (weekRows[w]=weekRows[w]||[]).push(a); }
     const engObjs = traineeMerged ? traineeEngs : [currentEng];
     const offerIds=[...new Set(engObjs.filter(e=>e.status==="active"&&e.offer_id).map(e=>e.offer_id))];
-    const [clRes,capRes]=await Promise.all([
+    const [clRes,capRes,mgRes]=await Promise.all([
       store._sb.from("week_closures").select("*").in("engagement_id",atEngIds),
-      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap,sessions_text").in("id",offerIds) : Promise.resolve({data:[]})
+      offerIds.length ? store._sb.from("offers").select("id,workouts_per_week_cap,sessions_text").in("id",offerIds) : Promise.resolve({data:[]}),
+      store._sb.from("macro_goals").select("*").in("engagement_id",atEngIds)
     ]);
     if(clRes.error) console.error("week_closures load",clRes.error);
+    if(mgRes.error) console.error("macro_goals load (run migrations_macro_goals.sql)",mgRes.error);
+    macroGoals=mgRes.data||[];
     for(const c of (clRes.data||[])){ (weekClosures[c.week_start]=weekClosures[c.week_start]||[]).push(c); }
     const caps=(capRes.data||[]).map(offerCap).filter(v=>v!=null);
     weekCap = caps.length ? caps.reduce((s,v)=>s+v,0) : null;
@@ -6797,6 +6856,20 @@ function openMacroLog(iso){
   ["ml-p","ml-c","ml-f"].forEach(id=>$("#"+id)?.addEventListener("input",recalc));
   recalc();
   macroLogDate=iso;
+  /* Item AX: show the day's nutrition goal and a live percentage as they type.
+     Fetched by RPC so it works from the homepage too, where no calendar state
+     is loaded. Renders nothing if no coach has set a goal. */
+  mlGoal=null;
+  const goalEl=document.createElement("div"); goalEl.id="ml-goal"; goalEl.style.cssText="margin-top:10px;font-size:12.5px;line-height:1.6;color:var(--muted);text-align:center"; body.appendChild(goalEl);
+  const mlPct=()=>{
+    if(!mlGoal){ goalEl.innerHTML=""; return; }
+    const n=id=>Number(($("#"+id)?.value||"").trim())||0; const k=Math.round(n("ml-p")*4+n("ml-c")*4+n("ml-f")*9), p=n("ml-p");
+    const pc=v=>`<b style="color:${v>=90&&v<=110?"#F5C542":"var(--ink)"}">${v}%</b>`;
+    const bits=[]; if(mlGoal.kcal) bits.push(`Calories ${pc(Math.round(k/mlGoal.kcal*100))} of ${Number(mlGoal.kcal).toLocaleString()}`); if(mlGoal.protein_g) bits.push(`Protein ${pc(Math.round(p/mlGoal.protein_g*100))} of ${mlGoal.protein_g} g`);
+    goalEl.innerHTML=`<div class="eyebrow" style="margin-bottom:2px">Your goal${mlGoal.carried?" (carried from an earlier week)":""}</div>${bits.join(" · ")}`;
+  };
+  ["ml-p","ml-c","ml-f"].forEach(id=>$("#"+id)?.addEventListener("input",mlPct));
+  store._sb.rpc("my_macro_goal",{p_date:iso}).then(({data,error})=>{ if(error){ console.error("my_macro_goal (run migrations_macro_goals.sql)",error); return; } if(data && macroLogDate===iso){ mlGoal=data; mlPct(); } });
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 async function saveMacroLog(){
@@ -6812,9 +6885,12 @@ async function saveMacroLog(){
     if(existing){ saved=await store.logs.update(existing.id,patch); }
     else { saved=await store.logs.add({trainee_id:ME.id,log_date:iso,...patch}); }
     logsByDate[iso]=saved;
+    /* Item AX: tell the trainee how close they came, as a percentage of the goal. */
+    let closeMsg="";
+    if(mlGoal){ const bits=[]; if(mlGoal.kcal&&kcal!=null) bits.push(`Calories ${Math.round(kcal/mlGoal.kcal*100)}%`); if(mlGoal.protein_g&&p!=null) bits.push(`Protein ${Math.round(p/mlGoal.protein_g*100)}%`); if(bits.length) closeMsg=" · "+bits.join(" · ")+" of your goal"; }
     macroLogDate=null;
     closeSheet();$("#sheet-add").textContent="Add selected";$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
-    toast("Logged ✓");
+    toast("Logged ✓"+closeMsg, closeMsg?5500:2500);
     /* Refresh whatever screen we're actually on. This used to call
        renderEngagement() unconditionally, which from the homepage rendered
        the calendar with currentEng still null and threw on coach_id. */

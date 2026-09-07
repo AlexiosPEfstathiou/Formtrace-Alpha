@@ -4,7 +4,36 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
-## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
+## AX. Weekly nutrition goals: coach sets calories + protein, trainee sees % on logging - DONE 2026-09-07
+
+Requested: a weekly task for the coach to set a caloric and protein goal
+per trainee; when the trainee submits macros they're told how close they
+came, as a percentage. Needs `supabase/migrations_macro_goals.sql` run.
+
+**Design decisions, stated so they can be redirected:**
+- The goal is a DAILY target (kcal/day, g protein/day), set PER WEEK by
+  the coach - the weekly task is confirming or adjusting it. Macros are
+  already logged per day, so the comparison is day-to-day.
+- Carry-forward: a week with no explicit goal inherits the latest earlier
+  one, so a missed week never leaves a trainee goalless. Both sides see
+  "(carried)" when that's the case, and the coach's prompt on such a week
+  reads "Set for this week" rather than "Adjust".
+- Multiple coaches: the most recently updated goal wins (`my_macro_goal`
+  orders by week then updated_at). Edge case, not a designed-for one.
+- "Notified" = shown at the moment it matters: live percentages in the
+  macro-log sheet as they type (gold when within 90-110%), and the save
+  toast reads "Logged ✓ · Calories 92% · Protein 78% of your goal".
+
+**Built:** `macro_goals(engagement_id, week_start, kcal, protein_g, set_by)`
+unique per engagement-week, RLS parties-read / coach-write;
+`my_macro_goal(date)` SECURITY DEFINER for the trainee's effective goal
+from any screen (the macro sheet opens from the homepage too, with no
+calendar state loaded). Client: a nutrition line under every week's slots
+(coach taps to set/adjust for current and future weeks; trainee reads it);
+goal sheet prefilled with the goal in force so "same as last week" is one
+tap; saving redraws that week and every later week in place (inheritance
+changes). Trainee macro sheet fetches the goal, shows targets and live %,
+and the save toast carries the result.---## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
 
 Not an app bug. The Supabase project's database went down at the TCP
 layer (dashboard health: "CRITICAL - Database not usable - CONNECT_TIMEOUT").
