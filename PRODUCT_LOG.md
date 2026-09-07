@@ -64,7 +64,17 @@ calendar state loaded). Client: a nutrition line under every week's slots
 goal sheet prefilled with the goal in force so "same as last week" is one
 tap; saving redraws that week and every later week in place (inheritance
 changes). Trainee macro sheet fetches the goal, shows targets and live %,
-and the save toast carries the result.---## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
+and the save toast carries the result.
+
+**Follow-up 2026-09-07 - goal on the macro dashboard, both roles.**
+`renderDashboard` (the Training-tab macro chart, already rendered for coach
+and trainee alike) now shows the goal in force this week: a dashed protein
+goal line on the grams axis - protein is the base segment of every bar, so
+the comparison is direct - with the axis extended to fit it; the per-bar
+kcal label turns gold when within ±10% of the calorie goal (kcal has no
+axis on a grams chart, so colour carries it); and a header line stating
+the goal, marked "(carried)" when inherited. Reads `macroGoals` already
+loaded by `renderEngagement`, the chart's only caller - no extra fetch.---## AW. Incident: app stuck at "Starting FormTrace…", then "Failed to fetch" on sign-in - RESOLVED 2026-09-07
 
 Not an app bug. The Supabase project's database went down at the TCP
 layer (dashboard health: "CRITICAL - Database not usable - CONNECT_TIMEOUT").

@@ -6064,7 +6064,12 @@ function renderDashboard(container, iAmCoach){
   // ---- macro stacked bar chart (SVG) with pattern fills (multi-channel: color + texture + labels) ----
   const macroCard=document.createElement("div");macroCard.className="card";macroCard.style.padding="18px 14px 12px";
   const W=Math.max(320, buckets.length*52), H=250, padB=30, padT=34, padL=34;
-  const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f));
+  /* Item AX: the nutrition goal in force this week, for both roles (macroGoals is
+     loaded by renderEngagement, the only caller). Protein is the base segment of
+     each bar, so a goal line on the grams axis is directly comparable to it;
+     kcal has no axis here, so its per-bar label is coloured against the goal. */
+  const goal = (typeof WEEK_MODEL!=="undefined" && WEEK_MODEL) ? goalForWeek(weekStartISO(new Date())) : null;
+  const maxG=Math.max(1,...buckets.map(b=>b.p+b.c+b.f), goal&&goal.protein_g ? goal.protein_g*1.08 : 0);
   const bw=Math.min(30, (W-padL-8)/buckets.length-12);
   const gap=((W-padL-8)/buckets.length);
   /* Texture carries the meaning as much as colour does. Default: protein solid,
@@ -6101,6 +6106,11 @@ function renderDashboard(container, iAmCoach){
       <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;${swF}"></span>Fat</span>
     </div>
     <div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:${W<340?"100%":W+"px"};max-width:none;height:${H}px">${defs}${gridSvg}`;
+  if(goal && goal.protein_g){
+    const gy=padT+chartH-(goal.protein_g/maxG)*chartH;
+    svg+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-8}" y2="${gy.toFixed(1)}" stroke="${M.p.col}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".9"/>`
+       +`<text x="${W-10}" y="${(gy-4).toFixed(1)}" text-anchor="end" font-size="9" font-weight="800" fill="${M.p.col}">protein goal ${goal.protein_g} g</text>`;
+  }
   buckets.forEach((b,i)=>{
     const x=padL+i*gap+(gap-bw)/2;
     const tot=b.p+b.c+b.f;
@@ -6121,11 +6131,13 @@ function renderDashboard(container, iAmCoach){
     });
     // kcal total in a soft pill above the bar
     if(tot>0){ const ty=padT+chartH-((tot/maxG)*chartH)-13;
-      svg+=`<text x="${x+bw/2}" y="${ty+9}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${C.ink}">${b.kcal}</text>`; }
+      const kcFill = (goal&&goal.kcal) ? (Math.abs(b.kcal/goal.kcal-1)<=0.10 ? "#F5C542" : C.ink) : C.ink;
+      svg+=`<text x="${x+bw/2}" y="${ty+9}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${kcFill}">${b.kcal}</text>`; }
     svg+=`<text x="${x+bw/2}" y="${H-9}" text-anchor="middle" font-size="9" fill="${C.faint}">${b.label}</text>`;
   });
   svg+=`</svg></div>`;
-  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Macros (g)</div><div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">${dashMode==="week"?"Weekly daily-average":"Daily"} · total kcal above each bar</div>`+svg;
+  const goalLine = goal ? `<div style="font-size:12px;color:var(--muted);margin:2px 0 10px">🍽 Goal: <b style="color:var(--ink)">${fmtGoal(goal)}</b>${goal.carried?` <span style="opacity:.7">(carried)</span>`:""}${goal.kcal?` · kcal label turns <b style="color:#F5C542">gold</b> within ±10%`:""}</div>` : "";
+  macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Macros (g)</div><div style="font-size:11.5px;color:var(--faint);margin-bottom:${goal?"4px":"12px"}">${dashMode==="week"?"Weekly daily-average":"Daily"} · total kcal above each bar</div>`+goalLine+svg;
   wrap.appendChild(macroCard);
 
   // ---- weight line chart (SVG) with area fill + themed color + date axis ----
