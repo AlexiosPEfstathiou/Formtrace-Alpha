@@ -2313,11 +2313,16 @@ async function playable(path){
    marker so re-renders don't re-fetch. */
 async function hydrateAvatars(root){
   const scope=root||document;
-  for(const el of scope.querySelectorAll("[data-avatar]:not([data-hydrated-av])")){
-    el.setAttribute("data-hydrated-av","1");
+  /* Latency: same parallel-first change as hydrateVideos - N avatars used to
+     mean N sequential signed-URL round trips. */
+  const aEls=[...scope.querySelectorAll("[data-avatar]:not([data-hydrated-av])")];
+  aEls.forEach(el=>el.setAttribute("data-hydrated-av","1"));
+  const aUrls=await Promise.all(aEls.map(el=>{ const p=el.getAttribute("data-avatar"); return p?playable(p).catch(()=>null):Promise.resolve(null); }));
+  for(let ai=0;ai<aEls.length;ai++){
+    const el=aEls[ai];
     const path=el.getAttribute("data-avatar");
     if(!path)continue;
-    const url=await playable(path);
+    const url=aUrls[ai];
     if(url){
       el.style.backgroundImage=`url("${url}")`;
       el.style.backgroundSize="cover";
@@ -2347,10 +2352,19 @@ async function hydrateVideos(root){
       .map(n=>n.getAttribute("data-video")).filter(Boolean);
     if(paths.length&&store.videoRotations) rots=await store.videoRotations(paths);
   }catch(e){ console.error("video rotations (run migrations_video_rotation.sql)",e); }
-  for(const el of scope.querySelectorAll("[data-video]:not([data-hydrated])")){
+  /* Latency: signed-URL requests used to run one at a time, awaited in series
+     per element - a screen with N videos paid N sequential round trips before
+     the last one appeared. All URLs now resolve in parallel first, then the
+     per-element work below runs unchanged. Per-promise catch so one bad path
+     degrades that one element instead of aborting every remaining one (the
+     old sequential loop would have thrown out of the whole function). */
+  const vEls=[...scope.querySelectorAll("[data-video]:not([data-hydrated])")];
+  vEls.forEach(el=>el.setAttribute("data-hydrated","1"));
+  const vUrls=await Promise.all(vEls.map(el=>playable(el.getAttribute("data-video")).catch(()=>null)));
+  for(let vi=0;vi<vEls.length;vi++){
+    const el=vEls[vi];
     const path=el.getAttribute("data-video");
-    el.setAttribute("data-hydrated","1");
-    const url=await playable(path);
+    const url=vUrls[vi];
     if(url){ el.innerHTML=`<video src="${url}" muted playsinline preload="metadata"></video><div class="play-big">▶</div>`;
       /* Cards are styled 9/16 with object-fit:cover, which crops a landscape
          take down to a zoomed centre strip. Read the real dimensions once
@@ -2924,12 +2938,23 @@ async function bootSignedIn(){
 async function checkPendingReview(){
   try{
     if(!ME)return;
-    const asCoach=await store.engagements.list({coach_id:ME.id});
-    const asTrainee=await store.engagements.list({trainee_id:ME.id});
+    /* Latency (runs on every login): the two engagement lists are independent
+       and used to run in series; and the loop below used to run one ratings
+       query per ended engagement, sequentially, until it found an unrated
+       one - so a user whose past goals are all already rated (the normal
+       steady state) paid one round trip per past goal every single login.
+       Now: both lists in parallel, then ONE ratings query for every ended
+       engagement at once, and the "already rated" check is a local Set lookup. */
+    const [asCoach,asTrainee]=await Promise.all([store.engagements.list({coach_id:ME.id}),store.engagements.list({trainee_id:ME.id})]);
     const ended=[...asCoach,...asTrainee].filter(e=>e.status==="completed"||e.status==="ended");
+    if(!ended.length)return;
+    const ratedIds=new Set();
+    try{
+      const {data:rated}=await store._sb.from("ratings").select("engagement_id").in("engagement_id",ended.map(e=>e.id)).eq("rater_id",ME.id);
+      for(const r of (rated||[])) ratedIds.add(r.engagement_id);
+    }catch(e){ console.error("ratings batch load",e); }
     for(const e of ended){
-      const {data}=await store._sb.from("ratings").select("id").eq("engagement_id",e.id).eq("rater_id",ME.id).maybeSingle();
-      if(data)continue; // already rated
+      if(ratedIds.has(e.id))continue; // already rated
       // found one to review
       const iAmCoach=e.coach_id===ME.id;
       const otherId=iAmCoach?e.trainee_id:e.coach_id;
@@ -4015,8 +4040,8 @@ async function openExEditor(id){
   $("#in-kind-interval").onclick=()=>{ editingExKind="interval"; applyKindUI(); };
   applyKindUI();
   $("#ex-delete").style.display=ex?"flex":"none";
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-ex-edit").classList.add("active");   // latency: show the (already-populated) form immediately; only the ref-video card fills in after
   await updateRefCard(ex);
-  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-ex-edit").classList.add("active");
 }
 async function updateRefCard(ex){
   const has = pendingRef ? true : hasRef(ex);
@@ -4097,8 +4122,13 @@ $("#btn-record-ref").addEventListener("click",()=>{
    ========================================================================= */
 let builder=null, libCache=[];
 async function openBuilder(id){
-  libCache=await loadCoachExerciseLibrary(ME.id);
-  const w=id?await store.workouts.get(id):null;
+  /* Latency: screen used to appear only after both fetches below finished, in
+     series. Now it switches immediately with a placeholder, and the two
+     independent fetches run in parallel. */
+  $("#wo-edit-title").textContent="Loading…"; $("#wo-items").innerHTML=`<div class="empty" style="padding:30px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-wo-build").classList.add("active");
+  const [lib,w]=await Promise.all([loadCoachExerciseLibrary(ME.id), id?store.workouts.get(id):Promise.resolve(null)]);
+  libCache=lib;
   builder=w?{id:w.id,name:w.name,items:(w.items||[]).map(i=>({...i})),isNew:false}
            :{id:null,name:"",items:[],isNew:true};
   $("#wo-edit-title").textContent=w?"Edit workout":"New workout";
@@ -4793,11 +4823,8 @@ async function acceptOffer(offerId){
     if(o.listing_id){
       await store.listings.update(o.listing_id,{status:"closed"});
       const siblings=await store.offers.list({listing_id:o.listing_id});
-      for(const s of siblings){
-        if(s.id!==offerId && s.status==="pending"){
-          try{ await store.offers.update(s.id,{status:"rejected"}); }catch(e){console.error("auto-decline",e);}
-        }
-      }
+      /* Latency: sibling declines in parallel rather than one at a time. */
+      await Promise.all(siblings.filter(s=>s.id!==offerId && s.status==="pending").map(s=>store.offers.update(s.id,{status:"rejected"}).catch(e=>console.error("auto-decline",e))));
     }
     // 4. into training
     toast("Offer accepted — engagement started ✓",3400);
@@ -4908,6 +4935,9 @@ async function renderMarket(){
 /* coach: compose offer */
 let offerListing=null, pendingOfferVideo=null;
 async function openOffer(listingId){
+  /* Latency: screen used to appear only after the listing fetch. Switch first. */
+  $("#offer-sub").textContent="Loading…"; $("#of-title").value="";
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-offer").classList.add("active");
   offerListing=await store.listings.get(listingId); pendingOfferVideo=null;
   $("#offer-sub").textContent=`Re: ${offerListing.title}`;
   $("#of-title").value=offerListing.title; $("#of-focus").value=offerListing.focus||"";
@@ -5120,19 +5150,21 @@ async function openTraineeCalendar(engs){
 /* Trainee: My Goals — ongoing / completed / cancelled, with cancel action */
 async function openGoals(){
   $("#goals-back").onclick=()=>go("trainee-home");
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-goals").classList.add("active");   // latency: renderGoals draws its own spinner, so switch first
   await renderGoals();
-  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-goals").classList.add("active");
 }
 async function renderGoals(){
   const body=$("#goals-body");body.innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
-  await loadActivePauses();
-  const engs=await store.engagements.list({trainee_id:ME.id});
+  const [,engs]=await Promise.all([loadActivePauses(), store.engagements.list({trainee_id:ME.id})]);   // latency: independent, run in parallel
   $("#goals-sub").textContent=engs.length?`${engs.length} goal${engs.length>1?"s":""}`:"No goals yet";
   // coach names
   const coachIds=[...new Set(engs.map(e=>e.coach_id).filter(Boolean))];
   const coachById={};
   for(const p of await store.coaches()) coachById[p.id]=p;
-  for(const id of coachIds){ if(!coachById[id]){ try{ const {data}=await store._sb.from("profiles").select("*").eq("id",id).single(); if(data)coachById[id]=data; }catch(e){} } }
+  /* Latency: third instance of the same N+1 fixed under items S and AS - one
+     sequential profile query per id not found in coaches(). Batched. */
+  { const missing=coachIds.filter(id=>!coachById[id]);
+    if(missing.length){ try{ const {data}=await store._sb.from("profiles").select("*").in("id",missing); for(const p of (data||[])) coachById[p.id]=p; }catch(e){ console.error("coach profile batch load",e); } } }
   body.innerHTML="";
   const label={active:"Ongoing",completed:"Completed",ended:"Cancelled"};
   const hasActive=engs.some(e=>e.status==="active");
@@ -5233,6 +5265,16 @@ async function openEngagement(id){
   traineeMerged=false;
   // drill-down, not a tab destination: it has its own bottom action row
   $("#s-engagement").classList.remove("tab-level");
+  /* Latency (perceived): this screen used to be activated only at the very
+     END of this function - after the engagement fetch, the counterpart
+     profile fetch, and the whole renderEngagement() load. Tapping a trainee
+     card therefore showed nothing at all until every one of those round
+     trips finished, which reads as "the button didn't work". Now the screen
+     switches immediately with a placeholder header and the body spinner
+     that renderEngagement already draws, and the data fills in behind it. */
+  $("#eng-title").textContent="Loading…"; $("#eng-sub").textContent="";
+  $("#engagement-body").innerHTML=`<div class="empty" style="padding:40px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-engagement").classList.add("active");
   currentEng=await store.engagements.get(id);
   const iAmCoach=currentEng.coach_id===ME.id;
   const otherId=iAmCoach?currentEng.trainee_id:currentEng.coach_id;
@@ -5938,9 +5980,13 @@ function renderDashboard(container, iAmCoach){
         box.appendChild(cell);
       }
       // hydrate photos via signed URLs
-      for(const el of box.querySelectorAll("[data-photo]")){
+      /* Latency: same parallel-first change as the shared hydrate functions. */
+      const pEls=[...box.querySelectorAll("[data-photo]")];
+      const pUrls=await Promise.all(pEls.map(el=>playable(el.getAttribute("data-photo")).catch(()=>null)));
+      for(let pi=0;pi<pEls.length;pi++){
+        const el=pEls[pi];
         const path=el.getAttribute("data-photo");
-        const url=await playable(path);
+        const url=pUrls[pi];
         if(url){
           el.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
           // Item AP: same shared lightbox as profile pictures — only wired
@@ -6277,8 +6323,10 @@ function openTraineeDay(iso){
     try{
       const engIds = traineeMerged ? traineeEngs.map(e=>e.id) : (currentEng?[currentEng.id]:[]);
       let any=false;
-      for(const eid of engIds){
-        const notes=await store.dayNotes.list({engagement_id:eid,note_date:iso});
+      /* Latency: one dayNotes query per engagement, in series, on every
+         calendar-day tap. Fetched in parallel, then iterated. */
+      const noteLists=await Promise.all(engIds.map(eid=>store.dayNotes.list({engagement_id:eid,note_date:iso}).catch(()=>[])));
+      for(const notes of noteLists){
         for(const n of notes){ any=true;
           const nc=document.createElement("div");nc.className="card";nc.style.cssText="margin-bottom:10px;border-color:var(--lime-dim)";
           nc.innerHTML=`<div class="eyebrow" style="color:var(--lime-dim);margin-bottom:6px">📣 Note from your coach</div>${n.text?`<div style="font-size:13.5px;line-height:1.5;margin-bottom:${n.video_path?"10px":"0"}">${escapeHtml(n.text)}</div>`:""}`;
@@ -7604,10 +7652,10 @@ async function writeSetLabels(sub){
       });
     });
   });
-  for(const row of rows){
-    try{ await store.setLabels.add(row); }
-    catch(e){ console.error("set label insert failed (run migrations_grading.sql)",e); }
-  }
+  /* Latency: one insert per labelled set, awaited in series - a 10-set review
+     paid 10 sequential round trips on Submit. Now all inserts run in parallel;
+     each still catches its own failure so one bad row doesn't block the rest. */
+  await Promise.all(rows.map(row=>store.setLabels.add(row).catch(e=>console.error("set label insert failed (run migrations_grading.sql)",e))));
 }
 /* Download each recorded set video (skeleton lines already baked in) to the device. */
 async function saveWorkoutVideos(){
@@ -7677,12 +7725,9 @@ async function openReview(assignedId,readonly=false){
         });
       });
     });
-    for(const row of missing){
-      try{
-        const created=await store.setLabels.add(row);
-        if(created&&created.id) labelBy[created.item_index+"-"+created.set_index]=created;
-      }catch(e){ console.error("backfill set label failed",e); }
-    }
+    /* Latency: same parallel change as saveSetLabels above. */
+    const createdRows=await Promise.all(missing.map(row=>store.setLabels.add(row).catch(e=>{ console.error("backfill set label failed",e); return null; })));
+    for(const created of createdRows){ if(created&&created.id) labelBy[created.item_index+"-"+created.set_index]=created; }
   }
   reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId, labelBy};
   /* Reachable straight from the trainee's training list, where the engagement
@@ -8977,8 +9022,7 @@ async function renderProfile(){
   }
   // completed goals (as coach or trainee) with on-time/late labels
   try{
-    const asT=await store.engagements.list({trainee_id:ME.id});
-    const asC=await store.engagements.list({coach_id:ME.id});
+    const [asT,asC]=await Promise.all([store.engagements.list({trainee_id:ME.id}),store.engagements.list({coach_id:ME.id})]);   // latency: independent, run in parallel
     const done=[...asT,...asC].filter(e=>e.status==="completed");
     if(done.length){
       html+=`<div class="section-h"><div class="eyebrow">Completed goals</div><div class="eyebrow">${done.length}</div></div>`;

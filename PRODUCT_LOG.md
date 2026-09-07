@@ -4,6 +4,66 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AU. App-wide latency audit - DONE 2026-09-07
+
+Requested: scan the whole app for latency, since many buttons don't
+respond fast enough. Done systematically rather than by feel - after AR
+and AS turned up two separate instances of the same anti-pattern within
+a day, it was clear there'd be more. Scanned mechanically for three
+signatures, then inspected every hit by hand to separate real problems
+from false positives.
+
+**Signature 1 - `await` inside a loop (sequential N+1).** 15 hits, 9
+genuine. Fixed:
+- `hydrateAvatars`, `hydrateVideos`, and the check-in photo strip - the
+  shared media-hydration functions that run on nearly every screen. Each
+  requested one signed URL per element, awaited in series - a screen with
+  N videos or avatars paid N sequential round trips before the last one
+  appeared. All three now resolve every URL in parallel first, then run
+  the existing per-element DOM work unchanged. Each promise catches its
+  own failure, so one bad path degrades one element instead of throwing
+  out of the whole loop (which the old sequential version would have
+  done). By far the highest-impact change in this pass.
+- A third instance of the S/AS N+1 (one profile query per coach id not
+  found in `coaches()`). Batched into one `.in()` query, same fix.
+- `checkPendingReview` (runs on every login): one ratings query per past
+  goal, in series, until it found an unrated one - so a user whose past
+  goals are all rated (the normal state) paid one round trip per goal on
+  every login. Now one batched ratings query, then a local Set lookup.
+- Day-detail notes: one `dayNotes` query per engagement on every calendar
+  day tap - now parallel.
+- Set-label inserts on review submit, in two places: one insert per
+  labelled set, in series - a 10-set review paid 10 sequential round
+  trips on the Submit button. Both now parallel.
+- Sibling offer auto-decline on accept: parallel instead of one at a time.
+False positives left alone: a sync loop with an unrelated await after
+it, an await inside a click handler *defined* in a loop (not run by it),
+and the deliberate one-at-a-time large-video download in
+`saveWorkoutVideos`, which is the right call for big files.
+
+**Signature 2 - consecutive independent awaits.** 3 places fetching two
+unrelated things in series (both engagement lists in `checkPendingReview`
+and the profile screen's completed-goals section; pauses + engagements in
+`renderGoals`). All now `Promise.all`.
+
+**Signature 3 - screen activated only AFTER its data loads.** This is the
+one that most directly produces "I tapped it and nothing happened". Five
+open-screen functions did all their fetching first and switched the
+screen on as the very last line, so the tap gave no visual response at
+all until every round trip finished. Worst was `openEngagement` (tapping
+a trainee card): three sequential awaits including the entire
+`renderEngagement` load, then the screen switch. All five (`openEngagement`,
+`openExEditor`, `openBuilder`, `openOffer`, `openGoals`) now switch the
+screen immediately with a placeholder header and spinner, and fill in
+behind it. `openBuilder` additionally had two independent fetches in
+series, now parallel.
+
+Net: 82 insertions, 38 deletions across the app file; smoke test clean;
+re-ran the loop scan afterward and every remaining hit is one of the
+identified false positives.
+
+---
+
 ## AT. Calendar granularity: weeks instead of days - coaches assign per week, trainees pick their own day
 
 Requested: change the whole calendar from day-level to week-level - a
