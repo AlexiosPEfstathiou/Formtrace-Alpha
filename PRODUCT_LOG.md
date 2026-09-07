@@ -282,6 +282,27 @@ running the week transition first, so a trainee who hasn't opened the app
 since the week rolled can show last week's unfinished sessions as still
 "this week" until either party opens that engagement's calendar.
 
+**Step 3 revised 2026-09-07 - session slots, per feedback.** Tested live:
+assigning still felt date-based (the coach's day tap offered "Assign a
+workout" for that date), and an assigned-but-unpicked session showed up
+only as a number in the header with no day turning green and nothing to
+tap - correct per the model, confusing in practice. Replaced with the
+suggested design: every week header carries **one slot per agreed
+session**, labelled Session 1..N (N = the cap; for past weeks or with no
+cap, however many exist; a coach with nothing assigned gets one empty
+slot to start from).
+- Coach: empty slot → "+ Assign" opens the picker for that week; filled,
+  unstarted slot → tap to remove (confirm dialog), freeing the slot.
+- Trainee, current week: filled slot shows the workout name and "Start ▸";
+  tapping stamps today and opens it. Future weeks show the name only.
+- Done slots go gold with the day it was done; a past week's unfinished
+  slot reads "not done" in red. Carried sessions are labelled.
+- The coach's day tap no longer offers workout assignment under the week
+  model - only the coaching-call proposal, which genuinely is a
+  day-and-time event - with a one-line pointer to the slots.
+- `startSession(a)` extracted so the slot and the Start-a-session sheet
+  share one path.
+
 ---
 
 ## AS. Coach's "Trainees" tab also loads slowly - DONE 2026-08-20

@@ -820,7 +820,19 @@
   /* Item AT: a full-width header row above each calendar week - the week is
      now the primary unit; day cells only show what was actually done on them. */
   .cal-day.cal-outside{opacity:.42;}
-  .cal-week{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-top:4px;border-radius:10px;font-size:11.5px;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--line2);}
+  .cal-week{grid-column:1/-1;display:block;padding:6px 10px 8px;margin-top:4px;border-radius:10px;font-size:11.5px;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--line2);}
+  .cal-week .wk-head{display:flex;align-items:center;justify-content:space-between;}
+  /* Item AT: one slot per agreed session. Coach fills an empty slot; trainee starts a filled one; done goes gold. */
+  .wk-slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
+  .wk-slot{flex:1 1 0;min-width:96px;padding:7px 8px;border-radius:9px;font-size:11px;font-weight:700;text-align:center;line-height:1.3;background:var(--bg);border:1px solid var(--line2);color:var(--muted);}
+  .wk-slot .sl-n{display:block;font-size:10px;letter-spacing:.04em;text-transform:uppercase;opacity:.8;}
+  .wk-slot.empty{border-style:dashed;}
+  .wk-slot.filled{color:var(--ink);border-color:var(--lime-dim);}
+  .wk-slot.done{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#1a1608;border-color:#E0A81E;}
+  .wk-slot.done .sl-n{opacity:.7;}
+  .wk-slot.missed{border-color:rgba(255,90,90,.5);color:var(--red);}
+  .wk-slot.tap{cursor:pointer;}
+  .wk-slot.tap:active{transform:scale(.98);}
   .cal-week .wk-n{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
   .cal-week.wk-done{background:linear-gradient(135deg,rgba(245,197,66,.28),rgba(224,168,30,.28));border-color:#E0A81E;color:var(--ink);}
   .cal-week.wk-done .wk-n{color:#F5C542;}
@@ -5330,12 +5342,14 @@ function weekLabel(monISO){
 }
 function weekHeaderEl(monISO, iAmCoach){
   const el=document.createElement("div"); el.className="cal-week";
-  const rows=weekRows[monISO]||[];
+  const rows=[...(weekRows[monISO]||[])].sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   const isDone=a=>a.status==="submitted"||a.status==="reviewed";
   const assigned=rows.length, done=rows.filter(isDone).length;
   const thisMon=weekStartISO(new Date());
+  const past=monISO<thisMon, current=monISO===thisMon, future=monISO>thisMon;
+  const active=!currentEng || currentEng.status==="active";
   let cls="", n="", sub="";
-  if(monISO<thisMon){
+  if(past){
     const cl=weekClosures[monISO]||[];
     if(cl.length){
       const a=cl.reduce((s,c)=>s+c.assigned_count,0), d=cl.reduce((s,c)=>s+c.completed_count,0);
@@ -5343,22 +5357,66 @@ function weekHeaderEl(monISO, iAmCoach){
       const good=cl.some(c=>!c.neutral&&c.completed_count>=c.assigned_count);
       if(bad){ cls="wk-missed"; n=`${d}/${a}`; sub="incomplete"; }
       else if(good){ cls="wk-done"; n=`${d}/${a}`; sub="complete ✓"; }
-      else { cls="wk-neutral"; n=""; sub=cl.some(c=>c.neutral_reason==="paused")?"on a break":"no sessions"; }
-    }else if(assigned){ // closed on the server but not yet recorded here (or pre-history): judge from rows
+      else { cls="wk-neutral"; sub=cl.some(c=>c.neutral_reason==="paused")?"on a break":"no sessions"; }
+    }else if(assigned){
       if(done>=assigned){ cls="wk-done"; n=`${done}/${assigned}`; sub="complete ✓"; } else { cls="wk-missed"; n=`${done}/${assigned}`; sub="incomplete"; }
     }else{ cls="wk-neutral"; sub="no sessions"; }
-  }else if(monISO===thisMon){
+  }else if(current){
     const target = weekCap!=null ? weekCap : assigned;
     cls="wk-current"; n=`${done}/${target}`; sub=(target&&done>=target)?"complete ✓":"this week";
   }else{
     cls="wk-neutral"; n=assigned?`${assigned}`:""; sub=assigned?(assigned===1?"session planned":"sessions planned"):"";
   }
-  const canAssign = iAmCoach && monISO>=thisMon && (!currentEng || currentEng.status==="active");
-  el.innerHTML=`<span>${weekLabel(monISO)}</span><span><span class="wk-n">${n}</span>${sub?` <span style="font-weight:600">${sub}</span>`:""}${canAssign?` <span style="color:var(--lime);font-weight:800;margin-left:8px">+ Assign</span>`:""}</span>`;
-  if(canAssign){ el.style.cursor="pointer"; el.addEventListener("click",()=>assignWorkoutFlow(monISO)); }
+  el.classList.add(cls);
+  el.innerHTML=`<div class="wk-head"><span>${weekLabel(monISO)}</span><span><span class="wk-n">${n}</span>${sub?` <span style="font-weight:600">${sub}</span>`:""}</span></div>`;
+
+  /* Slots: one per agreed session (the cap), or per existing session for past
+     weeks and when no cap is agreed. A coach with nothing assigned still gets
+     one empty slot to start from. */
+  let slotCount = past ? assigned : Math.max(weekCap!=null?weekCap:0, assigned);
+  if(!past && iAmCoach && active && slotCount===0) slotCount=1;
+  if(slotCount>0){
+    const slots=document.createElement("div"); slots.className="wk-slots";
+    for(let i=0;i<slotCount;i++){
+      const a=rows[i]; const s=document.createElement("div"); s.className="wk-slot";
+      const label=`<span class="sl-n">Session ${i+1}</span>`;
+      if(!a){
+        s.classList.add("empty");
+        if(iAmCoach && active){ s.classList.add("tap"); s.innerHTML=label+"+ Assign"; s.addEventListener("click",()=>assignWorkoutFlow(monISO)); }
+        else s.innerHTML=label+(iAmCoach?"—":"Not assigned yet");
+      }else if(isDone(a)){
+        s.classList.add("done");
+        s.innerHTML=label+`${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}${a.due_date?`<br><span style="font-weight:600;opacity:.75">${fmtDay(a.due_date)}</span>`:""}`;
+      }else{
+        const carried=a.created_at&&a.week_start&&isoOf(new Date(a.created_at))<a.week_start;
+        const name=escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")+(carried?` <span style="color:var(--attn)">· carried</span>`:"");
+        if(past){ s.classList.add("missed"); s.innerHTML=label+name+`<br><span style="font-weight:600">not done</span>`; }
+        else if(iAmCoach){
+          s.classList.add("filled","tap"); s.innerHTML=label+name;
+          s.addEventListener("click",async()=>{
+            const ok=await openConfirm({title:`Remove Session ${i+1}?`,body:`"${(a.snapshot&&a.snapshot.name)||"This workout"}" hasn't been started. Removing it frees the slot.`,confirmLabel:"Remove",cancelLabel:"Keep",danger:true});
+            if(!ok)return;
+            try{ await store.assignedWorkouts.remove(a.id); toast("Removed",1500); await renderEngagement(); }catch(e){ console.error("remove session",e); toast("Couldn't remove it",3500); }
+          });
+        }else if(current){
+          s.classList.add("filled","tap"); s.innerHTML=label+name+`<br><span style="color:var(--lime);font-weight:800">Start ▸</span>`;
+          s.addEventListener("click",()=>startSession(a));
+        }else{ s.classList.add("filled"); s.innerHTML=label+name; }
+      }
+      slots.appendChild(s);
+    }
+    el.appendChild(slots);
+  }
   return el;
 }
-/* Start a session: list this week's remaining pool in the shared sheet. Picking
+/* Trainee starts a session: stamp today as the day it was done (that is what
+   places it on the calendar), then hand off to the one workout-opening path. */
+async function startSession(a){
+  try{ await store.assignedWorkouts.update(a.id,{due_date:todayISO()}); }
+  catch(e){ console.error("stamp session day",e); toast("Couldn't start that session",3500); return; }
+  closeSheet();
+  await openAssigned(a.id);
+}/* Start a session: list this week's remaining pool in the shared sheet. Picking
    one stamps today as its due_date (the day it was actually done - that's what
    places it on the calendar) and opens it through the same openAssigned path
    every other entry point already uses. */
@@ -5378,12 +5436,7 @@ async function openWeekPool(pool){
     row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${((a.snapshot&&a.snapshot.items)||[]).length} exercises${eng.goal_title?` · ${escapeHtml(eng.goal_title)}`:""}${carried?` · <span style="color:var(--attn)">carried from last week</span>`:""}</div></div>
       <div style="color:var(--lime)">→</div>`;
-    row.addEventListener("click",async()=>{
-      try{ await store.assignedWorkouts.update(a.id,{due_date:today}); }
-      catch(e){ console.error("stamp session day",e); toast("Couldn't start that session",3500); return; }
-      closeSheet();
-      await openAssigned(a.id);
-    });
+    row.addEventListener("click",()=>startSession(a));
     body.appendChild(row);
   }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
@@ -6338,12 +6391,18 @@ function openCoachDayChoice(iso){
   $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
   $("#sheet-add").style.display="none";
   const wrap=document.createElement("div");
-  wrap.innerHTML=`
+  /* Item AT: under the week model a day is not where sessions are assigned -
+     the week's slots are. Offering "assign a workout" here was exactly what
+     made assigning look date-based. A day tap keeps only the coaching call,
+     which genuinely is a day-and-time event. */
+  wrap.innerHTML=WEEK_MODEL?`
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;line-height:1.45">Sessions are assigned per week — use the <b>Session</b> slots under that week's header.</div>
+    <button class="btn" id="choice-call" style="width:100%">🎥 Propose a coaching call</button>`:`
     <button class="btn" id="choice-workout" style="width:100%;margin-bottom:10px">▤ Assign a workout</button>
     <button class="btn ghost" id="choice-call" style="width:100%">🎥 Propose a coaching call</button>`;
   body.appendChild(wrap);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
-  $("#choice-workout").addEventListener("click",()=>{ closeSheet(); assignWorkoutFlow(iso); });
+  $("#choice-workout")?.addEventListener("click",()=>{ closeSheet(); assignWorkoutFlow(iso); });
   $("#choice-call").addEventListener("click",()=>{ closeSheet(); openProposeCallSheet(false,null,null,iso); });
 }
 async function openEngDay(iso){
