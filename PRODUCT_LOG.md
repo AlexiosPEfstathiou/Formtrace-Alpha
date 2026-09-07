@@ -4,6 +4,36 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## AZ. Recurring "statement timeout" - the landmark payload, fixed at the source - DONE 2026-09-07
+
+Kept coming back after the calendar_rows() fix. That fix cut what crossed
+the NETWORK, not what the DATABASE had to do: `to_jsonb(row) - 'snapshot'`
+still made Postgres load every row's full jsonb - the frozen pose landmarks
+for every exercise - from disk before discarding it, so the server-side
+work and the timeout were unchanged. And the audit turned up the real
+scale: ELEVEN list sites pulled full snapshots, most of them for every
+active engagement in parallel - homepage cards, coach home, notification
+batches, the streak badge - megabytes per screen that nothing ever read.
+
+Fixed where the cost is. Needs `supabase/migrations_snapshot_lite.sql`:
+- Two light columns on assigned_workouts, `snap_name` and `snap_items`
+  (item names/kind/sets/reps, no landmarks), kept in sync by a BEFORE
+  INSERT/UPDATE OF snapshot trigger; one-off backfill.
+- `calendar_rows()` rebuilt to never reference `snapshot` at all. Its
+  column list is generated from information_schema at migration time, so
+  re-running the migration after adding columns refreshes it - it can't
+  silently drop one.
+- Client: one helper, `assignedLiteByEng(engs)`, returns rows grouped per
+  engagement in the order given (a drop-in for the old per-engagement
+  Promise.all), with fallback to the full fetch only if the function is
+  missing. All 11 sites now go through it; the only direct list() left is
+  the helper's own fallback. Confirmed no list-fetched row ever needs
+  landmarks - the workout screen loads its single full row separately.
+Supersedes migrations_calendar_rows.sql (harmless if already run; the new
+function replaces it).
+
+---
+
 ## AY. Replace availability-based call scheduling with propose → accept → call in-app
 
 Requested: the current way of setting up a video call - each side

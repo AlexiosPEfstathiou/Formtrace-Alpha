@@ -2167,7 +2167,7 @@ async function renderHomeStreakRisk(el,engs){
   const dismissed=new Set(streakRiskDismissed());
   let at=null;
   try{
-    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const lists=await assignedLiteByEng(active);
     // Only within the last 7 days: anything older is long past mattering
     // for the current streak one way or the other, and would otherwise nag
     // indefinitely for a miss that's ancient history.
@@ -3003,7 +3003,7 @@ async function refreshStreakBadge(){
   if(!ME || roleOf()==="coach"){ hideStreakBadge(); return; }
   try{
     const engs=await store.engagements.list({trainee_id:ME.id});
-    const lists=await Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const lists=await assignedLiteByEng(engs);
     engAssignedByDate={}; for(const a of lists.flat()){ const dt=a.due_date||isoOf(new Date(a.created_at||Date.now())); (engAssignedByDate[dt]=engAssignedByDate[dt]||[]).push(a); }
     logsByDate={}; const logs=await store.logs.list({trainee_id:ME.id}); for(const l of logs) logsByDate[l.log_date]=l;
     // The COUNT is owned by the database (single source of truth shared with
@@ -3124,7 +3124,7 @@ async function renderHomeToday(engs, el){
   // today's assigned workouts (full snapshot) across all active goals
   let todays=[];
   try{
-    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const lists=await assignedLiteByEng(active);
     for(const a of lists.flat()){
       const due=a.due_date||isoOf(new Date(a.created_at||Date.now()));
       if(due===iso) todays.push(a);
@@ -3302,7 +3302,7 @@ async function renderHomeReviews(engs, el){
   if(!active.length) return;
   let unviewed=[];
   try{
-    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const lists=await assignedLiteByEng(active);
     for(const aw of lists.flat()){
       if(aw.status==="reviewed" && !aw.opened){ unviewed.push(aw); }
     }
@@ -3326,7 +3326,7 @@ async function renderHomePostpone(engs, el){
   if(!active.length) return;
   let decided=[];
   try{
-    const lists=await Promise.all(active.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const lists=await assignedLiteByEng(active);
     decided=lists.flat().filter(a=>
       (a.postpone_status==="approved"||a.postpone_status==="rejected") && !a.postpone_seen_at);
   }catch(e){ console.error("home postpone",e); return; }
@@ -3412,7 +3412,7 @@ async function renderHomeReviewDue(el){
        every trainee name at once. */
     const traineeIds=[...new Set(engs.map(e=>e.trainee_id))];
     const [awLists,profRes]=await Promise.all([
-      Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id}))),
+      assignedLiteByEng(engs),
       store._sb.from("profiles").select("id,display_name").in("id",traineeIds)
     ]);
     const profs={}; for(const p of (profRes.data||[])) profs[p.id]=p;
@@ -3458,7 +3458,7 @@ async function renderHomePostponeRequests(el){
     const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
     const traineeIds=[...new Set(engs.map(e=>e.trainee_id))];
     const [awLists,profRes]=await Promise.all([
-      Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id}))),
+      assignedLiteByEng(engs),
       store._sb.from("profiles").select("id,display_name").in("id",traineeIds)
     ]);
     const profs={}; for(const p of (profRes.data||[])) profs[p.id]=p;
@@ -3850,7 +3850,7 @@ async function renderCoachHome(el){
   try{
     const engs=(await store.engagements.list({coach_id:ME.id})).filter(e=>e.status==="active");
     const today=todayISO();
-    const lists=await Promise.all(engs.map(e=>store.assignedWorkouts.list({engagement_id:e.id})));
+    const lists=await assignedLiteByEng(engs);
     lists.forEach((aw,i)=>{
       // pending review: any submitted-but-not-reviewed workout
       pendingReview += aw.filter(a=>a.status==="submitted").length;
@@ -5357,6 +5357,22 @@ function offerCap(o){
   const m=/^\s*(\d+)/.exec(o.sessions_text||""); const v=m?Number(m[1]):0;
   return v>0?v:null;
 }
+/* Light assigned-workout rows for every list in the app. calendar_rows() returns
+   every column EXCEPT the frozen landmark payload (snapshot is re-exposed as
+   {name, items:[{name,...}]}), so listing a coach's whole roster costs
+   kilobytes instead of megabytes. Lists never need landmarks - the workout
+   screen loads its single full row via openAssigned(). Grouped per engagement,
+   in the order given, so it drops in for the old per-engagement Promise.all.
+   Falls back to the full fetch only if the function isn't installed. */
+async function assignedLiteByEng(engs){
+  const ids=engs.map(e=>e.id).filter(Boolean);
+  if(!ids.length) return engs.map(()=>[]);
+  let rows=null;
+  try{ const { data, error } = await store._sb.rpc("calendar_rows",{p_engagements:ids}); if(error) throw error; rows=data||[]; }
+  catch(e){ console.error("calendar_rows (run migrations_snapshot_lite.sql) - falling back to full rows",e); }
+  if(rows==null){ const lists=await Promise.all(ids.map(id=>store.assignedWorkouts.list({engagement_id:id}))); return engs.map(e=>lists[ids.indexOf(e.id)]||[]); }
+  return engs.map(e=>rows.filter(r=>r.engagement_id===e.id));
+}
 /* Item AX: the nutrition goal in force for a week - an exact row for that week,
    else the latest earlier one (carried). Across engagements, the most recently
    updated wins. */
@@ -5606,16 +5622,7 @@ async function renderEngagement(skipFetch){
      snapshot.name and the item names/count). calendar_rows() returns the rows
      with snapshot slimmed to exactly that, under the caller's own RLS. Falls
      back to the old full fetch only if the function isn't installed yet. */
-  let slimOk=false;
-  try{
-    const { data, error } = await store._sb.rpc("calendar_rows",{p_engagements:atEngIds});
-    if(error) throw error;
-    assigned=data||[]; slimOk=true;
-  }catch(e){ console.error("calendar_rows (run migrations_calendar_rows.sql) - falling back to full rows",e); }
-  if(!slimOk){
-    const lists=await Promise.all(atEngIds.map(id=>store.assignedWorkouts.list({engagement_id:id})));
-    assigned=lists.flat();
-  }
+  assigned=(await assignedLiteByEng(atEngIds.map(id=>({id})))).flat();
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){
@@ -6977,7 +6984,7 @@ async function coachCompleteGoal(){
   const btn=$("#eng-fab");btn.disabled=true;const o=btn.textContent;btn.textContent="Completing…";
   try{
     // derive outcome: any past, still-unsubmitted workout => late; otherwise on_time
-    const assigned=await store.assignedWorkouts.list({engagement_id:currentEng.id});
+    const assigned=(await assignedLiteByEng([currentEng]))[0];
     const today=todayISO();
     const missed=assigned.some(a=>a.status==="assigned" && a.due_date && a.due_date<today);
     const outcome=missed?"late":"on_time";
@@ -7155,7 +7162,7 @@ async function loadPrevSeries(a){
   if(!a||!a.engagement_id)return;
   try{
     const key=a.workout_id||((a.snapshot&&a.snapshot.name)||"");
-    const all=await store.assignedWorkouts.list({engagement_id:a.engagement_id});
+    const all=(await assignedLiteByEng([{id:a.engagement_id}]))[0];
     const dateOf=x=>x.due_date||isoOf(new Date(x.created_at||Date.now()));
     const series=all
       .filter(x=>(x.workout_id||((x.snapshot&&x.snapshot.name)||""))===key)
