@@ -4,6 +4,37 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BB. Streak animation must show the whole streak, scaled to its length
+
+Requested: the streak animation should accurately show the streak - the
+first and the last day always visible. Reported: on a 15-day streak the
+animation shows only the last 6 days. Scaling rule:
+- up to 30 days: one square per day, every day shown;
+- over 30 and up to 120 days: one square per week, with a clear start date
+  and current date;
+- over 120 days: one square per month.
+
+Where it lives (checked): the squares come from `streakDates()` (walks back
+day by day from today, collecting the run) feeding `openStreakBurst()`,
+which renders one animated square per date. Two candidates for the
+6-day cutoff, to confirm before fixing rather than assume: the walk
+stops after 7 consecutive rest days (`rest>=7` at ~2047), and the burst
+markup may cap how many squares fit. Neither is the requested behaviour.
+
+**Reconcile with item AT before building:** the streak is being redefined
+in WEEKS (`week_streak_count`, live since AT step 1; the day-based badge
+is retired at AT step 5). Under that model "15-day streak" becomes e.g.
+"3-week streak", and the natural unit is already a week - so the three
+tiers should be re-expressed in weeks (e.g. one square per week up to
+~26 weeks, then per month), with the start date being the Monday of the
+first complete week and the current square being this week. Building this
+against the day-based streak first and then porting it would be double
+work; build it once, on the week model, as part of AT step 4/5.
+
+Not started.
+
+---
+
 ## BA. Open goals hygiene: hide, expiry, and pitches that don't stick forever - DONE 2026-09-07
 
 Requested: coaches can hide an open goal so it stops reappearing; a
