@@ -4,6 +4,31 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BD. Alpha testing with 2 people
+
+Logged as a milestone/activity, not a build task. Two people alpha
+testing the live app (GitHub Pages + Supabase) - presumably one coach and
+one trainee, which is the minimum to exercise the two-sided flows
+end to end (offer -> accept -> engagement -> weekly assign -> pick a
+session -> submit -> review, plus macros, nutrition goals, calendar,
+streak). This is where most of the recent items surfaced from: the
+"statement timeout" (AR/AZ), the calendar/database outage (AW), the
+"3 planned but assign 1" chain (AT step 3 fixes), the vacation streak
+count (still open, awaiting the diagnostic output), and the several
+"Couldn't load the calendar" regressions. Worth treating tester reports
+as the current priority queue.
+
+Standing note for this phase: real accounts, real data, so migrations and
+data-shape changes carry more weight than during solo dev - the
+week-model cutover (AT) in particular is mid-flight (steps 1-4 live behind
+`WEEK_MODEL`, step 5 not yet done), so testers are exercising the new
+model on real engagements while the day-model code still exists underneath.
+
+Open tester-reported items right now: vacation streak miscount (awaiting
+diagnostic rows). No other unresolved reports outstanding.
+
+---
+
 ## BC. Trim option when submitting a video: cut from the start and end
 
 Requested: when submitting a workout video the submitter should be able to
