@@ -4,6 +4,42 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BC. Trim option when submitting a video: cut from the start and end
+
+Requested: when submitting a workout video the submitter should be able to
+trim parts off the beginning and end before it's sent.
+
+Where it fits (checked, not assumed): recording already has a review step
+(`#rreview`, shown when `recOpts.review`) between stopping and completing -
+that is the natural place for a trim UI, before `onComplete(lastCapture)`
+fires. Two in/out handles on a scrubber over `rplay` (the review
+`<video>`), defaulting to full length.
+
+**The real nuance, and why this isn't just a UI slider:** the captured
+blob is paired with `lastCapture.frames` - per-frame pose landmarks, at
+`lastCapture.fps` - and the whole point of these videos is pose grading
+against the coach's reference. A trim has to cut BOTH in lockstep, or the
+graded frames stop lining up with what's on screen. Frames are the easy
+half (drop those outside [in,out] by timestamp). Re-cutting the actual
+video blob is the hard half:
+- WebM/MP4 from MediaRecorder can't be losslessly trimmed client-side
+  without a mux library (none installable here - Artifactory/npm blocked),
+  and re-encoding through a canvas + MediaRecorder is a real re-record
+  pass (playback-speed, quality loss, battery).
+- Cheaper alternative worth weighing first: don't recut the blob at all -
+  store the chosen in/out offsets alongside it and have every player
+  (`hydrateVideos`, the review, the voice-over recorder) start at `in`
+  and stop at `out`. The uploaded file stays whole; playback and the
+  graded frame set both honour the trim. Less "true" than a hard cut but
+  far simpler and lossless, and it composes with the existing per-path
+  rotation-correction pattern (item X) which already adds playback
+  metadata without touching the file.
+
+Recommend deciding between hard-recut and offset-based trim before
+building. Not started.
+
+---
+
 ## BB. Streak animation must show the whole streak, scaled to its length - DONE 2026-09-07 (built inside AT step 4, see there)
 
 Requested: the streak animation should accurately show the streak - the
