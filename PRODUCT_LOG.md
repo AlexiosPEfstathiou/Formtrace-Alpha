@@ -4,6 +4,38 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BF. Vacation streak: "15 days became 1 week" - explained and fixed - DONE 2026-09-11
+
+Reported (BD tester): a 10-day streak, a 16-day vacation, then 5 more days
+read as a 15-day streak under the day model, and "1 week" after the
+cutover. Diagnosed from the code rather than the requested rows, which
+never arrived - two separate things:
+
+1. **Mostly a unit change, not a miscount.** `compute_week_streak` is
+   correct: a vacation week is neutral and skipped, and the walk continues
+   past it. 10 pre-vacation days were ~1 complete week; the return week is
+   still open and doesn't count yet. So "1w" is what the week rule says -
+   it just reads as a loss. Fixed by applying item BB's own rule to the
+   badge: **under 3 weeks the streak shows in training DAYS** (distinct
+   days a session was done inside the run, "12d"), from 3 weeks in weeks
+   ("3w"). Same unit on the badge, the burst, and the calendar copy.
+
+2. **A real bug in my BB code (AT step 4).** The run's start was computed
+   as `this Monday - 7 x W`. W counts only completed weeks, but neutral
+   weeks (a vacation) sit INSIDE the run without being counted - so for
+   this tester the span began last Monday and the burst dropped every
+   pre-vacation day. New `weekStreakSpan()` finds the start by walking the
+   recorded weeks back from last week, skipping neutral ones, until a week
+   breaks the run or all counted weeks are found; the week/month tiers
+   now iterate the counted weeks (skipping neutral ones) instead of
+   `start + 7i`. Used by badge and burst alike.
+
+Still worth confirming with the diagnostic rows if convenient: that the
+pre-vacation week is recorded complete in `week_closures`. If it isn't,
+that's a backfill under-count and a separate fix.
+
+---
+
 ## BE. Testing the running workouts (Interval Running) in real use
 
 Alpha-testing focus (item BD) on the Interval Running feature (AL)

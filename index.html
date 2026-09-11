@@ -2040,7 +2040,7 @@ function weekRisk(rows){
 function updateStreakBadge(info){
   const b=$("#streak-badge"); if(!b)return;
   b.classList.remove("hidden","danger","zero");
-  $("#streak-count").textContent = (info.unit==="week") ? `${info.count}w` : info.count;
+  $("#streak-count").textContent = (info.unit==="week") ? `${info.count}w` : (info.unit==="day" && WEEK_MODEL ? `${info.count}d` : info.count);
   b.title = (info.unit==="week") ? `${info.count}-week streak` : `${info.count}-day streak`;
   if(info.danger) b.classList.add("danger");
   else if(info.count===0) b.classList.add("zero");
@@ -2088,15 +2088,41 @@ function sbConfetti(){
      3 months and up -> one square per MONTH.
    W = completed consecutive weeks (server, week_streak_count); the current,
    still-open week is the dashed square at the end. */
-async function weekStreakSquares(){
+/* The streak's real SPAN. W (server) counts only completed weeks; neutral weeks
+   - a vacation, or a week with nothing assigned - sit inside the run without
+   being counted. So the start cannot be "this Monday - 7*W": it is found by
+   walking the recorded weeks back from last week, skipping neutral ones,
+   until a week breaks the run or the counted weeks are all found. Also
+   returns the distinct days a session was done inside that span, which is
+   what a sub-3-week streak is shown in. */
+async function weekStreakSpan(rows){
   const today=todayISO(), thisMon=weekStartISO(new Date());
   const W=Number(ME&&ME.week_streak_count)||0;
-  const startMon=addDaysISO(thisMon,-7*W);
+  let cl=Object.values(weekClosures||{}).flat();
+  if(!cl.length){
+    try{ const engs=await store.engagements.list({trainee_id:ME.id}); if(engs.length){ const {data}=await store._sb.from("week_closures").select("*").in("engagement_id",engs.map(e=>e.id)); cl=data||[]; } }catch(e){ console.error("streak span closures",e); }
+  }
+  const byW={}; for(const c of cl){ (byW[c.week_start]=byW[c.week_start]||[]).push(c); }
+  let startMon=thisMon, counted=0, w=addDaysISO(thisMon,-7), guard=0;
+  while(W>0 && guard++<600){
+    const rw=byW[w]||[];
+    if(rw.some(c=>!c.neutral&&c.completed_count<c.assigned_count)) break;          // a broken week ends the run
+    const good=rw.some(c=>!c.neutral&&c.completed_count>=c.assigned_count);
+    if(good){ counted++; startMon=w; }
+    else if(!rw.length && counted>=W) break;                                       // past recorded history once all counted weeks are found
+    if(counted>=W && !rw.some(c=>c.neutral)) break;                                // all counted weeks found; don't extend into earlier neutral weeks
+    w=addDaysISO(w,-7);
+  }
+  const doneDates=[...new Set((rows||[]).filter(a=>a.due_date&&a.status!=="assigned"&&a.due_date>=startMon&&a.due_date<=today).map(a=>a.due_date))].sort();
+  return {W, startMon, doneDates, doneDays:doneDates.length, thisMon, today};
+}
+async function weekStreakSquares(){
   let rows=Object.values(weekRows||{}).flat();
   if(!rows.length){
     try{ const engs=await store.engagements.list({trainee_id:ME.id}); rows=(await assignedLiteByEng(engs.filter(e=>e.status==="active"))).flat(); }catch(e){ console.error("streak squares rows",e); }
   }
-  const doneDates=[...new Set(rows.filter(a=>a.due_date&&a.status!=="assigned"&&a.due_date>=startMon&&a.due_date<=today).map(a=>a.due_date))].sort();
+  const span=await weekStreakSpan(rows);
+  const {W, startMon, doneDates, thisMon, today}=span;
   const doneThisWeek=rows.filter(a=>a.week_start===thisMon&&a.status!=="assigned").length;
   const targetThisWeek=weekCap!=null?weekCap:rows.filter(a=>a.week_start===thisMon).length;
   const mo=iso=>CAL_MONTHS[Number(iso.slice(5,7))-1].slice(0,3);
@@ -2108,11 +2134,12 @@ async function weekStreakSquares(){
     if(!doneDates.includes(today)) squares.push({...dayLabel(today),done:false,current:true});
   }else if(W<13){
     unit="week";
-    for(let i=0;i<W;i++){ const m=addDaysISO(startMon,7*i); squares.push({label:String(Number(m.slice(8,10))),sub:mo(m),done:true,current:false,wide:true}); }
+    // one square per COUNTED week: walk Mondays from the start and skip weeks that have no completed session (neutral)
+    for(let m=startMon; m<thisMon; m=addDaysISO(m,7)){ if(!rows.some(a=>a.week_start===m&&a.status!=="assigned")) continue; squares.push({label:String(Number(m.slice(8,10))),sub:mo(m),done:true,current:false,wide:true}); }
     squares.push({label:`${doneThisWeek}/${targetThisWeek||"–"}`,sub:"this wk",done:false,current:true,wide:true});
   }else{
     unit="month";
-    const byM={}; for(let i=0;i<W;i++){ const m=addDaysISO(startMon,7*i); const k=m.slice(0,7); byM[k]=(byM[k]||0)+1; }
+    const byM={}; for(let m=startMon; m<thisMon; m=addDaysISO(m,7)){ if(!rows.some(a=>a.week_start===m&&a.status!=="assigned")) continue; const k=m.slice(0,7); byM[k]=(byM[k]||0)+1; }
     for(const k of Object.keys(byM).sort()) squares.push({label:mo(k+"-01"),sub:`${byM[k]} wk`,done:true,current:false,wide:true});
     squares.push({label:mo(thisMon),sub:"now",done:false,current:true,wide:true});
   }
@@ -2127,7 +2154,7 @@ async function openStreakBurst(milestone){
     $("#sb-title").textContent = sbState.milestone ? "Milestone achieved!" : (s.W? "You're on fire!" : "Streak in the making");
     $("#sb-cal").innerHTML=s.squares.map((q,i)=>`<div class="sb-day${q.current?" sb-cur":""}${q.wide?" sb-wide":""}" style="animation-delay:${i*70}ms"><span class="sb-dow">${escapeHtml(q.sub)}</span><span class="sb-n">${escapeHtml(q.label)}</span>${q.done?`<span class="sb-flame" style="animation-delay:${i*70+220}ms">🔥</span>`:""}</div>`).join("");
     const unitTxt = s.unit==="day" ? `${s.doneDays} training day${s.doneDays===1?"":"s"}` : s.unit==="week" ? "one square per week" : "one square per month";
-    $("#sb-sub").textContent=`${s.W}-week streak · ${unitTxt} · ${s.startLabel} → ${s.currentLabel}`;
+    $("#sb-sub").textContent= s.unit==="day" ? `${s.doneDays} training day${s.doneDays===1?"":"s"} in your streak · ${s.startLabel} → ${s.currentLabel}` : `${s.W}-week streak · ${unitTxt} · ${s.startLabel} → ${s.currentLabel}`;
     const settle=s.squares.length*70+300;
     const t=$("#sb-title"), sb=$("#sb-sub");
     t.style.animationDelay=settle+"ms"; sb.style.animationDelay=(settle+120)+"ms";
@@ -3102,7 +3129,13 @@ async function refreshStreakBadge(){
     if(WEEK_MODEL){
       const r=weekRisk(lists.flat());
       const serverCount=await serverStreak();
-      streakInfo={count:serverCount??(ME.week_streak_count||0),unit:"week",danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft};
+      const W=serverCount??(ME.week_streak_count||0);
+      /* Item BB rule applied to the badge too: under 3 weeks the streak is shown
+         in training DAYS (the actual sessions done inside the run), from 3 weeks
+         in weeks. A 10-day run reading "1w" after the cutover was the report. */
+      const span=await weekStreakSpan(lists.flat());
+      streakInfo= W<3 ? {count:span.doneDays,unit:"day",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft}
+                      : {count:W,unit:"week",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft};
     }else{
       streakInfo=computeStreak();
       const serverCount=await serverStreak();
@@ -5808,11 +5841,15 @@ async function renderEngagement(skipFetch){
   // discipline streak (trainee only)
   if(WEEK_MODEL){
     const r=weekRisk(assigned);
-    streakInfo = iAmCoach ? {count:0,unit:"week",danger:false,broken:false} : {count:(ME.week_streak_count||0),unit:"week",danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft};
+    const W=(ME.week_streak_count||0);
+    streakInfo = iAmCoach ? {count:0,unit:"week",weeks:0,danger:false,broken:false}
+               : (W<3 ? {count:0,unit:"day",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft}   // day count filled in below from the span
+                      : {count:W,unit:"week",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft});
+    if(!iAmCoach && W<3){ weekStreakSpan(assigned).then(s=>{ streakInfo.count=s.doneDays; updateStreakBadge(streakInfo); }).catch(()=>{}); }
   }else{
     streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
   }
-  if(!iAmCoach){ updateStreakBadge(streakInfo); serverStreak().then(v=>{ if(v!=null){ streakInfo.count=v; updateStreakBadge(streakInfo); } }); }
+  if(!iAmCoach){ updateStreakBadge(streakInfo); serverStreak().then(v=>{ if(v!=null){ if(WEEK_MODEL){ streakInfo.weeks=v; if(streakInfo.unit==="week") streakInfo.count=v; } else streakInfo.count=v; updateStreakBadge(streakInfo); } }); }
   }
   body.innerHTML="";
 
@@ -5832,10 +5869,10 @@ async function renderEngagement(skipFetch){
   }
 
   // streak danger warning (trainee): one missed workout — reinstate by completing next day
-  if(!iAmCoach && streakInfo.danger && streakInfo.count>0){
+  if(!iAmCoach && streakInfo.danger && (WEEK_MODEL ? true : streakInfo.count>0)){
     const warn=document.createElement("div");warn.className="card";warn.style.cssText="background:rgba(255,90,90,.1);border-color:rgba(255,90,90,.5);margin-bottom:14px";
     const riskCopy = WEEK_MODEL
-      ? `${streakInfo.left} session${streakInfo.left===1?"":"s"} still to do and the week closes ${streakInfo.daysLeft===0?"today":"tomorrow"}. Finish ${streakInfo.left===1?"it":"them"} to keep your ${streakInfo.count}-week streak.`
+      ? `${streakInfo.left} session${streakInfo.left===1?"":"s"} still to do and the week closes ${streakInfo.daysLeft===0?"today":"tomorrow"}. Finish ${streakInfo.left===1?"it":"them"} to keep your streak${streakInfo.weeks?` (${streakInfo.weeks} week${streakInfo.weeks===1?"":"s"} and counting)`:""}.`
       : `You missed a workout. Your ${streakInfo.count}-day streak is paused — complete tomorrow to reinstate it. Miss again and it resets to zero.`;
     warn.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px">⚠️</div><div style="flex:1"><div style="font-weight:800;color:var(--red)">Streak at risk</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45">${riskCopy}</div></div></div>`;
     body.appendChild(warn);
