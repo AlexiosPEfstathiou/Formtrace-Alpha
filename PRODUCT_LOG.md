@@ -222,7 +222,7 @@ function replaces it).
 
 ---
 
-## AY. Replace availability-based call scheduling with propose → accept → call in-app
+## AY. Replace availability-based call scheduling with propose → accept → call in-app - SCHEDULING HALF DONE 2026-09-11, call technology still open
 
 Requested: the current way of setting up a video call - each side
 declaring recurring weekly availability windows, and proposals only being
@@ -248,8 +248,26 @@ on its own and is worth doing first; the call itself waits on that
 decision, and the in-app-only requirement from G still stands (no
 external meeting links).
 
-Not started. Supersedes the scheduling half of item G; G's call-technology
-question remains open and becomes this item's second step.
+**Scheduling half DONE 2026-09-11.** Needs
+`supabase/migrations_propose_any_time.sql` run.
+- `propose_call()` redefined without the two availability checks (the
+  server used to reject any time outside BOTH parties' declared windows).
+  Counters route through the same function, so one change relaxes both.
+- New propose sheet: date (or the tapped calendar day), a start time, and
+  a length (15/30/45/60 min) - the end time is computed. Copy: "Pick a
+  time that suits you. <name> can accept, decline, or suggest another."
+  Same sheet serves counters ("Suggest a different time").
+- The "Availability for calls" section is removed from Profile, and the
+  three availability functions with it. `availability_blocks` stays in
+  the schema, unused, until a cleanup pass.
+Accept / decline / counter, the homepage "needs your response" card, and
+accepted calls on the calendar are unchanged.
+
+**Second step still open:** the call itself, in-app - WebRTC (peer-to-peer,
+needs signalling and realistically a TURN relay for mobile reliability)
+vs a hosted provider SDK (simpler and reliable; a third party and usually
+a cost). Same decision item G has been paused on. Supersedes G's
+scheduling half.
 
 ---
 

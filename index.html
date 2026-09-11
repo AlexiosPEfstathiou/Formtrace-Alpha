@@ -6623,86 +6623,57 @@ async function renderCallScheduling(el){
    invalid time actually get sent. presetDate skips the date picker
    entirely when the caller already has a specific date in hand — the
    coach tapping a calendar day, not choosing one inside this sheet. */
+/* Item AY (scheduling half): propose ANY date and time. The availability-window
+   layer - both parties declaring recurring free hours, proposals only allowed
+   inside the overlap - was judged not user friendly and is gone. Pick a date, a
+   start time, and a duration; the other side accepts, declines, or counters
+   exactly as before (counters reuse this sheet). The server-side overlap check
+   is relaxed in migrations_propose_any_time.sql. */
 function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate){
   const body=$("#sheet-body");body.innerHTML="";
-  $("#sheet-lib").querySelector("h3").textContent=isCounter?"Propose a different time":"Propose a coaching call";
+  $("#sheet-lib").querySelector("h3").textContent=isCounter?"Suggest a different time":"Propose a coaching call";
   $("#sheet-add").style.display="none";
+  const other=(currentEngOther&&currentEngOther.display_name)||"they";
   const wrap=document.createElement("div");
   const dateFieldHtml = presetDate
-    ? `<div class="field"><label>Date</label><div style="height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);display:flex;align-items:center;padding:0 14px;font-size:15px">${escapeHtml(fmtDay(presetDate))}</div></div>`
+    ? `<div class="field"><label>Date</label><div style="height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);display:flex;align-items:center;padding:0 14px;font-weight:700">${fmtDay(presetDate)}</div></div>`
     : `<div class="field"><label for="pc-date">Date</label><input id="pc-date" type="date" min="${todayISO()}"></div>`;
-  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">${presetDate?"":"Pick a date — "}the windows shown are hours you and ${escapeHtml(currentEngOther.display_name||"they")} have both declared as available.</div>
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Pick a time that suits you. ${escapeHtml(other)} can accept, decline, or suggest another.</div>
     ${dateFieldHtml}
-    <div id="pc-overlap" style="margin-top:6px"></div>
-    <button class="btn primary" id="pc-send" style="margin-top:16px" disabled>Send proposal</button>`;
+    <div style="display:flex;gap:10px">
+      <div class="field" style="flex:1"><label for="pc-time">Start time</label><input id="pc-time" type="time" step="300"></div>
+      <div class="field" style="flex:1"><label for="pc-dur">Length</label><select id="pc-dur" class="sel"><option value="15">15 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div>
+    </div>
+    <button class="btn primary" id="pc-send" style="margin-top:16px" disabled>${isCounter?"Send suggestion":"Send proposal"}</button>`;
   body.appendChild(wrap);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 
-  let chosen=null;
-  const iAmCoachHere=(currentEng.coach_id===ME.id);
-  const otherId=iAmCoachHere?currentEng.trainee_id:currentEng.coach_id;
-
-  const computeOverlap=async(dateStr)=>{
-    const overlapEl=$("#pc-overlap");
-    chosen=null; $("#pc-send").disabled=true;
-    if(!dateStr){ overlapEl.innerHTML=""; return; }
-    const dow=new Date(dateStr+"T00:00:00").getDay();
-    overlapEl.innerHTML=`<div style="font-size:12px;color:var(--faint)">Checking availability…</div>`;
-    try{
-      const [mineRes,theirsRes]=await Promise.all([
-        store._sb.from("availability_blocks").select("*").eq("user_id",ME.id).eq("day_of_week",dow),
-        store._sb.from("availability_blocks").select("*").eq("user_id",otherId).eq("day_of_week",dow)
-      ]);
-      if(mineRes.error) throw mineRes.error; if(theirsRes.error) throw theirsRes.error;
-      const windows=[];
-      for(const m of (mineRes.data||[])) for(const t of (theirsRes.data||[])){
-        const s=m.start_time>t.start_time?m.start_time:t.start_time;
-        const en=m.end_time<t.end_time?m.end_time:t.end_time;
-        if(s<en) windows.push({start:s,end:en});
-      }
-      if(!windows.length){
-        overlapEl.innerHTML=`<div style="font-size:12.5px;color:var(--amber);line-height:1.5">Neither of you has declared overlapping availability on this day. Add availability from Profile, or try another date.</div>`;
-        return;
-      }
-      overlapEl.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Overlapping windows — tap one:</div>`
-        +windows.map((w,i)=>`<button class="gs-chip" data-win="${i}" style="width:100%;margin-bottom:6px;height:44px">${fmtTimeRange(w.start,w.end)}</button>`).join("");
-      overlapEl.querySelectorAll("[data-win]").forEach(b=>b.addEventListener("click",()=>{
-        overlapEl.querySelectorAll("[data-win]").forEach(x=>x.classList.remove("on"));
-        b.classList.add("on");
-        chosen=windows[+b.getAttribute("data-win")];
-        $("#pc-send").disabled=false;
-      }));
-    }catch(err){ console.error("overlap check",err); overlapEl.innerHTML=`<div style="font-size:12px;color:var(--red)">Couldn't check availability.</div>`; }
-  };
-  if(presetDate){ computeOverlap(presetDate); }
-  else{ $("#pc-date").addEventListener("change",e=>computeOverlap(e.target.value)); }
+  const ready=()=>{ const d=presetDate||$("#pc-date")?.value, t=$("#pc-time")?.value; $("#pc-send").disabled=!(d&&t); };
+  $("#pc-time").addEventListener("input",ready); $("#pc-date")?.addEventListener("change",ready);
 
   $("#pc-send").addEventListener("click",async()=>{
-    const dateStr=presetDate||$("#pc-date")?.value;
-    if(!dateStr||!chosen){ toast("Pick a date and a window"); return; }
+    const dateStr=presetDate||$("#pc-date")?.value, start=$("#pc-time").value, mins=Number($("#pc-dur").value)||30;
+    if(!dateStr||!start){ toast("Pick a date and a time"); return; }
+    const [hh,mm]=start.split(":").map(Number); const endMin=hh*60+mm+mins;
+    if(endMin>=24*60){ toast("That runs past midnight - pick an earlier time or shorter length",3500); return; }
+    const end=`${pad2(Math.floor(endMin/60))}:${pad2(endMin%60)}`, startT=`${pad2(hh)}:${pad2(mm)}`;
     const btn=$("#pc-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Sending…";
     try{
       if(isCounter){
         const { error } = await store._sb.rpc("respond_to_call_proposal",
-          {p_proposal_id:counterOfId,p_action:"counter",p_counter_date:dateStr,p_counter_start:chosen.start,p_counter_end:chosen.end});
+          {p_proposal_id:counterOfId,p_action:"counter",p_counter_date:dateStr,p_counter_start:startT,p_counter_end:end});
         if(error) throw error;
       }else{
         const { error } = await store._sb.rpc("propose_call",
-          {p_engagement_id:currentEng.id,p_date:dateStr,p_start_time:chosen.start,p_end_time:chosen.end});
+          {p_engagement_id:currentEng.id,p_date:dateStr,p_start_time:startT,p_end_time:end});
         if(error) throw error;
       }
-      toast("Proposal sent ✓");
+      toast(isCounter?"Suggestion sent ✓":"Proposal sent ✓");
       closeSheet();
-      // Always a full refresh, not a narrow renderCallScheduling(refreshEl)
-      // — the calendar-tap entry point has no existing card to target
-      // (refreshEl is null there), and a full re-render correctly updates
-      // the calendar, dashboard, and the status card uniformly regardless
-      // of which entry point sent this proposal.
       renderEngagement();
-    }catch(err){ console.error("propose call (run migrations_scheduled_calls.sql)",err); toast(err.message||"Couldn't send that proposal",4000); btn.disabled=false; btn.textContent=o; }
+    }catch(err){ console.error("propose call (run migrations_propose_any_time.sql)",err); toast(err.message||"Couldn't send that proposal",4000); btn.disabled=false; btn.textContent=o; }
   });
 }
-
 /* Item G: the coach's own choice when tapping an otherwise-empty day —
    assign a workout (existing), or propose a coaching call for that exact
    date (new). Reuses the standard sheet chrome rather than a bespoke
@@ -9586,17 +9557,7 @@ async function renderProfile(){
      proposal and a coach's response need to check against. Recurring
      (day-of-week + time range), not per-date — the only realistic reading
      of "available hours" someone would actually maintain. */
-  html+=`<div class="section-h"><div class="eyebrow">Availability for calls</div></div>
-    <div class="card" style="margin:0 0 12px">
-      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">Recurring weekly hours you're generally free for a call. A proposed time can only be sent within a window both sides have declared.</div>
-      <div id="avail-list"></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <select class="sel" id="avail-day" style="flex:1"></select>
-        <input type="time" id="avail-start" value="18:00" style="flex:1;height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);padding:0 12px;font-size:15px">
-        <input type="time" id="avail-end" value="20:00" style="flex:1;height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);padding:0 12px;font-size:15px">
-      </div>
-      <button class="btn sm" id="avail-add" style="margin-top:10px">＋ Add availability</button>
-    </div>`;
+  // Item AY: the "Availability for calls" section is gone - proposing no longer depends on declared hours.
   // ---- Danger zone: account deletion ----
   html+=`<div class="section-h"><div class="eyebrow" style="color:var(--red)">Danger zone</div></div>
     <div class="card" style="border-color:rgba(255,90,90,.35)">
@@ -9658,7 +9619,6 @@ async function renderProfile(){
   $("#cb-switch")?.addEventListener("change",e=>setColorblind(e.target.checked));
   wireSocialProfile();
   updateInstallUI();
-  wireAvailability();
   wireDangerZone();
   $("#apply-card")?.addEventListener("click",()=>go("coach-apply"));
   $("#pause-all-card")?.addEventListener("click",openPauseAllSheet);
@@ -9703,51 +9663,9 @@ function updateInstallUI(){
    logic to enforce here (the "manage own availability" policy already
    scopes this to auth.uid()), so a raw table operation is the right,
    simplest fit rather than a security-definer function for its own sake. */
-async function loadAvailability(){
-  const { data, error } = await store._sb.from("availability_blocks").select("*").eq("user_id",ME.id).order("day_of_week").order("start_time");
-  if(error){ console.error("loadAvailability (run migrations_scheduled_calls.sql)",error); return []; }
-  return data||[];
-}
-async function renderAvailabilityList(){
-  const list=$("#avail-list"); if(!list)return;
-  const rows=await loadAvailability();
-  if(!rows.length){ list.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Nothing declared yet.</div>`; return; }
-  list.innerHTML=rows.map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
-      <div style="flex:1;font-size:13.5px">${DOW_NAMES[r.day_of_week]} · ${r.start_time.slice(0,5)}–${r.end_time.slice(0,5)}</div>
-      <button data-avail-rm="${r.id}" style="background:transparent;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:4px">✕</button>
-    </div>`).join("");
-  list.querySelectorAll("[data-avail-rm]").forEach(b=>b.addEventListener("click",async()=>{
-    try{ await store._sb.from("availability_blocks").delete().eq("id",b.getAttribute("data-avail-rm")); renderAvailabilityList(); }
-    catch(e){ console.error("remove availability",e); toast("Couldn't remove that",3000); }
-  }));
-}
-function wireAvailability(){
-  const daySel=$("#avail-day"); if(!daySel)return;
-  daySel.innerHTML=DOW_NAMES.map((n,i)=>`<option value="${i}">${n}</option>`).join("");
-  renderAvailabilityList();
-  $("#avail-add").addEventListener("click",async()=>{
-    const day=+daySel.value, start=$("#avail-start").value, end=$("#avail-end").value;
-    if(!start||!end||end<=start){ toast("End time must be after start time",3000); return; }
-    const btn=$("#avail-add");btn.disabled=true;
-    try{
-      /* Reported bug fix: nothing stopped adding the same, or an
-         overlapping, block twice. Checked for genuine overlap (start <
-         existing end AND end > existing start), not just an exact-match
-         duplicate — two entries like 18:00-20:00 and 19:00-21:00 aren't
-         identical but are exactly the kind of redundant clutter the
-         report was about. */
-      const existing=await loadAvailability();
-      const clash=existing.find(r=>r.day_of_week===day && start<r.end_time.slice(0,5) && end>r.start_time.slice(0,5));
-      if(clash){
-        toast(`Overlaps an existing block: ${DOW_NAMES[day]} ${clash.start_time.slice(0,5)}–${clash.end_time.slice(0,5)}`,4000);
-        btn.disabled=false; return;
-      }
-      await store._sb.from("availability_blocks").insert({user_id:ME.id,day_of_week:day,start_time:start,end_time:end});
-      renderAvailabilityList();
-    }catch(e){ console.error("add availability (run migrations_scheduled_calls.sql)",e); toast(e.message||"Couldn't add that",4000); }
-    finally{ btn.disabled=false; }
-  });
-}
+/* Item AY: loadAvailability / renderAvailabilityList / wireAvailability removed - the
+   availability-window layer is gone; proposing a call no longer depends on
+   declared hours. availability_blocks stays in the schema until a cleanup pass. */
 /* Item N: bulk version of openPauseSheet — one message, every active
    engagement, via start_pause_all rather than start_pause. */
 function openPauseAllSheet(){
