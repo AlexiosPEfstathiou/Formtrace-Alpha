@@ -6066,10 +6066,23 @@ async function renderEngagement(skipFetch){
      pair (checking overlap needs a specific counterpart's availability) —
      shown only on a single engagement's own screen, never the merged
      multi-goal calendar, where there's no single "other party" to check. */
+  /* Item AY follow-up: the trainee's Training tab ALWAYS opens the merged view
+     (openTraineeCalendar sets traineeMerged even for one goal), so gating this
+     to the single view meant a trainee never saw it. Merged: one card per
+     active coach, names fetched in one batched query. */
   if(!traineeMerged && currentEng && currentEng.status==="active"){
     const callWrap=document.createElement("div");callWrap.style.cssText="margin-top:18px";
     body.appendChild(callWrap);
     renderCallScheduling(callWrap);
+  }else if(traineeMerged){
+    const act=(traineeEngs||[]).filter(e=>e.status==="active");
+    if(act.length){
+      const wraps=act.map(()=>{ const w=document.createElement("div"); w.style.cssText="margin-top:18px"; body.appendChild(w); return w; });
+      store._sb.from("profiles").select("id,display_name").in("id",[...new Set(act.map(e=>e.coach_id))]).then(({data})=>{
+        const byId=Object.fromEntries((data||[]).map(p=>[p.id,p]));
+        act.forEach((e,i)=>renderCallScheduling(wraps[i], e, byId[e.coach_id]||{display_name:"your coach"}));
+      }).catch(err=>{ console.error("coach names for call cards",err); act.forEach((e,i)=>renderCallScheduling(wraps[i], e, {display_name:"your coach"})); });
+    }
   }
 
   /* Item M's control: ordinary content at the very end of the scrollable
@@ -6561,15 +6574,15 @@ function renderDashboard(container, iAmCoach){
    for it to lead yet.
    ========================================================================= */
 function fmtTimeRange(a,b){ return a.slice(0,5)+"–"+b.slice(0,5); }
-async function renderCallScheduling(el){
-  el.innerHTML=`<div class="section-h"><div class="eyebrow">Video call</div></div>
-    <div class="card" id="call-sched-body"><div style="font-size:12.5px;color:var(--faint)">Loading…</div></div>`;
-  const body=$("#call-sched-body");
-  const iAmCoachHere=(currentEng.coach_id===ME.id);
+async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
+  el.innerHTML=`<div class="section-h"><div class="eyebrow">Video call${other&&other.display_name?` · ${escapeHtml(other.display_name)}`:""}</div></div>
+    <div class="card" data-call-body><div style="font-size:12.5px;color:var(--faint)">Loading…</div></div>`;
+  const body=el.querySelector("[data-call-body]");
+  const iAmCoachHere=(eng.coach_id===ME.id);
   let proposal=null;
   try{
     const { data, error } = await store._sb.from("call_proposals").select("*")
-      .eq("engagement_id",currentEng.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      .eq("engagement_id",eng.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
     if(error) throw error;
     proposal=data;
   }catch(e){ console.error("call proposal load (run migrations_scheduled_calls.sql)",e); body.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load — run migrations_scheduled_calls.sql</div>`; return; }
@@ -6585,26 +6598,26 @@ async function renderCallScheduling(el){
     const iProposedIt=(proposal.proposed_by===ME.id);
     const hoursLeft=Math.max(0,Math.round((new Date(proposal.expires_at)-new Date())/3600000));
     if(iProposedIt){
-      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">Waiting for ${escapeHtml(currentEngOther.display_name||"a response")}</div>
+      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">Waiting for ${escapeHtml((other||{}).display_name||"a response")}</div>
         <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>
         <div style="font-size:11.5px;color:var(--amber);margin-top:6px">Expires in about ${hoursLeft}h if there's no response</div>`;
     }else{
-      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">${escapeHtml(currentEngOther.display_name||"They")} proposed:</div>
+      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">${escapeHtml((other||{}).display_name||"They")} proposed:</div>
         <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>
         <div style="font-size:11.5px;color:var(--amber);margin-top:4px">Respond within about ${hoursLeft}h</div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn sm" id="call-accept" style="flex:1;margin:0">✓ Accept</button>
-          <button class="btn sm ghost" id="call-counter" style="flex:1;margin:0">Different time</button>
+          <button class="btn sm call-accept" style="flex:1;margin:0">✓ Accept</button>
+          <button class="btn sm ghost call-counter" style="flex:1;margin:0">Different time</button>
         </div>`;
-      $("#call-accept").addEventListener("click",async()=>{
-        const btn=$("#call-accept");btn.disabled=true;
+      el.querySelector(".call-accept").addEventListener("click",async()=>{
+        const btn=el.querySelector(".call-accept");btn.disabled=true;
         try{
           const { error } = await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:proposal.id,p_action:"accept"});
           if(error) throw error;
-          toast("Call confirmed ✓"); renderCallScheduling(el);
+          toast("Call confirmed ✓"); renderCallScheduling(el,eng,other);
         }catch(err){ console.error("accept call",err); toast(err.message||"Couldn't accept",4000); btn.disabled=false; }
       });
-      $("#call-counter").addEventListener("click",()=>openProposeCallSheet(true,proposal.id,el));
+      el.querySelector(".call-counter").addEventListener("click",()=>openProposeCallSheet(true,proposal.id,el,null,eng,other));
     }
     return;
   }
@@ -6616,9 +6629,9 @@ async function renderCallScheduling(el){
   /* Item AY: EITHER side proposes, straight from this card. The old text sent
      the coach to the calendar day-tap and told the trainee to wait - but a
      trainee's day tap opens the macro log, so they had no way in at all. */
-  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">${isExpired?"The last proposal expired without a response. ":""}No call scheduled. Propose a time - ${escapeHtml(currentEngOther.display_name||"they")} can accept, decline, or suggest another.</div>
-    <button class="btn primary sm" id="call-propose" style="width:auto">📅 Propose a call</button>`;
-  $("#call-propose").addEventListener("click",()=>openProposeCallSheet(false,null,el,null));
+  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">${isExpired?"The last proposal expired without a response. ":""}No call scheduled. Propose a time - ${escapeHtml((other||{}).display_name||"they")} can accept, decline, or suggest another.</div>
+    <button class="btn primary sm call-propose" style="width:auto">📅 Propose a call</button>`;
+  el.querySelector(".call-propose").addEventListener("click",()=>openProposeCallSheet(false,null,el,null,eng,other));
 }
 /* Shared sheet for both an opening proposal and a counter — the only
    difference is which RPC gets called at the end. Overlap is computed
@@ -6634,16 +6647,16 @@ async function renderCallScheduling(el){
    start time, and a duration; the other side accepts, declines, or counters
    exactly as before (counters reuse this sheet). The server-side overlap check
    is relaxed in migrations_propose_any_time.sql. */
-function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate){
+function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=currentEng,other=currentEngOther){
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent=isCounter?"Suggest a different time":"Propose a coaching call";
   $("#sheet-add").style.display="none";
-  const other=(currentEngOther&&currentEngOther.display_name)||"they";
+  const otherName=(other&&other.display_name)||"they";
   const wrap=document.createElement("div");
   const dateFieldHtml = presetDate
     ? `<div class="field"><label>Date</label><div style="height:50px;background:var(--panel);border:1px solid var(--line2);border-radius:13px;color:var(--ink);display:flex;align-items:center;padding:0 14px;font-weight:700">${fmtDay(presetDate)}</div></div>`
     : `<div class="field"><label for="pc-date">Date</label><input id="pc-date" type="date" min="${todayISO()}"></div>`;
-  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Pick a time that suits you. ${escapeHtml(other)} can accept, decline, or suggest another.</div>
+  wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Pick a time that suits you. ${escapeHtml(otherName)} can accept, decline, or suggest another.</div>
     ${dateFieldHtml}
     <div style="display:flex;gap:10px">
       <div class="field" style="flex:1"><label for="pc-time">Start time</label><input id="pc-time" type="time" step="300"></div>
@@ -6670,7 +6683,7 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate){
         if(error) throw error;
       }else{
         const { error } = await store._sb.rpc("propose_call",
-          {p_engagement_id:currentEng.id,p_date:dateStr,p_start_time:startT,p_end_time:end});
+          {p_engagement_id:eng.id,p_date:dateStr,p_start_time:startT,p_end_time:end});
         if(error) throw error;
       }
       toast(isCounter?"Suggestion sent ✓":"Proposal sent ✓");

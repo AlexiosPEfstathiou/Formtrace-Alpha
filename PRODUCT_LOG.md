@@ -4,6 +4,19 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BG. Check-in photo days should glisten
+
+Requested: the calendar days on which a check-in photo is due should carry
+the glisten (the animated attention shine already used for a new workout,
+an unviewed review, and today-incomplete), so the trainee sees at a glance
+that a photo is expected. Not started. Where it fits: the day-cell
+`glisten` flag in renderEngagement already ORs several attention cases;
+this adds "check-in due and not yet taken". Needs the check-in cadence
+(which days are check-in days - weekly, from the goal start?) confirmed
+from the existing check-in logic rather than assumed.
+
+---
+
 ## BF. Vacation streak: "15 days became 1 week" - explained and fixed - DONE 2026-09-11
 
 Reported (BD tester): a 10-day streak, a 16-day vacation, then 5 more days
@@ -268,9 +281,14 @@ accepted calls on the calendar are unchanged.
 coach to the calendar day-tap and told the trainee to wait. A trainee's
 day tap opens the macro log, not a call option, so the trainee could never
 initiate. The card now carries a "Propose a call" button for both roles.
-Known limit: the card only shows on a single goal's own screen, not the
-merged multi-goal calendar (no single counterpart there) - a trainee with
-several goals opens the specific goal first.
+**Then: "There is no video call card."** The limit above was the whole
+problem: `openTraineeCalendar` sets the merged view unconditionally - even
+for ONE goal - so a trainee's Training tab never rendered the card at all.
+Fixed properly: `renderCallScheduling(el, eng, other)` is parameterised on
+the engagement, scopes its lookups to its own element (the old global ids
+would have collided), and the merged view renders one card per active
+coach - "Video call · <coach>" - with coach names from a single batched
+profiles query. Single-goal screens unchanged.
 
 **Second step still open:** the call itself, in-app - WebRTC (peer-to-peer,
 needs signalling and realistically a TURN relay for mobile reliability)
