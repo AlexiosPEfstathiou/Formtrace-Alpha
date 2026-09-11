@@ -202,6 +202,11 @@
 .btn.vac-resume{margin:0;flex-shrink:0;width:auto;padding:0 14px;height:36px;}
   /* trainee homepage: unviewed form-review chips */
   .home-reviews{margin-top:18px;}
+  /* Item AY: a call proposal is the one thing on the homepage with a hard 24h clock - first in the stack, and blue like the calendar's call days so it can't be mistaken for a review or a workout. */
+  .home-call{margin-top:16px;padding:12px 14px;border-radius:16px;background:rgba(90,176,255,.10);border:1px solid rgba(90,176,255,.55);box-shadow:0 4px 16px rgba(90,176,255,.18);}
+  .home-call .rv-title{color:#5AB0FF;}
+  .home-call .rv-chip{background:rgba(90,176,255,.12);border-color:rgba(90,176,255,.6);}
+  .home-call .rv-chip .rv-ic{font-size:20px;}
   .home-reviews .rv-title{font-size:12.5px;font-weight:700;color:var(--lime);margin-bottom:9px;}
   .home-reviews .rv-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;}
   .rv-chip{display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--accent-surface);border:1px solid var(--accent-border);border-radius:13px;padding:10px 14px 10px 11px;cursor:pointer;text-align:left;}
@@ -927,6 +932,7 @@
      entirely, per the explicit ask — a solid fill, same visual weight as
      the gold "complete day" treatment, but blue so it reads as its own
      category rather than a variant of achievement/streak coloring. */
+  .cal-day.cal-callpending{border:2px dashed #5AB0FF!important;box-shadow:0 0 0 1px rgba(90,176,255,.25) inset;}
   .cal-coaching{background:linear-gradient(135deg,#5AB0FF,#2E7FD1)!important;border-color:#5AB0FF!important;box-shadow:0 3px 12px rgba(90,176,255,.35);}
   .cal-coaching .dn{color:#04101F!important;font-weight:800;}
   .cal-coaching .cal-badge{color:#04101F;}
@@ -1175,15 +1181,15 @@
       <div class="logo">FORM<b>TRACE</b> · COACH</div>
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
-      <div id="home-milestone" class="home-milestone" style="display:none"></div>
+      <div id="home-callproposal" class="home-call" style="display:none"></div>
+    <div id="home-milestone" class="home-milestone" style="display:none"></div>
       <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
       <div id="home-vacation" class="home-checkin" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
       <div id="home-today" class="home-today" style="display:none"></div>
       <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
-      <div id="home-callproposal" class="home-reviews" style="display:none"></div>
-      <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
+            <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
       <div id="home-declined" class="home-checkin" style="display:none"></div>
       <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
@@ -3517,10 +3523,10 @@ async function renderHomeCallProposal(el){
     const otherName=eng?(eng.coach_id===ME.id?"your trainee":"your coach"):"someone";
     return `<button class="rv-chip" data-callprop-eng="${p.engagement_id}">
         <span class="rv-ic">🎥</span>
-        <span class="rv-tx"><b>Call proposed by ${otherName}</b><span>${escapeHtml(fmtDay(p.proposed_date))} · ${fmtTimeRange(p.start_time,p.end_time)}</span></span>
+        <span class="rv-tx"><b>${p.recur_every_days?"Recurring call":"Call"} proposed by ${otherName}</b><span>${escapeHtml(fmtDay(p.proposed_date))} · ${fmtTimeRange(p.start_time,p.end_time)}${p.recur_every_days?` · ${recurLabel(p.recur_every_days)}`:""}</span></span>
       </button>`;
   }).join("");
-  el.innerHTML=`<div class="rv-title">Respond within 24 hours</div><div class="rv-row">${chips}</div>`;
+  el.innerHTML=`<div class="rv-title">📅 Call proposal - respond within 24 hours</div><div class="rv-row">${chips}</div>`;
   el.style.display="";
   el.querySelectorAll("[data-callprop-eng]").forEach(b=>b.addEventListener("click",()=>{
     openEngagement(b.getAttribute("data-callprop-eng"));
@@ -6048,8 +6054,8 @@ async function renderEngagement(skipFetch){
        that needs to respond, a plain badge for the proposer. */
     if(pendingCallByDate[iso]){
       const pp=pendingCallByDate[iso]; const mine=pp.proposed_by===ME.id;
-      if(!mine) cell.classList.add("cal-glisten");
-      if(!cell.querySelector(".cal-badge")) cell.insertAdjacentHTML("beforeend",'<div class="cal-badge">📅</div>');
+      cell.classList.add("cal-callpending"); if(!mine) cell.classList.add("cal-glisten");
+      const bd=cell.querySelector(".cal-badge"); if(bd) bd.textContent="📅"; else cell.insertAdjacentHTML("beforeend",'<div class="cal-badge">📅</div>');
       cell.title=(mine?"Your proposed call":"Proposed call - needs your response")+" · "+fmtTimeRange(pp.start_time,pp.end_time);
     }
     addCell(cell);

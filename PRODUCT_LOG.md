@@ -314,6 +314,17 @@ Needs `supabase/migrations_recurring_calls.sql` run.
   respond (plain 📅 badge for the proposer), and accepted recurring
   occurrences show as coaching-call days like one-time ones.
 
+**Tester feedback same day, addressed:** the homepage call card is now
+FIRST in the notification stack (it is the one item with a hard 24h
+clock) and blue - `home-call`, matching the calendar's call-day blue - so
+it can't be read as a review or a workout; the chip names recurrence
+("Recurring call proposed by your trainee · every week"). On the
+calendar, a pending proposal's day (the first occurrence, for a series)
+is now a dashed-blue cell with a 📅 badge for BOTH parties, glistening for
+the one who must respond, with a legend entry. Likely also a timing
+matter on the first test - the marker had been deployed about a minute
+before it was checked.
+
 **Second step still open:** the call itself, in-app - WebRTC (peer-to-peer,
 needs signalling and realistically a TURN relay for mobile reliability)
 vs a hosted provider SDK (simpler and reliable; a third party and usually
