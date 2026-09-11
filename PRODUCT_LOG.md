@@ -4,6 +4,32 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BH. Polish the offer marketplace tab
+
+Requested as stated: "polish the offer marketplace tab". Logged as an
+open-ended polish pass, not sized - it needs concrete direction before it
+can be built, the same way AB (graphical improvements) did. Two surfaces
+are candidates, and it isn't yet stated which (or both):
+- the COACH's **Open goals** tab (`renderMarket`: open listings with
+  pitch videos, session slots per week, "Send an offer", hide/unhide,
+  expiry countdown, and the "Your sent offers" outcomes section - all
+  built across AQ and BA);
+- the TRAINEE's **Offers / Find a coach** tab (`renderListings`: offers
+  grouped by goal, pitch video, accept with auto-decline confirmation,
+  Archive - item J).
+
+Worth collecting before starting: which screen, what feels off (layout,
+density, card design, ordering, copy, empty states, the video cards'
+size, the pitched/expired states), and what "polished" would look like -
+ideally a screenshot with notes. Recent additions on the coach side
+(expiry line, Hide/Unhide, the hidden-goals toggle) were each added in
+place without a layout pass, so that card's footer in particular is a
+likely candidate.
+
+Not started.
+
+---
+
 ## BG. Check-in photo days should glisten
 
 Requested: the calendar days on which a check-in photo is due should carry
