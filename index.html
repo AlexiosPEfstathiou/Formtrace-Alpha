@@ -6613,7 +6613,12 @@ async function renderCallScheduling(el){
   // as assigning a workout), not from a button in this card — this card
   // is a status display for whichever role didn't just act, plus a
   // pointer for the coach back to where proposing actually happens.
-  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${isExpired?"The last proposal expired without a response. ":""}${iAmCoachHere?"Tap a free day on the calendar above to propose a coaching call.":"Your coach can propose a coaching call from your calendar — you'll see it here to accept or suggest another time."}</div>`;
+  /* Item AY: EITHER side proposes, straight from this card. The old text sent
+     the coach to the calendar day-tap and told the trainee to wait - but a
+     trainee's day tap opens the macro log, so they had no way in at all. */
+  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">${isExpired?"The last proposal expired without a response. ":""}No call scheduled. Propose a time - ${escapeHtml(currentEngOther.display_name||"they")} can accept, decline, or suggest another.</div>
+    <button class="btn primary sm" id="call-propose" style="width:auto">📅 Propose a call</button>`;
+  $("#call-propose").addEventListener("click",()=>openProposeCallSheet(false,null,el,null));
 }
 /* Shared sheet for both an opening proposal and a counter — the only
    difference is which RPC gets called at the end. Overlap is computed

@@ -263,6 +263,15 @@ external meeting links).
 Accept / decline / counter, the homepage "needs your response" card, and
 accepted calls on the calendar are unchanged.
 
+**Follow-up same day: a trainee had no way to propose at all.** The
+"Video call" card's empty state deliberately had no button - it sent the
+coach to the calendar day-tap and told the trainee to wait. A trainee's
+day tap opens the macro log, not a call option, so the trainee could never
+initiate. The card now carries a "Propose a call" button for both roles.
+Known limit: the card only shows on a single goal's own screen, not the
+merged multi-goal calendar (no single counterpart there) - a trainee with
+several goals opens the specific goal first.
+
 **Second step still open:** the call itself, in-app - WebRTC (peer-to-peer,
 needs signalling and realistically a TURN relay for mobile reliability)
 vs a hosted provider SDK (simpler and reliable; a third party and usually
