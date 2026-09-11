@@ -4,6 +4,39 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BE. Testing the running workouts (Interval Running) in real use
+
+Alpha-testing focus (item BD) on the Interval Running feature (AL)
+specifically. Logged as a testing note - what to actually watch, since
+this feature depends on hardware and outdoors conditions that can't be
+exercised from the dev machine or the smoke test at all.
+
+What is genuinely untested until someone runs outside with a phone:
+- **GPS distance accuracy.** Distance segments and free-run advance on
+  `watchPosition` deltas; real GPS drifts, especially at the start before
+  it settles and under tree cover / between buildings. Worth checking the
+  measured distance against a known route.
+- **Segment transitions while moving.** Whether a time segment's countdown
+  and a distance segment's "reached" advance cleanly mid-run, and whether
+  the audio announcement (AL final piece: "Walk"/"Run"/"Workout complete"
+  via Web Speech) actually fires and is audible through headphones - the
+  autoplay/silent-mode reliability that was consciously deferred to the
+  native wrapper (see the AL deferral note). Real-device behaviour is the
+  only way to know if that deferral is costing anything now.
+- **Screen-lock / backgrounding.** If the phone locks or the app
+  backgrounds mid-run, does the tracker survive - does `watchPosition`
+  keep firing, does the timer keep time? PWAs are weak here; likely a real
+  gap to characterise, not assume.
+- **Free-run self-report toggle** (run/walk) and the final summary/splits
+  reading correctly against what was actually done.
+- **Battery / duration** over a genuinely long run, not a 2-minute trial.
+
+No code change - this records the test plan and that results feed back as
+their own items. Ties to the AL audio-cue deferral: this is the phase that
+would reveal whether it needs revisiting before the native wrapper.
+
+---
+
 ## BD. Alpha testing with 2 people
 
 Logged as a milestone/activity, not a build task. Two people alpha
