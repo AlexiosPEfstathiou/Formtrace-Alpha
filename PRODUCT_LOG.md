@@ -4,6 +4,64 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BI. Commission revenue plan (both sides) + a payments system where neither side can be stiffed
+
+Requested, two parts that only make sense together:
+1. A commission revenue plan that charges BOTH trainees and coaches.
+2. A payments system that guarantees coaches do not go unpaid and trainees
+   do not pay for services they don't receive - e.g. the trainee PREPAYS
+   the platform for the coach's services; the coach receives the funds
+   only after completion.
+
+**This is the settlement piece item B explicitly deferred** ("display and
+accounting only - no money moves"), and the earlier direct ask ("payments
+to go through from trainees to coaches"). Everything B built is the
+accounting layer this sits on: rate per workout, workouts/week cap,
+review-based earning, the hard review deadline, per-trainee totals.
+
+**What the prepay-then-release model actually is:** escrow-style
+marketplace payments. The right shape for a two-sided platform is a
+connected-accounts provider (Stripe Connect is the standard one): the
+trainee is charged by the platform, the funds are held by the PROVIDER
+(not by FormTrace - a platform legally holding client money is regulated
+territory), and a transfer to the coach's connected account is released
+when the app says the service was delivered. Commission on both sides is
+native to that model: a platform fee on the trainee's charge, and a
+percentage withheld from the coach's transfer.
+
+**How it maps onto what exists - a first sketch, not decided:**
+- Cycle: B's weekly cadence. The trainee prepays a week (cap x rate) when
+  the week opens; the hold is released to the coach as sessions are
+  REVIEWED (B's earning event), or at the review deadline for anything
+  reviewed on time. Sessions never reviewed in time are refunded to the
+  trainee - B's "sharp edge" becomes the refund trigger. Vacation weeks
+  bill nothing (already decided under M/N).
+- Carry-over (AT rule 2) needs a rule: a session carried into next week
+  is already paid for; next week's prepay covers only the new slots.
+- Coach onboarding = provider KYC (identity, bank account, tax) via the
+  provider's hosted flow - not something to build.
+- Server side is REQUIRED for webhooks (charge succeeded, transfer paid,
+  refund) - the app has no server today. Supabase Edge Functions are the
+  natural fit; the payment state itself lives in Postgres next to B's
+  ledger. The provider's browser library loads from a CDN like MediaPipe
+  does, so the Artifactory block doesn't apply to this part.
+
+**Decisions needed before any of it is built** (in order):
+1. Provider (recommendation: Stripe Connect, Express accounts).
+2. The two commission rates, and whether the trainee's fee is shown as a
+   line item or folded into the price they see.
+3. Prepay unit: a week, or the whole goal upfront with weekly release.
+4. Refund policy wording for the not-reviewed case, and for a trainee who
+   abandons mid-week (rule 2 says they owe nothing for unreviewed work).
+5. Jurisdiction/tax: coaches as independent contractors; where the
+   platform entity is; VAT/sales tax handling. This one likely needs a
+   professional, not a log entry.
+
+Largest item in the log. Not started; blocked on decision 1 (an account
+has to exist before a line of integration code makes sense).
+
+---
+
 ## BH. Polish the offer marketplace tab
 
 Requested as stated: "polish the offer marketplace tab". Logged as an
