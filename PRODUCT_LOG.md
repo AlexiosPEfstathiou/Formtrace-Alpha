@@ -290,6 +290,30 @@ would have collided), and the merged view renders one card per active
 coach - "Video call · <coach>" - with coach names from a single batched
 profiles query. Single-goal screens unchanged.
 
+**Part 2 DONE 2026-09-11 - past calls, recurring calls, notifications.**
+Needs `supabase/migrations_recurring_calls.sql` run.
+- **Bug:** an accepted call in the past still read "✓ Call scheduled" -
+  the card took the single latest row regardless of date. It now reads
+  the last dozen rows and classifies: a past one-time call is history
+  ("Last call: …"), never "scheduled".
+- **Recurring calls:** `call_proposals.recur_every_days` (null = one-time).
+  Propose sheet gains Repeat: one-time / every week / every 2 weeks /
+  every N days (1-90). Accepting a recurring proposal accepts the series;
+  occurrences are materialised client-side (date + k·N, a year ahead) for
+  the calendar - no row per occurrence. The card shows "🔁 Recurring call
+  · every week · 20:30-21:00 · next <date>". A one-time call can coexist
+  with a series. Counters keep the original's cadence unless changed.
+- **Cancel:** either party can stop a series or cancel a one-time call
+  (confirm dialog); the proposer can withdraw their own pending proposal.
+  New `cancelled` status; `respond_to_call_proposal` gains action
+  'cancel'. Decline button added to the receiving side of a pending
+  proposal (it existed server-side but had no button).
+- **Notifications:** the homepage "call proposal needs your response" card
+  already existed for both roles (confirmed, not assumed). Added the
+  calendar side: a pending proposal's day glistens for the party who must
+  respond (plain 📅 badge for the proposer), and accepted recurring
+  occurrences show as coaching-call days like one-time ones.
+
 **Second step still open:** the call itself, in-app - WebRTC (peer-to-peer,
 needs signalling and realistically a TURN relay for mobile reliability)
 vs a hosted provider SDK (simpler and reliable; a third party and usually

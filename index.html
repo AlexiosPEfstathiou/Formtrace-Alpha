@@ -5333,7 +5333,8 @@ async function renderTraineeHome(){
 
 let currentEng=null, currentEngOther=null;
 let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={}, streakInfo={count:0,danger:false,broken:false};
-let coachingDaysByDate={};   // iso -> accepted call_proposals row, single-engagement view only
+let coachingDaysByDate={};   // iso -> accepted call_proposals row (recurring series materialised per occurrence)
+let pendingCallByDate={};    // iso -> pending (unexpired) proposal - glistens for the receiving party
 /* Item AT (week model). weekRows: assigned_workouts keyed by week_start Monday ISO.
    weekClosures: closed weeks keyed by week_start (merged across the screen's
    engagements - any non-neutral incomplete closure marks the week missed).
@@ -5828,9 +5829,16 @@ async function renderEngagement(skipFetch){
   try{
     const engIds = traineeMerged ? traineeEngs.map(e=>e.id) : [currentEng.id];
     const { data, error } = await store._sb.from("call_proposals").select("*")
-      .in("engagement_id",engIds).eq("status","accepted");
+      .in("engagement_id",engIds).in("status",["accepted","pending"]);
     if(error) throw error;
-    for(const p of (data||[])) coachingDaysByDate[p.proposed_date]=p;
+    pendingCallByDate={};
+    for(const p of (data||[])){
+      if(p.status==="pending"){ if(new Date(p.expires_at)>=new Date()) pendingCallByDate[p.proposed_date]=p; continue; }
+      if(!p.recur_every_days){ coachingDaysByDate[p.proposed_date]=p; continue; }
+      // Item AY part 2: a recurring series - materialise a year of occurrences for display
+      let d=p.proposed_date, g=0; const horizon=addDaysISO(todayISO(),365);
+      while(d<=horizon && g++<400){ coachingDaysByDate[d]=coachingDaysByDate[d]||p; d=addDaysISO(d,p.recur_every_days); }
+    }
   }catch(e){ console.error("coaching days load (run migrations_scheduled_calls.sql)",e); }
   // macro logs indexed by date — trainee reads own; coach reads this trainee's (RLS-permitted on active engagements)
   logsByDate={};
@@ -6035,6 +6043,14 @@ async function renderEngagement(skipFetch){
           ${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
       }
       cell.addEventListener("click",()=>openTraineeDay(iso));
+    }
+    /* Item AY part 2: a pending proposal marks its day - glistening for the side
+       that needs to respond, a plain badge for the proposer. */
+    if(pendingCallByDate[iso]){
+      const pp=pendingCallByDate[iso]; const mine=pp.proposed_by===ME.id;
+      if(!mine) cell.classList.add("cal-glisten");
+      if(!cell.querySelector(".cal-badge")) cell.insertAdjacentHTML("beforeend",'<div class="cal-badge">📅</div>');
+      cell.title=(mine?"Your proposed call":"Proposed call - needs your response")+" · "+fmtTimeRange(pp.start_time,pp.end_time);
     }
     addCell(cell);
   }
@@ -6574,74 +6590,86 @@ function renderDashboard(container, iAmCoach){
    for it to lead yet.
    ========================================================================= */
 function fmtTimeRange(a,b){ return a.slice(0,5)+"–"+b.slice(0,5); }
+/* Item AY part 2: recurring calls. recur_every_days null = one-time. */
+function recurLabel(n){ n=Number(n)||0; if(!n) return "one-time"; return n%7===0 ? (n===7?"every week":`every ${n/7} weeks`) : (n===1?"every day":`every ${n} days`); }
+function nextOccurrence(p, fromISO){
+  let d=p.proposed_date; if(!p.recur_every_days) return d>=fromISO?d:null;
+  let g=0; while(d<fromISO && g++<2000) d=addDaysISO(d,p.recur_every_days);
+  return d;
+}
 async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
   el.innerHTML=`<div class="section-h"><div class="eyebrow">Video call${other&&other.display_name?` · ${escapeHtml(other.display_name)}`:""}</div></div>
     <div class="card" data-call-body><div style="font-size:12.5px;color:var(--faint)">Loading…</div></div>`;
   const body=el.querySelector("[data-call-body]");
   const iAmCoachHere=(eng.coach_id===ME.id);
-  let proposal=null;
+  let rows=[];
   try{
     const { data, error } = await store._sb.from("call_proposals").select("*")
-      .eq("engagement_id",eng.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      .eq("engagement_id",eng.id).order("created_at",{ascending:false}).limit(12);
     if(error) throw error;
-    proposal=data;
+    rows=data||[];
   }catch(e){ console.error("call proposal load (run migrations_scheduled_calls.sql)",e); body.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load — run migrations_scheduled_calls.sql</div>`; return; }
 
-  const isExpired = proposal && proposal.status==="pending" && new Date(proposal.expires_at) < new Date();
-
-  if(proposal && proposal.status==="accepted"){
-    body.innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--lime)">✓ Call scheduled</div>
-      <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>`;
-    return;
+  /* Classify. A past one-time call is HISTORY, not "scheduled" (that was the
+     report). A recurring series stays live until cancelled. Only one pending
+     thread exists at a time by construction. */
+  const today=todayISO();
+  const series = rows.find(r=>r.status==="accepted" && r.recur_every_days);
+  const oneTime = rows.find(r=>r.status==="accepted" && !r.recur_every_days && r.proposed_date>=today);
+  const lastPast = rows.find(r=>r.status==="accepted" && !r.recur_every_days && r.proposed_date<today);
+  const proposal = rows.find(r=>r.status==="pending") || null;
+  const isExpired = proposal && new Date(proposal.expires_at) < new Date();
+  body.innerHTML="";
+  const add=(html)=>{ const d=document.createElement("div"); d.innerHTML=html; body.appendChild(d); return d; };
+  const cancelBtn=(row,label)=>{ const b=document.createElement("button"); b.className="btn sm ghost"; b.style.cssText="width:auto;margin-top:8px"; b.textContent=label;
+    b.addEventListener("click",async()=>{ const ok=await openConfirm({title:label+"?",body:row.recur_every_days?"This ends the recurring call for both of you.":"This cancels the call for both of you.",confirmLabel:label,cancelLabel:"Keep",danger:true}); if(!ok) return;
+      try{ const { error }=await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:row.id,p_action:"cancel"}); if(error) throw error; toast("Cancelled",1800); renderCallScheduling(el,eng,other); renderEngagement(true); }
+      catch(err){ console.error("cancel call",err); toast(err.message||"Couldn't cancel",4000); } }); return b; };
+  if(series){
+    const nxt=nextOccurrence(series,today);
+    const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime)">🔁 Recurring call · ${recurLabel(series.recur_every_days)}</div>
+      <div style="font-size:15px;font-weight:700;margin-top:6px">${fmtTimeRange(series.start_time,series.end_time)} · next ${escapeHtml(fmtDay(nxt))}</div>`);
+    d.appendChild(cancelBtn(series,"Stop recurring"));
   }
-  if(proposal && proposal.status==="pending" && !isExpired){
+  if(oneTime){
+    const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime);margin-top:${series?"14px":"0"}">✓ Call scheduled</div>
+      <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(oneTime.proposed_date))} · ${fmtTimeRange(oneTime.start_time,oneTime.end_time)}</div>`);
+    d.appendChild(cancelBtn(oneTime,"Cancel call"));
+  }
+  if(proposal && !isExpired){
     const iProposedIt=(proposal.proposed_by===ME.id);
-    const hoursLeft=Math.max(0,Math.round((new Date(proposal.expires_at)-new Date())/3600000));
+    const when=`${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}${proposal.recur_every_days?` · <span style="color:var(--lime)">${recurLabel(proposal.recur_every_days)}</span>`:""}`;
     if(iProposedIt){
-      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">Waiting for ${escapeHtml((other||{}).display_name||"a response")}</div>
-        <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>
-        <div style="font-size:11.5px;color:var(--amber);margin-top:6px">Expires in about ${hoursLeft}h if there's no response</div>`;
+      const d=add(`<div style="font-size:13px;color:var(--muted);margin-top:${(series||oneTime)?"14px":"0"}">Waiting for ${escapeHtml((other||{}).display_name||"a response")}</div>
+        <div style="font-size:15px;font-weight:700;margin-top:6px">${when}</div>`);
+      d.appendChild(cancelBtn(proposal,"Withdraw proposal"));
     }else{
-      body.innerHTML=`<div style="font-size:13px;color:var(--muted)">${escapeHtml((other||{}).display_name||"They")} proposed:</div>
-        <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}</div>
-        <div style="font-size:11.5px;color:var(--amber);margin-top:4px">Respond within about ${hoursLeft}h</div>
+      add(`<div style="font-size:13px;color:var(--muted);margin-top:${(series||oneTime)?"14px":"0"}">${escapeHtml((other||{}).display_name||"They")} proposed:</div>
+        <div style="font-size:15px;font-weight:700;margin-top:6px">${when}</div>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn sm call-accept" style="flex:1;margin:0">✓ Accept</button>
           <button class="btn sm ghost call-counter" style="flex:1;margin:0">Different time</button>
-        </div>`;
+          <button class="btn sm ghost call-decline" style="flex:0 0 auto;margin:0">Decline</button>
+        </div>`);
       el.querySelector(".call-accept").addEventListener("click",async()=>{
         const btn=el.querySelector(".call-accept");btn.disabled=true;
-        try{
-          const { error } = await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:proposal.id,p_action:"accept"});
-          if(error) throw error;
-          toast("Call confirmed ✓"); renderCallScheduling(el,eng,other);
-        }catch(err){ console.error("accept call",err); toast(err.message||"Couldn't accept",4000); btn.disabled=false; }
+        try{ const { error } = await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:proposal.id,p_action:"accept"}); if(error) throw error;
+          toast(proposal.recur_every_days?"Recurring call confirmed ✓":"Call confirmed ✓"); renderCallScheduling(el,eng,other); renderEngagement(true); }
+        catch(err){ console.error("accept call",err); toast(err.message||"Couldn't accept",4000); btn.disabled=false; }
+      });
+      el.querySelector(".call-decline").addEventListener("click",async()=>{
+        try{ const { error } = await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:proposal.id,p_action:"decline"}); if(error) throw error; toast("Declined",1500); renderCallScheduling(el,eng,other); }
+        catch(err){ console.error("decline call",err); toast(err.message||"Couldn't decline",4000); }
       });
       el.querySelector(".call-counter").addEventListener("click",()=>openProposeCallSheet(true,proposal.id,el,null,eng,other));
     }
     return;
   }
-  // No live proposal, or the last one expired unanswered. Item G, revised:
-  // the coach initiates from the calendar day-tap now (same interaction
-  // as assigning a workout), not from a button in this card — this card
-  // is a status display for whichever role didn't just act, plus a
-  // pointer for the coach back to where proposing actually happens.
-  /* Item AY: EITHER side proposes, straight from this card. The old text sent
-     the coach to the calendar day-tap and told the trainee to wait - but a
-     trainee's day tap opens the macro log, so they had no way in at all. */
-  body.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">${isExpired?"The last proposal expired without a response. ":""}No call scheduled. Propose a time - ${escapeHtml((other||{}).display_name||"they")} can accept, decline, or suggest another.</div>
-    <button class="btn primary sm call-propose" style="width:auto">📅 Propose a call</button>`;
-  el.querySelector(".call-propose").addEventListener("click",()=>openProposeCallSheet(false,null,el,null,eng,other));
-}
-/* Shared sheet for both an opening proposal and a counter — the only
-   difference is which RPC gets called at the end. Overlap is computed
-   client-side from both parties' declared blocks for the chosen date's
-   weekday; the server re-validates independently in propose_call, so an
-   empty/incorrect client computation can only under-offer, never let an
-   invalid time actually get sent. presetDate skips the date picker
-   entirely when the caller already has a specific date in hand — the
-   coach tapping a calendar day, not choosing one inside this sheet. */
-/* Item AY (scheduling half): propose ANY date and time. The availability-window
+  // No pending thread: offer to propose (a one-time call is fine alongside a series).
+  const d=add(`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin:${(series||oneTime)?"14px":"0"} 0 12px">${isExpired?"The last proposal expired without a response. ":""}${(series||oneTime)?"":"No call scheduled. "}Propose a one-time or recurring call - ${escapeHtml((other||{}).display_name||"they")} can accept, decline, or suggest another.${(!series&&!oneTime&&lastPast)?` <span style="color:var(--faint)">Last call: ${escapeHtml(fmtDay(lastPast.proposed_date))}.</span>`:""}</div>
+    <button class="btn primary sm call-propose" style="width:auto">📅 Propose a call</button>`);
+  d.querySelector(".call-propose").addEventListener("click",()=>openProposeCallSheet(false,null,el,null,eng,other));
+}/* Item AY (scheduling half): propose ANY date and time. The availability-window
    layer - both parties declaring recurring free hours, proposals only allowed
    inside the overlap - was judged not user friendly and is gone. Pick a date, a
    start time, and a duration; the other side accepts, declines, or counters
@@ -6662,16 +6690,23 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
       <div class="field" style="flex:1"><label for="pc-time">Start time</label><input id="pc-time" type="time" step="300"></div>
       <div class="field" style="flex:1"><label for="pc-dur">Length</label><select id="pc-dur" class="sel"><option value="15">15 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div>
     </div>
+    <div class="field"><label for="pc-repeat">Repeat</label>
+      <select id="pc-repeat" class="sel"><option value="0">One-time call</option><option value="7">Every week</option><option value="14">Every 2 weeks</option><option value="custom">Every N days…</option></select>
+      <input id="pc-repeat-n" type="number" inputmode="numeric" min="1" max="90" placeholder="days between calls" style="display:none;margin-top:8px"></div>
     <button class="btn primary" id="pc-send" style="margin-top:16px" disabled>${isCounter?"Send suggestion":"Send proposal"}</button>`;
   body.appendChild(wrap);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 
   const ready=()=>{ const d=presetDate||$("#pc-date")?.value, t=$("#pc-time")?.value; $("#pc-send").disabled=!(d&&t); };
+  $("#pc-repeat").addEventListener("change",()=>{ $("#pc-repeat-n").style.display=$("#pc-repeat").value==="custom"?"block":"none"; });
+  const recurDays=()=>{ const v=$("#pc-repeat").value; if(v==="custom"){ const n=Number($("#pc-repeat-n").value)||0; return n>=1&&n<=90?n:null; } return Number(v)||null; };
   $("#pc-time").addEventListener("input",ready); $("#pc-date")?.addEventListener("change",ready);
 
   $("#pc-send").addEventListener("click",async()=>{
     const dateStr=presetDate||$("#pc-date")?.value, start=$("#pc-time").value, mins=Number($("#pc-dur").value)||30;
     if(!dateStr||!start){ toast("Pick a date and a time"); return; }
+    if($("#pc-repeat").value==="custom" && !recurDays()){ toast("Enter how many days between calls (1-90)",3000); return; }
+    const recur=recurDays();
     const [hh,mm]=start.split(":").map(Number); const endMin=hh*60+mm+mins;
     if(endMin>=24*60){ toast("That runs past midnight - pick an earlier time or shorter length",3500); return; }
     const end=`${pad2(Math.floor(endMin/60))}:${pad2(endMin%60)}`, startT=`${pad2(hh)}:${pad2(mm)}`;
@@ -6679,11 +6714,11 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
     try{
       if(isCounter){
         const { error } = await store._sb.rpc("respond_to_call_proposal",
-          {p_proposal_id:counterOfId,p_action:"counter",p_counter_date:dateStr,p_counter_start:startT,p_counter_end:end});
+          {p_proposal_id:counterOfId,p_action:"counter",p_counter_date:dateStr,p_counter_start:startT,p_counter_end:end,p_counter_recur:recur});
         if(error) throw error;
       }else{
         const { error } = await store._sb.rpc("propose_call",
-          {p_engagement_id:eng.id,p_date:dateStr,p_start_time:startT,p_end_time:end});
+          {p_engagement_id:eng.id,p_date:dateStr,p_start_time:startT,p_end_time:end,p_recur_every_days:recur});
         if(error) throw error;
       }
       toast(isCounter?"Suggestion sent ✓":"Proposal sent ✓");
