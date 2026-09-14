@@ -29,7 +29,7 @@ BE) are not tasks and are left out.
 | 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
 | 16 | **BR** Founding coaches: zero commission, capped | Follows BI | Promise now, honour when BI exists; per-coach override in the rate table. |
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
-| 18 | **BT** Toggleable background blur while recording | Medium-hard | Segmentation on the recorded canvas; phone load is the risk; needs a phone-testing pass. |
+| 18 | **BT** Background blur while recording - BUILT 2026-09-14 | phone test pending | Off by default; watch fps and warmth on the alpha phones. |
 | 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
@@ -128,7 +128,7 @@ words. Not run yet.
 
 ---
 
-## BT. Toggleable privacy background blur while recording (public gyms)
+## BT. Toggleable privacy background blur while recording (public gyms) - BUILT 2026-09-14, phone test pending
 
 Requested 2026-09-14: an option, off by default, that blurs everything
 behind the trainee while recording in a public space, so other gym-goers
@@ -153,7 +153,32 @@ background -> composite the person mask on top. The known costs:
 - Toggle lives with the other capture settings (gesture trigger,
   orientation) on the recorder; remembered per device (localStorage) and
   shown as a badge on the review so the trainee knows it was on.
-Estimate: a day, plus a phone-testing pass. Not started.
+Estimate: a day, plus a phone-testing pass.
+
+**BUILT 2026-09-14 - needs the phone-testing pass before anyone relies on
+it.** No SQL. Off by default.
+- New recorder tool button **🫥 Blur bg** (beside Timer / Portrait /
+  Touchless); remembered per device (`ft-blur`). Turning it on loads the
+  MediaPipe selfie segmenter (same tasks-vision bundle as pose, GPU
+  delegate); the button reads "Loading…" then "Blur on". If the model
+  fails to load, the setting turns itself off with a toast.
+- Per painted frame of the RECORDED canvas: segmentation every 2nd frame
+  (mask reused between), background = a downscale/upscale blur of the
+  camera (works in every browser; `ctx.filter` does not), the person
+  composited sharp on top through the mask with a soft edge. Pose
+  detection still reads the raw video, so skeleton, rep count and the BO
+  comparison are unaffected. The live preview stays sharp - only the
+  recording is blurred - and the toast says so; the review replay shows
+  the real result.
+- Safety valve: 20 consecutive segmentation failures switch blur off for
+  that take (`blurTakeOff`) rather than stalling the recording; logged to
+  console. The capture and the set result carry `blurred: true/false`.
+Untested on a phone from here - this is exactly the item where the desk
+check is not enough. What to watch on the alpha phones: recording fps
+with blur on (the paint loop is shared with encoding), warmth over a
+2-minute set, and edge flicker around fast-moving arms. If fps collapses,
+the next lever is segmenting every 3rd frame and dropping the record
+size a notch when blur is on.
 
 ---
 
