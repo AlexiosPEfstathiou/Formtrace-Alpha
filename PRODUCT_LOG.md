@@ -29,11 +29,131 @@ BE) are not tasks and are left out.
 | 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
 | 16 | **BR** Founding coaches: zero commission, capped | Follows BI | Promise now, honour when BI exists; per-coach override in the rate table. |
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
+| 18 | **BT** Toggleable background blur while recording | Medium-hard | Segmentation on the recorded canvas; phone load is the risk; needs a phone-testing pass. |
+| 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BU. Alpha end-to-end test day: what to test, coach and trainee lists
+
+Requested 2026-09-14: two checklists for an end-to-end test day, goal
+posting through goal completion. Drawn from what is actually built (each
+line names the surface), ordered as the day would run. Testers tick each
+line and note anything odd next to it; the notes become items here.
+
+**TRAINEE list**
+1. Sign-up via a coach's referral link (BN) - toast "You joined through
+   <name>'s link"; age + consent gate; profile photo; theme/colourblind.
+2. Post a goal (Open goals): title, pitch text, video pitch, sessions/week.
+3. Receive offers: pitch video plays; Length, Sessions, Price, **Total
+   (ceiling)** row (BK); cadence explainer; accept one - confirmation
+   states weeks and maximum; others auto-declined; goal closes.
+4. Training tab, merged calendar: This week card (X of N, days to close);
+   Start a session -> week pool -> pick a workout (AT).
+5. Record a set: 3-2-1 countdown or open-palm trigger; skeleton overlay
+   visible (AH: warning + Retry if it drops); trim start/end on review
+   (BC); Use this trace.
+6. Set result: reps counted, correct with +/-; weight; **form match line**
+   when the exercise has a reference (BO); last-time comparison.
+7. Wildcard exercise slot (pick from the coach's library); skip a workout
+   with a reason; exit mid-workout and come back (draft restore).
+8. Interval running workout: cues spoken and vibrated (AL); outdoor GPS
+   distance; the running review card.
+9. Macros: log a day (kcal/protein), see the coach's weekly goal and live
+   % (AX); dashboard bars and the goal line.
+10. Check-in photo on Saturday (or Sunday): homepage prompt; calendar day
+    glistens (BG); lightbox on the photo (AP); measurements.
+11. Personal bests and the trainee dashboard (streak squares BB, week
+    streak badge, milestone celebration + share image).
+12. Video call: Propose a call (one-time and recurring); accept / decline
+    / suggest another; Join call from card, calendar day and homepage
+    (AY); Withdraw a proposal.
+13. Receive a review: tags per set, written feedback, **voice-over**
+    plays with the clip (AA: level meter); rate the coach.
+14. Day notes with a video attachment; coach's written day note.
+15. Vacation: set a range; streak neutral, at-risk copy stays quiet.
+16. Goal completion: outcome; calendar and streak afterwards; the goal
+    appears in history; referral shows "completed a goal" for the
+    referrer.
+17. Profile: referral card - Copy and Share work; counts update.
+18. Install as an app (Profile > Install); offline banner behaviour.
+
+**COACH list**
+1. Apply to coach; admin approves; badges (Verified; Professional /
+   Certified if granted; Founding if assigned - BQ; referral tier - BN).
+2. Open goals tab: listings with pitch videos, days-remaining, Hide /
+   Unhide, hidden-goals toggle (BA); expired goal states.
+3. Send an offer: single **Length (weeks)** (BK), sessions/week, price,
+   no-show %, cadence preview with **Committed total**; video pitch is
+   required; over-cap notice.
+4. Trainees list: "2/3 this week" per trainee; open one.
+5. Exercise library: create an exercise, record a **reference** (trim it
+   - BC), reps detected; edit; delete; the "no reference" hint on review
+   (BO follow-up).
+6. Builder: build a workout from the library (sets/reps, intervals,
+   wildcard slots); save as template.
+7. Assign into a week: session slots per agreed cap; + Assign; remove an
+   unstarted one; carried-forward labels; week header macro goal (AX).
+8. Calendar as coach: trainee's week rows, done days gold, call days
+   blue, check-in badges (BG); tap a day for the coaching-call choice.
+9. Review a submitted workout: watch each set video (rotation fix if
+   sideways, X), **form match line + pose coverage warning** (BO/AH),
+   tags per set, written note per exercise, **record a voice-over**
+   (mic check, meter, level warning - AA), submit; review deadline (B).
+10. Payment ledger (B): earned per reviewed workout, per-trainee totals,
+    the deadline's effect - display only, no money moves.
+11. Video call from the coach side: propose (day tap or card), accept a
+    trainee's proposal, add the Meet link, Join (AY).
+12. Macro goal per week; carry-forward; trainee's % visible to you.
+13. Vacation for a trainee (single and bulk - M/N); the at-risk homepage
+    card for a trainee; inactivity handling (admin list).
+14. Complete a goal with the trainee; outcome recorded; the goal in
+    history; the founder/referral counters if applicable.
+15. Profile: referral link card; public profile as a trainee would see it
+    (badges, ratings, pitch history).
+16. Admin (project owner only): applications, error log, inactivity,
+    **Founding coaches** toggle (BQ).
+
+**Things NOT yet testable and to be said out loud on the day:** payments
+(BI), automatic Meet links, push reminders, iOS installability, Android
+app (AD), NFC (AE), background blur (BT).
+
+Result of the day -> new items here, one per finding, with the tester's
+words. Not run yet.
+
+---
+
+## BT. Toggleable privacy background blur while recording (public gyms)
+
+Requested 2026-09-14: an option, off by default, that blurs everything
+behind the trainee while recording in a public space, so other gym-goers
+are not identifiable in the clip sent to the coach.
+
+**What it would take (assessed, not built):** the recorder already draws
+the camera onto a canvas and records THAT canvas (`recCanvas.captureStream`)
+- so a blur applied on the canvas is what gets recorded, not just shown.
+Person segmentation is available on-device from the same MediaPipe
+tasks-vision bundle the pose model comes from (Image Segmenter, selfie
+model, ~200 KB); per frame: segment -> blurred copy of the frame as the
+background -> composite the person mask on top. The known costs:
+- **Phone load.** Pose + segmentation + encoding every frame is heavy;
+  budget is to run segmentation every 2nd frame and reuse the mask, and
+  accept a lower record fps on older phones. Must be measured on the
+  alpha phones before defaulting anything.
+- **Grading is unaffected**: pose runs on the raw camera frame, not the
+  blurred canvas, so the skeleton and the BO comparison see the true image.
+- **Edge quality**: mask edges around limbs flicker; a small mask blur and
+  a slight dilate hide most of it. Faces of OTHER people are what matter,
+  and those are in the background region, so imperfect edges are fine.
+- Toggle lives with the other capture settings (gesture trigger,
+  orientation) on the recorder; remembered per device (localStorage) and
+  shown as a badge on the review so the trainee knows it was on.
+Estimate: a day, plus a phone-testing pass. Not started.
 
 ---
 
