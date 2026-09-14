@@ -25,12 +25,12 @@ BE) are not tasks and are left out.
 | 11 | **AY part 2** Google Meet link on accepted calls - DONE 2026-09-14 | - | Create/paste/Join on the card, calendar and homepage; OAuth auto-mint later once there is a server. |
 | 12 | **BI** Commission plan + escrow payments | Hardest | Stripe Connect; rates DECIDED (5.9% trainee fee, 11.9% coach commission, 0/8.9/5.9 overrides). Unblock: open a Stripe account. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
-| 14 | **BP** Seed trainee goals before recruiting coaches | Easy (activity) | Not code; 3-5 real goals posted, response times logged. |
+| 14 | **BP** Seed trainee goals | ready to post | Five goals + pitch scripts in docs/TEST_DAY.md; post from the trainee account, log the three numbers. |
 | 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
 | 16 | **BR** Founding coaches: zero commission, capped | Follows BI | Promise now, honour when BI exists; per-coach override in the rate table. |
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
 | 18 | **BT** Background blur while recording - BUILT 2026-09-14 | phone test pending | Off by default; watch fps and warmth on the alpha phones. |
-| 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
+| 19 | **BU** Alpha end-to-end test day | pack ready | docs/TEST_DAY.md: plan, pre-flight, both tick lists, seed goals. Run it; one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
@@ -283,7 +283,14 @@ line and note anything odd next to it; the notes become items here.
 app (AD), NFC (AE), background blur (BT).
 
 Result of the day -> new items here, one per finding, with the tester's
-words. Not run yet.
+words.
+
+**Pack written 2026-09-14: `docs/TEST_DAY.md`** - the plan (roles, the
+20-minute pre-flight incl. every pending SQL, rules, the not-yet-testable
+list, timing), both checklists as tick tables with a Notes column
+(updated for everything built since the lists were first drafted:
+badges, Meet link, fees, blur, Top 1%), and the BP seed goals. Not run
+yet.
 
 ---
 
@@ -409,7 +416,16 @@ have 3-5 real trainee goals posted (yours, friends') so a founding
 coach's first Open goals tab is never empty. Pairs with the 48-hour
 first-response promise to trainees (BM option 7), kept by hand by lining
 up the founding coaches. Log the seeded goals and the response times here
-as they happen. Not started.
+as they happen.
+
+**Prepared 2026-09-14: five goals ready to post** - in `docs/TEST_DAY.md`
+§4: title, focus, sessions/week, details to paste, and a ~20-second pitch
+script each (a goal cannot be posted without a video). Squat depth / first
+10K / 6 kg by Christmas / return after shoulder injury / first pull-up -
+chosen to exercise strength, running, macros, rehab and bodyweight paths
+so the founding coaches see a varied market. Three numbers to log per
+goal: time to post, video recorded first time, time to first offer. Not
+posted yet - needs the trainee account(s).
 
 ---
 
