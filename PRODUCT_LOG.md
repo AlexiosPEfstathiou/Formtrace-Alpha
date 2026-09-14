@@ -77,7 +77,7 @@ Not started.
 
 ---
 
-## BK. Pitches for a determined period, so the total is committed at acceptance
+## BK. Pitches for a determined period, so the total is committed at acceptance - DONE 2026-09-14
 
 Requested: a coach's pitch should be for a determined time period, so
 that the total payment amount is committed when the trainee accepts.
@@ -102,8 +102,26 @@ total is known).
 Open question to decide with it: what happens to the committed total if
 the coach assigns fewer than the cap in some week (B already says: pay
 only for what is reviewed - so "committed" means the ceiling, and the
-prepay/refund mechanics in BI settle the difference). Not started;
-should land before BI, since BI needs the number.
+prepay/refund mechanics in BI settle the difference).
+
+**DONE 2026-09-14.** Needs `supabase/migrations_committed_length.sql` run.
+Grounding first: `rate_per_workout_cents` holds the WEEKLY price (the
+ledger v2 migration documents the rename), so total = weeks x weekly
+price - no per-workout arithmetic. Built:
+- Offer form: one "Length (weeks)" field replaces the min/max range;
+  `length_text` becomes "6 weeks"; new `offers.length_weeks` written.
+  Backfill takes the old range's upper bound ("4-6 weeks" -> 6).
+- The shared cadence explainer (coach preview AND trainee offer card -
+  one function, so they can never disagree) now ends with the committed
+  total: "Committed total: $600 over 6 weeks (6 x $100/week). That's the
+  ceiling - you pay only for sessions actually reviewed."
+- Trainee offer card gains a "Total (ceiling)" row; the accept
+  confirmation states the weeks and the maximum before the trainee
+  commits.
+- Accepting stamps the engagement: `committed_weeks`, `committed_end_date`
+  (= today + 7 x weeks); existing engagements backfilled from their offer.
+Deliberately kept "ceiling" semantics per B rather than "amount due" -
+that is the number BI prepays against and refunds down from.
 
 ---
 

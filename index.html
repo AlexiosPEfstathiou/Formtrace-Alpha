@@ -1287,11 +1287,8 @@
       <div class="field"><label>Focus</label><input id="of-focus" placeholder="e.g. Squat depth & posterior chain" autocomplete="off"></div>
       <div class="field">
         <label>Length (weeks)</label>
-        <div class="two">
-          <div class="stepper-lite"><input id="of-length-min" type="number" min="1" max="52" placeholder="4"></div>
-          <div style="align-self:center;color:var(--muted);font-weight:700">to</div>
-          <div class="stepper-lite"><input id="of-length-max" type="number" min="1" max="52" placeholder="6"></div>
-        </div>
+          <!-- Item BK: one committed length, not a range - so the total can commit at acceptance -->
+          <div class="stepper-lite"><input id="of-length" type="number" inputmode="numeric" min="1" max="104" placeholder="6"></div>
       </div>
       <div class="field"><label>Sessions / week</label>
         <select id="of-sessions" class="sel">
@@ -4943,7 +4940,8 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     <div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(o.length_text||"—")}</span></div>
     <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(o.sessions_text||"—")}</span></div>
     <div class="kv"><span class="k">Start</span><span class="v">${escapeHtml(o.start_text||"—")}</span></div>
-    <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>`;
+    <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>
+          ${(o.length_weeks&&o.rate_per_workout_cents!=null)?`<div class="kv"><span class="k">Total (ceiling)</span><span class="v"><b>${escapeHtml(((o.price_text||"").match(/^[^\d]+/)||["$"])[0].trim())}${((o.rate_per_workout_cents/100)*o.length_weeks).toLocaleString()}</b> over ${o.length_weeks} week${o.length_weeks===1?"":"s"}</span></div>`:""}`;
   /* The whole point of surfacing this: accepting is not a lump-sum
      commitment, so it needs to be visible at the moment that decision is
      being made, not buried in a help article. Only shown when the offer
@@ -4957,7 +4955,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
       price:o.rate_per_workout_cents/100,
       cur:(o.price_text||"$").trim()[0]||"$",
       noshow:o.noshow_fraction_pct||0,
-      perspective:"trainee"
+      perspective:"trainee", weeks:o.length_weeks||0
     });
     exp.appendChild(card);
   }
@@ -4968,7 +4966,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     row.querySelector("[data-acc]").addEventListener("click",async()=>{
       const ok=await openConfirm({
         title:"Accept this offer?",
-        body:"This will auto-decline all other offers for this goal. Would you like to proceed?",
+        body:`This will auto-decline all other offers for this goal.${(o&&o.length_weeks&&o.rate_per_workout_cents!=null)?` You are committing to ${o.length_weeks} week${o.length_weeks===1?"":"s"} - at most ${((o.rate_per_workout_cents/100)*o.length_weeks).toLocaleString()} in total, charged only for sessions that get reviewed.`:""} Would you like to proceed?`,
         confirmLabel:"Accept",cancelLabel:"Cancel"
       });
       if(!ok)return;
@@ -4991,7 +4989,10 @@ async function acceptOffer(offerId){
     // 1. accept this offer
     await store.offers.update(offerId,{status:"accepted"});
     // 2. create the engagement (the coach<->trainee working relationship)
-    await store.engagements.add({offer_id:o.id,coach_id:o.coach_id,trainee_id:o.trainee_id,goal_title:o.title,status:"active"});
+    /* Item BK: the engagement records what was accepted - weeks and the end date. */
+      const engRow={offer_id:o.id,coach_id:o.coach_id,trainee_id:o.trainee_id,goal_title:o.title,status:"active"};
+      if(o.length_weeks){ engRow.committed_weeks=o.length_weeks; engRow.committed_end_date=addDaysISO(todayISO(),7*o.length_weeks); }
+      await store.engagements.add(engRow);
     // 3. close the goal + auto-decline the other pending offers on it
     if(o.listing_id){
       await store.listings.update(o.listing_id,{status:"closed"});
@@ -5146,7 +5147,7 @@ async function openOffer(listingId){
   offerListing=await store.listings.get(listingId); pendingOfferVideo=null;
   $("#offer-sub").textContent=`Re: ${offerListing.title}`;
   $("#of-title").value=offerListing.title; $("#of-focus").value=offerListing.focus||"";
-  $("#of-length-min").value="";$("#of-length-max").value="";$("#of-sessions").value="";
+  $("#of-length").value="";$("#of-sessions").value="";
   $("#of-start").value="";$("#of-price").value="";$("#of-currency").value="$";$("#of-noshow").value="50";
   const slot=$("#of-video-slot");slot.classList.remove("filled");
   slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your pitch</div><div class="vs">Every offer carries a short video. No attachments.</div>`;
@@ -5166,16 +5167,16 @@ function renderCadencePreview(){
     el.innerHTML=`<div style="font-size:12px;color:var(--faint)">Fill in sessions and price to see how payment works.</div>`;
     return;
   }
-  el.innerHTML=cadenceExplainer({sessions,price,cur,noshow,perspective:"coach"});
+  el.innerHTML=cadenceExplainer({sessions,price,cur,noshow,perspective:"coach",weeks:Number($("#of-length")?.value)||0});
 }
-["of-sessions","of-price","of-currency","of-noshow"].forEach(id=>{
+["of-sessions","of-price","of-currency","of-noshow","of-length"].forEach(id=>{
   $("#"+id)?.addEventListener("change",renderCadencePreview);
   $("#"+id)?.addEventListener("input",renderCadencePreview);
 });
 /* Shared between the offer-builder preview and the trainee's offer card, so
    the two can never describe the mechanic differently. Pure string
    building — no DOM access — so it works in either context. */
-function cadenceExplainer({sessions,price,cur,noshow,perspective}){
+function cadenceExplainer({sessions,price,cur,noshow,perspective,weeks}){
   const per=price/sessions;
   const you=perspective==="coach"?"you":"your coach";
   const yourPoss=perspective==="coach"?"your":"your coach's";
@@ -5188,6 +5189,12 @@ function cadenceExplainer({sessions,price,cur,noshow,perspective}){
       : `<div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px">A session that's never submitted simply isn't charged.</div>`,
     `<div style="font-size:11.5px;color:var(--faint);line-height:1.5;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)">The payment for a given week is charged the following week, once every session in it has had a chance to be reviewed — so nothing is ever charged for a session nobody looked at. Either side can end the goal at any time; the next week's charge is always the last.</div>`
   ];
+  /* Item BK: the committed total - a CEILING. Only reviewed sessions are ever
+     charged (item B), so this is the most the goal can cost, known up front. */
+  if(weeks>0){
+    const total=price*weeks;
+    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)"><b style="color:var(--ink)">Committed total: ${cur}${total.toFixed(total%1?2:0)}</b> <span style="color:var(--muted)">over ${weeks} week${weeks===1?"":"s"} (${weeks} × ${cur}${price}/week). That's the ceiling - ${perspective==="coach"?"the trainee pays":"you pay"} only for sessions actually reviewed.</span></div>`);
+  }
   return lines.join("");
 }
 $("#of-video-slot").addEventListener("click",()=>{
@@ -5199,16 +5206,15 @@ $("#of-video-slot").addEventListener("click",()=>{
 });
 $("#of-send").addEventListener("click",async()=>{
   const title=$("#of-title").value.trim();
-  const lmin=$("#of-length-min").value.trim(), lmax=$("#of-length-max").value.trim();
+  const lweeks=Number($("#of-length").value.trim())||0;
   const sessions=$("#of-sessions").value, start=$("#of-start").value, cur=$("#of-currency").value, price=$("#of-price").value.trim();
   if(!title){toast("Missing goal");return;}
-  if(!lmin||!lmax){toast("Enter a length range in weeks");return;}
-  if(Number(lmin)>Number(lmax)){toast("Length range: min can't exceed max");return;}
+  if(!lweeks||lweeks<1||lweeks>104){toast("Enter the length in weeks (1-104)");return;}
   if(!sessions){toast("Choose sessions per week");return;}
   if(!start){toast("Pick a start date");return;}
   if(!price){toast("Enter a price per week");return;}
   if(!pendingOfferVideo){toast("Record your video pitch — it's required");return;}
-  const length_text = lmin===lmax ? `${lmin} weeks` : `${lmin}–${lmax} weeks`;
+  const length_text = `${lweeks} week${lweeks===1?"":"s"}`;
   const sessions_text = `${sessions} / week`;
   const start_text = new Date(start+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
   const price_text = `${cur}${price} / week`;
@@ -5225,6 +5231,7 @@ $("#of-send").addEventListener("click",async()=>{
       // these same two numbers, shown alongside rather than replaced.
       rate_per_workout_cents:Math.round(Number(price)*100),
       workouts_per_week_cap:Number(sessions),
+      length_weeks:lweeks,   // Item BK: committed length -> committed total (weeks x weekly price)
       noshow_fraction_pct:Math.max(0,Math.min(100,Number($("#of-noshow").value)||0))
     });
     toast("Offer sent ✓"); go("market");
