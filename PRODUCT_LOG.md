@@ -4,6 +4,70 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BO. Assess github.com/jeremyipark/vision-demos for FormTrace's camera - ASSESSED 2026-09-14
+
+Requested: read the repo's open-source motion/posture recognition and
+assess what FormTrace can use. Read it (README + the similarity-metric
+write-up) and compared against our own grading code, not in the abstract.
+
+**What it is.** One project, `dance_sync` (Apache-2.0, 3 commits): scores
+how alike several dancers' poses are, frame by frame. Pose estimation is
+NOT on-device - it calls `vitpose-plus-large` (17 COCO keypoints) through
+the paid VLM Run hosted gateway; the code is Python/conda. The value is
+the METHOD, documented unusually well in `similarity-metric-explained.md`.
+
+**What FormTrace does today** (`gradeForm`, ~line 2818): MediaPipe, 33
+landmarks, fully on-device in the browser. Eight joint angles (elbows,
+shoulders, hips, knees, both sides), DTW-aligned against the coach's
+reference, mean absolute degrees -> shape score on a FIXED anchor (100 at
+<=3°, minus 2 per degree); a ROM score; a tempo score from rep counting.
+
+**Directly usable ideas - port the idea, not the code:**
+1. **Torso-normalised segment DIRECTIONS instead of only joint angles.**
+   They measure 12 segments in a frame anchored at mid-hip with "up"
+   toward mid-shoulder, INCLUDING the torso's own lean against vertical
+   and the shoulder line. Our eight joint angles contain no spine/back
+   position at all - and back angle is the single most important cue in
+   a squat, deadlift, or hinge. MediaPipe has the landmarks; this is a
+   small change to `angleVec`. Highest-value item here.
+2. **Per-segment tolerance + core weighting.** They forgive a few degrees
+   per body part before scoring ("a forearm 20° off is nothing while a
+   torso 20° off is a different shape") and weight torso/thighs/neck
+   above arms. Our `vecDist` is an unweighted mean of absolute
+   differences. Cheap change; should reduce nuisance penalties for arm
+   variation while making back/hip errors count more.
+3. **Score the "landings".** They detect moments when limbs stop moving
+   and score shape there separately from the transitions. For us that is
+   the rep turnaround - the bottom of a squat or top of a press - which
+   is exactly where depth and lockout are judged. We already find reps
+   (`countReps`); scoring the bottom position as its own number is a
+   natural extension and more coach-legible than one blended score.
+4. **Angular speed as a timing signal.** They differentiate the same
+   angles for speed-only comparison. Our tempo score is rep-count based;
+   per-segment speed would catch "rushing the eccentric" that rep timing
+   can't.
+
+**Not usable, deliberately:**
+- The model. Off-device, paid API, video leaves the phone - the opposite
+  of FormTrace's design (on-device, private, works offline). MediaPipe's
+  33 landmarks are also richer than COCO-17 for our purpose.
+- **Clip-relative calibration.** Their 0%/100% anchors come from the clip
+  itself because they have no ground truth - they say so. We DO have one:
+  the coach's reference. Our fixed anchors are the right call; adopting
+  theirs would make a trainee's score incomparable across sessions.
+- Their ±2-frame local match is a weaker substitute for what we already
+  do with DTW. Keep DTW.
+- The Python code itself - single-file browser app, no build step; only
+  the ideas port. Apache-2.0 permits reuse with attribution if any code
+  ever does.
+
+Recommended order if picked up: (1) then (2), one commit, re-validate the
+grade distribution on existing submissions before/after so the change
+doesn't silently re-grade everyone; (3) after AT step 5; (4) optional.
+Not started.
+
+---
+
 ## BN. Coach referral links: counts, titles, partner benefits, and a commission on referred coaches
 
 Requested:
