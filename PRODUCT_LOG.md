@@ -754,9 +754,10 @@ card:** Needs `supabase/migrations_offer_start_date.sql` run.
   `admin_set_badges`, `admin_review_certification`. Rejecting the only
   approved certification falls the coach back to Professional if an
   employer is set, else none.
-Not built: notifying the coach when a certification is approved or
-rejected (they see the status on their Profile); an expiry date on
-certifications.
+Follow-up same day: the coach IS now told - a homepage card
+"🎓 Certification review: Approved: Level 3 PT" (green) or "Not approved"
+(red, with the admin's note if any) shows until tapped to dismiss
+(`seen_at`). Not built: an expiry date on certifications.
 Next: a screenshot of anything still off.
 
 ---
