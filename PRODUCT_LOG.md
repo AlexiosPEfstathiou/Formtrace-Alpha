@@ -842,6 +842,10 @@ preview now says "You receive $528.60 after your Partner rate of 5.9%"
 (or Founding / agreed / default) instead of assuming 11.9%. BM's design
 note ("give the rate table a per-user override from day one") is thereby
 done. The payment integration reads this table; nothing else changes.
+Same day: when a coach holds a privileged rate, the preview also reminds
+them of the standard one and what it saves them here - "The standard rate
+is 11.9% - this privilege saves you $36.00 on this offer" (Partner on a
+$600 goal).
 Housekeeping note: commit dd71fc3 shows an ~11k-line diff on index.html.
 That is a one-time line-ending normalisation (the stored blob was CRLF;
 core.autocrlf=true now stores LF, working copy stays CRLF), not content;
