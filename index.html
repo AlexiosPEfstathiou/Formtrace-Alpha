@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -2902,6 +2902,38 @@ function turnaroundFrames(frames){
   for(let i=0;i<n.length;i++){ const s=n[i]>.6?"hi":n[i]<.4?"lo":null; if(s&&s!==st){ flush(); st=s; } if(s===st&&s) run.push(i); }
   flush(); return out;
 }
+/* Item AY part 2: the meeting link on an accepted call. Google Meet, pasted:
+   "Create Meet link" opens meet.google.com/new (Google mints an instant room,
+   no calendar needed), the link is pasted back and stored on the row, and
+   both parties get a Join button. Auto-minting via OAuth needs a server -
+   logged for later. Returns an element; `after` runs on save. */
+function meetingLinkBlock(row, after){
+  const d=document.createElement("div"); d.style.cssText="margin-top:10px";
+  const render=()=>{
+    if(row.meeting_url){
+      d.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <a class="btn primary sm" style="width:auto;text-decoration:none" href="${escapeHtml(row.meeting_url)}" target="_blank" rel="noopener">📹 Join call</a>
+        <button class="btn sm ghost ml-change" style="width:auto">Change link</button>
+        <span style="font-size:11.5px;color:var(--faint);word-break:break-all">${escapeHtml(row.meeting_url.replace(/^https:\/\//,""))}</span></div>`;
+      d.querySelector(".ml-change").addEventListener("click",()=>{ row._editing=true; render(); });
+      if(!row._editing) return;
+    }
+    d.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${row.meeting_url?"Paste a different link":"Add the video call link so you both know where to meet"}${row.recur_every_days?" - one link covers every occurrence":""}.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn sm" style="width:auto;text-decoration:none" href="https://meet.google.com/new" target="_blank" rel="noopener">Create Meet link ↗</a>
+        <input class="ml-input" type="url" inputmode="url" placeholder="https://meet.google.com/…" value="${escapeHtml(row.meeting_url||"")}" style="flex:1;min-width:160px;height:38px;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:0 12px;font-size:13px">
+        <button class="btn primary sm ml-save" style="width:auto">Save</button></div>`;
+    d.querySelector(".ml-save").addEventListener("click",async()=>{
+      const url=d.querySelector(".ml-input").value.trim();
+      if(url && !/^https:\/\//i.test(url)){ toast("The link must start with https://",3000); return; }
+      const b=d.querySelector(".ml-save"); b.disabled=true;
+      try{ const { data, error }=await store._sb.rpc("set_call_meeting_url",{p_proposal_id:row.id,p_url:url||null}); if(error) throw error;
+        row.meeting_url=(data&&data.meeting_url)||null; row._editing=false; toast(row.meeting_url?"Link saved ✓":"Link removed",1600); render(); after&&after(); }
+      catch(err){ console.error("set meeting url (run migrations_call_meeting_url.sql)",err); toast(err.message||"Couldn't save the link",4000); b.disabled=false; }
+    });
+  };
+  render(); return d;
+}
 function gradeForm(trainee,coach){
   const t=subsample(trainee),c=subsample(coach);
   const cv=c.map(formVec);
@@ -3633,15 +3665,17 @@ async function renderHomeCallProposal(el){
     .concat(await store.engagements.list({trainee_id:ME.id}).catch(()=>[]))
     .filter(e=>e.status==="active");
   if(!active.length)return;
-  let mine=[];
+  let mine=[], todayCalls=[];
   try{
     const { data, error } = await store._sb.from("call_proposals").select("*,engagement_id")
-      .in("engagement_id",active.map(e=>e.id)).eq("status","pending");
+      .in("engagement_id",active.map(e=>e.id)).in("status",["pending","accepted"]);
     if(error) throw error;
     const now=new Date();
-    mine=(data||[]).filter(p=>p.proposed_by!==ME.id && new Date(p.expires_at)>now);
+    mine=(data||[]).filter(p=>p.status==="pending" && p.proposed_by!==ME.id && new Date(p.expires_at)>now);
+    // Item AY part 2: accepted calls happening TODAY (one-time, or a series occurrence)
+    todayCalls=(data||[]).filter(p=>p.status==="accepted" && nextOccurrence(p,todayISO())===todayISO());
   }catch(e){ console.error("home call proposal (run migrations_scheduled_calls.sql)",e); return; }
-  if(!mine.length)return;
+  if(!mine.length && !todayCalls.length)return;
   const engById={}; active.forEach(e=>engById[e.id]=e);
   const chips=mine.map(p=>{
     const eng=engById[p.engagement_id];
@@ -6084,7 +6118,7 @@ async function renderEngagement(skipFetch){
       cell.className="cal-day cal-tap cal-coaching"+(iso===today?" cal-today":"");
       cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🎥</div>`;
       cell.title="Coaching call · "+fmtTimeRange(p.start_time,p.end_time);
-      cell.addEventListener("click",()=>toast("Coaching call · "+fmtTimeRange(p.start_time,p.end_time),3000));
+      cell.addEventListener("click",()=>{ if(p.meeting_url && iso===today){ window.open(p.meeting_url,"_blank","noopener"); return; } toast("Coaching call · "+fmtTimeRange(p.start_time,p.end_time)+(p.meeting_url?(iso===today?"":" · link on the Video call card"):" · no link yet - add one on the Video call card"),3200); });
       addCell(cell);
       continue;
     }
@@ -6795,11 +6829,13 @@ async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
     const nxt=nextOccurrence(series,today);
     const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime)">🔁 Recurring call · ${recurLabel(series.recur_every_days)}</div>
       <div style="font-size:15px;font-weight:700;margin-top:6px">${fmtTimeRange(series.start_time,series.end_time)} · next ${escapeHtml(fmtDay(nxt))}</div>`);
+    d.appendChild(meetingLinkBlock(series,()=>renderEngagement(true)));
     d.appendChild(cancelBtn(series,"Stop recurring"));
   }
   if(oneTime){
     const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime);margin-top:${series?"14px":"0"}">✓ Call scheduled</div>
       <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(oneTime.proposed_date))} · ${fmtTimeRange(oneTime.start_time,oneTime.end_time)}</div>`);
+    d.appendChild(meetingLinkBlock(oneTime,()=>renderEngagement(true)));
     d.appendChild(cancelBtn(oneTime,"Cancel call"));
   }
   if(proposal && !isExpired){

@@ -22,7 +22,7 @@ BE) are not tasks and are left out.
 | 8 | **AA** Voice-over: no sound in preview - MITIGATED 2026-09-14 | blocked on repro | Earlier fixes confirmed present; low-level warning on the preview added. |
 | 9 | **AH** Pose overlay sometimes missing - MITIGATED 2026-09-14 | blocked on repro | Rebuild retries with backoff + manual retry; pose-coverage number on every set. |
 | 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
-| 11 | **AY part 2** The call: Google Meet link on accepted calls | Medium-easy (decided) | Paste-a-Meet-link flow now; OAuth auto-mint later once there is a server. |
+| 11 | **AY part 2** Google Meet link on accepted calls - DONE 2026-09-14 | - | Create/paste/Join on the card, calendar and homepage; OAuth auto-mint later once there is a server. |
 | 12 | **BI** Commission plan + escrow payments | Hardest | Direction: Stripe Connect (Onelink is Stripe's wallet); Binance Pay as a later optional method. Unblock: open a Stripe account. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
 | 14 | **BP** Seed trainee goals before recruiting coaches | Easy (activity) | Not code; 3-5 real goals posted, response times logged. |
@@ -806,7 +806,7 @@ function replaces it).
 
 ---
 
-## AY. Replace availability-based call scheduling with propose → accept → call in-app - SCHEDULING HALF DONE 2026-09-11, call technology still open
+## AY. Replace availability-based call scheduling with propose → accept → call in-app - DONE 2026-09-14 (Meet link; auto-mint later)
 
 Requested: the current way of setting up a video call - each side
 declaring recurring weekly availability windows, and proposals only being
@@ -909,7 +909,23 @@ copies the link back into a field on the call card; it is stored on the
 on the card, on the calendar day, and on the homepage reminder near call
 time. Recurring series: one link for the whole series (Meet rooms
 persist). Automatic minting via OAuth stays logged as a later polish once
-there is a server (BI needs one anyway). Not started; next code item.
+there is a server (BI needs one anyway).
+
+**DONE 2026-09-14.** Needs `supabase/migrations_call_meeting_url.sql` run.
+- `call_proposals.meeting_url`; `set_call_meeting_url(id, url)` - either
+  party, accepted calls only, https required, empty clears.
+- Video call card: an accepted call (or series) shows "Add the video call
+  link" with **Create Meet link ↗** (opens meet.google.com/new) and a paste
+  field; once saved, a **📹 Join call** button plus Change link. A series
+  carries one link for every occurrence.
+- Calendar: tapping a call day that is TODAY opens the link; other days
+  say where the link lives, or that none is set yet.
+- Homepage: a "📹 Call today" card for any accepted call occurring today
+  (one-time or series), tap to join - or tap to add the link if missing.
+  Rendered above the proposal card in the same blue block.
+Not built: automatic Meet creation (OAuth + server). Not built: reminders
+before the call beyond "today" (push notifications need the native
+wrapper, AD).
 
 ---
 
