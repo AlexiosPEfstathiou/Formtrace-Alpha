@@ -1587,7 +1587,13 @@
       <button class="captool" id="r-hand">✋ Touchless</button>
     </div>
     <div id="rreview">
-      <div class="row"><button class="btn primary" id="r-use">✓ Use this trace</button></div>
+          <!-- Item BC: trim the start and end before using the clip. Offsets, not a recut. -->
+          <div id="r-trim" style="width:100%;padding:0 4px 6px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px"><span>Start <b id="r-trim-in-l">0.0s</b></span><span id="r-trim-len"></span><span>End <b id="r-trim-out-l">–</b></span></div>
+            <input id="r-trim-in" type="range" min="0" max="100" step="0.1" value="0" style="width:100%">
+            <input id="r-trim-out" type="range" min="0" max="100" step="0.1" value="100" style="width:100%">
+          </div>
+          <div class="row"><button class="btn primary" id="r-use">✓ Use this trace</button></div>
       <div class="row"><button class="btn sm" id="r-retake" style="flex:1">↺ Retake</button><button class="btn sm" id="r-preview" style="flex:1">▶ Replay</button></div>
     </div>
   </div>
@@ -2508,6 +2514,7 @@ async function hydrateVideos(root){
     const paths=[...scope.querySelectorAll("[data-video]:not([data-hydrated])")]
       .map(n=>n.getAttribute("data-video")).filter(Boolean);
     if(paths.length&&store.videoRotations) rots=await store.videoRotations(paths);
+    let trims={}; try{ if(paths.length&&store.videoMeta){ const meta=await store.videoMeta(paths); for(const p in meta){ if(meta[p].trim_in!=null||meta[p].trim_out!=null) trims[p]=meta[p]; } } }catch(e){ console.error("video trims",e); }   // Item BC
   }catch(e){ console.error("video rotations (run migrations_video_rotation.sql)",e); }
   /* Latency: signed-URL requests used to run one at a time, awaited in series
      per element - a screen with N videos paid N sequential round trips before
@@ -2528,6 +2535,7 @@ async function hydrateVideos(root){
          metadata arrives and let the container adopt them. Small thumbnails
          keep the square crop — letterboxing a 58px tile looks worse. */
       const vid=el.querySelector("video");
+      if(trims[path]) wireTrim(vid,trims[path]);   // Item BC
       const isPlayer=el.classList.contains("video-card");
       let rot=rots[path]||0;
       if(vid&&isPlayer){
@@ -4348,7 +4356,7 @@ $("#ex-save").addEventListener("click",async()=>{
     let ref_video_path, landmarks;
     if(pendingRef){
       btn.textContent="Uploading video…";
-      ref_video_path=await store.video.upload(pendingRef.blob,"webm");
+      ref_video_path=await store.video.upload(pendingRef.blob,"webm"); persistTrim(ref_video_path,pendingRef);
       landmarks={frames:pendingRef.frames,fps:pendingRef.fps,reps:pendingRef.reps};
     }
     if(editingExId){
@@ -4368,7 +4376,7 @@ $("#btn-record-ref").addEventListener("click",()=>{
     // count on the full capture (more accurate) but STORE a subsampled track —
     // raw frames were posting hundreds of KB of JSON per exercise.
     const reps=countReps(cap.frames).reps;
-    pendingRef={frames:subsample(cap.frames,140),fps:cap.fps,reps,blob:cap.blob};
+    pendingRef={frames:subsample(cap.frames,140),fps:cap.fps,reps,blob:cap.blob,trim:cap.trim||null};
     updateRefCard(null);
     toast(reps?`Reference captured · ${reps} rep${reps>1?"s":""} detected — now tap Save to library`
               :"Reference captured — now tap Save to library",5000);
@@ -5310,7 +5318,7 @@ $("#of-send").addEventListener("click",async()=>{
   const price_text = `${cur}${price} / week`;
   const btn=$("#of-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Uploading…";
   try{
-    const path=await store.video.upload(pendingOfferVideo.blob,"webm");
+    const path=await store.video.upload(pendingOfferVideo.blob,"webm"); persistTrim(path,pendingOfferVideo);
     await store.offers.add({
       listing_id:offerListing.id,coach_id:ME.id,trainee_id:offerListing.trainee_id,kind:"offer",
       title,focus:$("#of-focus").value.trim(),length_text,
@@ -8214,7 +8222,7 @@ async function runAnalysis(itemIndex,setIndex,capture){
   let video_path=null;
   if(capture.blob){
     $("#an-msg").textContent="Saving your video…";$("#an-sub").textContent="Uploading to your coach";
-    try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); }
+    try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); persistTrim(video_path,capture); }
     catch(e){ console.error("set video upload failed",e); toast("Video didn't upload — set still saved",3600); }
   }
   const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path,form};
@@ -8809,6 +8817,17 @@ async function saveCoachGrades(){
    delicate code — a quarter turn needs the container to adopt the swapped
    aspect ratio and the video scaled to the container's other axis before
    rotating, or it clips instead of fitting. */
+/* Item BC: make a <video> honour saved trim offsets - start at trim_in, stop
+   at trim_out and rewind to trim_in. Offsets only; the file is untouched. */
+function wireTrim(vid,t){
+  if(!vid||!t) return;
+  const tin=Number(t.trim_in)||0, tout=Number(t.trim_out)||0;
+  const seekIn=()=>{ try{ if(tin>0 && vid.currentTime<tin-0.05) vid.currentTime=tin; }catch(e){} };
+  if(vid.readyState>=1) seekIn(); else vid.addEventListener("loadedmetadata",seekIn,{once:true});
+  vid.addEventListener("play",seekIn);
+  if(tout>0) vid.addEventListener("timeupdate",()=>{ if(vid.currentTime>=tout){ vid.pause(); try{ vid.currentTime=tin; }catch(e){} } });
+  vid.addEventListener("seeking",()=>{ if(tout>0 && vid.currentTime>tout) vid.currentTime=tout; if(vid.currentTime<tin) vid.currentTime=tin; });
+}
 function applyRotationToBox(box,vid,rot){
   const w=vid.videoWidth,h=vid.videoHeight;
   if(!w||!h)return false;
@@ -8829,6 +8848,7 @@ function applyRotationToBox(box,vid,rot){
 }
 function wireRotation(box,vid,path){
   if(!box||!vid||!path)return;
+  if(store.videoMeta) store.videoMeta([path]).then(m=>{ const t=m&&m[path]; if(t&&(t.trim_in!=null||t.trim_out!=null)) wireTrim(vid,t); }).catch(()=>{});   // Item BC
   store.videoRotations([path]).then(rots=>{
     const rot=(rots&&rots[path])||0;
     if(!rot)return;   // nothing to correct — don't touch layout for an unrotated clip
@@ -10677,6 +10697,42 @@ function startRec(){
   rRecording=true;$("#rbtn").classList.add("rec");$("#r-flip").style.visibility="hidden";$("#r-ghost").style.visibility="hidden";
   rStart=Date.now();$("#rtimer").classList.add("on");$("#rtval").textContent="0:00";rTimerInt=setInterval(()=>$("#rtval").textContent=fmt((Date.now()-rStart)/1000),250);
 }
+/* ---- Item BC: trim handles on the review step -----------------------------
+   Two range inputs over the replay. Dragging a handle seeks the replay to it.
+   On "Use", the capture's FRAMES are sliced to the window (frames are indexed
+   at a known fps, so this is a slice, and every consumer - rep counting, the
+   form comparison - then sees only the kept part), and the offsets travel with
+   the capture as cap.trim so the uploader can persist them for playback. */
+let trimState=null;
+function setupTrimHandles(){
+  const box=$("#r-trim"), inR=$("#r-trim-in"), outR=$("#r-trim-out"); if(!box||!inR||!outR) return;
+  trimState=null; box.style.display="none";
+  const init=()=>{
+    const dur=rplay.duration; if(!isFinite(dur)||dur<=0.5){ box.style.display="none"; return; }
+    inR.max=outR.max=dur.toFixed(1); inR.value=0; outR.value=dur.toFixed(1);
+    trimState={in:0,out:dur,dur};
+    box.style.display="";
+    const paint=()=>{ $("#r-trim-in-l").textContent=trimState.in.toFixed(1)+"s"; $("#r-trim-out-l").textContent=trimState.out.toFixed(1)+"s"; $("#r-trim-len").textContent=(trimState.out-trimState.in)<trimState.dur-0.05?`keeping ${(trimState.out-trimState.in).toFixed(1)}s of ${trimState.dur.toFixed(1)}s`:"full clip"; };
+    inR.oninput=()=>{ let v=Number(inR.value); if(v>trimState.out-0.5){ v=Math.max(0,trimState.out-0.5); inR.value=v; } trimState.in=v; rplay.pause(); rplay.currentTime=v; paint(); };
+    outR.oninput=()=>{ let v=Number(outR.value); if(v<trimState.in+0.5){ v=Math.min(trimState.dur,trimState.in+0.5); outR.value=v; } trimState.out=v; rplay.pause(); rplay.currentTime=Math.max(0,v-0.05); paint(); };
+    paint();
+  };
+  if(isFinite(rplay.duration)&&rplay.duration>0) init(); else rplay.addEventListener("loadedmetadata",init,{once:true});
+}
+function applyTrimToCapture(){
+  if(!lastCapture||!trimState) return;
+  const {in:tin,out:tout,dur}=trimState;
+  if(tin<=0.05 && tout>=dur-0.05) return;   // untouched: full clip
+  const fps=lastCapture.fps||30;
+  const a=Math.max(0,Math.floor(tin*fps)), b=Math.min(lastCapture.frames.length,Math.ceil(tout*fps));
+  if(b-a>=6) lastCapture.frames=lastCapture.frames.slice(a,b);
+  lastCapture.trim={in:+tin.toFixed(2),out:+tout.toFixed(2)};
+}
+/* Persist a capture's trim for its uploaded path, if it has one. Fire-and-forget. */
+function persistTrim(path,cap){
+  if(!path||!cap||!cap.trim||!store.setVideoTrim) return;
+  store.setVideoTrim(path,cap.trim.in,cap.trim.out).catch(e=>console.error("setVideoTrim (run migrations_video_trim.sql)",e));
+}
 function stopRec(silent){
   if(!rRecorder||rRecorder.state==="inactive")return;
   rRecorder._silent=silent;rRecorder.stop();cancelAnimationFrame(recPaintRAF);
@@ -10692,6 +10748,7 @@ function onRecStop(){
   if(recOpts.review){
     rvideo.style.display="none";roverlay.style.display="none";rplay.src=rURL;rplay.style.display="block";
     $("#r-deck").style.display="none";$("#rreview").style.display="flex";$("#r-tools").style.display="none";cancelAnimationFrame(rRAF);
+  setupTrimHandles();   // Item BC
   }else{
     const cb=recOpts.onComplete;closeRecorder();cb&&cb(lastCapture);
   }
@@ -10728,7 +10785,7 @@ $("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"enviro
 $("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);});
 $("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
 $("#r-preview").addEventListener("click",()=>{rplay.currentTime=0;rplay.play();});
-$("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;closeRecorder();cb&&cb(lastCapture);});
+$("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;applyTrimToCapture();closeRecorder();cb&&cb(lastCapture);});   // Item BC: trim first
 
 /* =========================================================================
    19. Boot — auth gate decides what shows first

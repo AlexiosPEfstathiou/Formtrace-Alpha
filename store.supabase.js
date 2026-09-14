@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // FormTrace Coach — store.supabase.js
 // Drop-in backend for the app's data layer, backed by Supabase.
 // Exposes window.store with the same surface the app already uses,
@@ -210,7 +210,26 @@
       for (const r of (data || [])) if (r.rotation) out[r.path] = r.rotation;
       return out;
     },
-    async setVideoRotation(path, rotation) {
+    // Item BC: per-path trim offsets (seconds), same table as rotation.
+  async videoMeta(paths) {
+    const list = (paths || []).filter(Boolean);
+    if (!list.length) return {};
+    const { data, error } = await sb.from("video_orientation")
+      .select("path,rotation,trim_in,trim_out").in("path", list);
+    if (error) throw error;
+    const out = {};
+    for (const r of (data || [])) out[r.path] = { rotation: r.rotation || 0, trim_in: r.trim_in, trim_out: r.trim_out };
+    return out;
+  },
+  async setVideoTrim(path, trim_in, trim_out) {
+    const u = await auth.currentUser();
+    if (!u) throw new Error("Not signed in");
+    return must(await sb.from("video_orientation")
+      .upsert({ path, trim_in, trim_out, updated_by: u.id, updated_at: new Date().toISOString() },
+        { onConflict: "path" })
+      .select().single());
+  },
+  async setVideoRotation(path, rotation) {
       const u = await auth.currentUser();
       if (!u) throw new Error("Not signed in");
       return must(await sb.from("video_orientation")

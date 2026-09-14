@@ -18,7 +18,7 @@ BE) are not tasks and are left out.
 | 4 | **BN** Referral links - part 1 (link, count, tier badge) | Medium-easy (decision) | Sign-up plumbing + a fourth badge family. Decision first: what counts as a referral (sign-up vs first accepted offer). Part 2 (discounts, referred-coach commission) waits for BI. |
 | 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
 | 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
-| 7 | **BC** Video trim on submit | Medium (offsets) / Hard (recut) | Offset-based trim is contained (players + graded frames honour in/out); a true recut needs a mux library the Artifactory block prevents. Decision first. |
+| 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
 | 8 | **AA** Voice-over: no sound in preview | Medium-hard, blocked | Device-dependent; needs a reproduction on a real phone. |
 | 9 | **AH** Pose overlay sometimes missing | Medium-hard, blocked | Cause unknown; needs the conditions it happens under. |
 | 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
@@ -455,7 +455,30 @@ diagnostic rows). No other unresolved reports outstanding.
 
 ---
 
-## BC. Trim option when submitting a video: cut from the start and end
+## BC. Trim option when submitting a video: cut from the start and end - DONE 2026-09-14 (offset-based)
+
+**DONE 2026-09-14 - the offset approach, decided here because the recut is
+blocked:** a true recut needs a mux/re-encode library, which the
+Artifactory policy prevents installing; offsets are instant, lossless and
+reversible, and mirror how rotation (item X) already works. Needs
+`supabase/migrations_video_trim.sql` run (two columns on
+`video_orientation`, the per-path metadata table).
+- Review step (`#rreview`) gains Start/End range handles over the replay;
+  dragging seeks to the handle; a readout shows "keeping 6.2s of 9.8s".
+  Minimum 0.5s kept; untouched handles = full clip, nothing stored.
+- On "Use this trace" the capture's FRAMES are sliced to the window BEFORE
+  any consumer sees them (frames are indexed at a known fps), so rep
+  counting and the BO form comparison grade only the kept part - the
+  frames stay in sync with the video by construction. Offsets travel as
+  `cap.trim` and are persisted after upload for trainee sets, references
+  and pitch videos (`persistTrim`).
+- Playback honours the offsets everywhere `hydrateVideos` renders a clip
+  and on the voice-over/review players: starts at trim_in, stops at
+  trim_out and rewinds. `store.videoMeta` reads rotation + trim in one
+  query; `videoRotations` unchanged for its three callers.
+Not done: editing the trim after upload (recorder-time only), and the day
+note video (recorded through the same recorder, so its frames are trimmed,
+but the offset isn't persisted for its path - small follow-up).
 
 Requested: when submitting a workout video the submitter should be able to
 trim parts off the beginning and end before it's sent.
