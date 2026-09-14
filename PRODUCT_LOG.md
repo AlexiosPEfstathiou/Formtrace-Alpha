@@ -686,8 +686,11 @@ Math checked in code (600 goal): trainee pays 635.40, coach receives
 528.60, FormTrace grosses 106.80 = 17.8% of the coach price. Worst case,
 every coach a Partner: gross 11.8% of coach price, **10.2% after UK Stripe
 fees** (owner's 10.3% confirmed); ~8.7% on US/international cards; a
-Founding coach's goal nets ~4.3% (trainee side only). Add a £1 minimum
-service fee so tiny weekly amounts still cover Stripe's fixed pence.
+Founding coach's goal nets ~4.3% (trainee side only). **Minimum service fee of 1 (offer currency) per weekly charge - DECIDED and
+displayed 2026-09-14** (`MIN_SERVICE_FEE`, `serviceFeeFor(weekly,weeks)`);
+the explainer says "minimum 1/week" when the floor applies. **VAT: assumed
+NOT registered until further notice** - fees shown are final; revisit
+decision 5 if/when FormTrace registers.
 Already in the app: the cadence explainer now tells the trainee
 "Committed total: $635.40 for 6 weeks - $600 for the coaching plus a 5.9%
 service fee" and the coach "The trainee pays $635.40 … You receive
