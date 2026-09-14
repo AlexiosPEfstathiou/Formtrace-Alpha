@@ -33,7 +33,7 @@ BE) are not tasks and are left out.
 | 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
-| 22 | **BX** Coach "Top 1%" badge from trainees' streaks | Medium | Materialised coach_streak_score, rank, animated rare badge; small-population rule to decide; rewards are placeholders. |
+| 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -42,7 +42,7 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
-## BX. Coach "Top 1%" badge: earned from their trainees' streaks
+## BX. Coach "Top 1%" badge: earned from their trainees' streaks - BUILT 2026-09-14 (rewards TBD)
 
 Adopted 2026-09-14 from the BW optional idea. A coach whose trainees keep
 long streaks is doing the job; measure it and reward the very best.
@@ -74,7 +74,25 @@ score, trainees, rank_pct, computed_at) refreshed by a function; the
 badge reads `rank_pct <= 1` (or the small-population rule);
 `loadCoachFacts` gains `top1`. Grants of the reward itself go through
 BW's `rewards` table when that exists.
-Not started; the rewards are placeholders by decision.
+**DECIDED and BUILT 2026-09-14.** Small-population rule: **top 1% with a
+minimum of one holder** (`greatest(1, ceil(n*0.01))`). Animation: a
+"power-up" golden aura - rising flame licks (blurred, jittering
+pseudo-elements), a pulsing outer glow and a slow shimmer across the
+gold; the only animated badge in the app; disabled under
+prefers-reduced-motion. Needs `supabase/migrations_top1.sql` run.
+- `coach_streak_score` (coach_id, score, trainees, rank, of_coaches,
+  top1, top1_last_at, computed_at), public read.
+- `refresh_coach_streak_scores(force)`: sums `week_streak_count` over
+  active trainees per coach, ranks (score desc, trainees desc), flags the
+  top slots; self-throttled to once per 6 hours; called when a coach
+  opens home. Coaches with no active trainee drop out of the ranking.
+- Grace: the badge shows while `top1` OR within 8 days of `top1_last_at`.
+- `loadCoachFacts` carries `streak` + `top1`; `badgeSpans` renders "👑 Top
+  1%" FIRST everywhere; hover "Top 1% of coaches by their trainees'
+  combined week streaks · 312 weeks across 9 trainees · rank 1 of 40".
+- Coach Profile card "Your trainees' streaks": combined weeks, active
+  trainees, rank of N, and either the badge or "held by the top K".
+Rewards for holders remain placeholders (own item later).
 
 ---
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -615,6 +615,17 @@
   .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
   .cbadge.ref{background:rgba(90,176,255,.14);color:#5AB0FF;border:1px solid rgba(90,176,255,.6);}   /* Item BN referral tier */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
+
+  /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
+     flares upward like a power-up: rising flame licks (::before, blurred and
+     jittering), a pulsing outer glow, and a slow shimmer across the gold. */
+  .cbadge.top1{position:relative;isolation:isolate;overflow:visible;background:linear-gradient(120deg,#FFF3B0 0%,#FFD23F 35%,#FFB300 55%,#FFE27A 80%,#FFF3B0 100%);background-size:220% 100%;color:#3a2600;border:1px solid #FFC93A;text-shadow:0 0 6px rgba(255,255,255,.7);animation:top1-shimmer 3.2s linear infinite, top1-pulse 1.4s ease-in-out infinite;}
+  .cbadge.top1::before{content:"";position:absolute;inset:-9px -6px -2px -6px;border-radius:24px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 60% 90% at 50% 100%,rgba(255,210,63,.75),rgba(255,140,0,.35) 45%,transparent 70%);filter:blur(5px);transform-origin:50% 100%;animation:top1-flare .55s ease-in-out infinite alternate;}
+  .cbadge.top1::after{content:"";position:absolute;inset:-14px -4px -4px -4px;border-radius:26px;z-index:-2;pointer-events:none;background:radial-gradient(ellipse 45% 100% at 50% 100%,rgba(255,240,150,.55),transparent 65%);filter:blur(8px);transform-origin:50% 100%;animation:top1-flare .8s ease-in-out infinite alternate-reverse;}
+  @keyframes top1-shimmer{0%{background-position:0% 0;}100%{background-position:220% 0;}}
+  @keyframes top1-pulse{0%,100%{box-shadow:0 0 6px 1px rgba(255,200,60,.45);}50%{box-shadow:0 0 16px 4px rgba(255,180,20,.75);}}
+  @keyframes top1-flare{0%{transform:scaleY(.85) scaleX(.96) translateY(1px);opacity:.75;}100%{transform:scaleY(1.25) scaleX(1.04) translateY(-3px);opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .cbadge.top1, .cbadge.top1::before, .cbadge.top1::after{animation:none;} }
   .cp-exp{font-size:14px;font-weight:700;color:var(--lime-dim);margin-top:4px;}
   .cp-bio{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px;}
   .cp-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
@@ -3464,7 +3475,8 @@ async function renderHome(){
       renderCoachTrainees(coachEl,newsEl),
       renderHomeVacation($("#home-vacation")),
       renderHomeCallProposal($("#home-callproposal")),
-      renderHomeCertStatus($("#home-certstatus"))   // certification approved / rejected
+      renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
+      store._sb.rpc("refresh_coach_streak_scores").catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
     ]);
     $("#home-p").style.display="";
     $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
@@ -5202,14 +5214,17 @@ function renderOfferRow(wrap,o,c,shortName,flash,coachName,goalActive){
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest(".cbadge[title]"); if(b){ e.stopPropagation(); toast(b.getAttribute("title"),4200); } },true);
 async function loadCoachFacts(ids){
   ids=[...new Set((ids||[]).filter(Boolean))]; const out={}; if(!ids.length) return out;
-  const [profs,certs,refs]=await Promise.all([
+  const [profs,certs,scores,refs]=await Promise.all([
     store._sb.from("profiles").select("id,role,verified_at,pro_status,pro_employer,founding_at").in("id",ids).then(r=>r.data||[]).catch(()=>[]),
     store._sb.from("coach_certifications").select("coach_id,title,issuer,cert_date").eq("status","approved").in("coach_id",ids).then(r=>r.data||[]).catch(()=>[]),
+    store._sb.from("coach_streak_score").select("coach_id,score,trainees,rank,of_coaches,top1,top1_last_at").in("coach_id",ids).then(r=>r.data||[]).catch(()=>[]),
     Promise.all(ids.map(id=>store._sb.rpc("referral_stats",{p_user:id}).then(r=>[id,r.data]).catch(()=>[id,null])))
   ]);
   for(const id of ids) out[id]={verified_at:null,pro_status:"none",pro_employer:null,founding_at:null,certs:[],referral:null,role:null};
   for(const p of profs){ Object.assign(out[p.id],{role:p.role,verified_at:p.verified_at,pro_status:p.pro_status||"none",pro_employer:p.pro_employer,founding_at:p.founding_at}); }
   for(const c of certs){ if(out[c.coach_id]) out[c.coach_id].certs.push(c); }
+  // Item BX: Top 1% - live flag, or within a one-week grace of last holding it
+  for(const s of scores){ if(out[s.coach_id]){ out[s.coach_id].streak=s; out[s.coach_id].top1 = !!(s.top1 || (s.top1_last_at && (Date.now()-new Date(s.top1_last_at).getTime()) < 8*86400000)); } }
   for(const [id,r] of refs){ if(r&&r.tier&&out[id]) out[id].referral=r; }
   return out;
 }
@@ -5220,6 +5235,7 @@ function badgeTitle(kind,f){
     case "professional": return f.pro_employer?`Works at ${f.pro_employer}`:"Professional coach - coaching is their profession.";
     case "certified":    { const c=(f.certs||[]).map(x=>`${x.title}${x.cert_date?` (${fmtDay(String(x.cert_date).slice(0,10))})`:""}`).join(" · "); return `Certified Professional${c?` - ${c}`:""}, checked by FormTrace.`; }
     case "founding":     return "Founding coach - this coach has been part of FormTrace's development.";
+    case "top1":         { const s=f.streak||{}; return `Top 1% of coaches by their trainees' combined week streaks · ${s.score||0} weeks across ${s.trainees||0} trainee${(s.trainees||0)===1?"":"s"}${s.rank?` · rank ${s.rank} of ${s.of_coaches}`:""}.`; }
     case "referral":     { const r=f.referral||{}; return `${r.title||"Referral tier"} · ${r.qualified||0} referred trainee${(r.qualified||0)===1?"":"s"} completed a goal.`; }
   }
   return "";
@@ -5227,6 +5243,7 @@ function badgeTitle(kind,f){
 /* Badge spans for a coach. long=true uses the full labels (public profile). */
 function badgeSpans(f,long){
   f=f||{}; const b=[];
+  if(f.top1) b.push(`<span class="cbadge top1" title="${escapeHtml(badgeTitle("top1",f))}">👑 Top 1%</span>`);   // Item BX - first, always
   if(f.role==="coach"||f.verified) b.push(`<span class="cbadge v" title="${escapeHtml(badgeTitle("verified",f))}">✓ Verified</span>`);
   if(f.pro_status==="professional") b.push(`<span class="cbadge pro" title="${escapeHtml(badgeTitle("professional",f))}">★ Professional</span>`);
   if(f.pro_status==="certified") b.push(`<span class="cbadge cert" title="${escapeHtml(badgeTitle("certified",f))}">🎓 ${long?"Certified Professional":"Certified"}</span>`);
@@ -9960,6 +9977,14 @@ function referralTierBadge(stats){
   const ic=stats.tier>=3?"🏆":stats.tier>=2?"🌟":"🔗";
   return `<span class="cbadge ref" title="${escapeHtml(badgeTitle("referral",{referral:stats}))}">${ic} ${escapeHtml(stats.title)}</span>`;
 }
+async function wireTop1Card(){
+  const el=$("#top1-stats"); if(!el||!ME) return;
+  try{
+    const f=(await loadCoachFacts([ME.id]))[ME.id]||{}; const s=f.streak;
+    if(!s||s.rank==null){ el.innerHTML=`Your ranking appears once you have an active trainee. The <b style="color:var(--ink)">👑 Top 1%</b> badge goes to the top 1% of coaches by their trainees' combined week streaks - at least one coach always holds it.`; return; }
+    el.innerHTML=`<b style="color:var(--ink)">${s.score}</b> combined streak week${s.score===1?"":"s"} across <b style="color:var(--ink)">${s.trainees}</b> active trainee${s.trainees===1?"":"s"} · rank <b style="color:var(--ink)">${s.rank}</b> of ${s.of_coaches}${f.top1?` · <span class="cbadge top1" title="${escapeHtml(badgeTitle("top1",f))}">👑 Top 1%</span>`:` · <span style="color:var(--faint)">Top 1% is held by the top ${Math.max(1,Math.ceil((s.of_coaches||0)*0.01))} coach${Math.max(1,Math.ceil((s.of_coaches||0)*0.01))===1?"":"es"}</span>`}`;
+  }catch(e){ console.error("top1 (run migrations_top1.sql)",e); el.textContent="Ranking isn't available yet."; }
+}
 async function wireCertCard(){
   const card=$("#cert-card"); if(!card||!ME) return;
   const list=$("#cert-list");
@@ -10108,6 +10133,11 @@ async function renderProfile(){
 
   }
 
+  /* Item BX: the coach's standing on the trainees'-streaks ranking. */
+  if(roleOf()==="coach"){
+    html+=`<div class="section-h"><div class="eyebrow">Your trainees' streaks</div></div>
+    <div class="card" style="margin:0 0 12px" id="top1-card"><div id="top1-stats" style="font-size:12.5px;color:var(--muted);line-height:1.5">Loading…</div></div>`;
+  }
   /* Certifications (BH badge system): the coach attaches one here; an admin
      approves it, which grants the Certified badge and shows the summary. */
   if(roleOf()==="coach"){
@@ -10169,6 +10199,7 @@ async function renderProfile(){
   body.innerHTML=html;
   wireReferralCard();   // Item BN: copy/share + live counts for the referral card
   wireCertCard();       // certifications (BH badge system)
+  wireTop1Card();       // Item BX standing
   $("#pf-save").addEventListener("click",async()=>{
     try{ ME=await store.auth.updateProfile({display_name:$("#pf-name").value.trim(),city:$("#pf-city").value.trim(),bio:$("#pf-bio").value.trim()}); toast("Profile saved ✓"); }
     catch(err){console.error(err);toast("Couldn't save profile",4000);}
