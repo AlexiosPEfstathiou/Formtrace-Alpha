@@ -17,7 +17,7 @@ BE) are not tasks and are left out.
 | 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
 | 4 | **BN** Referral links - part 1 (link, count, tier badge) | Medium-easy (decision) | Sign-up plumbing + a fourth badge family. Decision first: what counts as a referral (sign-up vs first accepted offer). Part 2 (discounts, referred-coach commission) waits for BI. |
 | 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
-| 6 | **AT step 5** Week-model cutover cleanup | Medium, careful | Delete day-model paths and retire old RPCs; move share-story to weeks. Low complexity, real risk: testers on live data - do after the alpha's calendar reports go quiet. |
+| 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
 | 7 | **BC** Video trim on submit | Medium (offsets) / Hard (recut) | Offset-based trim is contained (players + graded frames honour in/out); a true recut needs a mux library the Artifactory block prevents. Decision first. |
 | 8 | **AA** Voice-over: no sound in preview | Medium-hard, blocked | Device-dependent; needs a reproduction on a real phone. |
 | 9 | **AH** Pose overlay sometimes missing | Medium-hard, blocked | Cause unknown; needs the conditions it happens under. |
@@ -1157,6 +1157,27 @@ trainee-side bug found while diagnosing it. Needs
   memory and fetches light rows only when opened from the homepage.
 Known, deferred to step 5: `shareStreakStory` still draws from the day
 list; `computeStreak`/`streakDates` remain for the non-flag path.
+
+**Step 5 DONE 2026-09-14 - deliberately measured.** The week model has
+been the only live model since step 4 (`WEEK_MODEL=true`). What step 5
+finished:
+- Share image is unit-aware: "3 weeks in a row" / "12 training days in a
+  row", and "3-week milestone" - it had been printing weeks as "days".
+- Milestones (`renderHomeMilestone`) read completed weeks x 7 as a
+  day-equivalent, so the existing tiers/labels stay honest and
+  `milestone_ack` keeps its meaning. They had been reading the badge's
+  mixed-unit count (a 7-week streak would have celebrated "7 days").
+What step 5 did NOT do, on purpose: excise the day-model code paths and
+drop the day RPCs (`refresh_my_streak`, `reschedule_for_streak`, the
+postpone functions). They are dead behind the constant and harmless;
+deleting a few hundred lines across ~30 conditionals while two testers
+are on live data buys nothing users can see and risks a regression of
+the kind AV was. Scheduled as its own cleanup item once the alpha's
+calendar reports go quiet. Postponement tables stay for the same reason.
+
+Superseded by AT, for the record: item W (three day states - the states
+no longer exist), the day-streak items (streak_redefine/reschedule/
+localdate), postponement items (request/decide/cancel/ack), rest days.
 
 - **"Only one slot" - REAL CAUSE, and it was never a limit.** The screenshot
   showed a single "Session 1 + Assign" and no planned count: that is what

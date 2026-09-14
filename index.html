@@ -2153,7 +2153,8 @@ async function openStreakBurst(milestone){
   if(WEEK_MODEL){
     const s=await weekStreakSquares();
     if(!s.W && !s.doneDays){ toast("Finish this week's sessions to start your streak",2800); return; }
-    sbState={count:s.W, milestone:(typeof milestone==="number"?milestone:0)};
+    // unit-aware so the share image can say "weeks", or "training days" for a young streak
+    sbState={count:(s.unit==="day"?s.doneDays:s.W), unit:(s.unit==="day"?"day":"week"), weeks:s.W, milestone:(typeof milestone==="number"?milestone:0)};
     $("#sb-title").textContent = sbState.milestone ? "Milestone achieved!" : (s.W? "You're on fire!" : "Streak in the making");
     $("#sb-cal").innerHTML=s.squares.map((q,i)=>`<div class="sb-day${q.current?" sb-cur":""}${q.wide?" sb-wide":""}" style="animation-delay:${i*70}ms"><span class="sb-dow">${escapeHtml(q.sub)}</span><span class="sb-n">${escapeHtml(q.label)}</span>${q.done?`<span class="sb-flame" style="animation-delay:${i*70+220}ms">🔥</span>`:""}</div>`).join("");
     const unitTxt = s.unit==="day" ? `${s.doneDays} training day${s.doneDays===1?"":"s"}` : s.unit==="week" ? "one square per week" : "one square per month";
@@ -2213,7 +2214,11 @@ let milestoneShowing=false;
 async function renderHomeMilestone(el){
   el.style.display="none"; el.innerHTML=""; milestoneShowing=false;
   if(!ME||roleOf()==="coach")return;
-  const n=(streakInfo&&streakInfo.count)||ME.streak_count||0;
+  /* Under the week model the badge count is mixed-unit (days when young, weeks
+     after). Milestones use completed weeks x 7 as a day-equivalent, so the
+     existing tiers and month labels stay honest and milestone_ack keeps its
+     meaning ("1 month" fires at 5 completed weeks). */
+  const n = WEEK_MODEL ? ((ME.week_streak_count||0)*7) : ((streakInfo&&streakInfo.count)||ME.streak_count||0);
   const m=milestoneFor(n);
   const ack=ME.milestone_ack||0;
   if(m<ack){
@@ -2409,13 +2414,14 @@ function drawStreakStory(){
   x.fillText(String(sbState.count),W/2,H*0.34+250);
   x.fillStyle="rgba(255,255,255,.75)";
   x.font="600 46px system-ui, sans-serif";
-  x.fillText(sbState.count===1?"day streak":"days in a row",W/2,H*0.34+330);
+  const unitWord = sbState.unit==="week" ? (sbState.count===1?"week streak":"weeks in a row") : (sbState.unit==="day"&&WEEK_MODEL ? (sbState.count===1?"training day":"training days in a row") : (sbState.count===1?"day streak":"days in a row"));
+  x.fillText(unitWord,W/2,H*0.34+330);
   // headline, wrapped by hand
   const who=publicName((ME&&ME.display_name)||"Someone",(ME&&ME.name_style)||"first");
   // "a 7-day milestone", not "a 7 days milestone"
   const what=sbState.milestone
     ? (sbState.milestone<30 ? sbState.milestone+"-day" : milestoneLabel(sbState.milestone))
-    : sbState.count+"-day";
+    : (sbState.unit==="week" ? sbState.count+"-week" : sbState.count+"-day");
   const lines=[`${who} just hit a`,`${what} milestone`,`on FormTrace`];
   x.fillStyle="#fff";
   x.font="700 64px system-ui, sans-serif";
