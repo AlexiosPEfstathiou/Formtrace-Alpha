@@ -34,11 +34,25 @@ BE) are not tasks and are left out.
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
+| 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BY. Rewards for Top 1% badge holders
+
+Placeholder opened 2026-09-14 (from BX, by decision). What a coach gets
+for holding the 👑 Top 1% badge, beyond the badge itself. Candidates to
+brainstorm, none promised in-app: [commission benefit - e.g. Partner rate
+while held, via `fee_overrides`], [merch drop], [featured placement at the
+top of Find a coach], [early access to new features], [a yearly "Top 1%"
+share image / certificate]. Fulfilment goes through BW's `rewards` table
+when it exists. Since the badge can be gained and lost, any reward that
+costs money should be granted per holding period, not once. Not started.
 
 ---
 
@@ -816,6 +830,18 @@ service fee" and the coach "The trainee pays $635.40 … You receive
 $528.60 after FormTrace's 11.9% commission"; the offer card's Price line
 includes the fee. Constants `TRAINEE_FEE_PCT`, `COACH_COMMISSION_PCT`,
 `coachCommissionPct(facts)` - display only until BI moves money.
+**Groundwork built 2026-09-14 - rates as server truth (no Stripe needed):**
+`supabase/migrations_platform_rates.sql`. `platform_rates` (trainee fee
+5.9%, min 1.00/week, coach commission 11.9%, Ambassador 8.9%, Partner
+5.9%, Founding 0%) - one row per rate, editable in SQL without a deploy.
+`fee_overrides` for an explicit per-coach rate (`admin_set_fee_override`).
+`effective_rates(coach)` is THE decision point: override > Founding >
+Partner > Ambassador > default, returning the pct and its source. The app
+loads the defaults at sign-in and a coach's own effective rate; the pitch
+preview now says "You receive $528.60 after your Partner rate of 5.9%"
+(or Founding / agreed / default) instead of assuming 11.9%. BM's design
+note ("give the rate table a per-user override from day one") is thereby
+done. The payment integration reads this table; nothing else changes.
 Housekeeping note: commit dd71fc3 shows an ~11k-line diff on index.html.
 That is a one-time line-ending normalisation (the stored blob was CRLF;
 core.autocrlf=true now stores LF, working copy stays CRLF), not content;

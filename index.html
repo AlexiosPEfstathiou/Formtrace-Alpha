@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -2889,7 +2889,15 @@ function drawFigure(ctx,lm,W,H){
    4. Analysis — rep counting + DTW form grading (validated offline)
    ========================================================================= */
 /* Pricing (BI decision 2, 2026-09-14): the trainee pays the coach's price plus a service fee that covers card processing; the coach receives their price minus a commission. Founders 0%, Ambassador 8.9%, Partner 5.9% - applied per coach once BI exists (`coachCommissionPct` is the default until then). */
-const TRAINEE_FEE_PCT=5.9, COACH_COMMISSION_PCT=11.9, MIN_SERVICE_FEE=1;   // minimum 1 (in the offer currency) per weekly charge, so tiny amounts still cover card processing; no VAT assumed until registered
+let TRAINEE_FEE_PCT=5.9, COACH_COMMISSION_PCT=11.9, MIN_SERVICE_FEE=1;   // defaults; refreshed from platform_rates at sign-in (BI groundwork). No VAT assumed until registered.
+let MY_RATES=null;   // effective_rates(ME.id) for a coach: {coach_commission_pct, commission_source}
+async function loadPlatformRates(){
+  try{
+    const { data }=await store._sb.from("platform_rates").select("key,value");
+    for(const r of (data||[])){ const v=Number(r.value); if(r.key==="trainee_fee_pct"&&isFinite(v)) TRAINEE_FEE_PCT=v; if(r.key==="coach_commission_pct"&&isFinite(v)) COACH_COMMISSION_PCT=v; if(r.key==="trainee_fee_min"&&isFinite(v)) MIN_SERVICE_FEE=v; }
+    if(ME&&ME.role==="coach"){ const { data:er }=await store._sb.rpc("effective_rates",{p_coach:ME.id}); if(er) MY_RATES=er; }
+  }catch(e){ /* migration not run yet - defaults stand */ }
+}
 function serviceFeeFor(weeklyPrice,weeks){ return Math.max(weeklyPrice*TRAINEE_FEE_PCT/100, MIN_SERVICE_FEE)*weeks; }
 function coachCommissionPct(facts){ if(facts&&facts.founding_at) return 0; const t=facts&&facts.referral&&facts.referral.tier; if(t>=3) return 5.9; if(t>=2) return 8.9; return COACH_COMMISSION_PCT; }
 const DEG=180/Math.PI;
@@ -3293,6 +3301,7 @@ async function bootSignedIn(){
   ME=await store.auth.myProfile();
   if(!ME){ toast("Couldn't load your profile",4000); return; }
   claimPendingReferral();   // Item BN - fire and forget
+  loadPlatformRates();      // BI groundwork - server truth for fees; defaults until it returns
   $("#app-loading").style.display="none";
   // One-off age + consent gate. Covers new signups and anyone who joined
   // before consent was recorded — the app is unreachable until both are in.
@@ -5564,9 +5573,11 @@ function cadenceExplainer({sessions,price,cur,noshow,perspective,weeks}){
      charged (item B), so this is the most the goal can cost, known up front. */
   if(weeks>0){
     const total=price*weeks;
-    const fee=serviceFeeFor(price,weeks), payTotal=total+fee, coachNet=total*(1-COACH_COMMISSION_PCT/100), feeIsMin=fee>total*TRAINEE_FEE_PCT/100+0.001;
+    const myPct=(perspective==="coach"&&MY_RATES&&isFinite(Number(MY_RATES.coach_commission_pct)))?Number(MY_RATES.coach_commission_pct):COACH_COMMISSION_PCT;
+    const src=(perspective==="coach"&&MY_RATES)?MY_RATES.commission_source:"default";
+    const fee=serviceFeeFor(price,weeks), payTotal=total+fee, coachNet=total*(1-myPct/100), feeIsMin=fee>total*TRAINEE_FEE_PCT/100+0.001;
     const m=v=>cur+(Math.round(v*100)/100).toLocaleString(undefined,{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2});
-    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)">${perspective==="coach"?`<b style="color:var(--ink)">The trainee pays ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} (${m(total)} + ${feeIsMin?`a minimum ${m(MIN_SERVICE_FEE)}/week`:`${TRAINEE_FEE_PCT}%`} service fee). <b style="color:var(--ink)">You receive ${m(coachNet)}</b> after FormTrace's ${COACH_COMMISSION_PCT}% commission - less if you hold a Founding or referral tier.</span>`:`<b style="color:var(--ink)">Committed total: ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} - ${m(total)} for the coaching plus a ${feeIsMin?`${m(MIN_SERVICE_FEE)}/week minimum`:`${TRAINEE_FEE_PCT}%`} service fee. That's the ceiling: you pay only for sessions actually reviewed.</span>`}</div>`);
+    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)">${perspective==="coach"?`<b style="color:var(--ink)">The trainee pays ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} (${m(total)} + ${feeIsMin?`a minimum ${m(MIN_SERVICE_FEE)}/week`:`${TRAINEE_FEE_PCT}%`} service fee). <b style="color:var(--ink)">You receive ${m(coachNet)}</b> after ${src==="founding"?`your Founding coach rate of ${myPct}%`:src==="partner"?`your Partner rate of ${myPct}%`:src==="ambassador"?`your Ambassador rate of ${myPct}%`:src==="override"?`your agreed rate of ${myPct}%`:`FormTrace's ${myPct}% commission - less if you reach a referral tier`}.</span>`:`<b style="color:var(--ink)">Committed total: ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} - ${m(total)} for the coaching plus a ${feeIsMin?`${m(MIN_SERVICE_FEE)}/week minimum`:`${TRAINEE_FEE_PCT}%`} service fee. That's the ceiling: you pay only for sessions actually reviewed.</span>`}</div>`);
   }
   return lines.join("");
 }
