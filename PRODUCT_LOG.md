@@ -4,6 +4,47 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BN. Coach referral links: counts, titles, partner benefits, and a commission on referred coaches
+
+Requested:
+- Every coach gets a referral link. A new trainee who signs up through it
+  raises that coach's referral count.
+- Referral counts unlock titles and partner benefits - e.g. commission
+  discounts.
+- If a referred trainee later becomes a coach, the referrer earns a small
+  commission on the new coach's earnings.
+
+**Where it plugs in (checked, not assumed):**
+- Sign-up is Supabase Auth with a `profiles` row created on first login.
+  A referral link is `?ref=<coach code>` on the app URL; the code has to
+  survive the auth redirect (stash in localStorage before sign-in, read
+  after `myProfile()` on first boot) and be written ONCE to
+  `profiles.referred_by` - never overwritten, never self-referrable.
+- Titles = item A's badge system (Verified / Professional / Certified are
+  driven by `pro_status`); a referral tier is a fourth badge family
+  derived from a count, shown on the public coach profile and in the
+  Open goals cards' coach line.
+- Commission discounts and the referred-coach commission are BI's
+  territory: the platform's fee on that coach's payouts is reduced by
+  tier, and a slice of the platform's fee on a referred coach's payouts is
+  redirected to the referrer. Both are adjustments to BI's fee
+  calculation, not separate money flows - the platform never pays the
+  referrer out of its own pocket; it shares the fee it was taking anyway.
+
+**Decisions this needs before building:**
+1. What counts as a referral - sign-up, or first accepted offer? (Sign-up
+   is gameable; first accepted offer is the honest one.)
+2. The tiers: counts -> titles -> discount percentages.
+3. The referred-coach commission rate and duration (forever is a real
+   liability; the usual shape is N months or until a cap).
+4. Whether trainees can refer too (the request says coaches only).
+
+**Ordering:** the count + link + badge can be built before BI exists.
+The discounts and the referred-coach commission cannot - they are line
+items in a fee calculation that doesn't exist yet. Not started.
+
+---
+
 ## BM. Brainstorm incentives for the first coach and first trainee to sign up
 
 Requested. A thinking item, not a build item - logged so it is not lost.
