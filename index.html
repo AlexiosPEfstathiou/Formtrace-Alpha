@@ -2808,26 +2808,110 @@ function countReps(frames){
   return {reps:Math.round(cr/2),dominant:best.name};
 }
 function subsample(f,cap=140){if(f.length<=cap)return f;const out=[],step=f.length/cap;for(let i=0;i<cap;i++)out.push(f[Math.floor(i*step)]);return out;}
-function vecDist(a,b){let s=0;for(let i=0;i<a.length;i++)s+=Math.abs(a[i]-b[i]);return s/a.length;}
-function dtwCost(A,B){const a=A.map(angleVec),b=B.map(angleVec),n=a.length,m=b.length,INF=1e12;
+/* ---- Item BO: form comparison against the coach's reference -----------------
+   Method adapted from jeremyipark/vision-demos (dance_sync), Apache-2.0 -
+   ideas, not code. What changed versus the old DTW-on-joint-angles:
+   1. A torso-normalised frame (origin mid-hip, "up" toward mid-shoulder) and
+      the DIRECTION of 9 body segments in it, plus the neck and the torso's own
+      lean against vertical - the old vector had no spine angle at all, and
+      back position is the primary cue in a squat, deadlift or hinge.
+   2. Per-part tolerance and weighting: a forearm 10° off is nothing, a torso
+      4° off is a different lift. Core > thighs > shins > arms.
+   3. The 8 joint angles stay in the vector (rep counting still uses angleVec).
+   4. Mirror-robust: graded both as-is and horizontally mirrored, best wins, so
+      facing the other way from the coach never counts against the trainee.
+   5. Per-part deviations along the DTW path, so the result can SAY what
+      differed ("torso 11° more forward"), and a turnaround score - the shape at
+      the bottom/top of each rep, where depth and lockout are actually judged.
+   Anchors are FIXED (not clip-relative as in dance_sync): we have a ground
+   truth, the coach's reference, so a score must mean the same across sessions.
+   This is an ASSIST shown to trainee and coach; the coach's tags stay the grade. */
+const FORM_PARTS=[
+  // 8 joint angles (same order as JOINTS): elbows, shoulders, hips, knees
+  {n:"left elbow",w:.75,t:8},{n:"right elbow",w:.75,t:8},{n:"left shoulder",w:.75,t:8},{n:"right shoulder",w:.75,t:8},
+  {n:"left hip",w:1.5,t:5},{n:"right hip",w:1.5,t:5},{n:"left knee",w:1.25,t:5},{n:"right knee",w:1.25,t:5},
+  // segment directions in the torso frame
+  {n:"left thigh",w:1.5,t:5},{n:"right thigh",w:1.5,t:5},{n:"left shin",w:1,t:6},{n:"right shin",w:1,t:6},
+  {n:"left upper arm",w:.75,t:8},{n:"right upper arm",w:.75,t:8},{n:"left forearm",w:.5,t:10},{n:"right forearm",w:.5,t:10},
+  {n:"shoulder line",w:1,t:5},{n:"neck",w:1,t:8},
+  {n:"torso lean",w:2,t:4}
+];
+const FORM_SEGS=[[23,25],[24,26],[25,27],[26,28],[11,13],[12,14],[13,15],[14,16],[11,12]];
+const FORM_WSUM=FORM_PARTS.reduce((s,p)=>s+p.w,0);
+const wrap180=a=>{a=((a+180)%360+360)%360-180;return a;};
+function formVec(f){
+  const mh={x:(f[23].x+f[24].x)/2,y:(f[23].y+f[24].y)/2}, ms={x:(f[11].x+f[12].x)/2,y:(f[11].y+f[12].y)/2};
+  const up=Math.atan2(ms.y-mh.y,ms.x-mh.x)*DEG;                       // torso axis in image space
+  const dir=(a,b)=>wrap180(Math.atan2(f[b].y-f[a].y,f[b].x-f[a].x)*DEG-up);
+  const v=angleVec(f);
+  for(const [a,b] of FORM_SEGS) v.push(dir(a,b));
+  v.push(wrap180(Math.atan2(f[0].y-ms.y,f[0].x-ms.x)*DEG-up));          // neck: mid-shoulder -> nose
+  v.push(wrap180(up-(-90)));                                          // torso lean vs image vertical (y is down)
+  return v;
+}
+function formDist(a,b){ let s=0; for(let i=0;i<FORM_PARTS.length;i++){ const d=Math.abs(wrap180(a[i]-b[i])); s+=FORM_PARTS[i].w*Math.max(0,d-FORM_PARTS[i].t); } return s/FORM_WSUM; }
+function mirrorFrame(f){
+  const g=f.map(p=>({...p,x:1-p.x}));
+  for(const [l,r] of [[11,12],[13,14],[15,16],[23,24],[25,26],[27,28],[1,4],[2,5],[3,6],[7,8],[9,10],[17,18],[19,20],[21,22],[29,30],[31,32]]){ if(g[l]&&g[r]){ const t=g[l]; g[l]=g[r]; g[r]=t; } }
+  return g;
+}
+/* DTW over form vectors; returns the mean path cost AND the aligned pairs. */
+function dtwAlign(a,b){
+  const n=a.length,m=b.length,INF=1e12;
   const D=Array.from({length:n+1},()=>new Float64Array(m+1).fill(INF));D[0][0]=0;
-  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){const c=vecDist(a[i-1],b[j-1]);D[i][j]=c+Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);}
-  let i=n,j=m,len=0;while(i>0&&j>0){len++;const m3=Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);if(m3===D[i-1][j-1]){i--;j--;}else if(m3===D[i-1][j]){i--;}else{j--;}}
-  return D[n][m]/Math.max(1,len);
+  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){const c=formDist(a[i-1],b[j-1]);D[i][j]=c+Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);}
+  const path=[];let i=n,j=m;while(i>0&&j>0){path.push([i-1,j-1]);const m3=Math.min(D[i-1][j],D[i][j-1],D[i-1][j-1]);if(m3===D[i-1][j-1]){i--;j--;}else if(m3===D[i-1][j]){i--;}else{j--;}}
+  return {cost:D[n][m]/Math.max(1,path.length),path};
+}
+/* Rep turnarounds: the extreme frame of each low/high run of the dominant rep
+   signal - the bottom of a squat, the top of a press. */
+function turnaroundFrames(frames){
+  if(frames.length<6) return [];
+  const av=frames.map(angleVec),cand=[];
+  for(let p=0;p<4;p++)cand.push(av.map(a=>(a[p*2]+a[p*2+1])/2));
+  cand.push(frames.map(f=>((f[11].y+f[12].y+f[23].y+f[24].y)/4)*180));
+  let best=cand[0],bestR=rng(smooth(cand[0]));for(const c of cand){const r=rng(smooth(c));if(r>bestR){bestR=r;best=c;}}
+  const n=norm01(smooth(best)); const out=[]; let st=null,run=[];
+  const flush=()=>{ if(!run.length) return; const ext=(st==="lo")?run.reduce((m,i)=>n[i]<n[m]?i:m,run[0]):run.reduce((m,i)=>n[i]>n[m]?i:m,run[0]); out.push(ext); run=[]; };
+  for(let i=0;i<n.length;i++){ const s=n[i]>.6?"hi":n[i]<.4?"lo":null; if(s&&s!==st){ flush(); st=s; } if(s===st&&s) run.push(i); }
+  flush(); return out;
 }
 function gradeForm(trainee,coach){
   const t=subsample(trainee),c=subsample(coach);
-  const shapeDeg=dtwCost(t,c);
-  const tv=t.map(angleVec),cv=c.map(angleVec);
+  const cv=c.map(formVec);
+  const asIs=dtwAlign(t.map(formVec),cv), mir=dtwAlign(t.map(f=>formVec(mirrorFrame(f))),cv);
+  const best=mir.cost<asIs.cost?mir:asIs, tv=(best===mir)?t.map(f=>formVec(mirrorFrame(f))):t.map(formVec);
+  const shapeDeg=best.cost;
+  // per-part signed mean difference along the alignment (trainee - coach), tolerance applied
+  const acc=FORM_PARTS.map(()=>({sum:0,abs:0,n:0}));
+  for(const [i,j] of best.path){ for(let k=0;k<FORM_PARTS.length;k++){ const d=wrap180(tv[i][k]-cv[j][k]); acc[k].sum+=d; acc[k].abs+=Math.abs(d); acc[k].n++; } }
+  const deviations=FORM_PARTS.map((p,k)=>({part:p.n,mean:acc[k].n?acc[k].sum/acc[k].n:0,abs:acc[k].n?acc[k].abs/acc[k].n:0,w:p.w,t:p.t}))
+    .map(d=>({...d,over:Math.max(0,d.abs-d.t)*d.w})).filter(d=>d.over>0).sort((a,b)=>b.over-a.over).slice(0,3)
+    .map(d=>({part:d.part,deg:Math.round(d.mean)}));
+  // range of motion difference (weighted, over the form vector)
   const jr=vs=>vs[0].map((_,j)=>{let mn=Infinity,mx=-Infinity;for(const v of vs){if(v[j]<mn)mn=v[j];if(v[j]>mx)mx=v[j];}return mx-mn;});
-  const tr=jr(tv),cr=jr(cv);let romDiff=0;for(let j=0;j<tr.length;j++)romDiff+=Math.abs(tr[j]-cr[j]);romDiff/=tr.length;
-  const err=shapeDeg*0.7+romDiff*0.6;
-  let g=10-(err-5)/((45-5)/9);g=Math.max(1,Math.min(10,Math.round(g)));
-  const shapeScore=Math.max(0,Math.min(100,Math.round(100-(shapeDeg-3)/0.5)));
-  const romScore=Math.max(0,Math.min(100,Math.round(100-romDiff*3)));
-  return {grade:g,shape:shapeScore,rom:romScore,shapeDeg:+shapeDeg.toFixed(1),romDiff:+romDiff.toFixed(1)};
+  const tr=jr(tv),cr=jr(cv);let romDiff=0;for(let j=0;j<tr.length;j++)romDiff+=FORM_PARTS[j].w*Math.abs(tr[j]-cr[j]);romDiff/=FORM_WSUM;
+  // turnaround (bottom/top) shape: each trainee turnaround vs its nearest coach turnaround
+  const tt=turnaroundFrames(t), ct=turnaroundFrames(c); let turn=null;
+  if(tt.length&&ct.length){ let s=0; for(const i of tt){ let m=Infinity; for(const j of ct){ const d=formDist(tv[i],cv[j]); if(d<m)m=d; } s+=m; } turn=s/tt.length; }
+  const pct=(deg,zeroAt)=>Math.max(0,Math.min(100,Math.round(100-(deg/zeroAt)*100)));
+  const match=pct(shapeDeg,25), rom=pct(romDiff,40), turnScore=turn==null?null:pct(turn,25);
+  const overall=turnScore==null?match:Math.round(match*0.6+turnScore*0.4);
+  return {match:overall, shape:match, turn:turnScore, rom, shapeDeg:+shapeDeg.toFixed(1), romDiff:+romDiff.toFixed(1), mirrored:best===mir, deviations};
 }
-function tempoScore(traineeFrames,traineeReps,coachFrames,coachReps){
+/* Human line for a deviation: "torso lean 11° more forward" etc. Signs are in
+   the torso frame, so words are chosen per part rather than assumed. */
+function describeDeviation(d){
+  const a=Math.abs(d.deg); if(a<1) return null;
+  if(d.part==="torso lean") return `torso ${a}° more ${d.deg>0?"forward":"upright"}`;
+  if(/hip|knee|elbow|shoulder$/.test(d.part)) return `${d.part} ${a}° ${d.deg>0?"more open":"more bent"}`;
+  return `${d.part} off by ${a}°`;
+}
+function formSummaryLine(form){
+  if(!form) return "";
+  const bits=(form.deviations||[]).map(describeDeviation).filter(Boolean);
+  return `Form match ${form.match}%${form.turn!=null?` · at the turnaround ${form.turn}%`:""}${bits.length?` · ${bits.join(", ")}`:""}`;
+}function tempoScore(traineeFrames,traineeReps,coachFrames,coachReps){
   if(!traineeReps||!coachReps)return 70;
   const tpr=traineeFrames.length/traineeReps, cpr=coachFrames.length/coachReps;
   const ratio=tpr/cpr, dev=Math.abs(Math.log(ratio));
@@ -8086,11 +8170,16 @@ $("#iv-close").addEventListener("click",async()=>{
 async function runAnalysis(itemIndex,setIndex,capture){
   const it=currentAssigned.snapshot.items[itemIndex];
   const A=$("#analyze");A.classList.add("on");const ring=$("#an-ring");
-  // Form is graded by the COACH on review, not here. This pass only counts reps.
+  // Form is graded by the COACH on review. This pass counts reps and, when a reference exists, computes the form comparison as an assist (item BO).
   const steps=[["Counting repetitions","Tracking the dominant joint"],["Checking the count","Smoothing the motion signal"]];
   const setStep=i=>{$("#an-msg").textContent=steps[i][0];$("#an-sub").textContent=steps[i][1];ring.style.strokeDashoffset=264-(264*(i+1)/steps.length);};
   setStep(0);await wait(600);setStep(1);await wait(500);
   const rc=countReps(capture.frames);
+  /* Item BO: compare against the coach's reference as an ASSIST (the coach's
+     tags remain the grade). Only when a reference with frames exists. */
+  let form=null;
+  try{ const ref=it.landmarks&&it.landmarks.frames; if(ref&&ref.length>=6&&capture.frames.length>=6){ $("#an-msg").textContent="Comparing to your coach's form"; $("#an-sub").textContent="Torso, hips, knees and arms"; await wait(150); form=gradeForm(capture.frames,ref); } }
+  catch(e){ console.error("form comparison",e); form=null; }
   // upload the trainee's set video so the coach can watch it on review
   let video_path=null;
   if(capture.blob){
@@ -8098,7 +8187,7 @@ async function runAnalysis(itemIndex,setIndex,capture){
     try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); }
     catch(e){ console.error("set video upload failed",e); toast("Video didn't upload — set still saved",3600); }
   }
-  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path};
+  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path,form};
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
   saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
@@ -8134,6 +8223,9 @@ function showResult(exName,it,setIndex,r,itemIndex){
   $("#res-eyebrow").textContent="Set complete";
   $("#res-reps").textContent=r.reps;
   $("#res-target").textContent=`reps counted · target ${it.reps}`;
+  /* Item BO: form assist for the trainee, right after the set. */
+  { let fl=$("#res-form"); if(!fl){ fl=document.createElement("div"); fl.id="res-form"; fl.style.cssText="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5"; $("#res-target").insertAdjacentElement("afterend",fl); }
+    fl.textContent = r.form ? formSummaryLine(r.form) : ""; fl.style.display=r.form?"":"none"; }
   // comparison against the same set last time round
   const cmpEl=$("#res-cmp");
   if(cmpEl){
@@ -8521,7 +8613,7 @@ async function openReview(assignedId,readonly=false){
       const badgeHtml = shownTags.length
         ? `<div class="grade-badge tags">${shownTags.map(t=>`<span class="ftag-chip">${escapeHtml(t)}</span>`).join("")}</div>`
         : `<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"tag below"}</span></div>`;
-      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>
+      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${r.form?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
         <div style="font-size:12px;color:var(--muted);margin-bottom:${wLine?"6px":"10px"}">${shownReps} reps · target ${item.reps}${repNote}</div>${wLine}`;
       // trainee's submitted video for this set
       if(r.video_path){

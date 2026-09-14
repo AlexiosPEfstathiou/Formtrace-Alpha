@@ -4,7 +4,7 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
-## BO. Assess github.com/jeremyipark/vision-demos for FormTrace's camera - ASSESSED 2026-09-14
+## BO. Assess github.com/jeremyipark/vision-demos for FormTrace's camera - ASSESSED and BUILT 2026-09-14
 
 Requested: read the repo's open-source motion/posture recognition and
 assess what FormTrace can use. Read it (README + the similarity-metric
@@ -64,7 +64,40 @@ reference, mean absolute degrees -> shape score on a FIXED anchor (100 at
 Recommended order if picked up: (1) then (2), one commit, re-validate the
 grade distribution on existing submissions before/after so the change
 doesn't silently re-grade everyone; (3) after AT step 5; (4) optional.
-Not started.
+
+**BUILT 2026-09-14 (re-grading approved: all current videos are tests).**
+First finding on picking it up, and it reshaped the work: `gradeForm` /
+`tempoScore` were DEAD CODE - defined, never called. Rep counting was
+live; automatic form grading never was, by explicit decision ("Form is
+graded by the COACH on review, not here"). The README line claiming
+per-rep form scoring was overstated - mine - and is corrected. So this
+was not "improve the grader"; it was "build the comparison as an ASSIST
+and wire it in", with the coach's tags remaining the grade.
+
+Built (ideas 1-3, plus mirror-robustness):
+- `formVec`: the 8 joint angles (kept - `countReps` depends on `angleVec`
+  order) + 9 segment directions in a torso frame (origin mid-hip, up =
+  mid-shoulder) + neck + torso lean vs vertical = 19 parts, each with a
+  weight and tolerance (`FORM_PARTS`; torso 2.0/4°, thighs 1.5/5°, arms
+  down to forearm 0.5/10°). `formDist` is the weighted tolerance-forgiving
+  mean.
+- `dtwAlign` returns the path, so per-part signed deviations are computed
+  along the alignment and the top three named ("torso 17° more forward").
+- `turnaroundFrames` finds each rep's bottom/top from the dominant signal;
+  turnaround shape scored separately (idea 3), 40% of the overall match.
+- Mirror-robust: graded as-is and horizontally mirrored, best wins.
+- Fixed anchors (0% at 25° weighted deviation), NOT clip-relative - we
+  have a ground truth. Result stored on the set result JSON as `form`.
+- Wired at analysis time when the exercise has a reference; shown to the
+  trainee on the set-complete screen and to the coach on the review card
+  ("🤖 … auto-compared to your reference, your tags decide").
+Verified on synthetic poses: identical -> 100; mirrored -> 100 (flagged
+mirrored); 17° extra torso lean -> 67% with "torso 17° more forward" as the
+top deviation; half-depth squat -> 87%, ROM 65%, "knee 10° more open".
+Known artifact, accepted: in a torso-normalised frame a torso rotation also
+shifts shin/thigh directions, so a lean deviation is often accompanied by
+shin deviations of similar size - true of dance_sync too. Idea 4 (angular
+speed) not built.
 
 ---
 

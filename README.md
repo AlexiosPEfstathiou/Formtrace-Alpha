@@ -1,4 +1,4 @@
-# FormTrace Coach
+﻿# FormTrace Coach
 
 A two-sided fitness coaching app connecting **coaches** and **trainees** —
 coaches build and review workouts with real form feedback; trainees train,
@@ -44,8 +44,11 @@ Supabase (auth, database, storage), hosted on GitHub Pages.
   explicitly rather than as edge cases bolted on afterward.
 
 ### Training and feedback
-- Every performed set is **video-recorded and pose-graded** — per-rep form
-  scoring against the coach's own reference recording, not a generic model.
+- Every performed set is **video-recorded and pose-analysed**: reps are
+  counted from the movement itself, and the set is compared against the
+  coach's own reference recording (form match, the shape at each rep's
+  turnaround, and the biggest deviations named - "torso 11° more forward").
+  That comparison is an assist for both sides; the coach's tags are the grade.
 - A coach can **voice-over** a trainee's submitted video directly, narrating
   over the footage rather than typing separate notes.
 - Grading uses multi-select tags rather than a single numeric score, since a
