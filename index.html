@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -3685,7 +3685,11 @@ async function renderHomeCallProposal(el){
         <span class="rv-tx"><b>${p.recur_every_days?"Recurring call":"Call"} proposed by ${otherName}</b><span>${escapeHtml(fmtDay(p.proposed_date))} · ${fmtTimeRange(p.start_time,p.end_time)}${p.recur_every_days?` · ${recurLabel(p.recur_every_days)}`:""}</span></span>
       </button>`;
   }).join("");
-  el.innerHTML=`<div class="rv-title">📅 Call proposal - respond within 24 hours</div><div class="rv-row">${chips}</div>`;
+  const todayChips=todayCalls.map(p=>{ const eng=engById[p.engagement_id]; const who=eng?(eng.coach_id===ME.id?"your trainee":"your coach"):"someone";
+    return `<a class="rv-chip" style="text-decoration:none" ${p.meeting_url?`href="${escapeHtml(p.meeting_url)}" target="_blank" rel="noopener"`:`data-callprop-eng="${p.engagement_id}"`}>
+      <span class="rv-ic">📹</span>
+      <span class="rv-tx"><b>Call today with ${who} · ${fmtTimeRange(p.start_time,p.end_time)}</b><span>${p.meeting_url?"Tap to join":"No link yet - tap to add one"}</span></span></a>`; }).join("");
+  el.innerHTML=(todayChips?`<div class="rv-title">📹 Call today</div><div class="rv-row">${todayChips}</div>`:"")+(chips?`<div class="rv-title" style="${todayChips?"margin-top:10px":""}">📅 Call proposal - respond within 24 hours</div><div class="rv-row">${chips}</div>`:"");
   el.style.display="";
   el.querySelectorAll("[data-callprop-eng]").forEach(b=>b.addEventListener("click",()=>{
     openEngagement(b.getAttribute("data-callprop-eng"));
