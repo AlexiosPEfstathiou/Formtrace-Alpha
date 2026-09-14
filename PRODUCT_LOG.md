@@ -31,7 +31,7 @@ BE) are not tasks and are left out.
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
 | 18 | **BT** Background blur while recording - BUILT 2026-09-14 | phone test pending | Off by default; watch fps and warmth on the alpha phones. |
 | 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
-| 20 | **BV** Referral tier requirements, coach vs trainee referrals | Easy code (decision) | Only the counting rule in referral_stats changes; four decisions listed. |
+| 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -40,7 +40,7 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
-## BV. Referral tier requirements: coach referrals and trainee referrals must not carry the same power
+## BV. Referral tier requirements: coach referrals and trainee referrals must not carry the same power - DECIDED and DONE 2026-09-14
 
 Opened 2026-09-14 on the owner's instruction. Today (BN) a tier counts
 "qualified referrals" - referred members who completed a coaching goal -
@@ -62,7 +62,25 @@ To decide here, separately from BN/BS:
    reward must be something else - BS).
 The data already distinguishes both: `profiles.referred_by` +
 `profiles.role` of the referred, and `engagements` for completion. Only
-the counting rule in `referral_stats` changes. Not started.
+the counting rule in `referral_stats` changes.
+
+**DECIDED and DONE 2026-09-14 (interview).** Needs
+`supabase/migrations_referral_trainees_only.sql` run.
+1. Worth: the platform pursues a **3 trainees : 1 coach equilibrium**, so
+   the relative worth of the two kinds of referral fluctuates - no fixed
+   weight is baked in.
+2. **Tiers count referred TRAINEES only** (completed a coaching goal as a
+   trainee). Recruiting coaches is the company's strategy for now, not a
+   member reward; referred coaches are still recorded - `coaches_referred`
+   - and qualify on **approval as a coach** (decision 3), shown on the
+   referrer's Profile ("· 2 became coaches") but never moving the tier.
+4. **Reward ladders differ by the REFERRER's role**: coach referrers get
+   commission benefits (Ambassador 8.9%, Partner 5.9%) and merch; trainee
+   referrers get vouchers, merch, etc. Same tier names and counts for
+   both. The Profile card now says which applies to you. Vouchers/merch
+   themselves are BS scope, blocked on BI.
+Hover on a tier badge now reads "Ambassador · 12 referred trainees
+completed a goal."
 
 ---
 
@@ -224,10 +242,11 @@ tangible at each tier rather than a title alone. Proposed menu, to decide:
 - A one-off bonus at the moment a referral qualifies (not tier-based),
   e.g. a small credit to both referrer and newcomer - the standard
   two-sided pattern.
-**Decided 2026-09-14 with BI decision 2:** the tier rewards ARE the
-commission rates - Recruiter 11.9% (no discount yet), **Ambassador 8.9%,
-Partner 5.9%**, Founders 0%. One-off bonuses and trainee-side rewards
-remain open. Every one of these is a per-user override in BI's
+**Decided 2026-09-14 with BI decision 2 and BV:** two ladders, same tier
+names. COACH referrers: the commission rates - Recruiter 11.9% (no
+discount yet), **Ambassador 8.9%, Partner 5.9%**, Founders 0% - plus
+merch. TRAINEE referrers: **vouchers, merch, etc.** (to be specified;
+vouchers need BI's payments to exist). One-off bonuses remain open. Every one of these is a per-user override in BI's
 commission table, so they are cheap once BI exists and impossible before
 it. The tier is
 already computed (`referral_stats`); the reward is the missing half.

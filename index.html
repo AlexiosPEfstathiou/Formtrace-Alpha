@@ -5220,7 +5220,7 @@ function badgeTitle(kind,f){
     case "professional": return f.pro_employer?`Works at ${f.pro_employer}`:"Professional coach - coaching is their profession.";
     case "certified":    { const c=(f.certs||[]).map(x=>`${x.title}${x.cert_date?` (${fmtDay(String(x.cert_date).slice(0,10))})`:""}`).join(" · "); return `Certified Professional${c?` - ${c}`:""}, checked by FormTrace.`; }
     case "founding":     return "Founding coach - this coach has been part of FormTrace's development.";
-    case "referral":     { const r=f.referral||{}; return `${r.title||"Referral tier"} · ${r.qualified||0} referral${(r.qualified||0)===1?"":"s"} completed a goal.`; }
+    case "referral":     { const r=f.referral||{}; return `${r.title||"Referral tier"} · ${r.qualified||0} referred trainee${(r.qualified||0)===1?"":"s"} completed a goal.`; }
   }
   return "";
 }
@@ -10003,7 +10003,7 @@ async function wireReferralCard(){
   try{
     const { data, error } = await store._sb.rpc("referral_stats",{p_user:ME.id}); if(error) throw error;
     const s=data||{}; const el=$("#ref-stats"); if(!el) return;
-    el.innerHTML=`<b style="color:var(--ink)">${s.signups||0}</b> joined through your link · <b style="color:var(--ink)">${s.qualified||0}</b> completed a goal`
+    el.innerHTML=`<b style="color:var(--ink)">${s.signups||0}</b> joined through your link · <b style="color:var(--ink)">${s.qualified||0}</b> trainee${(s.qualified||0)===1?"":"s"} completed a goal${s.coaches_referred?` · <b style="color:var(--ink)">${s.coaches_referred}</b> became coach${s.coaches_referred===1?"":"es"}`:""}`
       +(s.title?` · ${referralTierBadge(s)}`:"")
       +(s.next_at?`<div style="margin-top:4px;color:var(--faint)">${s.next_at-(s.qualified||0)} more qualified referral${(s.next_at-(s.qualified||0))===1?"":"s"} to ${s.next_at===3?"Recruiter":s.next_at===10?"Ambassador":"Partner"}</div>`:"");
   }catch(e){ console.error("referral stats (run migrations_referrals.sql)",e); const el=$("#ref-stats"); if(el) el.textContent="Referral counts aren't available yet."; }
@@ -10100,7 +10100,7 @@ async function renderProfile(){
   { // Item BN: coaches AND trainees can refer
     html+=`<div class="section-h"><div class="eyebrow">Your referral link</div></div>
     <div class="card" style="margin:0 0 12px" id="ref-card">
-      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Anyone who joins through this link counts toward your referral tier. A referral <b>qualifies</b> once they complete a coaching goal - accepting and then cancelling doesn't count.</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Trainees who join through this link count toward your referral tier once they <b>complete a coaching goal</b> - accepting and then cancelling doesn't count. ${roleOf()==="coach"?"Tiers lower your commission: Ambassador 8.9%, Partner 5.9%.":"Tiers unlock vouchers and merch once payments launch."} Coaches you bring are recorded too, but tiers count trainees only.</div>
       <div style="display:flex;gap:8px;align-items:center"><input id="ref-link" readonly class="ro" style="flex:1;font-size:12px" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}"><button class="btn sm" id="ref-copy" style="width:auto">Copy</button>${navigator.share?`<button class="btn sm ghost" id="ref-share" style="width:auto">Share</button>`:""}</div>
       <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
 
