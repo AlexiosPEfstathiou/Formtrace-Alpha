@@ -15,7 +15,7 @@ BE) are not tasks and are left out.
 | 1 | **BG** Check-in photo days glisten - DONE 2026-09-14 | - | Camera badge on photo days; Saturday/Sunday glisten while the week's check-in is unmet. |
 | 2 | **BM** Incentives brainstorm (first coach/trainee) | Easy (thinking) | No code. Levers already exist: commission rates (BI), a founding badge (item A), free first week. |
 | 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
-| 4 | **BN** Referral links - part 1 (link, count, tier badge) | Medium-easy (decision) | Sign-up plumbing + a fourth badge family. Decision first: what counts as a referral (sign-up vs first accepted offer). Part 2 (discounts, referred-coach commission) waits for BI. |
+| 4 | **BN** Referral links - part 1 DONE 2026-09-14 | - | Both counts kept (sign-ups and qualified); tiers on qualified. Part 2 (money) waits for BI. |
 | 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
 | 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
 | 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
@@ -130,7 +130,7 @@ speed) not built.
 
 ---
 
-## BN. Coach referral links: counts, titles, partner benefits, and a commission on referred coaches
+## BN. Coach referral links: counts, titles, partner benefits, and a commission on referred coaches - PART 1 DONE 2026-09-14
 
 Requested:
 - Every coach gets a referral link. A new trainee who signs up through it
@@ -167,7 +167,31 @@ Requested:
 
 **Ordering:** the count + link + badge can be built before BI exists.
 The discounts and the referred-coach commission cannot - they are line
-items in a fee calculation that doesn't exist yet. Not started.
+items in a fee calculation that doesn't exist yet.
+
+**Part 1 DONE 2026-09-14.** Needs `supabase/migrations_referrals.sql` run.
+Decision 1 sidestepped rather than made: BOTH counts are kept - sign-ups
+through the link, and QUALIFIED referrals (the trainee went on to accept
+an offer, i.e. has an engagement). Tiers key on qualified, which is not
+gameable by creating accounts. Tiers chosen as a starting point, easy to
+change in one SQL function: 3 -> Referrer, 10 -> Ambassador, 25 -> Partner.
+- `profiles.referral_code` (8 chars, generated for everyone),
+  `referred_by`, `referred_at`.
+- Link: `<app>?ref=CODE`. Captured at module start into localStorage
+  before the auth redirect can drop it, URL cleaned; claimed once the
+  profile exists (`claim_referral`): written ONCE, never overwritten, only
+  for accounts under 7 days old, coaches' codes only (per the request),
+  no self-referral. Toast: "You joined through <coach>'s link".
+- Coach's Profile gains "Your referral link": the link, Copy, Share (Web
+  Share where available), and live counts - "4 joined through your link ·
+  2 became clients · 1 more to Referrer".
+- Public coach profile shows the tier as a fourth badge family
+  (`.cbadge.ref`, blue) next to Verified / Professional / Certified.
+- `referral_stats(user)` returns signups, qualified, tier, title, next_at.
+Not built (part 2, waits for BI): commission discounts by tier; the
+commission share on a referred trainee who later becomes a coach.
+Not built (decision 4): trainee-to-trainee referrals - links work for
+coaches only.
 
 ---
 

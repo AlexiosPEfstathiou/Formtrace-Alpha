@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -613,6 +613,7 @@
   .cbadge.v{background:rgba(90,176,255,.16);color:#7BC0FF;border:1px solid rgba(90,176,255,.4);}
   .cbadge.pro{background:rgba(255,194,74,.16);color:var(--amber);border:1px solid rgba(255,194,74,.44);}
   .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
+  .cbadge.ref{background:rgba(90,176,255,.14);color:#5AB0FF;border:1px solid rgba(90,176,255,.6);}   /* Item BN referral tier */
   .cp-exp{font-size:14px;font-weight:700;color:var(--lime-dim);margin-top:4px;}
   .cp-bio{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px;}
   .cp-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
@@ -2946,6 +2947,23 @@ function formSummaryLine(form){
 /* =========================================================================
    5. Session + navigation
    ========================================================================= */
+/* Item BN: a referral link is ?ref=CODE on the app URL. Stash it before the
+   auth redirect can drop it; claimed once the profile exists (bootSignedIn). */
+try{
+  const _u=new URL(location.href), _ref=_u.searchParams.get("ref");
+  if(_ref){ localStorage.setItem("ft-ref",_ref.trim().toUpperCase()); _u.searchParams.delete("ref"); history.replaceState(null,"",_u.pathname+(_u.search||"")+_u.hash); }
+}catch(e){}
+async function claimPendingReferral(){
+  let code=null; try{ code=localStorage.getItem("ft-ref"); }catch(e){}
+  if(!code) return;
+  try{
+    if(ME&&ME.referred_by){ localStorage.removeItem("ft-ref"); return; }
+    const { data, error } = await store._sb.rpc("claim_referral",{p_code:code});
+    if(error) throw error;
+    localStorage.removeItem("ft-ref");
+    if(data){ ME.referred_by=ME.referred_by||"set"; toast(`You joined through ${data}'s link 👋`,3500); }
+  }catch(e){ console.error("claim referral (run migrations_referrals.sql)",e); }
+}
 let ME=null;          // profiles row for the signed-in user
 let currentView="trainee";  // which "hat" the user is currently using on home
 
@@ -3162,6 +3180,7 @@ function isAtLeast18(iso){
 async function bootSignedIn(){
   ME=await store.auth.myProfile();
   if(!ME){ toast("Couldn't load your profile",4000); return; }
+  claimPendingReferral();   // Item BN - fire and forget
   $("#app-loading").style.display="none";
   // One-off age + consent gate. Covers new signups and anyone who joined
   // before consent was recorded — the app is unreachable until both are in.
@@ -9696,6 +9715,25 @@ $("#rate-submit").addEventListener("click",async()=>{
 /* =========================================================================
    16. Profile + coach application
    ========================================================================= */
+/* Item BN: copy/share the referral link and show live counts + tier. */
+function referralTierBadge(stats){
+  if(!stats||!stats.tier) return "";
+  const ic=stats.tier>=3?"🏆":stats.tier>=2?"🌟":"🔗";
+  return `<span class="cbadge ref" title="${stats.qualified} referred trainee${stats.qualified===1?"":"s"} became clients">${ic} ${escapeHtml(stats.title)}</span>`;
+}
+async function wireReferralCard(){
+  const card=$("#ref-card"); if(!card||!ME) return;
+  const link=$("#ref-link").value;
+  $("#ref-copy")?.addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(link); toast("Link copied ✓",1500); }catch(e){ $("#ref-link").select(); toast("Long-press the link to copy",2500); } });
+  $("#ref-share")?.addEventListener("click",()=>{ navigator.share({title:"Train with me on FormTrace",text:"Join me on FormTrace Coach:",url:link}).catch(()=>{}); });
+  try{
+    const { data, error } = await store._sb.rpc("referral_stats",{p_user:ME.id}); if(error) throw error;
+    const s=data||{}; const el=$("#ref-stats"); if(!el) return;
+    el.innerHTML=`<b style="color:var(--ink)">${s.signups||0}</b> joined through your link · <b style="color:var(--ink)">${s.qualified||0}</b> became client${(s.qualified||0)===1?"":"s"}`
+      +(s.title?` · ${referralTierBadge(s)}`:"")
+      +(s.next_at?`<div style="margin-top:4px;color:var(--faint)">${s.next_at-(s.qualified||0)} more qualified referral${(s.next_at-(s.qualified||0))===1?"":"s"} to ${s.next_at===3?"Referrer":s.next_at===10?"Ambassador":"Partner"}</div>`:"");
+  }catch(e){ console.error("referral stats (run migrations_referrals.sql)",e); const el=$("#ref-stats"); if(el) el.textContent="Referral counts aren't available yet."; }
+}
 async function renderProfile(){
   const body=$("#profile-body");
   const r=roleOf();
@@ -9784,6 +9822,15 @@ async function renderProfile(){
      (day-of-week + time range), not per-date — the only realistic reading
      of "available hours" someone would actually maintain. */
   // Item AY: the "Availability for calls" section is gone - proposing no longer depends on declared hours.
+  /* Item BN: the coach's referral link. Counts are filled in async below. */
+  if(roleOf()==="coach"){
+    html+=`<div class="section-h"><div class="eyebrow">Your referral link</div></div>
+    <div class="card" style="margin:0 0 12px" id="ref-card">
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Trainees who join through this link count toward your referral tier. A referral <b>qualifies</b> once they accept a coach's offer.</div>
+      <div style="display:flex;gap:8px;align-items:center"><input id="ref-link" readonly class="ro" style="flex:1;font-size:12px" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}"><button class="btn sm" id="ref-copy" style="width:auto">Copy</button>${navigator.share?`<button class="btn sm ghost" id="ref-share" style="width:auto">Share</button>`:""}</div>
+      <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
+    </div>`;
+  }
   // ---- Danger zone: account deletion ----
   html+=`<div class="section-h"><div class="eyebrow" style="color:var(--red)">Danger zone</div></div>
     <div class="card" style="border-color:rgba(255,90,90,.35)">
@@ -9833,6 +9880,7 @@ async function renderProfile(){
     }
   }catch(e){console.error("completed goals",e);}
   body.innerHTML=html;
+  wireReferralCard();   // Item BN: copy/share + live counts for the referral card
   $("#pf-save").addEventListener("click",async()=>{
     try{ ME=await store.auth.updateProfile({display_name:$("#pf-name").value.trim(),city:$("#pf-city").value.trim(),bio:$("#pf-bio").value.trim()}); toast("Profile saved ✓"); }
     catch(err){console.error(err);toast("Couldn't save profile",4000);}
@@ -10043,6 +10091,7 @@ async function openCoachProfile(coachId,backTo){
     return;
   }
   if(!p){ body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">?</div><p>This coach no longer has a profile.</p></div>`; return; }
+    try{ const { data }=await store._sb.rpc("referral_stats",{p_user:coachId}); if(data&&data.tier) p._referral=data; }catch(e){}   // Item BN
   renderCoachProfile(p);
 }
 function badgeRow(p){
@@ -10050,6 +10099,7 @@ function badgeRow(p){
   if(p.verified) b.push(`<span class="cbadge v" title="Approved by FormTrace">✓ Verified</span>`);
   if(p.pro_status==="professional") b.push(`<span class="cbadge pro">★ Professional</span>`);
   if(p.pro_status==="certified") b.push(`<span class="cbadge cert">◆ Certified Professional</span>`);
+    if(p._referral) b.push(referralTierBadge(p._referral));   // Item BN
   return b.length?`<div class="cbadges">${b.join("")}</div>`:"";
 }
 function subBar(label,val){
