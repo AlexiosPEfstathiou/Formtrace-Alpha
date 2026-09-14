@@ -5432,6 +5432,7 @@ let currentEng=null, currentEngOther=null;
 let engCalYear=null, engCalMonth=null, engAssignedByDate={}, logsByDate={}, streakInfo={count:0,danger:false,broken:false};
 let coachingDaysByDate={};   // iso -> accepted call_proposals row (recurring series materialised per occurrence)
 let pendingCallByDate={};    // iso -> pending (unexpired) proposal - glistens for the receiving party
+let checkinByDate={};        // Item BG: iso -> check-in row (photo taken that day)
 /* Item AT (week model). weekRows: assigned_workouts keyed by week_start Monday ISO.
    weekClosures: closed weeks keyed by week_start (merged across the screen's
    engagements - any non-neutral incomplete closure marks the week missed).
@@ -5941,7 +5942,12 @@ async function renderEngagement(skipFetch){
   logsByDate={};
   {
     const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
-    try{ const logs=await store.logs.list({trainee_id:traineeId}); for(const l of logs) logsByDate[l.log_date]=l; }catch(e){console.error("logs load",e);}
+    const [logsRes,ciRes]=await Promise.all([
+      store.logs.list({trainee_id:traineeId}).catch(e=>{ console.error("logs load",e); return []; }),
+      store.checkins.list({trainee_id:traineeId}).catch(e=>{ console.error("checkins load",e); return []; })   // Item BG
+    ]);
+    for(const l of (logsRes||[])) logsByDate[l.log_date]=l;
+    checkinByDate={}; for(const c of (ciRes||[])) checkinByDate[c.checkin_date]=c;
   }
   // discipline streak (trainee only)
   if(WEEK_MODEL){
@@ -6143,6 +6149,23 @@ async function renderEngagement(skipFetch){
     }
     /* Item AY part 2: a pending proposal marks its day - glistening for the side
        that needs to respond, a plain badge for the proposer. */
+    /* Item BG: check-in photos on the calendar. A day with a photo gets a 📷
+       badge. The check-in window is Saturday-Sunday (renderHomeCheckin): while
+       this week's is unmet, this week's Saturday - and Sunday, if Saturday
+       passed - glistens for the trainee, who is the one who can act on it. */
+    if(checkinByDate[iso]){
+      const bd=cell.querySelector(".cal-badge"); if(bd) bd.textContent="📷"; else cell.insertAdjacentHTML("beforeend",'<div class="cal-badge">📷</div>');
+      cell.title="Check-in photo taken";
+    }else if(!iAmCoach && !curOutside){
+      const dowI=(cur.getDay()+6)%7;                       // 0 Mon .. 5 Sat, 6 Sun
+      const thisMonBG=weekStartISO(new Date());
+      const weekDone=Object.keys(checkinByDate).some(d=>d>=thisMonBG && d<=addDaysISO(thisMonBG,6));
+      if(!weekDone && iso>=thisMonBG && iso<=addDaysISO(thisMonBG,6) && iso>=today && (dowI===5 || (dowI===6 && today>addDaysISO(thisMonBG,5)))){
+        cell.classList.add("cal-glisten");
+        if(!cell.querySelector(".cal-badge")) cell.insertAdjacentHTML("beforeend",'<div class="cal-badge">📷</div>');
+        cell.title="Weekly check-in photo due";
+      }
+    }
     if(pendingCallByDate[iso]){
       const pp=pendingCallByDate[iso]; const mine=pp.proposed_by===ME.id;
       cell.classList.add("cal-callpending"); if(!mine) cell.classList.add("cal-glisten");
@@ -6170,6 +6193,7 @@ async function renderEngagement(skipFetch){
       ${WEEK_MODEL?"":`<div class="leg-item"><span class="leg-sw" style="background:linear-gradient(135deg,#F5C542,#E0A81E)"></span>Rest day 😴 — nothing due</div>`}
       <div class="leg-item"><span class="leg-sw" style="background:#F4F2EA;border-color:#F4F2EA"></span>Paused ✈️</div>
       <div class="leg-item"><span class="leg-sw" style="border:2px dashed #5AB0FF;background:transparent"></span>📅 Proposed call · awaiting a response</div>
+      <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>📷 Check-in photo · glistens when this week's is due</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
   body.appendChild(legend);
 
