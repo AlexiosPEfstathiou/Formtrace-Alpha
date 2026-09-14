@@ -25,11 +25,76 @@ BE) are not tasks and are left out.
 | 11 | **AY part 2** The in-app video call itself | Hard (decision) | WebRTC (signalling + TURN relay for mobile) vs a provider SDK (cost, third party). Scheduling half is done. |
 | 12 | **BI** Commission plan + escrow payments | Hardest (decision) | Provider account, server side (Edge Functions) for webhooks, KYC via provider, legal/tax. Five decisions listed in the item; blocked on the first. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
+| 14 | **BP** Seed trainee goals before recruiting coaches | Easy (activity) | Not code; 3-5 real goals posted, response times logged. |
+| 15 | **BQ** Founding coach badge | Easy (decision) | An hour on the badge system; needs the founding-cohort definition (approved vs completed a goal). |
+| 16 | **BR** Founding coaches: zero commission, capped | Follows BI | Promise now, honour when BI exists; per-coach override in the rate table. |
+| 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BS. Referral bonuses: rewards for reaching referral goals
+
+Requested (2026-09-14): bonuses when a member reaches a referral goal.
+Extends BN (tiers exist: 3 / 10 / 25 qualified referrals) with something
+tangible at each tier rather than a title alone. Proposed menu, to decide:
+- **Referrer (3):** one month at zero platform commission (coach) or the
+  platform fee waived on the next goal (trainee).
+- **Ambassador (10):** permanent commission discount (e.g. -25%) for a
+  coach; for a trainee, a free week on the next goal, coach paid by the
+  platform.
+- **Partner (25):** permanent larger discount (e.g. -50%) and the badge;
+  for a trainee, one full goal's platform fee waived per year.
+- A one-off bonus at the moment a referral qualifies (not tier-based),
+  e.g. a small credit to both referrer and newcomer - the standard
+  two-sided pattern.
+Every one of these is a per-user override in BI's commission table, so
+they are cheap once BI exists and impossible before it. The tier is
+already computed (`referral_stats`); the reward is the missing half.
+Design note carried from BM: give BI's rate table a per-user override
+column from day one. Not started; blocked on BI.
+
+---
+
+## BR. Founding coaches: zero platform commission, capped
+
+From the BM brainstorm, adopted 2026-09-14: the first N coaches (cap to be
+set - 10 or 25) pay zero platform commission, forever. Scarce and
+time-boxed by the cap. Implementation is a per-coach override in BI's
+rate table (see BS/BM note) plus a `founding_rank` or `founding_at` on
+profiles set when they qualify - which needs a definition: first N
+coaches APPROVED, or first N to complete a goal with a trainee? The second
+is the honest one (a listed-but-inactive coach shouldn't hold a founding
+slot). Can be PROMISED now and honoured once BI exists; the badge (BQ) is
+the visible half that can ship today. Not started; the commission half
+is blocked on BI.
+
+---
+
+## BQ. "Founding coach" badge
+
+From the BM brainstorm, adopted 2026-09-14. A permanent badge on the
+public coach profile and wherever Verified / Professional / Certified /
+the referral tier show, for the founding cohort (definition shared with
+BR). Zero cost, about an hour on item A's badge system: a `founding_at`
+column, a fifth `.cbadge` style, one line in `badgeRow`. Not started -
+waiting only on the founding-cohort definition from BR (approved vs
+completed-a-goal).
+
+---
+
+## BP. Seed the marketplace with trainee goals before recruiting coaches
+
+From the BM brainstorm, adopted 2026-09-14. An activity, not a build:
+have 3-5 real trainee goals posted (yours, friends') so a founding
+coach's first Open goals tab is never empty. Pairs with the 48-hour
+first-response promise to trainees (BM option 7), kept by hand by lining
+up the founding coaches. Log the seeded goals and the response times here
+as they happen. Not started.
 
 ---
 
