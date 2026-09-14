@@ -32,11 +32,56 @@ BE) are not tasks and are left out.
 | 18 | **BT** Background blur while recording - BUILT 2026-09-14 | phone test pending | Off by default; watch fps and warmth on the alpha phones. |
 | 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
+| 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BW. Reward ladders: referrals (both roles) and discipline streaks
+
+Requested 2026-09-14. Two ladders to design, one framework to build.
+
+**1. Referral rewards** - the concrete "what do you get" behind the tiers
+BV just fixed (Recruiter 3 / Ambassador 10 / Partner 25 referred trainees
+who completed a goal). Two ladders by referrer role, same names:
+- Coach referrers: commission 11.9% -> 8.9% -> 5.9% (decided, BI/BS) plus
+  merch at each tier.
+- Trainee referrers: vouchers (money off the next goal's service fee or
+  the goal itself), merch, etc. Amounts to decide; vouchers need BI.
+
+**2. Discipline streak rewards** - new. The week streak (AT/BB) is the
+product's core loop and today its only reward is the badge, the burst
+and the share image. Proposed milestones follow the existing celebration
+tiers (`MILESTONES` = 7/14/30/60/90/180/270/365 day-equivalents, i.e.
+completed weeks x 7 - so 1 month ≈ 5 weeks, 3 months ≈ 13, 6 months ≈ 26,
+1 year ≈ 52):
+- 1 month: a title/badge ("Consistent") on the trainee's profile.
+- 3 months: a voucher on the next goal's service fee.
+- 6 months: merch.
+- 1 year: a larger voucher and a permanent badge ("Iron year").
+Coaches could earn from their trainees' streaks too (a coach whose
+trainees hold long streaks is doing the job) - optional, to decide.
+Vacation weeks are neutral (M/N), so a holiday never resets a streak;
+that rule stays.
+
+**Framework (build once, both ladders hang off it):**
+- `rewards` table: who, kind (referral_tier | streak_milestone), key
+  (e.g. "ambassador", "streak_90"), granted_at, fulfilled_at, fulfilment
+  (voucher code / merch order ref / commission override applied), state.
+- Grants are idempotent (one per person per key) and computed by a
+  function that reads `referral_stats` and `week_streak_count` - never by
+  the client.
+- Homepage card "🎁 You've earned …" (same pattern as the milestone card)
+  with the fulfilment step (claim voucher / confirm merch address).
+- Merch needs an address, a supplier and a budget - an operations
+  question before code.
+Dependencies: vouchers and commission fulfilment on BI; badges/titles and
+merch claim can be built before it. Not started; amounts and the merch
+list to decide first.
 
 ---
 
