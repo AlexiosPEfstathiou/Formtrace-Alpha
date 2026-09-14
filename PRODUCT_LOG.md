@@ -1,6 +1,35 @@
 ﻿# FormTrace — Product Log
 
-Opened 2026-08-07. Ordered by dependency, not by size.
+Opened 2026-08-07. Body is chronological (newest first) - a development
+record, kept that way because it is what every bug hunt has been traced
+through. The index below is the sorted view.
+
+## OPEN ITEMS, EASIEST TO HARDEST (as of 2026-09-14)
+
+Difficulty is about the work and risk to ship, not importance. Items
+needing a decision first are marked (decision). Testing activities (BD,
+BE) are not tasks and are left out.
+
+| # | Item | Difficulty | Why |
+|---|------|-----------|-----|
+| 1 | **BG** Check-in photo days glisten | Easy | One more case in the day-cell glisten flag; only unknown is confirming the check-in cadence from code. |
+| 2 | **BM** Incentives brainstorm (first coach/trainee) | Easy (thinking) | No code. Levers already exist: commission rates (BI), a founding badge (item A), free first week. |
+| 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
+| 4 | **BN** Referral links - part 1 (link, count, tier badge) | Medium-easy (decision) | Sign-up plumbing + a fourth badge family. Decision first: what counts as a referral (sign-up vs first accepted offer). Part 2 (discounts, referred-coach commission) waits for BI. |
+| 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
+| 6 | **AT step 5** Week-model cutover cleanup | Medium, careful | Delete day-model paths and retire old RPCs; move share-story to weeks. Low complexity, real risk: testers on live data - do after the alpha's calendar reports go quiet. |
+| 7 | **BC** Video trim on submit | Medium (offsets) / Hard (recut) | Offset-based trim is contained (players + graded frames honour in/out); a true recut needs a mux library the Artifactory block prevents. Decision first. |
+| 8 | **AA** Voice-over: no sound in preview | Medium-hard, blocked | Device-dependent; needs a reproduction on a real phone. |
+| 9 | **AH** Pose overlay sometimes missing | Medium-hard, blocked | Cause unknown; needs the conditions it happens under. |
+| 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
+| 11 | **AY part 2** The in-app video call itself | Hard (decision) | WebRTC (signalling + TURN relay for mobile) vs a provider SDK (cost, third party). Scheduling half is done. |
+| 12 | **BI** Commission plan + escrow payments | Hardest (decision) | Provider account, server side (Edge Functions) for webhooks, KYC via provider, legal/tax. Five decisions listed in the item; blocked on the first. |
+| 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
+
+Suggested next three, if going in order: BG, then BN part 1 once the
+referral definition is decided, then AT step 5 once the alpha is quiet.
+
+---
 
 ---
 
