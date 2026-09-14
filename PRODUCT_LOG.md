@@ -33,11 +33,48 @@ BE) are not tasks and are left out.
 | 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
+| 22 | **BX** Coach "Top 1%" badge from trainees' streaks | Medium | Materialised coach_streak_score, rank, animated rare badge; small-population rule to decide; rewards are placeholders. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BX. Coach "Top 1%" badge: earned from their trainees' streaks
+
+Adopted 2026-09-14 from the BW optional idea. A coach whose trainees keep
+long streaks is doing the job; measure it and reward the very best.
+
+**Metric:** the sum of current week streaks across a coach's ACTIVE
+trainees - `sum(profiles.week_streak_count)` over `engagements` where
+`coach_id = coach and status = 'active'`. Sum, not average, deliberately:
+it rewards coaching many people well, not one person for a long time.
+Two design points to settle before it goes live:
+- Recompute cadence: nightly, or at each week close (`close_week` already
+  fires weekly per engagement - the natural hook).
+- Small-population rule: "top 1%" of 40 coaches is zero people. Until
+  there are ≥100 coaches with at least one active trainee, either grant
+  to the top 1 by rank or show nothing and say why on the coach's
+  dashboard ("Top 1% unlocks at 100 active coaches").
+**Badge:** a flashy, RARE badge - the only animated one (a slow gold
+shimmer, same restraint as the streak glisten), label "Top 1%", hover
+"Top 1% of coaches by their trainees' combined streaks · 312 weeks across
+9 trainees". Re-evaluated on each recompute; a coach can gain or lose
+it, with a grace week so it doesn't flicker at the boundary.
+**Where it shows:** public coach profile (first, before Verified), offer
+cards, the Open goals coach line - everywhere `badgeSpans` renders.
+**Reward for holders:** placeholders for now, to brainstorm as its own
+item - e.g. [commission rate benefit], [merch], [featured placement in
+Find a coach], [early access to features]. Nothing promised in-app until
+decided.
+**Framework:** a `coach_streak_score` (materialised table: coach_id,
+score, trainees, rank_pct, computed_at) refreshed by a function; the
+badge reads `rank_pct <= 1` (or the small-population rule);
+`loadCoachFacts` gains `top1`. Grants of the reward itself go through
+BW's `rewards` table when that exists.
+Not started; the rewards are placeholders by decision.
 
 ---
 
@@ -63,8 +100,8 @@ completed weeks x 7 - so 1 month ≈ 5 weeks, 3 months ≈ 13, 6 months ≈ 26,
 - 3 months: a voucher on the next goal's service fee.
 - 6 months: merch.
 - 1 year: a larger voucher and a permanent badge ("Iron year").
-Coaches could earn from their trainees' streaks too (a coach whose
-trainees hold long streaks is doing the job) - optional, to decide.
+Coaches earn from their trainees' streaks too - adopted as its own item,
+BX (the "Top 1%" badge).
 Vacation weeks are neutral (M/N), so a holiday never resets a streak;
 that rule stays.
 
