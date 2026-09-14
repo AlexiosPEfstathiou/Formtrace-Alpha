@@ -13,7 +13,7 @@ BE) are not tasks and are left out.
 | # | Item | Difficulty | Why |
 |---|------|-----------|-----|
 | 1 | **BG** Check-in photo days glisten - DONE 2026-09-14 | - | Camera badge on photo days; Saturday/Sunday glisten while the week's check-in is unmet. |
-| 2 | **BM** Incentives brainstorm (first coach/trainee) | Easy (thinking) | No code. Levers already exist: commission rates (BI), a founding badge (item A), free first week. |
+| 2 | **BM** Incentives brainstorm - DONE 2026-09-14 | - | Nine options; recommended free opening moves: seed goals, founding badge, 48-hour response promise, capped zero-commission for founders. |
 | 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
 | 4 | **BN** Referral links - part 1 DONE 2026-09-14 | - | Sign-ups and qualified (goal COMPLETED) counted; trainees can refer too; tiers on qualified. Part 2 (money) waits for BI. |
 | 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
@@ -205,7 +205,7 @@ it when re-run.
 
 ---
 
-## BM. Brainstorm incentives for the first coach and first trainee to sign up
+## BM. Brainstorm incentives for the first coach and first trainee to sign up - BRAINSTORM DONE 2026-09-14
 
 Requested. A thinking item, not a build item - logged so it is not lost.
 Context worth holding onto when brainstorming: this is a two-sided
@@ -220,7 +220,68 @@ a waitlist. Also realistic: the first coach and first trainee are very
 likely people you know, and the incentive is the personal ask plus a
 product that works - which is what BD (alpha) is for.
 
-Not started.
+**BRAINSTORM DONE 2026-09-14.** Options, grouped by who they target and
+tagged with what they need. Nothing here is decided; it is a menu.
+
+*The framing that matters most:* this is a cold-start on a two-sided
+market. The first COACH is the harder side - a coach lists a pitch into
+an empty room and gets nothing back for weeks. The first TRAINEE is
+easier: they post a goal and, if a coach answers within a day, the
+product already delivers. So spend the incentive budget on coaches, and
+spend effort (not money) on making sure the first trainees get answered
+fast.
+
+**For the first coaches**
+1. **Founding coach: zero platform commission, forever.** The single
+   strongest offer available, and it costs nothing until BI exists. Cap it
+   (first 10 or first 25) so it is scarce and time-boxed. Needs BI's rate
+   table to have a per-coach override - trivial to design in now.
+2. **"Founding coach" badge**, permanent, shown wherever Verified /
+   Professional / the referral tier show. Zero cost, built in an hour on
+   item A's badge system. Status is currency for coaches; this is the one
+   they will screenshot.
+3. **Seeded trainees.** The real incentive is a client. Before recruiting
+   coaches, have 3-5 trainee goals already posted (yours, friends') so a
+   coach's first Open goals tab is not empty. Effort, not money.
+4. **Referral tier fast-track:** founding coaches start at Referrer (BN)
+   so the badge row is not bare. Cosmetic, cheap.
+5. **A say in the roadmap** - a founders' channel and their reported
+   items logged by name. Costs nothing and is honest: it is already how
+   the log works.
+
+**For the first trainees**
+6. **Free first week** - the platform's fee AND the coach's fee waived,
+   the coach compensated by the platform. Only possible once BI exists and
+   only if the prepay unit is a week (BI decision 3). Powerful but it
+   costs real money; hold until there is revenue to fund it.
+7. **Guaranteed first response:** a promise that a posted goal gets at
+   least one pitch within 48 hours - backed by you personally lining up
+   the founding coaches to answer. Effort, not money, and it is the thing
+   a first trainee actually fears (posting into silence).
+8. **Referral credit on both sides** (BN part 2): the referrer AND the
+   newcomer get something. Standard, and it makes the trainee link worth
+   sharing. Needs BI.
+9. **Streak-linked reward:** finish the first committed goal (BK gives
+   the end date) and the next goal's platform fee is waived. Ties the
+   incentive to the behaviour the product is built around. Needs BI.
+
+**Levers that already exist in the product**
+- Badges (item A) - founding badge is a fourth/fifth family.
+- Referral tiers (BN) - fast-track and two-sided credit hang off it.
+- Committed goal + end date (BK) - "complete your first goal" is now a
+  well-defined event to reward.
+- Commission table (BI, not built) - every money incentive above is a
+  per-user override in that table. Design the override column in from the
+  start; retrofitting it later is the expensive path.
+
+**Recommended opening move, in order, costing nothing:** 3 (seed goals),
+then 2 (founding badge, an hour), then 7 (the 48-hour promise, kept by
+hand), then 1 as the headline offer with a cap, to be honoured once BI
+exists. Everything else waits for revenue.
+
+Not built: the founding badge (2) and the referral fast-track (4) are
+buildable today and are logged here as the next code items if this menu
+is agreed.
 
 ---
 
