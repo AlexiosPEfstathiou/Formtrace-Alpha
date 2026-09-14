@@ -4,6 +4,85 @@ Opened 2026-08-07. Ordered by dependency, not by size.
 
 ---
 
+## BM. Brainstorm incentives for the first coach and first trainee to sign up
+
+Requested. A thinking item, not a build item - logged so it is not lost.
+Context worth holding onto when brainstorming: this is a two-sided
+marketplace, so the classic cold-start problem applies - a coach won't
+list without trainees, a trainee won't post without coaches. Incentive
+levers the product already has hooks for: the commission rates (BI) -
+e.g. zero platform fee for a founding cohort, forever or for N weeks; a
+"Founding coach" badge alongside Verified/Professional (item A's badge
+system is built); a free first week for the first trainees (needs BI's
+prepay unit to be a week). Levers it doesn't have yet: referral credit,
+a waitlist. Also realistic: the first coach and first trainee are very
+likely people you know, and the incentive is the personal ask plus a
+product that works - which is what BD (alpha) is for.
+
+Not started.
+
+---
+
+## BL. Make the first successful transaction
+
+Requested. The milestone that BI (payments) exists to reach: one trainee
+prepays, one coach gets paid out, commission taken on both sides, all
+through the real provider - and in test mode first, obviously. Depends on
+BI decisions 1-3 at minimum (provider account, rates, prepay unit) and on
+BK (a committed total to charge). Logged as the definition of done for
+the payments work rather than as separate work.
+
+Not started.
+
+---
+
+## BK. Pitches for a determined period, so the total is committed at acceptance
+
+Requested: a coach's pitch should be for a determined time period, so
+that the total payment amount is committed when the trainee accepts.
+
+**What exists (checked):** an offer already carries a length - but as a
+RANGE stored as text: two inputs (`of-length-min`/`of-length-max`, in
+weeks) become `length_text` like "4-6 weeks". A range is exactly why a
+total can't be committed today: rate x cap x "4 to 6" is not a number.
+The structured fields BI needs already exist for the other two factors
+(`rate_per_workout_cents`, `workouts_per_week_cap`).
+
+**Change:** the pitch commits to ONE length - a single "weeks" input
+(`length_weeks` integer on offers, backfill by taking the range's upper
+bound or its single value from `length_text`). Then, at pitch time and
+again at acceptance, the app can show and commit the total:
+`weeks x workouts_per_week_cap x rate_per_workout_cents`, alongside B's
+existing per-week framing. The engagement gets a committed end date
+(start + weeks), which also gives AT a natural "goal complete" boundary
+and BI its prepay horizon (whole-goal prepay becomes possible once the
+total is known).
+
+Open question to decide with it: what happens to the committed total if
+the coach assigns fewer than the cap in some week (B already says: pay
+only for what is reviewed - so "committed" means the ceiling, and the
+prepay/refund mechanics in BI settle the difference). Not started;
+should land before BI, since BI needs the number.
+
+---
+
+## BJ. Explore alternative names, logo, branding, and a web domain
+
+Requested. "FormTrace Coach" is the working name; the app is served from
+a github.io URL. Logged as an exploration, not a task with a definition of
+done - it needs a decision meeting more than code. Things to keep in
+mind: a name check across app stores (relevant once AD's Android
+packaging happens), trademark and domain availability together, and that
+the PWA's `manifest.json` name/icons and the README are the only places
+the brand lives in the codebase, so a rename is cheap on the code side
+and expensive everywhere else. Avoid the generic AI-startup naming
+patterns; a real word or a coined one both work, the test is whether a
+coach would say it to a trainee out loud.
+
+Not started.
+
+---
+
 ## BI. Commission revenue plan (both sides) + a payments system where neither side can be stiffed
 
 Requested, two parts that only make sense together:
