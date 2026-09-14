@@ -694,6 +694,10 @@ service fee" and the coach "The trainee pays $635.40 … You receive
 $528.60 after FormTrace's 11.9% commission"; the offer card's Price line
 includes the fee. Constants `TRAINEE_FEE_PCT`, `COACH_COMMISSION_PCT`,
 `coachCommissionPct(facts)` - display only until BI moves money.
+Housekeeping note: commit dd71fc3 shows an ~11k-line diff on index.html.
+That is a one-time line-ending normalisation (the stored blob was CRLF;
+core.autocrlf=true now stores LF, working copy stays CRLF), not content;
+the fee edits are the only real change. Future diffs are small again.
 VAT note for decision 5: if FormTrace registers, VAT applies to the FEES,
 which changes 5.9% to ~7% or eats the net - accountant before the first
 real charge.
