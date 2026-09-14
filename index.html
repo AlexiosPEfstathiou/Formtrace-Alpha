@@ -614,6 +614,7 @@
   .cbadge.pro{background:rgba(255,194,74,.16);color:var(--amber);border:1px solid rgba(255,194,74,.44);}
   .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
   .cbadge.ref{background:rgba(90,176,255,.14);color:#5AB0FF;border:1px solid rgba(90,176,255,.6);}   /* Item BN referral tier */
+  .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
   .cp-exp{font-size:14px;font-weight:700;color:var(--lime-dim);margin-top:4px;}
   .cp-bio{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px;}
   .cp-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
@@ -10099,6 +10100,7 @@ async function openCoachProfile(coachId,backTo){
   }
   if(!p){ body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">?</div><p>This coach no longer has a profile.</p></div>`; return; }
     try{ const { data }=await store._sb.rpc("referral_stats",{p_user:coachId}); if(data&&data.tier) p._referral=data; }catch(e){}   // Item BN
+    try{ const { data }=await store._sb.from("profiles").select("founding_at").eq("id",coachId).maybeSingle(); if(data&&data.founding_at) p._founding=true; }catch(e){}   // Item BQ
   renderCoachProfile(p);
 }
 function badgeRow(p){
@@ -10106,6 +10108,7 @@ function badgeRow(p){
   if(p.verified) b.push(`<span class="cbadge v" title="Approved by FormTrace">✓ Verified</span>`);
   if(p.pro_status==="professional") b.push(`<span class="cbadge pro">★ Professional</span>`);
   if(p.pro_status==="certified") b.push(`<span class="cbadge cert">◆ Certified Professional</span>`);
+    if(p._founding) b.push(`<span class="cbadge founding" title="One of the founding coaches">⭐ Founding coach</span>`);   // Item BQ
     if(p._referral) b.push(referralTierBadge(p._referral));   // Item BN
   return b.length?`<div class="cbadges">${b.join("")}</div>`:"";
 }
@@ -10472,6 +10475,29 @@ async function renderAdminInactivity(body){
     slot.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load review activity.</div>`;
   }
 }
+/* Item BQ: founding coaches are chosen by hand by the project owner. */
+async function renderAdminFounding(body){
+  const wrap=document.createElement("div"); wrap.className="card"; wrap.style.marginBottom="12px";
+  wrap.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Founding coaches</div><div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:10px">Assigned by hand. Shows a permanent badge on the coach's public profile; item BR reads the same flag for zero commission once payments exist.</div><div id="adm-founding">Loading…</div>`;
+  body.appendChild(wrap);
+  try{
+    const { data, error } = await store._sb.from("profiles").select("id,display_name,city,founding_at").eq("role","coach").order("display_name");
+    if(error) throw error;
+    const list=$("#adm-founding"); list.innerHTML="";
+    if(!(data||[]).length){ list.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No coaches yet.</div>`; return; }
+    for(const c of data){
+      const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)";
+      row.innerHTML=`<div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"—")}${c.founding_at?` <span class="cbadge founding">⭐ Founding</span>`:""}</div><div style="font-size:11.5px;color:var(--faint)">${escapeHtml(c.city||"")}${c.founding_at?` · since ${escapeHtml(fmtDay(c.founding_at.slice(0,10)))}`:""}</div></div>
+        <button class="btn sm ${c.founding_at?"ghost":""}" style="width:auto" data-founding="${c.id}" data-on="${c.founding_at?"0":"1"}">${c.founding_at?"Remove":"Make founding"}</button>`;
+      list.appendChild(row);
+    }
+    list.querySelectorAll("[data-founding]").forEach(b=>b.addEventListener("click",async()=>{
+      b.disabled=true;
+      try{ const { error }=await store._sb.rpc("admin_set_founding",{p_coach:b.getAttribute("data-founding"),p_on:b.getAttribute("data-on")==="1"}); if(error) throw error; toast(b.getAttribute("data-on")==="1"?"Founding coach ⭐":"Removed",1800); renderAdmin(); }
+      catch(err){ console.error("set founding (run migrations_founding.sql)",err); toast(err.message||"Couldn't update",4000); b.disabled=false; }
+    }));
+  }catch(err){ console.error("founding list",err); const list=$("#adm-founding"); if(list) list.textContent="Run migrations_founding.sql to enable."; }
+}
 async function renderAdmin(){
   const body=$("#admin-body");body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   let apps=[];
@@ -10480,6 +10506,7 @@ async function renderAdmin(){
   body.innerHTML="";
   await renderAdminErrors(body);
   await renderAdminInactivity(body);
+  await renderAdminFounding(body);   // Item BQ
   if(!apps.length){ body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`); return; }
   for(const a of apps){
     const prof=a.profiles||{};

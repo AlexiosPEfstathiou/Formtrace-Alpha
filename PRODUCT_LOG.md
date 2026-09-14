@@ -22,11 +22,11 @@ BE) are not tasks and are left out.
 | 8 | **AA** Voice-over: no sound in preview - MITIGATED 2026-09-14 | blocked on repro | Earlier fixes confirmed present; low-level warning on the preview added. |
 | 9 | **AH** Pose overlay sometimes missing - MITIGATED 2026-09-14 | blocked on repro | Rebuild retries with backoff + manual retry; pose-coverage number on every set. |
 | 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
-| 11 | **AY part 2** The in-app video call itself | Hard (decision) | WebRTC (signalling + TURN relay for mobile) vs a provider SDK (cost, third party). Scheduling half is done. |
-| 12 | **BI** Commission plan + escrow payments | Hardest (decision) | Provider account, server side (Edge Functions) for webhooks, KYC via provider, legal/tax. Five decisions listed in the item; blocked on the first. |
+| 11 | **AY part 2** The call: Google Meet link on accepted calls | Medium-easy (decided) | Paste-a-Meet-link flow now; OAuth auto-mint later once there is a server. |
+| 12 | **BI** Commission plan + escrow payments | Hardest | Direction: Stripe Connect (Onelink is Stripe's wallet); Binance Pay as a later optional method. Unblock: open a Stripe account. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
 | 14 | **BP** Seed trainee goals before recruiting coaches | Easy (activity) | Not code; 3-5 real goals posted, response times logged. |
-| 15 | **BQ** Founding coach badge | Easy (decision) | An hour on the badge system; needs the founding-cohort definition (approved vs completed a goal). |
+| 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
 | 16 | **BR** Founding coaches: zero commission, capped | Follows BI | Promise now, honour when BI exists; per-coach override in the rate table. |
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
 
@@ -66,24 +66,30 @@ From the BM brainstorm, adopted 2026-09-14: the first N coaches (cap to be
 set - 10 or 25) pay zero platform commission, forever. Scarce and
 time-boxed by the cap. Implementation is a per-coach override in BI's
 rate table (see BS/BM note) plus a `founding_rank` or `founding_at` on
-profiles set when they qualify - which needs a definition: first N
-coaches APPROVED, or first N to complete a goal with a trainee? The second
-is the honest one (a listed-but-inactive coach shouldn't hold a founding
-slot). Can be PROMISED now and honoured once BI exists; the badge (BQ) is
+profiles set when they qualify - which needs a definition. **Decided 2026-09-14: assigned manually by
+the project owner** - `profiles.founding_at`, set from the Admin screen
+(BQ). No automatic rule, no cap enforced in code; the cap is a promise
+kept by hand. Can be PROMISED now and honoured once BI exists; the badge (BQ) is
 the visible half that can ship today. Not started; the commission half
 is blocked on BI.
 
 ---
 
-## BQ. "Founding coach" badge
+## BQ. "Founding coach" badge - DONE 2026-09-14 (admin-assigned)
 
 From the BM brainstorm, adopted 2026-09-14. A permanent badge on the
 public coach profile and wherever Verified / Professional / Certified /
 the referral tier show, for the founding cohort (definition shared with
 BR). Zero cost, about an hour on item A's badge system: a `founding_at`
-column, a fifth `.cbadge` style, one line in `badgeRow`. Not started -
-waiting only on the founding-cohort definition from BR (approved vs
-completed-a-goal).
+column, a fifth `.cbadge` style, one line in `badgeRow`.
+
+**Decided 2026-09-14 (interview): founding coaches are assigned MANUALLY
+by the project owner**, not by rule. **DONE same day.** Needs
+`supabase/migrations_founding.sql` run. `profiles.founding_at`;
+`admin_set_founding(coach, on)` (admin-only, security definer); the Admin
+screen gains a "Founding coaches" card listing every coach with Make
+founding / Remove; the public coach profile shows "⭐ Founding coach"
+(gold) beside the other badges. BR reads the same column later.
 
 ---
 
@@ -490,8 +496,25 @@ percentage withheld from the coach's transfer.
    platform entity is; VAT/sales tax handling. This one likely needs a
    professional, not a log entry.
 
-Largest item in the log. Not started; blocked on decision 1 (an account
-has to exist before a line of integration code makes sense).
+**Decision 1 direction from the interview (2026-09-14): candidates named
+were Onelink.com and Binance Pay.** Assessed:
+- **Onelink IS Stripe.** It is Stripe's one-click wallet (the successor to
+  Stripe Link), built into Stripe checkout at no extra fee. Choosing it
+  therefore means building on Stripe - and the marketplace/escrow half
+  (trainee charged, funds held by the provider, released to the coach's
+  connected account, commission on both sides) is Stripe Connect. So the
+  candidate and the recommendation converge: **Stripe Connect as the
+  platform, with Onelink enabled as a checkout method** so trainees pay
+  one-click. Next step unchanged: open a Stripe account, test mode.
+- **Binance Pay** is a crypto merchant checkout: trainees pay from a
+  Binance wallet, settlement in crypto to the platform's Binance merchant
+  account. It has no connected-accounts/escrow model - paying coaches out
+  would be manual crypto transfers to coaches who must hold Binance
+  accounts - and it carries regulatory and tax complexity per country.
+  Reasonable as an OPTIONAL trainee payment method later (accepting crypto
+  in), unsuitable as the platform. Logged as a possible add-on, not a
+  foundation.
+Largest item in the log. Not started; the Stripe account is the unblock.
 
 ---
 
@@ -873,11 +896,20 @@ the one who must respond, with a legend entry. Likely also a timing
 matter on the first test - the marker had been deployed about a minute
 before it was checked.
 
-**Second step still open:** the call itself, in-app - WebRTC (peer-to-peer,
-needs signalling and realistically a TURN relay for mobile reliability)
-vs a hosted provider SDK (simpler and reliable; a third party and usually
-a cost). Same decision item G has been paused on. Supersedes G's
-scheduling half.
+**Second step DECIDED 2026-09-14 (interview): generate a Google Meet link.**
+Honest constraint first: creating a Meet link programmatically needs the
+Google Calendar / Meet REST API with OAuth - a Google Cloud project, a
+consent screen, and a server to hold tokens. The app has none of those,
+and the decision was "Meet", not "build Google integration". What CAN be
+built now, and is the real 90%: a **Join call** link on every accepted
+call. Either party taps "Create Meet link", which opens
+meet.google.com/new (Google mints an instant room, no calendar needed),
+copies the link back into a field on the call card; it is stored on the
+`call_proposals` row (`meeting_url`) and shown to both as a Join button
+on the card, on the calendar day, and on the homepage reminder near call
+time. Recurring series: one link for the whole series (Meet rooms
+persist). Automatic minting via OAuth stays logged as a later polish once
+there is a server (BI needs one anyway). Not started; next code item.
 
 ---
 
