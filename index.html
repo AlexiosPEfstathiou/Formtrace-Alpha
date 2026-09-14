@@ -2487,8 +2487,10 @@ async function hydrateAvatars(root){
   for(let ai=0;ai<aEls.length;ai++){
     const el=aEls[ai];
     const path=el.getAttribute("data-avatar");
-    if(!path)continue;
     const url=aUrls[ai];
+    // Item BH: coach avatars without a photo show a whistle instead of initials
+    if(!url && el.getAttribute("data-avatar-fallback")==="whistle"){ el.innerHTML=WHISTLE_SVG; el.style.display="flex"; el.style.alignItems="center"; el.style.justifyContent="center"; continue; }
+    if(!path)continue;
     if(url){
       el.style.backgroundImage=`url("${url}")`;
       el.style.backgroundSize="cover";
@@ -5043,6 +5045,21 @@ async function renderOffersTab(body){
     store.engagements.list({trainee_id:ME.id})
   ]);
   const coaches=Object.fromEntries(coachRows.map(c=>[c.id,c]));
+  /* Item BH: badges and the average rating belong ON the offer, not behind a
+     tap. One public-profile call per distinct coach with an offer here, in
+     parallel; founding flag and referral tier alongside. */
+  try{
+    const ids=[...new Set(offers.map(o=>o.coach_id).filter(Boolean))];
+    await Promise.all(ids.map(async id=>{
+      const c=coaches[id]||(coaches[id]={id});
+      const [pub,ref,fp]=await Promise.all([
+        store._sb.rpc("coach_public_profile",{p_coach:id}).then(r=>r.data).catch(()=>null),
+        store._sb.rpc("referral_stats",{p_user:id}).then(r=>r.data).catch(()=>null),
+        store._sb.from("profiles").select("founding_at").eq("id",id).maybeSingle().then(r=>r.data).catch(()=>null)
+      ]);
+      c._pub=pub||{}; if(ref&&ref.tier) c._referral=ref; if(fp&&fp.founding_at) c._founding=true;
+    }));
+  }catch(e){ console.error("offer coach badges",e); }
   const listingById=Object.fromEntries(mine.map(l=>[l.id,l]));
   const engByOffer={};
   for(const e of engs){ if(e.offer_id) engByOffer[e.offer_id]=e; }
@@ -5156,6 +5173,39 @@ function renderOfferRow(wrap,o,c,shortName,flash,coachName,goalActive){
    viewing it. Collapse control is a top-right X on the card itself rather
    than a button at the bottom — the X can undo any expansion, including
    a pre-expanded one, back down to the compact row. */
+/* Item BH: badges + average rating shown ON the offer card, from the batched
+   public profile attached in renderOffersTab (c._pub / c._referral / c._founding). */
+function coachBadgesInline(c){
+  const p=c&&c._pub||{}; const b=[];
+  if(p.verified) b.push(`<span class="cbadge v">✓ Verified</span>`);
+  if(p.pro_status==="professional") b.push(`<span class="cbadge pro">★ Professional</span>`);
+  if(p.pro_status==="certified") b.push(`<span class="cbadge cert">🎓 Certified</span>`);
+  if(c._founding) b.push(`<span class="cbadge founding">⭐ Founding</span>`);
+  if(c._referral) b.push(referralTierBadge(c._referral));
+  const rating = p.rating_count ? `<span style="font-size:12px;color:var(--ink);font-weight:700;white-space:nowrap">★ ${Number(p.rating_avg).toFixed(1)} <span style="color:var(--faint);font-weight:400">(${p.rating_count})</span></span>` : `<span style="font-size:11.5px;color:var(--faint)">No ratings yet</span>`;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">${rating}${b.join("")}</div>`;
+}
+/* Item BH: precise terms. Length and sessions as numbers, start and last day
+   on one line, price as "[full] ([per session] / session)". Falls back to the
+   coach's free text for offers made before the structured fields existed. */
+function offerDetailRows(o){
+  const cur=((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0];
+  const weeks=o.length_weeks||null, cap=o.workouts_per_week_cap||null, weekly=o.rate_per_workout_cents!=null?o.rate_per_workout_cents/100:null;
+  const money=v=>cur+(Math.round(v*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
+  const length = weeks ? `${weeks} week${weeks===1?"":"s"}` : (o.length_text||"—");
+  const sessions = (weeks&&cap) ? `${weeks*cap} sessions (${cap} / week)` : (o.sessions_text||"—");
+  let dates = o.start_text||"—";
+  if(o.start_date && weeks){ const end=addDaysISO(o.start_date,7*weeks-1); dates=`${fmtDay(o.start_date)} → ${fmtDay(end)}`; }
+  else if(o.start_date){ dates=fmtDay(o.start_date); }
+  let price = o.price_text||"—";
+  if(weekly!=null && weeks && cap){ price=`<b>${money(weekly*weeks)}</b> <span style="color:var(--muted)">(${money(weekly/cap)} / session)</span>`; }
+  return `<div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(length)}</span></div>
+    <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(sessions)}</span></div>
+    <div class="kv"><span class="k">Dates</span><span class="v">${escapeHtml(dates)}</span></div>
+    <div class="kv"><span class="k">Price</span><span class="v">${price}</span></div>`;
+}
+/* Item BH: placeholder for a coach with no profile photo - a whistle. */
+const WHISTLE_SVG=`<svg viewBox="0 0 64 64" width="70%" height="70%" xmlns="http://www.w3.org/2000/svg" aria-label="Coach"><path d="M14 30a12 12 0 1 0 24 0v-4h20a3 3 0 0 0 3-3v-2a3 3 0 0 0-3-3H26a12 12 0 0 0-12 12z" fill="#F5C542" stroke="#3a2c00" stroke-width="2.5" stroke-linejoin="round"/><circle cx="26" cy="30" r="5" fill="#0B0E11" opacity=".85"/><path d="M45 20v6" stroke="#3a2c00" stroke-width="2.5" stroke-linecap="round"/><path d="M50 8c2 3 2 6 0 9M55 6c3 4 3 9 0 13" stroke="#5AB0FF" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>`;
 function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
   if(preExpanded&&!o.viewed_at){
     store.offers.update(o.id,{viewed_at:new Date().toISOString()}).catch(e=>console.error(e));
@@ -5164,17 +5214,15 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
   const exp=document.createElement("div");exp.className="offer-expanded";
   exp.innerHTML=`<button class="oe-close" aria-label="Collapse">✕</button>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-right:26px">
-      <div class="avatar" data-avatar="${escapeHtml(c.avatar_path||"")}">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
-      <div style="flex:1;min-width:0"><div style="font-weight:700" class="coach-link" data-coach="${o.coach_id}">${escapeHtml(coachName)}</div><div style="font-size:12px;color:var(--muted)">${escapeHtml(o.focus||"")}</div>${langLine(c)}</div>
+      <div class="avatar" data-avatar="${escapeHtml(c.avatar_path||"")}" data-avatar-fallback="whistle">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
+      <div style="flex:1;min-width:0"><div style="font-weight:700" class="coach-link" data-coach="${o.coach_id}">${escapeHtml(coachName)}</div>
+        ${coachBadgesInline(c)}
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${escapeHtml(o.focus||"")}</div>${langLine(c)}</div>
       <span class="badge ${o.status}">${o.status}</span></div>
-    <div style="font-size:11.5px;color:var(--faint);margin:-6px 0 12px">Tap the name to see their full profile, badges and ratings</div>
     <h3 style="font-size:17px;font-weight:800;margin-bottom:4px">${escapeHtml(o.title)}</h3>
     <div class="video-card" style="margin:12px 0" data-video="${o.pitch_video_path}"></div>
-    <div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(o.length_text||"—")}</span></div>
-    <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(o.sessions_text||"—")}</span></div>
-    <div class="kv"><span class="k">Start</span><span class="v">${escapeHtml(o.start_text||"—")}</span></div>
-    <div class="kv"><span class="k">Price</span><span class="v">${escapeHtml(o.price_text||"—")}</span></div>
-          ${(o.length_weeks&&o.rate_per_workout_cents!=null)?`<div class="kv"><span class="k">Total (ceiling)</span><span class="v"><b>${escapeHtml(((o.price_text||"").match(/^[^\d]+/)||["$"])[0].trim())}${((o.rate_per_workout_cents/100)*o.length_weeks).toLocaleString()}</b> over ${o.length_weeks} week${o.length_weeks===1?"":"s"}</span></div>`:""}`;
+    ${offerDetailRows(o)}
+`;
   /* The whole point of surfacing this: accepting is not a lump-sum
      commitment, so it needs to be visible at the moment that decision is
      being made, not buried in a help article. Only shown when the offer
@@ -5479,6 +5527,7 @@ $("#of-send").addEventListener("click",async()=>{
       rate_per_workout_cents:Math.round(Number(price)*100),
       workouts_per_week_cap:Number(sessions),
       length_weeks:lweeks,   // Item BK: committed length -> committed total (weeks x weekly price)
+      start_date:start,      // Item BH: real date, so the card can state the last day
       noshow_fraction_pct:Math.max(0,Math.min(100,Number($("#of-noshow").value)||0))
     });
     toast("Offer sent ✓"); go("market");
@@ -10252,7 +10301,7 @@ function renderCoachProfile(p){
   const anySub=SUBR.some(([k])=>sub[k]!=null);
   let h="";
   h+=`<div class="card cp-head">
-      <div class="cp-av" data-avatar="${escapeHtml(p.avatar_path||"")}">${p.avatar_initials?escapeHtml(p.avatar_initials):escapeHtml(initials(nm))}</div>
+      <div class="cp-av" data-avatar="${escapeHtml(p.avatar_path||"")}" data-avatar-fallback="whistle">${p.avatar_initials?escapeHtml(p.avatar_initials):escapeHtml(initials(nm))}</div>
       <div class="cp-id">
         <div class="cp-nm">${escapeHtml(nm)}</div>
         ${badgeRow(p)}

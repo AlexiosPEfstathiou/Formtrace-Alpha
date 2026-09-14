@@ -16,7 +16,7 @@ BE) are not tasks and are left out.
 | 2 | **BM** Incentives brainstorm - DONE 2026-09-14 | - | Nine options; recommended free opening moves: seed goals, founding badge, 48-hour response promise, capped zero-commission for founders. |
 | 3 | **BJ** Names, logo, branding, domain | waiting on shortlist | Project owner to send names; then domain / trademark / store / handle checks per name. |
 | 4 | **BN** Referral links - part 1 DONE 2026-09-14 | - | Sign-ups and qualified (goal COMPLETED) counted; trainees can refer too; tiers on qualified. Part 2 (money) waits for BI. |
-| 5 | **BH** Marketplace polish - first pass done 2026-09-14 | awaiting reaction | Coach card: who + one footer row. Trainee goals: status line, small Cancel. Second pass on a screenshot. |
+| 5 | **BH** Marketplace polish - two passes 2026-09-14 | awaiting reaction | Coach card: who + footer. Trainee: goal status line; offer card with badges + rating, precise terms, dates line, price format, whistle placeholder. |
 | 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
 | 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
 | 8 | **AA** Voice-over: no sound in preview - MITIGATED 2026-09-14 | blocked on repro | Earlier fixes confirmed present; low-level warning on the preview added. |
@@ -666,7 +666,7 @@ Largest item in the log. Not started; the Stripe account is the unblock.
 
 ---
 
-## BH. Polish the offer marketplace tab - FIRST PASS 2026-09-14 (both screens)
+## BH. Polish the offer marketplace tab - TWO PASSES 2026-09-14 (both screens)
 
 Requested as stated: "polish the offer marketplace tab". Logged as an
 open-ended polish pass, not sized - it needs concrete direction before it
@@ -705,9 +705,27 @@ not the last word. What was demonstrably off, and what changed:
   or "No offers yet", "Matched with a coach", "Expired without a match",
   "Cancelled by you" - with a small ghost Cancel on the right. Offer
   counts come from one query.
-Not touched: the trainee's offers cards themselves (they already carry
-the BK total row and the cadence explainer; leaving them until you see
-this pass). Next: react with a screenshot and I take the second pass.
+**Second pass, same day, from the owner's review of the trainee's offer
+card:** Needs `supabase/migrations_offer_start_date.sql` run.
+- **Badges and average rating on the offer itself** - no tap-through
+  needed. Under the coach's name: "★ 4.6 (12)" (or "No ratings yet") and
+  the badge row - Verified, Professional / Certified, Founding, referral
+  tier. One `coach_public_profile` call per distinct coach on the tab, in
+  parallel, plus founding flag and referral tier. The "Tap the name to see
+  their full profile, badges and ratings" hint is gone; the name is still
+  a link for the full profile.
+- **Precise terms**, from the structured fields (falling back to the
+  coach's free text only for offers made before those fields existed):
+  Length "6 weeks"; Sessions "18 sessions (3 / week)"; **Dates** on one
+  line "Mon 14 Sep → Sun 25 Oct" (new `offers.start_date`, written on
+  save and backfilled from `start_text` where it parses); **Price**
+  "$600 ($33.33 / session)" - full price first, per-session in brackets.
+  The separate "Total (ceiling)" row is folded into Price; the cadence
+  explainer below still spells out the ceiling rule.
+- **Whistle placeholder**: a coach with no profile photo shows a whistle
+  cartoon (inline SVG) instead of initials - on the offer card and the
+  public coach profile header. Trainees keep initials.
+Next: a screenshot of anything still off.
 
 ---
 
