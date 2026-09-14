@@ -22,7 +22,7 @@
 
 **Not yet testable — say it out loud:** payments and any money moving (BI), automatic Google Meet creation (the link is pasted), push reminders, iOS install, the Android app (AD), NFC (AE), and background blur on a phone you have not tried it on before (BT — try it, but treat frame-rate as the thing to observe, not a pass/fail).
 
-**Timing.** Trainee list ≈ 2.5 h with a real workout in it; coach list ≈ 2 h; they interleave (the coach cannot review before the trainee submits). Plan a half day.
+**Timing.** Trainee list ≈ 2 h with a real set in it; coach list ≈ 1.5 h; they interleave (the coach cannot review before the trainee submits). Plan a half day.
 
 ---
 
@@ -31,25 +31,24 @@
 | # | Step | Where | ✓ / ~ / ✗ | Notes |
 |---|------|-------|-----------|-------|
 | 1 | Sign up **through the coach's referral link**; see "You joined through …'s link"; age + consent gate; profile photo; theme, colourblind mode | Sign-in, Profile | | |
-| 2 | Post a goal: title, focus, details, sessions/week, **video pitch** (required) | Open goals → Post | | |
-| 3 | Receive an offer: pitch video plays; coach's **badges + rating** shown on the card; Length, Sessions "18 sessions (3 / week)", **Dates** on one line, **Price "$635.40 ($35.30 / session · includes the 5.9% service fee)"** | Offers tab | | |
+| 2 | Post a goal: title, focus, details, **1 session per week** (it is a test - the coach will offer a **1-week** goal), **video pitch** (required) | Open goals → Post | | |
+| 3 | Receive an offer (**1 week, 1 session, €100 before fees**): pitch video plays; coach's **badges + rating** shown on the card; Length "1 week", Sessions "1 session (1 / week)", **Dates** on one line, **Price "€105.90 (€105.90 / session · includes the 5.9% service fee)"** | Offers tab | | |
 | 4 | Accept it: confirmation states weeks and the maximum; other offers auto-declined; goal closes | Offers tab | | |
 | 5 | Training tab (merged calendar): This week card — X of N, days to close; **Start a session** → week pool → pick a workout | Training | | |
 | 6 | Record a set: 3-2-1 timer or open-palm trigger; skeleton overlay visible; **trim start/end** on the review; Use this trace | Recorder | | |
 | 7 | Set result: reps counted; correct with +/−; weight; **form match line** when the exercise has a reference; last-time comparison | Set complete | | |
 | 8 | Try **Blur bg** on one set: does the recording blur behind you? Does the phone get warm / stutter? Note the phone model | Recorder | | |
 | 9 | Wildcard slot (pick from the coach's library); skip a workout with a reason; exit mid-workout and come back (draft restored?) | Workout | | |
-| 10 | Interval running workout outdoors: cues spoken and vibrated; GPS distance; the running review card | Workout | | |
-| 11 | Macros: log a day; see the coach's weekly goal and live %; dashboard bars and goal line | Training → day tap; Dashboard | | |
-| 12 | Check-in photo (Saturday/Sunday window — if not that day, note that the prompt is correctly absent); calendar day glistens; lightbox on the photo; measurements | Home, Training, Profile | | |
-| 13 | Personal bests and dashboard: streak squares, week streak badge, milestone celebration + share image ("weeks", not "days") | Dashboard | | |
-| 14 | Video call: **Propose a call** (one-time AND recurring); accept / decline / suggest another; **Join call** from card, calendar day, homepage; Withdraw a proposal | Training → Video call card | | |
-| 15 | Receive a review: tags per set; written feedback; **voice-over** plays with the clip; rate the coach | Review | | |
-| 16 | Day notes with a video attachment; read the coach's day note | Training → day | | |
-| 17 | Vacation: set a range; streak neutral; at-risk copy stays quiet | Profile / Training | | |
-| 18 | Goal completion: outcome recorded; calendar and streak afterwards; goal in history; the referrer's Profile shows "1 trainee completed a goal" | Training, Profile | | |
-| 19 | Profile: referral card — Copy and Share work; counts; the card says tiers unlock **vouchers and merch** | Profile | | |
-| 20 | Install as an app; offline banner behaviour | Profile → Install | | |
+| 10 | Macros: log a day; see the coach's weekly goal and live %; dashboard bars and goal line | Training → day tap; Dashboard | | |
+| 11 | Check-in photo (Saturday/Sunday window — if not that day, note that the prompt is correctly absent); calendar day glistens; lightbox on the photo; measurements | Home, Training, Profile | | |
+| 12 | Personal bests and dashboard: streak squares, week streak badge, milestone celebration + share image ("weeks", not "days") | Dashboard | | |
+| 13 | Video call: **Propose a call** (one-time AND recurring); accept / decline / suggest another; **Join call** from card, calendar day, homepage; Withdraw a proposal | Training → Video call card | | |
+| 14 | Receive a review: tags per set; written feedback; **voice-over** plays with the clip; rate the coach | Review | | |
+| 15 | Day notes with a video attachment; read the coach's day note | Training → day | | |
+| 16 | Vacation: set a range; streak neutral; at-risk copy stays quiet | Profile / Training | | |
+| 17 | Goal completion: outcome recorded; calendar and streak afterwards; goal in history; the referrer's Profile shows "1 trainee completed a goal" | Training, Profile | | |
+| 18 | Profile: referral card — Copy and Share work; counts; the card says tiers unlock **vouchers and merch** | Profile | | |
+| 19 | Install as an app; offline banner behaviour | Profile → Install | | |
 
 ---
 
@@ -61,7 +60,7 @@
 | 2 | Admin **Assign badges**: set Professional with an employer ("Works at …" on hover); Founding; see them on the public profile and on offer cards | Admin, public profile | | |
 | 3 | Attach a **certification** (title, issuer, date, photo/PDF) → admin approves → Certified badge + summary on public profile → **homepage notice** to the coach | Profile, Admin, Home | | |
 | 4 | Open goals: **who** posted (avatar, name, city, "posted N days ago"), days left, Hide / Unhide, hidden-goals toggle | Open goals | | |
-| 5 | Send an offer: single **Length (weeks)**, sessions/week, price, no-show %; preview says "**The trainee pays … You receive … after your … rate**" (and the standard rate + saving if privileged); video pitch required | Open goals → Send an offer | | |
+| 5 | Send an offer for the test goal - **1 week, 1 session/week, €100**: "**The trainee pays €105.90 … You receive €88.10 after FormTrace's 11.9% commission**" (or your privileged rate + the saving); video pitch required | Open goals → Send an offer | | |
 | 6 | Trainees list: "2/3 this week" per trainee; open one | Trainees | | |
 | 7 | Exercise library: create, **record a reference** (trim it), reps detected; edit; delete; the "no reference recorded" hint on review for one without | Library, Review | | |
 | 8 | Builder: build a workout (sets/reps, intervals, wildcard slots); save as template | Builder | | |
@@ -71,11 +70,10 @@
 | 12 | Payment ledger: earned per reviewed workout, per-trainee totals — display only, no money moves | Payments | | |
 | 13 | Video call: propose (day tap or card), accept the trainee's, **add the Meet link**, Join; recurring shows "next …" | Trainee calendar → Video call card | | |
 | 14 | Weekly macro goal; carry-forward; the trainee's % visible to you | Trainee calendar | | |
-| 15 | Vacation for a trainee (single and bulk); at-risk homepage card for a trainee; inactivity list in admin | Trainee calendar, Admin | | |
-| 16 | Complete the goal with the trainee; outcome recorded; history | Trainee calendar | | |
-| 17 | Profile: referral link card (coach copy says tiers **lower your commission**); "Your trainees' streaks" card — combined weeks, rank of N, **Top 1%** badge or "held by the top K" | Profile | | |
-| 18 | Public profile as a trainee would see it: badges in order (Top 1% first), certification summary, ratings, pitch history | Public profile | | |
-| 19 | Admin: applications, error log, inactivity, **Coach badges** list with "N to review" flags | Admin | | |
+| 15 | Complete the goal with the trainee; outcome recorded; history | Trainee calendar | | |
+| 16 | Profile: referral link card (coach copy says tiers **lower your commission**); "Your trainees' streaks" card — combined weeks, rank of N, **Top 1%** badge or "held by the top K" | Profile | | |
+| 17 | Public profile as a trainee would see it: badges in order (Top 1% first), certification summary, ratings, pitch history | Public profile | | |
+| 18 | Admin: applications, error log, inactivity, **Coach badges** list with "N to review" flags | Admin | | |
 
 ---
 
