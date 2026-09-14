@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -2877,6 +2877,9 @@ function drawFigure(ctx,lm,W,H){
 /* =========================================================================
    4. Analysis — rep counting + DTW form grading (validated offline)
    ========================================================================= */
+/* Pricing (BI decision 2, 2026-09-14): the trainee pays the coach's price plus a service fee that covers card processing; the coach receives their price minus a commission. Founders 0%, Ambassador 8.9%, Partner 5.9% - applied per coach once BI exists (`coachCommissionPct` is the default until then). */
+const TRAINEE_FEE_PCT=5.9, COACH_COMMISSION_PCT=11.9;
+function coachCommissionPct(facts){ if(facts&&facts.founding_at) return 0; const t=facts&&facts.referral&&facts.referral.tier; if(t>=3) return 5.9; if(t>=2) return 8.9; return COACH_COMMISSION_PCT; }
 const DEG=180/Math.PI;
 const JOINTS=[[11,13,15],[12,14,16],[13,11,23],[14,12,24],[11,23,25],[12,24,26],[23,25,27],[24,26,28]];
 function jAngle(A,B,C){const v1={x:A.x-B.x,y:A.y-B.y},v2={x:C.x-B.x,y:C.y-B.y};const d=v1.x*v2.x+v1.y*v2.y;const m=(Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y))||1e-9;let c=d/m;c=Math.max(-1,Math.min(1,c));return Math.acos(c)*DEG;}
@@ -5253,7 +5256,7 @@ function offerDetailRows(o){
   if(o.start_date && weeks){ const end=addDaysISO(o.start_date,7*weeks-1); dates=`${fmtDay(o.start_date)} → ${fmtDay(end)}`; }
   else if(o.start_date){ dates=fmtDay(o.start_date); }
   let price = o.price_text||"—";
-  if(weekly!=null && weeks && cap){ price=`<b>${money(weekly*weeks)}</b> <span style="color:var(--muted)">(${money(weekly/cap)} / session)</span>`; }
+  if(weekly!=null && weeks && cap){ const gross=weekly*weeks*(1+TRAINEE_FEE_PCT/100); price=`<b>${money(gross)}</b> <span style="color:var(--muted)">(${money(gross/(weeks*cap))} / session · includes ${TRAINEE_FEE_PCT}% service fee)</span>`; }
   return `<div class="kv"><span class="k">Length</span><span class="v">${escapeHtml(length)}</span></div>
     <div class="kv"><span class="k">Sessions</span><span class="v">${escapeHtml(sessions)}</span></div>
     <div class="kv"><span class="k">Dates</span><span class="v">${escapeHtml(dates)}</span></div>
@@ -5543,7 +5546,9 @@ function cadenceExplainer({sessions,price,cur,noshow,perspective,weeks}){
      charged (item B), so this is the most the goal can cost, known up front. */
   if(weeks>0){
     const total=price*weeks;
-    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)"><b style="color:var(--ink)">Committed total: ${cur}${total.toFixed(total%1?2:0)}</b> <span style="color:var(--muted)">over ${weeks} week${weeks===1?"":"s"} (${weeks} × ${cur}${price}/week). That's the ceiling - ${perspective==="coach"?"the trainee pays":"you pay"} only for sessions actually reviewed.</span></div>`);
+    const fee=total*TRAINEE_FEE_PCT/100, payTotal=total+fee, coachNet=total*(1-COACH_COMMISSION_PCT/100);
+    const m=v=>cur+(Math.round(v*100)/100).toLocaleString(undefined,{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2});
+    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)">${perspective==="coach"?`<b style="color:var(--ink)">The trainee pays ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} (${m(total)} + ${TRAINEE_FEE_PCT}% service fee). <b style="color:var(--ink)">You receive ${m(coachNet)}</b> after FormTrace's ${COACH_COMMISSION_PCT}% commission - less if you hold a Founding or referral tier.</span>`:`<b style="color:var(--ink)">Committed total: ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} - ${m(total)} for the coaching plus a ${TRAINEE_FEE_PCT}% service fee. That's the ceiling: you pay only for sessions actually reviewed.</span>`}</div>`);
   }
   return lines.join("");
 }
@@ -10096,9 +10101,12 @@ async function renderProfile(){
     <div class="card" style="margin:0 0 12px" id="ref-card">
       <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Anyone who joins through this link counts toward your referral tier. A referral <b>qualifies</b> once they complete a coaching goal - accepting and then cancelling doesn't count.</div>
       <div style="display:flex;gap:8px;align-items:center"><input id="ref-link" readonly class="ro" style="flex:1;font-size:12px" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}"><button class="btn sm" id="ref-copy" style="width:auto">Copy</button>${navigator.share?`<button class="btn sm ghost" id="ref-share" style="width:auto">Share</button>`:""}</div>
-      <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
-    </div>`;
-  }
+      <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
+
+    </div>`;
+
+  }
+
   /* Certifications (BH badge system): the coach attaches one here; an admin
      approves it, which grants the Certified badge and shows the summary. */
   if(roleOf()==="coach"){

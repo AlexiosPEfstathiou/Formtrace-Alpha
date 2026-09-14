@@ -23,7 +23,7 @@ BE) are not tasks and are left out.
 | 9 | **AH** Pose overlay sometimes missing - MITIGATED 2026-09-14 | blocked on repro | Rebuild retries with backoff + manual retry; pose-coverage number on every set. |
 | 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
 | 11 | **AY part 2** Google Meet link on accepted calls - DONE 2026-09-14 | - | Create/paste/Join on the card, calendar and homepage; OAuth auto-mint later once there is a server. |
-| 12 | **BI** Commission plan + escrow payments | Hardest | Direction: Stripe Connect (Onelink is Stripe's wallet); Binance Pay as a later optional method. Unblock: open a Stripe account. |
+| 12 | **BI** Commission plan + escrow payments | Hardest | Stripe Connect; rates DECIDED (5.9% trainee fee, 11.9% coach commission, 0/8.9/5.9 overrides). Unblock: open a Stripe account. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
 | 14 | **BP** Seed trainee goals before recruiting coaches | Easy (activity) | Not code; 3-5 real goals posted, response times logged. |
 | 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
@@ -31,11 +31,38 @@ BE) are not tasks and are left out.
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
 | 18 | **BT** Background blur while recording - BUILT 2026-09-14 | phone test pending | Off by default; watch fps and warmth on the alpha phones. |
 | 19 | **BU** Alpha end-to-end test day | Easy (activity) | Two checklists written; run the day, one item per finding. |
+| 20 | **BV** Referral tier requirements, coach vs trainee referrals | Easy code (decision) | Only the counting rule in referral_stats changes; four decisions listed. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BV. Referral tier requirements: coach referrals and trainee referrals must not carry the same power
+
+Opened 2026-09-14 on the owner's instruction. Today (BN) a tier counts
+"qualified referrals" - referred members who completed a coaching goal -
+and one ladder (3 / 10 / 25) applies whether the referrer is a coach or a
+trainee, and whether the referred person became a coach or a trainee.
+That is deliberately NOT the intended end state: the two kinds of
+referral have different value to the platform and should not unlock the
+same tiers with the same counts.
+
+To decide here, separately from BN/BS:
+1. Which referral is worth more - bringing a COACH (supply, the hard side
+   of the cold start; BM's framing) or bringing a paying TRAINEE (revenue)?
+2. Weighting: separate ladders per kind, or one ladder with points (e.g. a
+   completed-goal trainee = 1, an active coach = 3)?
+3. What "qualified" means for a referred coach - approved, first pitch,
+   first completed goal with a trainee?
+4. Whether trainee referrers can reach the money tiers at all (Ambassador
+   8.9% / Partner 5.9% are coach commission rates; a trainee referrer's
+   reward must be something else - BS).
+The data already distinguishes both: `profiles.referred_by` +
+`profiles.role` of the referred, and `engagements` for completion. Only
+the counting rule in `referral_stats` changes. Not started.
 
 ---
 
@@ -197,8 +224,12 @@ tangible at each tier rather than a title alone. Proposed menu, to decide:
 - A one-off bonus at the moment a referral qualifies (not tier-based),
   e.g. a small credit to both referrer and newcomer - the standard
   two-sided pattern.
-Every one of these is a per-user override in BI's commission table, so
-they are cheap once BI exists and impossible before it. The tier is
+**Decided 2026-09-14 with BI decision 2:** the tier rewards ARE the
+commission rates - Recruiter 11.9% (no discount yet), **Ambassador 8.9%,
+Partner 5.9%**, Founders 0%. One-off bonuses and trainee-side rewards
+remain open. Every one of these is a per-user override in BI's
+commission table, so they are cheap once BI exists and impossible before
+it. The tier is
 already computed (`referral_stats`); the reward is the missing half.
 Design note carried from BM: give BI's rate table a per-user override
 column from day one. Not started; blocked on BI.
@@ -643,6 +674,29 @@ percentage withheld from the coach's transfer.
 5. Jurisdiction/tax: coaches as independent contractors; where the
    platform entity is; VAT/sales tax handling. This one likely needs a
    professional, not a log entry.
+
+**Decision 2 MADE 2026-09-14 - pricing model and rates (option B):**
+the trainee pays the coach's price plus a **5.9% service fee** (one all-in
+number, fee named inside it - card surcharges are illegal in the UK/EU, a
+service fee is not; Stripe's ~1.5%+20p UK / 2.9%+30c US comes out of it);
+the coach receives their price minus **11.9% commission**, shown to them
+at pitch time. Overrides: **Founders 0%**, **Ambassadors 8.9%**,
+**Partners 5.9%**. Each side sees only its own number.
+Math checked in code (600 goal): trainee pays 635.40, coach receives
+528.60, FormTrace grosses 106.80 = 17.8% of the coach price. Worst case,
+every coach a Partner: gross 11.8% of coach price, **10.2% after UK Stripe
+fees** (owner's 10.3% confirmed); ~8.7% on US/international cards; a
+Founding coach's goal nets ~4.3% (trainee side only). Add a £1 minimum
+service fee so tiny weekly amounts still cover Stripe's fixed pence.
+Already in the app: the cadence explainer now tells the trainee
+"Committed total: $635.40 for 6 weeks - $600 for the coaching plus a 5.9%
+service fee" and the coach "The trainee pays $635.40 … You receive
+$528.60 after FormTrace's 11.9% commission"; the offer card's Price line
+includes the fee. Constants `TRAINEE_FEE_PCT`, `COACH_COMMISSION_PCT`,
+`coachCommissionPct(facts)` - display only until BI moves money.
+VAT note for decision 5: if FormTrace registers, VAT applies to the FEES,
+which changes 5.9% to ~7% or eats the net - accountant before the first
+real charge.
 
 **Decision 1 direction from the interview (2026-09-14): candidates named
 were Onelink.com and Binance Pay.** Assessed:
