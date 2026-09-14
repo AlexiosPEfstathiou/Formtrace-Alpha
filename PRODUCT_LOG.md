@@ -730,6 +730,33 @@ card:** Needs `supabase/migrations_offer_start_date.sql` run.
   tooltip explaining what it means and how it is earned (`BADGE_HELP`,
   one source of text for all surfaces). Phones have no hover, so a tap on
   any badge shows the same text as a toast; the cursor shows "help".
+**Badge system made concrete (owner direction, same day).** Needs
+`supabase/migrations_badges.sql` run (after migrations_founding.sql).
+- Admin: the "Make founding" button is replaced by **Assign badges** per
+  coach, one sheet for all of them. Verified is shown as a fact ("since
+  14 Sep 2026", from the application's approval date - `verified_at`,
+  backfilled) and is not editable. Professional is a toggle with a
+  **place of employment**; hover reads "Works at Planet Fitness".
+  Certified is EARNED: the coach attaches a certification (title, issuer,
+  date, photo/PDF) on their Profile; the admin sees it in the sheet
+  (View / Approve / Reject); approval sets Certified and the summary
+  ("🎓 Level 3 PT · CIMSPA · 3 Mar 2024") appears on the public profile.
+  Founding is a plain toggle; hover says the coach has been part of
+  FormTrace's development. Referral tiers renamed **Recruiter** /
+  Ambassador / Partner; hover shows the referral number.
+- One badge model for every surface: `loadCoachFacts(ids)` (one batched
+  pass: profiles + approved certifications + referral stats) ->
+  `badgeSpans(facts)` + `badgeTitle(kind, facts)`. Offer card, public
+  profile, admin list all render from it, so wording cannot drift. Tap =
+  hover on phones (toast).
+- New table `coach_certifications` (RLS: coach owns, approved are public,
+  admin reads all); storage policy so admins can open attached files;
+  `admin_set_badges`, `admin_review_certification`. Rejecting the only
+  approved certification falls the coach back to Professional if an
+  employer is set, else none.
+Not built: notifying the coach when a certification is approved or
+rejected (they see the status on their Profile); an expiry date on
+certifications.
 Next: a screenshot of anything still off.
 
 ---

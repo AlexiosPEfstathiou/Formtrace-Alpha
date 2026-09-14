@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5046,20 +5046,15 @@ async function renderOffersTab(body){
   ]);
   const coaches=Object.fromEntries(coachRows.map(c=>[c.id,c]));
   /* Item BH: badges and the average rating belong ON the offer, not behind a
-     tap. One public-profile call per distinct coach with an offer here, in
-     parallel; founding flag and referral tier alongside. */
+     tap. Public profile (rating) per distinct coach in parallel, plus the
+     badge facts in one batched pass. */
   try{
     const ids=[...new Set(offers.map(o=>o.coach_id).filter(Boolean))];
-    await Promise.all(ids.map(async id=>{
-      const c=coaches[id]||(coaches[id]={id});
-      const [pub,ref,fp]=await Promise.all([
-        store._sb.rpc("coach_public_profile",{p_coach:id}).then(r=>r.data).catch(()=>null),
-        store._sb.rpc("referral_stats",{p_user:id}).then(r=>r.data).catch(()=>null),
-        store._sb.from("profiles").select("founding_at").eq("id",id).maybeSingle().then(r=>r.data).catch(()=>null)
-      ]);
-      c._pub=pub||{}; if(ref&&ref.tier) c._referral=ref; if(fp&&fp.founding_at) c._founding=true;
-    }));
-  }catch(e){ console.error("offer coach badges",e); }
+    const [facts]=await Promise.all([
+      loadCoachFacts(ids),
+      Promise.all(ids.map(async id=>{ const c=coaches[id]||(coaches[id]={id}); c._pub=(await store._sb.rpc("coach_public_profile",{p_coach:id}).then(r=>r.data).catch(()=>null))||{}; }))
+    ]);
+    for(const id of ids){ (coaches[id]||(coaches[id]={id}))._facts=facts[id]; }  }catch(e){ console.error("offer coach badges",e); }
   const listingById=Object.fromEntries(mine.map(l=>[l.id,l]));
   const engByOffer={};
   for(const e of engs){ if(e.offer_id) engByOffer[e.offer_id]=e; }
@@ -5175,26 +5170,57 @@ function renderOfferRow(wrap,o,c,shortName,flash,coachName,goalActive){
    a pre-expanded one, back down to the compact row. */
 /* Item BH: badges + average rating shown ON the offer card, from the batched
    public profile attached in renderOffersTab (c._pub / c._referral / c._founding). */
-/* Item BH: what each badge means - shown on hover (title) and on tap (toast). */
-const BADGE_HELP={
-  verified:"Verified - FormTrace reviewed this coach's application and approved them to coach here.",
-  professional:"Professional - coaching is their profession; granted by FormTrace on evidence, not self-declared.",
-  certified:"Certified Professional - holds a recognised coaching certification, checked by FormTrace.",
-  founding:"Founding coach - one of the first coaches on FormTrace, chosen by the project owner.",
-  referral:n=>`${n||"Their"} referred member${n===1?"":"s"} went on to complete a coaching goal. Referrer at 3, Ambassador at 10, Partner at 25.`
-};
+/* ---- Badge system (BH/BQ, 2026-09-14) ----------------------------------------
+   One source of truth for what a coach's badges are and what they say on hover
+   (title) or tap (toast - phones have no hover). `facts` for a coach:
+     { verified_at, pro_status, pro_employer, founding_at, certs:[{title,cert_date}], referral:{title,qualified} }
+   Loaded in one batched pass by loadCoachFacts(ids). */
 document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest(".cbadge[title]"); if(b){ e.stopPropagation(); toast(b.getAttribute("title"),4200); } },true);
-function coachBadgesInline(c){
-  const p=c&&c._pub||{}; const b=[];
-  if(p.verified) b.push(`<span class="cbadge v" title="${BADGE_HELP.verified}">✓ Verified</span>`);
-  if(p.pro_status==="professional") b.push(`<span class="cbadge pro" title="${BADGE_HELP.professional}">★ Professional</span>`);
-  if(p.pro_status==="certified") b.push(`<span class="cbadge cert" title="${BADGE_HELP.certified}">🎓 Certified</span>`);
-  if(c._founding) b.push(`<span class="cbadge founding" title="${BADGE_HELP.founding}">⭐ Founding</span>`);
-  if(c._referral) b.push(referralTierBadge(c._referral));
-  const rating = p.rating_count ? `<span style="font-size:12px;color:var(--ink);font-weight:700;white-space:nowrap">★ ${Number(p.rating_avg).toFixed(1)} <span style="color:var(--faint);font-weight:400">(${p.rating_count})</span></span>` : `<span style="font-size:11.5px;color:var(--faint)">No ratings yet</span>`;
-  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">${rating}${b.join("")}</div>`;
+async function loadCoachFacts(ids){
+  ids=[...new Set((ids||[]).filter(Boolean))]; const out={}; if(!ids.length) return out;
+  const [profs,certs,refs]=await Promise.all([
+    store._sb.from("profiles").select("id,role,verified_at,pro_status,pro_employer,founding_at").in("id",ids).then(r=>r.data||[]).catch(()=>[]),
+    store._sb.from("coach_certifications").select("coach_id,title,issuer,cert_date").eq("status","approved").in("coach_id",ids).then(r=>r.data||[]).catch(()=>[]),
+    Promise.all(ids.map(id=>store._sb.rpc("referral_stats",{p_user:id}).then(r=>[id,r.data]).catch(()=>[id,null])))
+  ]);
+  for(const id of ids) out[id]={verified_at:null,pro_status:"none",pro_employer:null,founding_at:null,certs:[],referral:null,role:null};
+  for(const p of profs){ Object.assign(out[p.id],{role:p.role,verified_at:p.verified_at,pro_status:p.pro_status||"none",pro_employer:p.pro_employer,founding_at:p.founding_at}); }
+  for(const c of certs){ if(out[c.coach_id]) out[c.coach_id].certs.push(c); }
+  for(const [id,r] of refs){ if(r&&r.tier&&out[id]) out[id].referral=r; }
+  return out;
 }
-/* Item BH: precise terms. Length and sessions as numbers, start and last day
+function badgeTitle(kind,f){
+  f=f||{};
+  switch(kind){
+    case "verified":     return `Verified coach${f.verified_at?` · since ${fmtDay(String(f.verified_at).slice(0,10))}`:""} - FormTrace reviewed and approved their application.`;
+    case "professional": return f.pro_employer?`Works at ${f.pro_employer}`:"Professional coach - coaching is their profession.";
+    case "certified":    { const c=(f.certs||[]).map(x=>`${x.title}${x.cert_date?` (${fmtDay(String(x.cert_date).slice(0,10))})`:""}`).join(" · "); return `Certified Professional${c?` - ${c}`:""}, checked by FormTrace.`; }
+    case "founding":     return "Founding coach - this coach has been part of FormTrace's development.";
+    case "referral":     { const r=f.referral||{}; return `${r.title||"Referral tier"} · ${r.qualified||0} referral${(r.qualified||0)===1?"":"s"} completed a goal.`; }
+  }
+  return "";
+}
+/* Badge spans for a coach. long=true uses the full labels (public profile). */
+function badgeSpans(f,long){
+  f=f||{}; const b=[];
+  if(f.role==="coach"||f.verified) b.push(`<span class="cbadge v" title="${escapeHtml(badgeTitle("verified",f))}">✓ Verified</span>`);
+  if(f.pro_status==="professional") b.push(`<span class="cbadge pro" title="${escapeHtml(badgeTitle("professional",f))}">★ Professional</span>`);
+  if(f.pro_status==="certified") b.push(`<span class="cbadge cert" title="${escapeHtml(badgeTitle("certified",f))}">🎓 ${long?"Certified Professional":"Certified"}</span>`);
+  if(f.founding_at) b.push(`<span class="cbadge founding" title="${escapeHtml(badgeTitle("founding",f))}">⭐ Founding${long?" coach":""}</span>`);
+  if(f.referral&&f.referral.tier){ const ic=f.referral.tier>=3?"🏆":f.referral.tier>=2?"🌟":"🔗"; b.push(`<span class="cbadge ref" title="${escapeHtml(badgeTitle("referral",f))}">${ic} ${escapeHtml(f.referral.title)}</span>`); }
+  return b.join("");
+}
+/* Approved certification summary for a public profile: "🎓 Title · date". */
+function certSummary(f){
+  const cs=(f&&f.certs)||[]; if(!cs.length) return "";
+  return `<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">${cs.map(c=>`<div style="font-size:12.5px;color:var(--muted)">🎓 <b style="color:var(--ink)">${escapeHtml(c.title)}</b>${c.issuer?` · ${escapeHtml(c.issuer)}`:""}${c.cert_date?` · ${escapeHtml(fmtDay(String(c.cert_date).slice(0,10)))}`:""}</div>`).join("")}</div>`;
+}
+/* Item BH: badges + average rating shown ON the offer card. */
+function coachBadgesInline(c){
+  const p=c&&c._pub||{}; const f=c&&c._facts||{};
+  const rating = p.rating_count ? `<span style="font-size:12px;color:var(--ink);font-weight:700;white-space:nowrap">★ ${Number(p.rating_avg).toFixed(1)} <span style="color:var(--faint);font-weight:400">(${p.rating_count})</span></span>` : `<span style="font-size:11.5px;color:var(--faint)">No ratings yet</span>`;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">${rating}${badgeSpans(f,false)}</div>`;
+}/* Item BH: precise terms. Length and sessions as numbers, start and last day
    on one line, price as "[full] ([per session] / session)". Falls back to the
    coach's free text for offers made before the structured fields existed. */
 function offerDetailRows(o){
@@ -9906,7 +9932,42 @@ $("#rate-submit").addEventListener("click",async()=>{
 function referralTierBadge(stats){
   if(!stats||!stats.tier) return "";
   const ic=stats.tier>=3?"🏆":stats.tier>=2?"🌟":"🔗";
-  return `<span class="cbadge ref" title="${escapeHtml(stats.title)} - ${BADGE_HELP.referral(stats.qualified)}">${ic} ${escapeHtml(stats.title)}</span>`;
+  return `<span class="cbadge ref" title="${escapeHtml(badgeTitle("referral",{referral:stats}))}">${ic} ${escapeHtml(stats.title)}</span>`;
+}
+async function wireCertCard(){
+  const card=$("#cert-card"); if(!card||!ME) return;
+  const list=$("#cert-list");
+  const paint=async()=>{
+    try{
+      const { data, error }=await store._sb.from("coach_certifications").select("*").eq("coach_id",ME.id).order("submitted_at",{ascending:false}); if(error) throw error;
+      if(!(data||[]).length){ list.innerHTML=`<span style="color:var(--faint)">None attached yet.</span>`; return; }
+      list.innerHTML=data.map(x=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line2)"><div style="flex:1;min-width:0"><b style="color:var(--ink)">${escapeHtml(x.title)}</b>${x.issuer?` · ${escapeHtml(x.issuer)}`:""}${x.cert_date?` · ${escapeHtml(fmtDay(String(x.cert_date).slice(0,10)))}`:""}</div><span class="badge ${x.status==="approved"?"accepted":x.status==="rejected"?"rejected":"pending"}">${x.status==="pending"?"awaiting approval":x.status}</span></div>`).join("");
+    }catch(e){ console.error("certs (run migrations_badges.sql)",e); list.textContent="Certifications aren't available yet."; }
+  };
+  paint();
+  $("#cert-add")?.addEventListener("click",()=>{
+    const body=$("#sheet-body"); body.innerHTML="";
+    $("#sheet-lib").querySelector("h3").textContent="Add a certification"; $("#sheet-add").style.display="none";
+    const w=document.createElement("div");
+    w.innerHTML=`<div class="field"><label for="ct-title">Title</label><input id="ct-title" placeholder="e.g. Level 3 Personal Trainer"></div>
+      <div class="field"><label for="ct-issuer">Issued by</label><input id="ct-issuer" placeholder="e.g. CIMSPA, NASM"></div>
+      <div class="field"><label for="ct-date">Certification date</label><input id="ct-date" type="date" max="${todayISO()}"></div>
+      <div class="field"><label for="ct-file">Certificate (photo or PDF)</label><input id="ct-file" type="file" accept="image/*,.pdf"></div>
+      <button class="btn primary" id="ct-send" style="margin-top:8px">Submit for approval</button>`;
+    body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+    $("#ct-send").addEventListener("click",async()=>{
+      const title=$("#ct-title").value.trim(), issuer=$("#ct-issuer").value.trim(), date=$("#ct-date").value, file=$("#ct-file").files[0];
+      if(!title){ toast("Give the certification a title"); return; }
+      if(!file){ toast("Attach the certificate"); return; }
+      const btn=$("#ct-send"); btn.disabled=true; btn.textContent="Uploading…";
+      try{
+        const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+        const path=await store.video.upload(file,ext);
+        const { error }=await store._sb.from("coach_certifications").insert({coach_id:ME.id,title,issuer:issuer||null,cert_date:date||null,file_path:path}); if(error) throw error;
+        toast("Submitted - FormTrace will review it ✓",3000); closeSheet(); paint();
+      }catch(err){ console.error("add certification",err); toast(err.message||"Couldn't submit",4000); btn.disabled=false; btn.textContent="Submit for approval"; }
+    });
+  });
 }
 async function wireReferralCard(){
   const card=$("#ref-card"); if(!card||!ME) return;
@@ -9918,7 +9979,7 @@ async function wireReferralCard(){
     const s=data||{}; const el=$("#ref-stats"); if(!el) return;
     el.innerHTML=`<b style="color:var(--ink)">${s.signups||0}</b> joined through your link · <b style="color:var(--ink)">${s.qualified||0}</b> completed a goal`
       +(s.title?` · ${referralTierBadge(s)}`:"")
-      +(s.next_at?`<div style="margin-top:4px;color:var(--faint)">${s.next_at-(s.qualified||0)} more qualified referral${(s.next_at-(s.qualified||0))===1?"":"s"} to ${s.next_at===3?"Referrer":s.next_at===10?"Ambassador":"Partner"}</div>`:"");
+      +(s.next_at?`<div style="margin-top:4px;color:var(--faint)">${s.next_at-(s.qualified||0)} more qualified referral${(s.next_at-(s.qualified||0))===1?"":"s"} to ${s.next_at===3?"Recruiter":s.next_at===10?"Ambassador":"Partner"}</div>`:"");
   }catch(e){ console.error("referral stats (run migrations_referrals.sql)",e); const el=$("#ref-stats"); if(el) el.textContent="Referral counts aren't available yet."; }
 }
 async function renderProfile(){
@@ -10015,7 +10076,17 @@ async function renderProfile(){
     <div class="card" style="margin:0 0 12px" id="ref-card">
       <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Anyone who joins through this link counts toward your referral tier. A referral <b>qualifies</b> once they complete a coaching goal - accepting and then cancelling doesn't count.</div>
       <div style="display:flex;gap:8px;align-items:center"><input id="ref-link" readonly class="ro" style="flex:1;font-size:12px" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}"><button class="btn sm" id="ref-copy" style="width:auto">Copy</button>${navigator.share?`<button class="btn sm ghost" id="ref-share" style="width:auto">Share</button>`:""}</div>
-      <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
+      <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
+    </div>`;
+  }
+  /* Certifications (BH badge system): the coach attaches one here; an admin
+     approves it, which grants the Certified badge and shows the summary. */
+  if(roleOf()==="coach"){
+    html+=`<div class="section-h"><div class="eyebrow">Certifications</div></div>
+    <div class="card" style="margin:0 0 12px" id="cert-card">
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Attach a coaching certification. Once FormTrace approves it you get the 🎓 Certified badge, and its title and date show on your public profile.</div>
+      <div id="cert-list" style="font-size:12.5px;color:var(--muted)">Loading…</div>
+      <button class="btn sm" id="cert-add" style="width:auto;margin-top:10px">+ Add a certification</button>
     </div>`;
   }
   // ---- Danger zone: account deletion ----
@@ -10068,6 +10139,7 @@ async function renderProfile(){
   }catch(e){console.error("completed goals",e);}
   body.innerHTML=html;
   wireReferralCard();   // Item BN: copy/share + live counts for the referral card
+  wireCertCard();       // certifications (BH badge system)
   $("#pf-save").addEventListener("click",async()=>{
     try{ ME=await store.auth.updateProfile({display_name:$("#pf-name").value.trim(),city:$("#pf-city").value.trim(),bio:$("#pf-bio").value.trim()}); toast("Profile saved ✓"); }
     catch(err){console.error(err);toast("Couldn't save profile",4000);}
@@ -10278,19 +10350,10 @@ async function openCoachProfile(coachId,backTo){
     return;
   }
   if(!p){ body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">?</div><p>This coach no longer has a profile.</p></div>`; return; }
-    try{ const { data }=await store._sb.rpc("referral_stats",{p_user:coachId}); if(data&&data.tier) p._referral=data; }catch(e){}   // Item BN
-    try{ const { data }=await store._sb.from("profiles").select("founding_at").eq("id",coachId).maybeSingle(); if(data&&data.founding_at) p._founding=true; }catch(e){}   // Item BQ
+    try{ p._facts=(await loadCoachFacts([coachId]))[coachId]; }catch(e){}   // badge facts (BH/BQ)
   renderCoachProfile(p);
 }
-function badgeRow(p){
-  const b=[];
-  if(p.verified) b.push(`<span class="cbadge v" title="${BADGE_HELP.verified}">✓ Verified</span>`);
-  if(p.pro_status==="professional") b.push(`<span class="cbadge pro" title="${BADGE_HELP.professional}">★ Professional</span>`);
-  if(p.pro_status==="certified") b.push(`<span class="cbadge cert" title="${BADGE_HELP.certified}">◆ Certified Professional</span>`);
-    if(p._founding) b.push(`<span class="cbadge founding" title="${BADGE_HELP.founding}">⭐ Founding coach</span>`);   // Item BQ
-    if(p._referral) b.push(referralTierBadge(p._referral));   // Item BN
-  return b.length?`<div class="cbadges">${b.join("")}</div>`:"";
-}
+function badgeRow(p){ const s=badgeSpans(p._facts||{role:p.verified?"coach":null,pro_status:p.pro_status},true); return s?`<div class="cbadges">${s}</div>`:""; }
 function subBar(label,val){
   const v=val==null?null:Number(val);
   const pct=v==null?0:Math.max(0,Math.min(100,(v/5)*100));
@@ -10313,7 +10376,7 @@ function renderCoachProfile(p){
       <div class="cp-av" data-avatar="${escapeHtml(p.avatar_path||"")}" data-avatar-fallback="whistle">${p.avatar_initials?escapeHtml(p.avatar_initials):escapeHtml(initials(nm))}</div>
       <div class="cp-id">
         <div class="cp-nm">${escapeHtml(nm)}</div>
-        ${badgeRow(p)}
+        ${badgeRow(p)}${certSummary(p._facts)}
       </div>
     </div>`;
   if(p.expertise) h+=`<div class="card"><div class="eyebrow">Expertise</div><div class="cp-exp">${escapeHtml(p.expertise)}</div></div>`;
@@ -10654,30 +10717,67 @@ async function renderAdminInactivity(body){
     slot.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load review activity.</div>`;
   }
 }
-/* Item BQ: founding coaches are chosen by hand by the project owner. */
-async function renderAdminFounding(body){
+/* Badges (BH/BQ): the project owner assigns them from one sheet per coach.
+   Verified is a fact (approval date), not a toggle. Professional carries a
+   place of employment. Certified is earned: the coach uploads a certification,
+   the admin approves it here. Founding is a plain toggle. */
+async function renderAdminBadges(body){
   const wrap=document.createElement("div"); wrap.className="card"; wrap.style.marginBottom="12px";
-  wrap.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Founding coaches</div><div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:10px">Assigned by hand. Shows a permanent badge on the coach's public profile; item BR reads the same flag for zero commission once payments exist.</div><div id="adm-founding">Loading…</div>`;
+  wrap.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Coach badges</div><div id="adm-badges">Loading…</div>`;
   body.appendChild(wrap);
   try{
-    const { data, error } = await store._sb.from("profiles").select("id,display_name,city,founding_at").eq("role","coach").order("display_name");
+    const { data, error } = await store._sb.from("profiles").select("id,display_name,city,verified_at,pro_status,pro_employer,founding_at").eq("role","coach").order("display_name");
     if(error) throw error;
-    const list=$("#adm-founding"); list.innerHTML="";
+    const pend=await store._sb.from("coach_certifications").select("coach_id").eq("status","pending").then(r=>r.data||[]).catch(()=>[]);
+    const pendBy={}; for(const c of pend) pendBy[c.coach_id]=(pendBy[c.coach_id]||0)+1;
+    const list=$("#adm-badges"); list.innerHTML="";
     if(!(data||[]).length){ list.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No coaches yet.</div>`; return; }
     for(const c of data){
+      const f={role:"coach",verified_at:c.verified_at,pro_status:c.pro_status,pro_employer:c.pro_employer,founding_at:c.founding_at,certs:[]};
       const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)";
-      row.innerHTML=`<div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"—")}${c.founding_at?` <span class="cbadge founding" title="${BADGE_HELP.founding}">⭐ Founding</span>`:""}</div><div style="font-size:11.5px;color:var(--faint)">${escapeHtml(c.city||"")}${c.founding_at?` · since ${escapeHtml(fmtDay(c.founding_at.slice(0,10)))}`:""}</div></div>
-        <button class="btn sm ${c.founding_at?"ghost":""}" style="width:auto" data-founding="${c.id}" data-on="${c.founding_at?"0":"1"}">${c.founding_at?"Remove":"Make founding"}</button>`;
+      row.innerHTML=`<div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"—")}</div>
+          <div class="cbadges" style="margin-top:4px">${badgeSpans(f,false)}${pendBy[c.id]?`<span class="cbadge" style="background:rgba(255,176,32,.15);color:var(--amber);border:1px solid rgba(255,176,32,.5)" title="Certification awaiting your review">🎓 ${pendBy[c.id]} to review</span>`:""}</div></div>
+        <button class="btn sm" style="width:auto" data-badges="${c.id}">Assign badges</button>`;
       list.appendChild(row);
     }
-    list.querySelectorAll("[data-founding]").forEach(b=>b.addEventListener("click",async()=>{
-      b.disabled=true;
-      try{ const { error }=await store._sb.rpc("admin_set_founding",{p_coach:b.getAttribute("data-founding"),p_on:b.getAttribute("data-on")==="1"}); if(error) throw error; toast(b.getAttribute("data-on")==="1"?"Founding coach ⭐":"Removed",1800); renderAdmin(); }
-      catch(err){ console.error("set founding (run migrations_founding.sql)",err); toast(err.message||"Couldn't update",4000); b.disabled=false; }
-    }));
-  }catch(err){ console.error("founding list",err); const list=$("#adm-founding"); if(list) list.textContent="Run migrations_founding.sql to enable."; }
+    list.querySelectorAll("[data-badges]").forEach(b=>b.addEventListener("click",()=>{ const c=(data||[]).find(x=>x.id===b.getAttribute("data-badges")); if(c) openAssignBadgesSheet(c); }));
+  }catch(err){ console.error("badges list",err); const list=$("#adm-badges"); if(list) list.textContent="Run migrations_badges.sql to enable."; }
 }
-async function renderAdmin(){
+async function openAssignBadgesSheet(c){
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=`Badges · ${c.display_name||"Coach"}`;
+  $("#sheet-add").style.display="none";
+  let certs=[]; try{ certs=(await store._sb.from("coach_certifications").select("*").eq("coach_id",c.id).order("submitted_at",{ascending:false})).data||[]; }catch(e){}
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`
+    <div class="kv"><span class="k">✓ Verified</span><span class="v">${c.verified_at?`since ${escapeHtml(fmtDay(String(c.verified_at).slice(0,10)))}`:"—"} <span style="color:var(--faint)">· from approval, not editable</span></span></div>
+    <div class="field" style="margin-top:14px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="ab-pro" ${c.pro_status==="professional"?"checked":""} ${c.pro_status==="certified"?"disabled":""} style="width:18px;height:18px"> ★ Professional${c.pro_status==="certified"?` <span style="color:var(--faint);font-weight:400">(superseded by Certified)</span>`:""}</label>
+      <input id="ab-employer" placeholder="Place of employment, e.g. Planet Fitness" value="${escapeHtml(c.pro_employer||"")}" style="margin-top:8px"><div style="font-size:11.5px;color:var(--faint);margin-top:4px">Hover on the badge will read "Works at …"</div></div>
+    <div class="field"><label>🎓 Certified</label>
+      <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Earned, not assigned: the coach attaches a certification on their profile and you approve it here.</div>
+      <div id="ab-certs">${certs.length?certs.map(x=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line2)">
+          <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px">${escapeHtml(x.title)}</div><div style="font-size:11.5px;color:var(--faint)">${x.issuer?escapeHtml(x.issuer)+" · ":""}${x.cert_date?escapeHtml(fmtDay(String(x.cert_date).slice(0,10)))+" · ":""}<span class="badge ${x.status==="approved"?"accepted":x.status==="rejected"?"rejected":"pending"}">${x.status}</span></div></div>
+          ${x.file_path?`<button class="btn sm ghost" style="width:auto" data-cert-view="${x.file_path}">View</button>`:""}
+          ${x.status==="pending"?`<button class="btn sm ghost" style="width:auto;color:var(--red)" data-cert-rej="${x.id}">Reject</button><button class="btn primary sm" style="width:auto" data-cert-ok="${x.id}">Approve</button>`:""}
+        </div>`).join(""):`<div style="font-size:12px;color:var(--faint)">No certifications attached yet.</div>`}</div></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="ab-founding" ${c.founding_at?"checked":""} style="width:18px;height:18px"> ⭐ Founding coach</label><div style="font-size:11.5px;color:var(--faint);margin-top:4px">Hover will say this coach has been part of FormTrace's development.</div></div>
+    <button class="btn primary" id="ab-save" style="margin-top:8px">Save badges</button>`;
+  body.appendChild(wrap);
+  $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  wrap.querySelectorAll("[data-cert-view]").forEach(b=>b.addEventListener("click",async()=>{ try{ const u=await playable(b.getAttribute("data-cert-view")); if(u) window.open(u,"_blank","noopener"); }catch(e){ toast("Couldn't open the file",3000); } }));
+  const review=async(id,approve)=>{ try{ const { error }=await store._sb.rpc("admin_review_certification",{p_id:id,p_approve:approve}); if(error) throw error; toast(approve?"Certification approved 🎓":"Rejected",1800); closeSheet(); renderAdmin(); }catch(err){ console.error("review cert",err); toast(err.message||"Couldn't update",4000); } };
+  wrap.querySelectorAll("[data-cert-ok]").forEach(b=>b.addEventListener("click",()=>review(b.getAttribute("data-cert-ok"),true)));
+  wrap.querySelectorAll("[data-cert-rej]").forEach(b=>b.addEventListener("click",()=>review(b.getAttribute("data-cert-rej"),false)));
+  $("#ab-save").addEventListener("click",async()=>{
+    const btn=$("#ab-save"); btn.disabled=true;
+    try{
+      const proEl=$("#ab-pro"); const args={p_coach:c.id,p_employer:$("#ab-employer").value,p_founding:$("#ab-founding").checked};
+      if(!proEl.disabled) args.p_professional=proEl.checked;
+      const { error }=await store._sb.rpc("admin_set_badges",args); if(error) throw error;
+      toast("Badges saved ✓",1800); closeSheet(); renderAdmin();
+    }catch(err){ console.error("set badges (run migrations_badges.sql)",err); toast(err.message||"Couldn't save",4000); btn.disabled=false; }
+  });
+}async function renderAdmin(){
   const body=$("#admin-body");body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   let apps=[];
   try{ apps=await store.coachApps.pending(); }catch(err){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><p>${escapeHtml(err.message||"Couldn't load applications")}</p></div>`; return; }
@@ -10685,7 +10785,7 @@ async function renderAdmin(){
   body.innerHTML="";
   await renderAdminErrors(body);
   await renderAdminInactivity(body);
-  await renderAdminFounding(body);   // Item BQ
+  await renderAdminBadges(body);   // badges (BH/BQ)
   if(!apps.length){ body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`); return; }
   for(const a of apps){
     const prof=a.profiles||{};
