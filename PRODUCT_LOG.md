@@ -123,6 +123,15 @@ Built (ideas 1-3, plus mirror-robustness):
 Verified on synthetic poses: identical -> 100; mirrored -> 100 (flagged
 mirrored); 17° extra torso lean -> 67% with "torso 17° more forward" as the
 top deviation; half-depth squat -> 87%, ROM 65%, "knee 10° more open".
+
+**Follow-ups 2026-09-14:** (1) the snapshot copies the reference at ASSIGN
+time, so a coach who recorded one afterwards never got comparisons on
+already-assigned workouts - analysis now falls back to the library's
+current reference when the snapshot has none (trainee read policy on
+exercises permits it). (2) The coach's review card now says, for a set
+with no comparison and no reference, "No reference recorded for this
+exercise - record one in your library to get form comparisons on future
+sets" - nudging toward the feature exactly where it is absent.
 Known artifact, accepted: in a torso-normalised frame a torso rotation also
 shifts shin/thigh directions, so a lean deviation is often accompanied by
 shin deviations of similar size - true of dance_sync too. Idea 4 (angular
@@ -580,9 +589,8 @@ reversible, and mirror how rotation (item X) already works. Needs
   and on the voice-over/review players: starts at trim_in, stops at
   trim_out and rewinds. `store.videoMeta` reads rotation + trim in one
   query; `videoRotations` unchanged for its three callers.
-Not done: editing the trim after upload (recorder-time only), and the day
-note video (recorded through the same recorder, so its frames are trimmed,
-but the offset isn't persisted for its path - small follow-up).
+Not done: editing the trim after upload (recorder-time only). The day-note
+video's offset is now persisted too (follow-up done same day).
 
 Requested: when submitting a workout video the submitter should be able to
 trim parts off the beginning and end before it's sent.

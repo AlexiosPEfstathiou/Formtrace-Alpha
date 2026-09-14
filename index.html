@@ -6968,7 +6968,7 @@ function openCoachMissedDay(iso,wl){
   vidBtn.addEventListener("click",()=>{
     openRecorder({title:"Video note",subtitle:fmtDay(iso),review:true,audio:true,useLabel:"✓ Use this video",
       onComplete:async cap=>{ if(!cap.blob)return; toast("Uploading…",2000);
-        try{ const ext=(cap.blob.type||"").includes("mp4")?"mp4":"webm"; pendingNoteVideo=await store.video.upload(cap.blob,ext); vidBtn.textContent="✓ Video attached — re-record"; toast("Video attached ✓"); }
+        try{ const ext=(cap.blob.type||"").includes("mp4")?"mp4":"webm"; pendingNoteVideo=await store.video.upload(cap.blob,ext); persistTrim(pendingNoteVideo,cap); vidBtn.textContent="✓ Video attached — re-record"; toast("Video attached ✓"); }
         catch(e){console.error(e);toast("Couldn't upload video",4000);} }});
   });
   body.appendChild(vidBtn);
@@ -8245,7 +8245,14 @@ async function runAnalysis(itemIndex,setIndex,capture){
   /* Item BO: compare against the coach's reference as an ASSIST (the coach's
      tags remain the grade). Only when a reference with frames exists. */
   let form=null;
-  try{ const ref=it.landmarks&&it.landmarks.frames; if(ref&&ref.length>=6&&capture.frames.length>=6){ $("#an-msg").textContent="Comparing to your coach's form"; $("#an-sub").textContent="Torso, hips, knees and arms"; await wait(150); form=gradeForm(capture.frames,ref); } }
+  try{
+    let ref=it.landmarks&&it.landmarks.frames;
+    /* BO follow-up: the snapshot copies the reference at ASSIGN time, so a coach who
+       recorded one afterwards would never see comparisons on already-assigned
+       workouts. Fall back to the library's current reference (trainee read policy
+       allows it for an active coach). */
+    if((!ref||ref.length<6)&&it.exercise_id){ try{ const { data }=await store._sb.from("exercises").select("landmarks").eq("id",it.exercise_id).maybeSingle(); if(data&&data.landmarks&&data.landmarks.frames) ref=data.landmarks.frames; }catch(e){} }
+    if(ref&&ref.length>=6&&capture.frames.length>=6){ $("#an-msg").textContent="Comparing to your coach's form"; $("#an-sub").textContent="Torso, hips, knees and arms"; await wait(150); form=gradeForm(capture.frames,ref); } }
   catch(e){ console.error("form comparison",e); form=null; }
   // upload the trainee's set video so the coach can watch it on review
   let video_path=null;
@@ -8680,7 +8687,7 @@ async function openReview(assignedId,readonly=false){
       const badgeHtml = shownTags.length
         ? `<div class="grade-badge tags">${shownTags.map(t=>`<span class="ftag-chip">${escapeHtml(t)}</span>`).join("")}</div>`
         : `<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"tag below"}</span></div>`;
-      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${(r.pose_coverage!=null&&r.pose_coverage<0.6)?`<div style="font-size:12px;color:var(--amber);margin:-4px 0 8px">Pose tracked on only ${Math.round(r.pose_coverage*100)}% of this set - rep count and form comparison are unreliable here.</div>`:""}${r.form?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
+      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${(!r.form && roleOf()==="coach" && item.exercise_id && !(item.landmarks&&item.landmarks.frames))?`<div style="font-size:12px;color:var(--faint);margin:-4px 0 8px">No reference recorded for this exercise - record one in your library to get form comparisons on future sets.</div>`:""}${(r.pose_coverage!=null&&r.pose_coverage<0.6)?`<div style="font-size:12px;color:var(--amber);margin:-4px 0 8px">Pose tracked on only ${Math.round(r.pose_coverage*100)}% of this set - rep count and form comparison are unreliable here.</div>`:""}${r.form?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
         <div style="font-size:12px;color:var(--muted);margin-bottom:${wLine?"6px":"10px"}">${shownReps} reps · target ${item.reps}${repNote}</div>${wLine}`;
       // trainee's submitted video for this set
       if(r.video_path){
