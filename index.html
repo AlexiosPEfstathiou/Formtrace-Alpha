@@ -1566,7 +1566,7 @@
       <canvas id="roverlay"></canvas>
       <video id="rplay" playsinline controls></video>
       <div class="r-note" id="r-note"></div>
-      <div class="r-posewarn" id="r-posewarn" style="display:none">⚠ Form tracking isn't available this session — recording still works, but reps won't be counted.</div>
+      <div class="r-posewarn" id="r-posewarn" style="display:none">Form tracking stopped - recording still works, but reps and the form comparison will not be counted. <button class="btn sm ghost" id="r-posewarn-retry" style="width:auto;margin-left:8px;padding:2px 10px;height:28px">Retry</button></div>
       <button class="vid-rot" id="r-rot" style="display:none" aria-label="Rotate video">⟳</button>
       <div id="r-dims"></div>
       <div class="rtop">
@@ -2662,11 +2662,21 @@ async function ensureModel(onmsg){
    that fades in a few seconds would be actively misleading. */
 function showPoseWarn(){ const el=$("#r-posewarn"); if(el) el.style.display=""; }
 function hidePoseWarn(){ const el=$("#r-posewarn"); if(el) el.style.display="none"; }
+/* Item AH: a single failed rebuild used to end tracking for the whole session.
+   Now four attempts with backoff (0s, 1s, 3s, 7s) - GPU context loss is often
+   transient - and the warning offers a manual retry after that. */
+let poseRebuilding=false;
 async function resetPoseEngine(){
+  if(poseRebuilding) return; poseRebuilding=true;
   try{ if(landmarker&&landmarker.close) landmarker.close(); }catch(e){ console.error("pose close",e); }
   landmarker=null; poseFails=0;
-  try{ await ensureModel(); console.warn("pose engine rebuilt"); hidePoseWarn(); }
-  catch(e){ console.error("pose engine rebuild failed",e); showPoseWarn(); }
+  const waits=[0,1000,3000,7000];
+  for(let i=0;i<waits.length;i++){
+    if(waits[i]) await new Promise(r=>setTimeout(r,waits[i]));
+    try{ await ensureModel(); console.warn("pose engine rebuilt (attempt "+(i+1)+")"); hidePoseWarn(); poseRebuilding=false; return; }
+    catch(e){ console.error("pose engine rebuild failed (attempt "+(i+1)+")",e); }
+  }
+  poseRebuilding=false; showPoseWarn();
 }
 
 /* =========================================================================
@@ -8225,7 +8235,7 @@ async function runAnalysis(itemIndex,setIndex,capture){
     try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); persistTrim(video_path,capture); }
     catch(e){ console.error("set video upload failed",e); toast("Video didn't upload — set still saved",3600); }
   }
-  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path,form};
+  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path,form,pose_coverage:capture.pose_coverage??null};
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
   saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
@@ -8651,7 +8661,7 @@ async function openReview(assignedId,readonly=false){
       const badgeHtml = shownTags.length
         ? `<div class="grade-badge tags">${shownTags.map(t=>`<span class="ftag-chip">${escapeHtml(t)}</span>`).join("")}</div>`
         : `<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"tag below"}</span></div>`;
-      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${r.form?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
+      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${(r.pose_coverage!=null&&r.pose_coverage<0.6)?`<div style="font-size:12px;color:var(--amber);margin:-4px 0 8px">Pose tracked on only ${Math.round(r.pose_coverage*100)}% of this set - rep count and form comparison are unreliable here.</div>`:""}${r.form?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
         <div style="font-size:12px;color:var(--muted);margin-bottom:${wLine?"6px":"10px"}">${shownReps} reps · target ${item.reps}${repNote}</div>${wLine}`;
       // trainee's submitted video for this set
       if(r.video_path){
@@ -8927,6 +8937,10 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     if(meterCtx){ meterCtx.close().catch(()=>{}); meterCtx=null; }
     const fill=$("#vo-meter-fill"); if(fill) fill.style.width="0%";
   };
+  /* Item AA: remember the loudest level seen WHILE recording, so the preview
+     can say plainly when the mic barely picked anything up - the one cause of
+     "no sound in preview" that is confirmable by eye rather than by ear. */
+  let recPeak=0;
   const startMeter=liveStream=>{
     stopMeter();   // guards against double-wiring if a device is switched mid-check
     try{
@@ -8941,6 +8955,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
         analyser.getByteFrequencyData(data);
         const avg=data.reduce((a,b)=>a+b,0)/data.length;
         if(fill) fill.style.width=Math.min(100,Math.round((avg/90)*100))+"%";
+        if(voState&&voState.recorder&&voState.recorder.state==="recording"&&avg>recPeak) recPeak=avg;
         meterRAF=requestAnimationFrame(tick);
       };
       tick();
@@ -9073,6 +9088,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     // the right order here: a few ms of recorded silence before playback
     // begins is harmless, but starting playback first risks the recorder
     // missing the very first instant of audio.
+    recPeak=0;
     recorder.start();
     try{ await vid.play(); }catch(e){}
     status.textContent="Recording… talking over the clip.";
@@ -9097,7 +9113,8 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   const showPreview=()=>{
     reviewBox.style.display="";
     recordBtn.style.display="none";
-    status.textContent="Recording finished.";
+    if(recPeak<12){ status.innerHTML='<span style="color:var(--amber)">⚠ The mic barely picked anything up while you recorded - the preview will be near-silent. Check the mic selection (or that another app is not holding the mic) and re-record.</span>'; }
+    else{ status.textContent="Recording finished."; }
     const slot=$("#vo-preview-slot");slot.innerHTML="";
     const audioUrl=URL.createObjectURL(resultBlob);
     slot.appendChild(buildSyncPlayer(url,audioUrl,videoPath));
@@ -10441,6 +10458,7 @@ const rvideo=$("#rvideo"),roverlay=$("#roverlay"),rctx=roverlay.getContext("2d")
 let rStream=null,rFacing="user",rShow=true,rRAF=null,rLastT=-1;
 let rRecording=false,rRecorder=null,rChunks=[],rBlob=null,rURL=null,rStart=0,rTimerInt=null;
 let capFrames=[],capStart=0, recOpts=null, lastCapture=null;
+let capSeen=0;   // Item AH: video frames processed while recording (capFrames.length / capSeen = pose coverage)
 let recCanvas,recCtx,recPaintRAF;
 
 function sizeCanvas(){const w=rvideo.videoWidth||rvideo.clientWidth,h=rvideo.videoHeight||rvideo.clientHeight;if(w&&h&&(roverlay.width!==w||roverlay.height!==h)){roverlay.width=w;roverlay.height=h;}}
@@ -10612,7 +10630,8 @@ function rLoop(){
         poseTs=Math.max(poseTs+1, Math.round(performance.now()));
         let res=null;
         try{
-          res=landmarker.detectForVideo(rvideo,poseTs);
+          if(rRecording) capSeen++;
+      res=landmarker.detectForVideo(rvideo,poseTs);
           poseFails=0;
         }catch(err){
           poseFails++;
@@ -10686,7 +10705,7 @@ function startRec(){
     recPaintRAF=requestAnimationFrame(paint);
   };
   paint();
-  const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capStart=performance.now();
+  const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capSeen=0;capStart=performance.now();
   // A canvas stream has NO audio track, so the mic has to be merged in
   // explicitly — otherwise pitch videos record silently even with mic access.
   const aud=rStream?rStream.getAudioTracks():[];
@@ -10744,7 +10763,7 @@ function onRecStop(){
   rBlob=new Blob(rChunks,{type});if(rURL)URL.revokeObjectURL(rURL);rURL=URL.createObjectURL(rBlob);
   if(rRecorder._silent)return;
   const fps=capFrames.length/Math.max(0.001,(performance.now()-capStart)/1000);
-  lastCapture={frames:capFrames.slice(),fps,blob:rBlob};
+  lastCapture={frames:capFrames.slice(),fps,blob:rBlob,pose_coverage:capSeen?+(capFrames.length/capSeen).toFixed(2):(capFrames.length?1:0)};   // Item AH
   if(recOpts.review){
     rvideo.style.display="none";roverlay.style.display="none";rplay.src=rURL;rplay.style.display="block";
     $("#r-deck").style.display="none";$("#rreview").style.display="flex";$("#r-tools").style.display="none";cancelAnimationFrame(rRAF);
@@ -10785,6 +10804,7 @@ $("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"enviro
 $("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);});
 $("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
 $("#r-preview").addEventListener("click",()=>{rplay.currentTime=0;rplay.play();});
+$("#r-posewarn-retry")?.addEventListener("click",()=>{ $("#r-posewarn-retry").disabled=true; resetPoseEngine().finally(()=>{ $("#r-posewarn-retry").disabled=false; }); });   // Item AH
 $("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;applyTrimToCapture();closeRecorder();cb&&cb(lastCapture);});   // Item BC: trim first
 
 /* =========================================================================

@@ -12,15 +12,15 @@ BE) are not tasks and are left out.
 
 | # | Item | Difficulty | Why |
 |---|------|-----------|-----|
-| 1 | **BG** Check-in photo days glisten | Easy | One more case in the day-cell glisten flag; only unknown is confirming the check-in cadence from code. |
+| 1 | **BG** Check-in photo days glisten - DONE 2026-09-14 | - | Camera badge on photo days; Saturday/Sunday glisten while the week's check-in is unmet. |
 | 2 | **BM** Incentives brainstorm (first coach/trainee) | Easy (thinking) | No code. Levers already exist: commission rates (BI), a founding badge (item A), free first week. |
 | 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
 | 4 | **BN** Referral links - part 1 (link, count, tier badge) | Medium-easy (decision) | Sign-up plumbing + a fourth badge family. Decision first: what counts as a referral (sign-up vs first accepted offer). Part 2 (discounts, referred-coach commission) waits for BI. |
 | 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
 | 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
 | 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
-| 8 | **AA** Voice-over: no sound in preview | Medium-hard, blocked | Device-dependent; needs a reproduction on a real phone. |
-| 9 | **AH** Pose overlay sometimes missing | Medium-hard, blocked | Cause unknown; needs the conditions it happens under. |
+| 8 | **AA** Voice-over: no sound in preview - MITIGATED 2026-09-14 | blocked on repro | Earlier fixes confirmed present; low-level warning on the preview added. |
+| 9 | **AH** Pose overlay sometimes missing - MITIGATED 2026-09-14 | blocked on repro | Rebuild retries with backoff + manual retry; pose-coverage number on every set. |
 | 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
 | 11 | **AY part 2** The in-app video call itself | Hard (decision) | WebRTC (signalling + TURN relay for mobile) vs a provider SDK (cost, third party). Scheduling half is done. |
 | 12 | **BI** Commission plan + escrow payments | Hardest (decision) | Provider account, server side (Edge Functions) for webhooks, KYC via provider, legal/tax. Five decisions listed in the item; blocked on the first. |
@@ -352,12 +352,21 @@ Not started.
 
 ---
 
-## BG. Check-in photo days should glisten
+## BG. Check-in photo days should glisten - DONE 2026-09-14
 
 Requested: the calendar days on which a check-in photo is due should carry
 the glisten (the animated attention shine already used for a new workout,
 an unviewed review, and today-incomplete), so the trainee sees at a glance
-that a photo is expected. Not started. Where it fits: the day-cell
+that a photo is expected. **DONE 2026-09-14.** Cadence confirmed from `renderHomeCheckin` rather than
+assumed: the window opens Saturday and stays open through Sunday; "done"
+is any check-in dated since Monday. Built: the calendar now loads the
+trainee's check-ins alongside the day logs (one batched fetch). Days with
+a photo get a camera badge (title "Check-in photo taken"). While this
+week's check-in is unmet, this week's Saturday glistens for the trainee
+- and Sunday too once Saturday has passed - so the due day is unmissable.
+Coach view shows the badges but never the glisten (only the trainee can
+act). Legend entry added. Past weeks are left alone: a missed check-in is
+history, not a nag. Where it fits: the day-cell
 `glisten` flag in renderEngagement already ORs several attention cases;
 this adds "check-in due and not yet taken". Needs the check-in cadence
 (which days are check-in days - weekly, from the goal start?) confirmed
@@ -1848,7 +1857,23 @@ change needed — same reasoning as item U's persistence.
 
 ---
 
-## AA. Voice-over preview: no sound, and no way to visually confirm it recorded
+## AA. Voice-over preview: no sound, and no way to visually confirm it recorded - MITIGATED 2026-09-14 (peak warning added; earlier fixes confirmed present)
+
+**Revisited 2026-09-14 - the entry above was stale.** Checked the current
+code before touching anything: a later session had already (a) added the
+requested live level meter during recording, (b) added a playback meter
+that routes the preview through Web Audio with the context resumed before
+play (which also forces speaker routing on iOS), and (c) releases the mic
+stream in `recorder.onstop` BEFORE the preview builds - candidate 1
+(capture holding the audio session in earpiece mode) was already closed.
+What remained was candidate 2, a genuinely near-silent capture the coach
+only discovers by ear. Done: the recording meter now remembers the peak
+level seen while recording, and if the whole take stayed below a low
+threshold the preview says so plainly in amber ("The mic barely picked
+anything up while you recorded ... check the mic selection ... and
+re-record") instead of "Recording finished." As mitigated as it can be
+without a device that reproduces it; if a tester still hears nothing WITH
+the meter moving, that is a new, narrower report.
 
 Reported by the coach: previewing a just-recorded voice-over produces no
 audible sound. Requested fix: an obvious volume meter during preview, so
@@ -2408,7 +2433,25 @@ trainee-facing gap here also makes those other two signals more honest.
 
 ---
 
-## AH. The pose overlay sometimes doesn't appear, cause unknown
+## AH. The pose overlay sometimes doesn't appear, cause unknown - MITIGATED 2026-09-14 (retries with backoff, manual retry, pose-coverage diagnostic)
+
+**Revisited 2026-09-14.** The catch block DID already show the on-screen
+warning (a later session closed that gap; the paragraph above is stale on
+that point). Two things were still missing and are now built:
+- `resetPoseEngine` makes four attempts with backoff (0/1/3/7 s) instead
+  of one - GPU context loss is often transient - and the warning carries a
+  Retry button for the case where it isn't. Re-entrancy guarded.
+- **Pose coverage as a diagnostic.** The recorder now counts video frames
+  processed while recording versus frames that produced landmarks, and
+  stores the ratio on the capture and the set result (`pose_coverage`).
+  The coach's review card flags any set under 60% in amber: "Pose tracked
+  on only 23% of this set - rep count and form comparison are unreliable
+  here." This is what turns the next "the skeleton was missing" into a
+  report with a number attached, and it also tells the coach when NOT to
+  trust the BO comparison on a set.
+Cause of the original report still unconfirmed - it needs the conditions
+it happens under - but the failure now heals itself when it can, says so
+when it can't, and leaves evidence either way.
 
 Reported as-is: sometimes the camera doesn't produce the skeleton lines,
 reason not yet known. Checked the actual detection loop before logging
