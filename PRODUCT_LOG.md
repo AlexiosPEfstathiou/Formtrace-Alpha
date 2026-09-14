@@ -725,6 +725,11 @@ card:** Needs `supabase/migrations_offer_start_date.sql` run.
 - **Whistle placeholder**: a coach with no profile photo shows a whistle
   cartoon (inline SVG) instead of initials - on the offer card and the
   public coach profile header. Trainees keep initials.
+- **Badge meanings** (owner request, same day): every badge - Verified,
+  Professional, Certified, Founding, referral tier - carries a hover
+  tooltip explaining what it means and how it is earned (`BADGE_HELP`,
+  one source of text for all surfaces). Phones have no hover, so a tap on
+  any badge shows the same text as a toast; the cursor shows "help".
 Next: a screenshot of anything still off.
 
 ---

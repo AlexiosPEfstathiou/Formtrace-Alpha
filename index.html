@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -609,7 +609,7 @@
   .cp-id{min-width:0;flex:1;}
   .cp-nm{font-size:18px;font-weight:800;color:var(--ink);}
   .cbadges{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
-  .cbadge{font-size:10.5px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:3px 9px;white-space:nowrap;}
+  .cbadge{font-size:10.5px;font-weight:800;letter-spacing:.02em;border-radius:20px;padding:3px 9px;white-space:nowrap;cursor:help;}
   .cbadge.v{background:rgba(90,176,255,.16);color:#7BC0FF;border:1px solid rgba(90,176,255,.4);}
   .cbadge.pro{background:rgba(255,194,74,.16);color:var(--amber);border:1px solid rgba(255,194,74,.44);}
   .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
@@ -5175,12 +5175,21 @@ function renderOfferRow(wrap,o,c,shortName,flash,coachName,goalActive){
    a pre-expanded one, back down to the compact row. */
 /* Item BH: badges + average rating shown ON the offer card, from the batched
    public profile attached in renderOffersTab (c._pub / c._referral / c._founding). */
+/* Item BH: what each badge means - shown on hover (title) and on tap (toast). */
+const BADGE_HELP={
+  verified:"Verified - FormTrace reviewed this coach's application and approved them to coach here.",
+  professional:"Professional - coaching is their profession; granted by FormTrace on evidence, not self-declared.",
+  certified:"Certified Professional - holds a recognised coaching certification, checked by FormTrace.",
+  founding:"Founding coach - one of the first coaches on FormTrace, chosen by the project owner.",
+  referral:n=>`${n||"Their"} referred member${n===1?"":"s"} went on to complete a coaching goal. Referrer at 3, Ambassador at 10, Partner at 25.`
+};
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest(".cbadge[title]"); if(b){ e.stopPropagation(); toast(b.getAttribute("title"),4200); } },true);
 function coachBadgesInline(c){
   const p=c&&c._pub||{}; const b=[];
-  if(p.verified) b.push(`<span class="cbadge v">✓ Verified</span>`);
-  if(p.pro_status==="professional") b.push(`<span class="cbadge pro">★ Professional</span>`);
-  if(p.pro_status==="certified") b.push(`<span class="cbadge cert">🎓 Certified</span>`);
-  if(c._founding) b.push(`<span class="cbadge founding">⭐ Founding</span>`);
+  if(p.verified) b.push(`<span class="cbadge v" title="${BADGE_HELP.verified}">✓ Verified</span>`);
+  if(p.pro_status==="professional") b.push(`<span class="cbadge pro" title="${BADGE_HELP.professional}">★ Professional</span>`);
+  if(p.pro_status==="certified") b.push(`<span class="cbadge cert" title="${BADGE_HELP.certified}">🎓 Certified</span>`);
+  if(c._founding) b.push(`<span class="cbadge founding" title="${BADGE_HELP.founding}">⭐ Founding</span>`);
   if(c._referral) b.push(referralTierBadge(c._referral));
   const rating = p.rating_count ? `<span style="font-size:12px;color:var(--ink);font-weight:700;white-space:nowrap">★ ${Number(p.rating_avg).toFixed(1)} <span style="color:var(--faint);font-weight:400">(${p.rating_count})</span></span>` : `<span style="font-size:11.5px;color:var(--faint)">No ratings yet</span>`;
   return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">${rating}${b.join("")}</div>`;
@@ -9897,7 +9906,7 @@ $("#rate-submit").addEventListener("click",async()=>{
 function referralTierBadge(stats){
   if(!stats||!stats.tier) return "";
   const ic=stats.tier>=3?"🏆":stats.tier>=2?"🌟":"🔗";
-  return `<span class="cbadge ref" title="${stats.qualified} referred member${stats.qualified===1?"":"s"} completed a goal">${ic} ${escapeHtml(stats.title)}</span>`;
+  return `<span class="cbadge ref" title="${escapeHtml(stats.title)} - ${BADGE_HELP.referral(stats.qualified)}">${ic} ${escapeHtml(stats.title)}</span>`;
 }
 async function wireReferralCard(){
   const card=$("#ref-card"); if(!card||!ME) return;
@@ -10275,10 +10284,10 @@ async function openCoachProfile(coachId,backTo){
 }
 function badgeRow(p){
   const b=[];
-  if(p.verified) b.push(`<span class="cbadge v" title="Approved by FormTrace">✓ Verified</span>`);
-  if(p.pro_status==="professional") b.push(`<span class="cbadge pro">★ Professional</span>`);
-  if(p.pro_status==="certified") b.push(`<span class="cbadge cert">◆ Certified Professional</span>`);
-    if(p._founding) b.push(`<span class="cbadge founding" title="One of the founding coaches">⭐ Founding coach</span>`);   // Item BQ
+  if(p.verified) b.push(`<span class="cbadge v" title="${BADGE_HELP.verified}">✓ Verified</span>`);
+  if(p.pro_status==="professional") b.push(`<span class="cbadge pro" title="${BADGE_HELP.professional}">★ Professional</span>`);
+  if(p.pro_status==="certified") b.push(`<span class="cbadge cert" title="${BADGE_HELP.certified}">◆ Certified Professional</span>`);
+    if(p._founding) b.push(`<span class="cbadge founding" title="${BADGE_HELP.founding}">⭐ Founding coach</span>`);   // Item BQ
     if(p._referral) b.push(referralTierBadge(p._referral));   // Item BN
   return b.length?`<div class="cbadges">${b.join("")}</div>`:"";
 }
@@ -10657,7 +10666,7 @@ async function renderAdminFounding(body){
     if(!(data||[]).length){ list.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No coaches yet.</div>`; return; }
     for(const c of data){
       const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)";
-      row.innerHTML=`<div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"—")}${c.founding_at?` <span class="cbadge founding">⭐ Founding</span>`:""}</div><div style="font-size:11.5px;color:var(--faint)">${escapeHtml(c.city||"")}${c.founding_at?` · since ${escapeHtml(fmtDay(c.founding_at.slice(0,10)))}`:""}</div></div>
+      row.innerHTML=`<div style="flex:1;min-width:0"><div style="font-weight:700">${escapeHtml(c.display_name||"—")}${c.founding_at?` <span class="cbadge founding" title="${BADGE_HELP.founding}">⭐ Founding</span>`:""}</div><div style="font-size:11.5px;color:var(--faint)">${escapeHtml(c.city||"")}${c.founding_at?` · since ${escapeHtml(fmtDay(c.founding_at.slice(0,10)))}`:""}</div></div>
         <button class="btn sm ${c.founding_at?"ghost":""}" style="width:auto" data-founding="${c.id}" data-on="${c.founding_at?"0":"1"}">${c.founding_at?"Remove":"Make founding"}</button>`;
       list.appendChild(row);
     }
