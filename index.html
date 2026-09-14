@@ -4990,6 +4990,9 @@ async function renderListings(){
     $("#listings-sub").textContent=mine.length?`${mine.length} goal${mine.length>1?"s":""} posted`:"Post a goal, receive video offers";
     body.innerHTML="";
     if(!mine.length){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">◎</div><p>No goals posted yet.<br>Post one and coaches will send video offers.</p></div>`; return; }
+    /* Item BH: how many offers each goal has drawn, in one query. */
+    let offerCounts={};
+    try{ const ids=mine.map(l=>l.id); if(ids.length){ const { data }=await store._sb.from("offers").select("listing_id,status").in("listing_id",ids); for(const o of (data||[])){ offerCounts[o.listing_id]=offerCounts[o.listing_id]||{total:0,pending:0}; offerCounts[o.listing_id].total++; if(o.status==="pending") offerCounts[o.listing_id].pending++; } } }catch(e){ console.error("offer counts",e); }
     for(const l of mine){
       const div=document.createElement("div");div.className="card";
       const badgeCls=(l.closed_reason==="cancelled"||l.closed_reason==="expired")?"rejected":l.status;
@@ -4998,7 +5001,10 @@ async function renderListings(){
           <div class="ex-thumb" style="width:52px;height:52px" ${l.pitch_video_path?`data-video="${l.pitch_video_path}"`:""}>${l.pitch_video_path?"":'<span class="ph">◉</span>'}</div>
           <div class="lr-main"><h3>${escapeHtml(l.title)}</h3><div class="sub">${escapeHtml(l.focus||"")}</div></div>
           <span class="badge ${badgeCls}">${escapeHtml(badgeTxt)}</span></div>
-        ${l.status==="open"?`<button class="btn sm" style="width:100%;margin-top:10px;color:var(--red)" data-cancel-listing="${l.id}">Cancel this goal</button>`:""}`;
+        ${(()=>{ const c=offerCounts[l.id]||{total:0,pending:0}; const daysLeft=Math.max(0,Math.ceil((new Date(l.created_at).getTime()+7*86400000-Date.now())/86400000));
+            const line= l.status==="open" ? `${c.total?`<b style="color:var(--ink)">${c.total}</b> offer${c.total===1?"":"s"}${c.pending?` · ${c.pending} to answer`:""}`:"No offers yet"} · ${daysLeft===0?"expires today":daysLeft===1?"expires tomorrow":`${daysLeft} days left`}`
+                       : l.status==="matched"||l.status==="closed" && !l.closed_reason ? `Matched with a coach` : l.closed_reason==="expired" ? `Expired without a match` : l.closed_reason==="cancelled" ? `Cancelled by you` : "";
+            return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--faint)"><span>${line}</span>${l.status==="open"?`<button class="btn ghost sm" style="width:auto;height:30px;padding:0 10px;color:var(--red)" data-cancel-listing="${l.id}">Cancel</button>`:""}</div>`; })()}`;
       body.appendChild(div);
       div.querySelector("[data-cancel-listing]")?.addEventListener("click",async e=>{
         e.stopPropagation();
@@ -5311,25 +5317,39 @@ async function renderMarket(){
   if(!open.length){
     body.appendChild(Object.assign(document.createElement("div"),{className:"empty",style:"padding:40px 20px",innerHTML:`<div class="ic">◎</div><p>No open goals right now.<br>Check back soon.</p>`}));
   }
+  /* Item BH: one batched lookup for the trainees behind the open goals, so a
+     card can say WHO posted it. Names follow the poster's own name_style. */
+  let posters={};
+  try{ const ids=[...new Set(open.map(l=>l.trainee_id).filter(Boolean))]; if(ids.length){ const { data }=await store._sb.from("profiles").select("id,display_name,name_style,avatar_initials,city").in("id",ids); for(const p of (data||[])) posters[p.id]=p; } }catch(e){ console.error("goal posters",e); }
+  const ago=iso=>{ const d=Math.floor((Date.now()-new Date(iso).getTime())/86400000); return d<=0?"today":d===1?"yesterday":`${d} days ago`; };
   for(const l of open){
     const pitched=pitchedIds.has(l.id);
+    const p=posters[l.trainee_id]||{};
+    const who=publicName(p.display_name||"A trainee",p.name_style||"first");
+    const daysLeft=Math.max(0,Math.ceil((new Date(l.created_at).getTime()+7*86400000-Date.now())/86400000));
+    const expiry=daysLeft===0?"Expires today":daysLeft===1?"Expires tomorrow":`${daysLeft} days left`;
     const div=document.createElement("div");div.className="card";
-    div.innerHTML=`<h3 style="font-size:17px;font-weight:800">${escapeHtml(l.title)}</h3>
-      <div style="margin:6px 0 12px"><span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="avatar" data-avatar="${l.trainee_id}" style="width:36px;height:36px;font-size:13px">${escapeHtml(p.avatar_initials||initials(who))}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(who)}</div><div style="font-size:11.5px;color:var(--faint)">${p.city?escapeHtml(p.city)+" · ":""}posted ${ago(l.created_at)}</div></div>
+        <span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
+      <h3 style="font-size:17px;font-weight:800;margin-bottom:10px">${escapeHtml(l.title)}</h3>
       <div class="video-card" data-video="${l.pitch_video_path}"></div>
       ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
-      ${pitched
-        ? `<div class="pitched-tag">✓ Pitched</div>`
-        : `<button class="btn primary sm" style="margin-top:14px" data-offer="${l.id}">Send an offer</button>`}
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11.5px;color:var(--faint)">
-        <span>${(()=>{const d=Math.max(0,Math.ceil((new Date(l.created_at).getTime()+7*86400000-Date.now())/86400000)); return d===0?"expires today":d===1?"expires tomorrow":`expires in ${d} days`;})()}</span>
-        ${hidden.has(l.id)
-          ? `<button class="btn ghost sm" style="width:auto" data-unhide="${l.id}">Unhide</button>`
-          : (pitched?"":`<button class="btn ghost sm" style="width:auto" data-hide="${l.id}">Hide</button>`)}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line2)">
+        <div style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--faint)">
+          <span style="${daysLeft<=1?"color:var(--amber);font-weight:700":""}">${expiry}</span>
+          ${hidden.has(l.id)
+            ? `<button class="btn ghost sm" style="width:auto;height:30px;padding:0 10px" data-unhide="${l.id}">Unhide</button>`
+            : (pitched?"":`<button class="btn ghost sm" style="width:auto;height:30px;padding:0 10px" data-hide="${l.id}">Hide</button>`)}
+        </div>
+        ${pitched
+          ? `<div class="pitched-tag" style="margin:0">✓ Pitched · awaiting reply</div>`
+          : `<button class="btn primary sm" style="width:auto;margin:0" data-offer="${l.id}">Send an offer →</button>`}
       </div>`;
     body.appendChild(div);
   }
-  /* Item BA: hide / unhide are per coach and never touch the trainee's goal. */
+  hydrateAvatars(body);  /* Item BA: hide / unhide are per coach and never touch the trainee's goal. */
   if(nHidden){
     const t=document.createElement("button"); t.className="btn ghost sm"; t.style.cssText="width:100%;margin-top:6px";
     t.textContent=marketShowHidden?`Hide ${nHidden} hidden goal${nHidden>1?"s":""} again`:`Show ${nHidden} hidden goal${nHidden>1?"s":""}`;

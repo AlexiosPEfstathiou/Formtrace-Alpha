@@ -14,9 +14,9 @@ BE) are not tasks and are left out.
 |---|------|-----------|-----|
 | 1 | **BG** Check-in photo days glisten - DONE 2026-09-14 | - | Camera badge on photo days; Saturday/Sunday glisten while the week's check-in is unmet. |
 | 2 | **BM** Incentives brainstorm - DONE 2026-09-14 | - | Nine options; recommended free opening moves: seed goals, founding badge, 48-hour response promise, capped zero-commission for founders. |
-| 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
+| 3 | **BJ** Names, logo, branding, domain | waiting on shortlist | Project owner to send names; then domain / trademark / store / handle checks per name. |
 | 4 | **BN** Referral links - part 1 DONE 2026-09-14 | - | Sign-ups and qualified (goal COMPLETED) counted; trainees can refer too; tiers on qualified. Part 2 (money) waits for BI. |
-| 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
+| 5 | **BH** Marketplace polish - first pass done 2026-09-14 | awaiting reaction | Coach card: who + one footer row. Trainee goals: status line, small Cancel. Second pass on a screenshot. |
 | 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
 | 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
 | 8 | **AA** Voice-over: no sound in preview - MITIGATED 2026-09-14 | blocked on repro | Earlier fixes confirmed present; low-level warning on the preview added. |
@@ -584,7 +584,10 @@ and expensive everywhere else. Avoid the generic AI-startup naming
 patterns; a real word or a coined one both work, the test is whether a
 coach would say it to a trainee out loud.
 
-Not started.
+**Interview 2026-09-14: explore new names; the project owner will send a
+shortlist.** On receipt, for each name: domain availability (.com/.app),
+a trademark search (UK IPO, EUIPO, USPTO), app-store name collisions,
+social handles, and the say-it-out-loud test. Waiting on the shortlist.
 
 ---
 
@@ -663,7 +666,7 @@ Largest item in the log. Not started; the Stripe account is the unblock.
 
 ---
 
-## BH. Polish the offer marketplace tab
+## BH. Polish the offer marketplace tab - FIRST PASS 2026-09-14 (both screens)
 
 Requested as stated: "polish the offer marketplace tab". Logged as an
 open-ended polish pass, not sized - it needs concrete direction before it
@@ -685,7 +688,26 @@ ideally a screenshot with notes. Recent additions on the coach side
 place without a layout pass, so that card's footer in particular is a
 likely candidate.
 
-Not started.
+**Interview 2026-09-14: BOTH screens. First pass DONE same day, from a
+code review rather than a screenshot** - so this is a base to react to,
+not the last word. What was demonstrably off, and what changed:
+- *Coach, Open goals card:* a goal had no WHO - no name, no avatar - so it
+  read as anonymous; "Send an offer" was a full-width block above a
+  separate expiry/Hide footer; the pitched state was a loose tag. Now: a
+  header row (avatar · name per the poster's name style · city · "posted
+  3 days ago" · focus badge), title, video, details, and ONE footer row
+  with a divider: "5 days left" (amber when ≤1) and Hide on the left, the
+  primary "Send an offer →" or "✓ Pitched · awaiting reply" on the right.
+  Posters come from one batched profiles query.
+- *Trainee, My goals card:* a full-width red "Cancel this goal" dominated
+  every open card, and nothing said whether the goal was drawing
+  interest. Now: a status line - "2 offers · 1 to answer · 5 days left",
+  or "No offers yet", "Matched with a coach", "Expired without a match",
+  "Cancelled by you" - with a small ghost Cancel on the right. Offer
+  counts come from one query.
+Not touched: the trainee's offers cards themselves (they already carry
+the BK total row and the cadence explainer; leaving them until you see
+this pass). Next: react with a screenshot and I take the second pass.
 
 ---
 
