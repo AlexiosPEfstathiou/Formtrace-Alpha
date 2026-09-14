@@ -1,4 +1,4 @@
--- =====================================================================
+﻿-- =====================================================================
 -- FormTrace — Item BN part 1: coach referral links, counts, tier badge.
 -- Run in the Supabase SQL editor.
 --
@@ -7,8 +7,9 @@
 -- sign-in. Two counts are kept, deliberately - the "what counts" decision
 -- is thereby not blocked:
 --   signups   = profiles referred by this coach
---   qualified = of those, trainees who went on to accept an offer (have an
---               engagement) - not gameable by making accounts
+--   qualified = of those, trainees who went on to COMPLETE a coaching goal
+--               (engagement status 'completed') - accepting then cancelling,
+--               or a goal ended early, never counts; not gameable
 -- Tiers key on QUALIFIED. The money parts (commission discounts, a share on
 -- a referred trainee who later coaches) are item BI's territory and not here.
 -- =====================================================================
@@ -39,7 +40,7 @@ begin
   if v_me.referred_by is not null then return null; end if;                  -- already stamped: never overwrite
   if v_me.created_at < now() - interval '7 days' then return null; end if;   -- only new accounts can be referred
   select id, display_name, role into v_ref from public.profiles
-   where referral_code = upper(trim(p_code)) and role = 'coach';            -- coaches' links only (per the request)
+   where referral_code = upper(trim(p_code));                               -- any member's link: coaches AND trainees
   if not found then return null; end if;
   if v_ref.id = uid then return null; end if;                               -- no self-referral
   update public.profiles set referred_by = v_ref.id, referred_at = now() where id = uid;
@@ -59,7 +60,7 @@ set search_path = public
 as $$
   with r as (
     select p.id,
-           exists (select 1 from public.engagements e where e.trainee_id = p.id) as qualified
+           exists (select 1 from public.engagements e where e.trainee_id = p.id and e.status = 'completed') as qualified
       from public.profiles p where p.referred_by = p_user
   ),
   c as (

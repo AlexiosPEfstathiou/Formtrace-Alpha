@@ -15,7 +15,7 @@ BE) are not tasks and are left out.
 | 1 | **BG** Check-in photo days glisten - DONE 2026-09-14 | - | Camera badge on photo days; Saturday/Sunday glisten while the week's check-in is unmet. |
 | 2 | **BM** Incentives brainstorm (first coach/trainee) | Easy (thinking) | No code. Levers already exist: commission rates (BI), a founding badge (item A), free first week. |
 | 3 | **BJ** Names, logo, branding, domain | Easy code, hard decision | Code side is `manifest.json` + README; the real work is choosing, plus store/trademark/domain checks. |
-| 4 | **BN** Referral links - part 1 DONE 2026-09-14 | - | Both counts kept (sign-ups and qualified); tiers on qualified. Part 2 (money) waits for BI. |
+| 4 | **BN** Referral links - part 1 DONE 2026-09-14 | - | Sign-ups and qualified (goal COMPLETED) counted; trainees can refer too; tiers on qualified. Part 2 (money) waits for BI. |
 | 5 | **BH** Polish the offer marketplace tab | Medium (decision) | Purely UI, but open-ended until told which screen and what feels off. |
 | 6 | **AT step 5** Week-model cutover - DONE 2026-09-14; the dead-code excision is deferred to its own cleanup item after the alpha | - | Share image and milestones moved to weeks. Day-model paths stay behind the constant until testers are off live data. |
 | 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
@@ -190,8 +190,18 @@ change in one SQL function: 3 -> Referrer, 10 -> Ambassador, 25 -> Partner.
 - `referral_stats(user)` returns signups, qualified, tier, title, next_at.
 Not built (part 2, waits for BI): commission discounts by tier; the
 commission share on a referred trainee who later becomes a coach.
-Not built (decision 4): trainee-to-trainee referrals - links work for
-coaches only.
+**Corrected same day on two points from review:**
+- *Qualified* now means the referred trainee **completed** a coaching goal
+  (`engagements.status = 'completed'`), not merely accepted an offer -
+  accept-then-cancel, and goals ended early, never count.
+- Trainees' referrals count too (decision 4 made): any member's code can
+  be claimed, and the referral card appears on every Profile. A trainee's
+  tier has no public surface yet - there is no public trainee profile
+  screen - so it shows on their own card only; the coach's shows on the
+  public coach profile as before.
+The first version of the SQL had coaches-only claiming and accepted-offer
+qualification; the two `create or replace` functions in the file supersede
+it when re-run.
 
 ---
 
