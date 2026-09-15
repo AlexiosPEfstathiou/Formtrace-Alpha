@@ -36,11 +36,64 @@ BE) are not tasks and are left out.
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
 | 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
 | 24 | **BZ** Coach homepage "X new goals posted today" | Easy | One count query; tappable line to Open goals; silent at zero, weekly fallback. |
+| 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CB. Launch timeline (owner, 2026-09-15)
+
+The sequence to first real usage, in order. Each phase names the log
+items it depends on and the numbers to write down, so the timeline is a
+plan rather than a wish.
+
+**1. Alpha test day -> findings as log items.** BU pack is ready
+(`docs/TEST_DAY.md`); BP seed goals ready to post. Output: one item per
+✗/~ row in the tester's words. Gate to phase 2: no ✗ left on the trainee
+path from goal to completion.
+
+**2. Make payments possible.** BI (Stripe Connect, rates decided and
+already server-side in `platform_rates`), then BL (the first real
+transaction, test mode first). Also unlocks BR (founders 0%), BS
+(commission tiers) and the voucher in phase 4. Gate: one trainee charged
+€105.90, one coach paid €88.10, commission taken, refund path exercised
+once - in test mode, then once for real.
+
+**3. Three coaches who scan offers once a day.** Founding coaches (BQ
+badge, BR 0% commission as the ask). The commitment is the daily scan:
+every open goal sees a pitch or a pass within 24 h - the "48-hour first
+response" promise from BM, kept by hand. Track: median time from goal
+posted to first offer; goals that got zero offers.
+
+**4. Thirty trainees, first month.** Scout 30 trainees who will post a
+goal, accept an offer and follow it; target an average of **one new
+offer per day** across the month. Each gets a **€30 voucher on their
+first goal**. Numbers: with 30 goals and 3 daily-scanning coaches, ~1
+goal/day is the supply; 1 offer/day needs each goal to draw at least one
+pitch - the phase-3 promise is what makes this arithmetic hold. Voucher
+mechanics need BI (voucher = a credit against the trainee's charge; the
+coach is still paid in full, so it is a €30 subsidy per goal, **≈ €900
+budget** for 30). Before BI exists it can only be a manual refund.
+Referral links (BN) should be the way these 30 arrive where possible, so
+the counters mean something from day one.
+
+**5. Learn from the first goals.** Watch how the first goal goes for both
+sides and collect feedback; measure who keeps using the service after
+trying it. Define the metrics now so they can be read later:
+- *Completion:* goals reaching status completed vs ended early.
+- *Retention (trainee):* posts a second goal, or accepts a second offer,
+  within 30 days of the first completing.
+- *Retention (coach):* still scanning daily and pitching in month 2.
+- *Quality signals already in the product:* week streaks, review
+  turnaround vs the deadline (B), ratings, form-match trend (BO), macro
+  goal adherence (AX).
+- *Feedback:* a short in-app or off-app questionnaire at goal completion
+  for both roles (not built - log as an item when phase 5 nears).
+Not started; phase 1 is next.
 
 ---
 
