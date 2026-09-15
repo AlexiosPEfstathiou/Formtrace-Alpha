@@ -44,6 +44,31 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
+## CA. PWA installability audit against the standard checklist - DONE 2026-09-15
+
+Owner's checklist: `<link rel="manifest">`; display standalone, start_url,
+theme_color, 192 + 512 + maskable-512 icons; a service worker registered
+with a fetch handler; https. Audited the repo rather than assuming:
+- Already in place: manifest linked (line 10), `display: standalone`,
+  `start_url ./index.html`, `scope ./`, theme/background colour, 192 and
+  512 PNGs, `sw.js` registered from index.html with install/activate/fetch
+  handlers (deliberately pass-through, no cache - see the file's header
+  comment), https via GitHub Pages, `beforeinstallprompt` captured for the
+  Profile Install card. Paths are RELATIVE on purpose: the app is served
+  under /Formtrace-Alpha/, so `/sw.js` or `/manifest.webmanifest` at the
+  root would 404.
+- Fixed today: **no maskable icon** (Android shrank the icon into a white
+  disc) - `icon-512-maskable.png` generated with the mark at 70% inside
+  the safe zone on the app background, declared with `purpose: maskable`;
+  **`icon.svg` was 6 bytes of garbage** referenced from the manifest -
+  removed; added a stable manifest `id` ("./") so updates keep the same
+  installed identity.
+Result: installable on Chrome Android with the "Install app" prompt (was
+already; now with a correct adaptive icon). iOS remains add-to-home-screen
+only (AD/deferred).
+
+---
+
 ## BZ. Coach homepage: "X new goals posted today"
 
 Requested 2026-09-15. A line on the coach's homepage stating how many
