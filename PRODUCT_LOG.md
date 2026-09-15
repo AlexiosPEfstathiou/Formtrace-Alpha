@@ -35,11 +35,26 @@ BE) are not tasks and are left out.
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
 | 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
+| 24 | **BZ** Coach homepage "X new goals posted today" | Easy | One count query; tappable line to Open goals; silent at zero, weekly fallback. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## BZ. Coach homepage: "X new goals posted today"
+
+Requested 2026-09-15. A line on the coach's homepage stating how many
+open goals were posted today - the freshest supply in the marketplace,
+surfaced where the coach lands. Small build: one count query on
+`listings` (status open, `created_at` today in the coach's local day,
+excluding goals the coach has hidden - BA), rendered as a tappable line
+or chip above the existing "check the marketplace" copy, e.g. "3 new
+goals posted today →" opening the Open goals tab. Say nothing when the
+count is zero rather than "0 new goals"; consider "N this week" as the
+fallback so the line still earns its place on a quiet day. Not started.
 
 ---
 
