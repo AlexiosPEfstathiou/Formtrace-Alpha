@@ -37,11 +37,102 @@ BE) are not tasks and are left out.
 | 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
 | 24 | **BZ** Coach homepage "X new goals posted today" | Easy | One count query; tappable line to Open goals; silent at zero, weekly fallback. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
+| 26 | **CC** Goal-completion questionnaire | Easy | goal_feedback table; two ≤60 s question sets; card after the celebration; admin NPS by cohort. |
+| 27 | **CD** Post-completion retention plan | Medium | Direct offer to a past trainee first; prefilled repost; day 3/7/14 homepage cards; coach Past section; measure source of second goal. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CD. Post-goal-completion retention plan
+
+Requested 2026-09-15. What happens in the days after a goal completes so
+the trainee's next goal - and the coach's next client - is the default,
+not an afterthought. Retention definition accepted (CB): a trainee is
+retained if they post a second goal or accept a second offer within 30
+days of the first completing; a coach if still scanning daily and
+pitching in month two.
+
+**Trainee side, in order of when it fires:**
+1. *At completion (day 0):* the outcome screen ends with one clear next
+   step - "Post your next goal" prefilled from the finished one (same
+   focus, title suggesting progression), and "Continue with <coach>" which
+   opens the coach's profile with the coach pre-selected so their next
+   pitch is a one-tap accept (needs a "direct offer to a past trainee"
+   path - see coach side). Show the goal's own story: streak span, PBs,
+   form-match trend, the check-in photo first vs last (AP lightbox).
+2. *Day 0:* the completion questionnaire (CC) - short, both roles.
+3. *Day 3:* homepage card "Your streak is still alive - N weeks. Next goal
+   keeps it." The week streak (AT) is the product's core loop; a completed
+   goal must not read as "the end".
+4. *Day 7:* if no new goal, a homepage card with the coach's completion
+   note (if any) and the two buttons from step 1 again. One card, not a
+   nag - it appears once.
+5. *Day 14-30:* the referral prompt - "Bring a friend, tiers unlock
+   vouchers" (BN/BS) - because a trainee who just finished is the best
+   recruiter the platform has.
+6. *Voucher hook (needs BI):* the discipline-streak reward (BW) at the
+   relevant milestone lands here if earned.
+Push notifications would carry 3-5 far better than homepage cards; until
+the native wrapper (AD) exists, the cards are the channel, so the
+homepage must be the place these land.
+
+**Coach side:**
+1. *At completion:* "Offer <trainee> their next goal" - a **direct offer
+   to a past trainee** without waiting for a posted goal (new path: an
+   offer with `listing_id` null and `trainee_id` set; the trainee sees it
+   on the Offers tab as "from your coach"). This is the single biggest
+   retention mechanic for both sides and does not exist yet.
+2. The coach's Trainees list keeps completed trainees in a "Past" section
+   with "Offer next goal" beside each, and the streak they held.
+3. Coach retention itself is watched, not nudged: daily-scan and pitch
+   counts per coach (from listings/offers timestamps) on the admin
+   screen, so a lapsing founding coach is visible in week 1, not month 2.
+
+**Measure:** the two retention rates above, per cohort (month of first
+goal), plus where the second goal came from - prefilled repost, continue-
+with-coach, direct offer, or organic. Not started; the direct-offer path
+is the piece to build first when this item starts.
+
+---
+
+## CC. Goal-completion questionnaire (both roles)
+
+Requested 2026-09-15, for CB phase 5. A short in-app questionnaire shown
+once, when a goal reaches status completed, to the trainee and to the
+coach - the structured half of "collect valuable feedback".
+
+**Trainee (≤ 60 s):**
+1. How likely are you to recommend FormTrace to a friend? 0-10 (NPS).
+2. How likely are you to start another goal here? 0-10.
+3. Rate the coach (already exists - reuse the rating, do not ask twice).
+4. Pick up to three that mattered most: form checks on my videos /
+   written feedback / voice-overs / the week streak / macros / check-in
+   photos / video calls / the price / the coach.
+5. What nearly made you stop? (free text, optional)
+6. What would you change? (free text, optional)
+
+**Coach (≤ 60 s):**
+1. How likely are you to recommend FormTrace to another coach? 0-10.
+2. How much of the coaching work did the app save you, compared to
+   messaging + spreadsheets? less / same / some / a lot.
+3. Pick up to three that helped: form-match assist / pose overlay /
+   voice-over / review flow / assigning weeks / macro goals / calls /
+   the ledger.
+4. Where did the app get in the way? (free text)
+5. Would you take another trainee here next month? yes / maybe / no.
+
+**Mechanics:** `goal_feedback` table (engagement_id, role, answers jsonb,
+submitted_at) with RLS (own rows; admin reads all); shown as a card on
+the completion screen and on the homepage until answered or dismissed
+(one dismiss allowed, then it stays gone); admin screen lists responses
+with NPS by cohort. Questions live in one JS constant so they can change
+without a schema change. Ask AFTER the celebration, never before it.
+Not started; small build once the completion screen exists in its CD
+form.
 
 ---
 
@@ -91,8 +182,8 @@ trying it. Define the metrics now so they can be read later:
 - *Quality signals already in the product:* week streaks, review
   turnaround vs the deadline (B), ratings, form-match trend (BO), macro
   goal adherence (AX).
-- *Feedback:* a short in-app or off-app questionnaire at goal completion
-  for both roles (not built - log as an item when phase 5 nears).
+- *Feedback:* the goal-completion questionnaire (CC) and the post-
+  completion retention plan (CD).
 Not started; phase 1 is next.
 
 ---
