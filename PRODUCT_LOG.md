@@ -63,8 +63,15 @@ with a fetch handler; https. Audited the repo rather than assuming:
   **`icon.svg` was 6 bytes of garbage** referenced from the manifest -
   removed; added a stable manifest `id` ("./") so updates keep the same
   installed identity.
-Result: installable on Chrome Android with the "Install app" prompt (was
-already; now with a correct adaptive icon). iOS remains add-to-home-screen
+Result: installable on Chrome Android via Profile → Install (was already;
+now with a correct adaptive icon). Tester report same day: "the install
+card says not available, the menu has no Add to Home screen" - cause was
+**Incognito**, where Chrome blocks web-app installs and hides the menu
+entry. The Install card's fallback text now names the three blockers
+(Incognito, opened from another app's in-app browser, first visit) and
+the test-day pack's install step says so. Note also that Chrome's own
+install banner never appears by design - the app suppresses it
+(preventDefault) so the Profile card is the single install path. iOS remains add-to-home-screen
 only (AD/deferred).
 
 ---

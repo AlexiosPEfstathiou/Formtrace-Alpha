@@ -10260,7 +10260,8 @@ function updateInstallUI(){
   }
   // Honest, diagnostic messaging rather than hiding this silently — this
   // IS the answer to "why don't I see Install app" for whoever's looking.
-  card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.6">Not offered yet by your browser. Chrome and similar browsers only offer this once they judge you've visited enough — try revisiting a few times, then check back here.</div>`;
+  /* Tester 2026-09-15: spent ten minutes here in Incognito. Name the blockers. */
+  card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.6">Not offered by your browser right now. The usual reasons, in order:<br>• <b>Incognito / private window</b> - installs are blocked there; open the site in a normal Chrome window.<br>• Opened <b>from another app</b> (WhatsApp, Teams, Gmail…) - that in-app browser can't install; use ⋮ → <b>Open in Chrome</b>, or type the address into Chrome itself.<br>• A <b>first visit</b> - Chrome sometimes waits until you've been back once. Chrome's own ⋮ menu → <b>Add to Home screen</b> works regardless.</div>`;
 }
 /* Item G: a person's own recurring availability. Plain CRUD, not routed
    through a function — unlike proposals, there's no cross-party business

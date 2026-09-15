@@ -48,7 +48,7 @@
 | 16 | Vacation: set a range; streak neutral; at-risk copy stays quiet | Profile / Training | | |
 | 17 | Goal completion: outcome recorded; calendar and streak afterwards; goal in history; the referrer's Profile shows "1 trainee completed a goal" | Training, Profile | | |
 | 18 | Profile: referral card — Copy and Share work; counts; the card says tiers unlock **vouchers and merch** | Profile | | |
-| 19 | Install as an app; offline banner behaviour | Profile → Install | | |
+| 19 | Install as an app: **Profile → Install** (Chrome shows no banner - the app suppresses it on purpose). Must be a **normal Chrome window, not Incognito**, and opened in the Chrome app itself, not from a link inside WhatsApp/Teams. Offline banner behaviour | Profile → Install | | |
 
 ---
 
