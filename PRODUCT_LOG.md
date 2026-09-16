@@ -39,11 +39,72 @@ BE) are not tasks and are left out.
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire | Easy | goal_feedback table; two ≤60 s question sets; card after the celebration; admin NPS by cohort. |
 | 27 | **CD** Post-completion retention plan | Medium | Direct offer to a past trainee first; prefilled repost; day 3/7/14 homepage cards; coach Past section; measure source of second goal. |
+| 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
+| 29 | **CF** Monday PBs + streak notifications | Easy (card) / on CE (push) | Content from the week close; homepage-card version first, push later. |
+| 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CG. Workout levels: one workout, scaled reps and added weight
+
+Requested 2026-09-16. A coach assigns a **level** to a workout (1, 2, 3
+…): the exercises stay the same, the reps and the added weight scale with
+the level. So one built workout serves a beginner and an advanced trainee
+without duplicating it in the library.
+Design to settle: where the scaling lives - per exercise in the builder
+("Level 1: 8 reps @ 0 kg · Level 2: 10 @ 10 kg · Level 3: 12 @ 20 kg"), or
+one multiplier per level applied to a base; the first is explicit and
+what a coach actually thinks in, the second is less typing. Assigning
+picks the level for that trainee (default from the engagement, e.g. set
+once per trainee and remembered); the snapshot (`snap_items`) stores the
+resolved reps/weight so the trainee sees numbers, not "level 2". PBs and
+the form comparison are unaffected (they key on the exercise). Also lets
+the coach "level up" a trainee mid-goal by reassigning at a higher level,
+which is a visible progression moment worth celebrating. Not started.
+
+---
+
+## CF. Weekly Monday notification: personal bests and streak
+
+Requested 2026-09-16. Two recurring nudges, both on Monday morning:
+- **"X personal bests achieved last week"** - counts PBs (weight or reps)
+  set in the closed week; zero PBs sends nothing (never a "0 PBs"
+  message). Incentivises effort.
+- **Streak** - "N-week streak - this week keeps it going" or, when last
+  week was neutral (vacation), a softer "back from your break - the streak
+  is intact". Incentivises discipline. Ties into the week close
+  (`close_week`), which already runs per engagement at the week boundary.
+Both need a delivery channel: push (CE) when it exists; until then, a
+homepage card on the first open of the week (the same content, seen on
+open rather than pushed). Build the card version first - it is the same
+data and the copy carries over unchanged to push. Not started.
+
+---
+
+## CE. Mobile phone notifications (push)
+
+Requested 2026-09-16, now that the app installs. Push is what makes the
+timed nudges real: call reminders (AY), the week-close and PB/streak
+messages (CF), the retention cards (CD), review-ready and offer-received
+alerts, the 24 h proposal clock.
+**What it takes:** Web Push works on installed Chrome Android today -
+`PushManager.subscribe` with a VAPID key pair, subscriptions stored in a
+`push_subscriptions` table (user, endpoint, keys), and a **server** to
+send (Supabase Edge Function using web-push with the VAPID private key,
+triggered by database events or a schedule). The service worker gains a
+`push` handler and a `notificationclick` that opens the right screen.
+iOS supports Web Push only for home-screen-installed apps on 16.4+,
+which is consistent with the deferred iOS stance. The server side is the
+same one BI needs, so build them together.
+**Rules:** opt-in from Profile with a clear list of what will be sent;
+quiet hours; every notification type individually switchable; nothing
+marketing-flavoured in v1. Not started; depends on the Edge Function
+server being stood up (BI).
 
 ---
 
