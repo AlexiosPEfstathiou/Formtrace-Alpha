@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1200,6 +1200,7 @@
     <div id="home-certstatus" class="home-reviews" style="display:none"></div>
     <div id="home-milestone" class="home-milestone" style="display:none"></div>
     <div id="home-renewal" class="home-call" style="display:none"></div>
+    <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
     <div id="home-recap" class="home-milestone" style="display:none"></div>
     <div id="home-feedback" class="home-reviews" style="display:none"></div>
       <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
@@ -3466,6 +3467,7 @@ async function renderHome(){
     await Promise.all([
       renderHomeStreakRisk($("#home-streakrisk"), engs),
       renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
+      renderHomeNextGoal($("#home-nextgoal"), engs),   // Item CD: between-goals nudge
       renderHomeWeekRecap($("#home-recap"), engs),   // Item CF (card version)
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       renderHomeVacation($("#home-vacation")),
@@ -3912,6 +3914,30 @@ async function afterFeedbackHandoff(eng,role,kind){
   const ok=await openConfirm({title:`Offer ${name} their next goal?`,body:`"${eng.goal_title||"Their goal"}" is complete. Proposing the next block now is the best moment - they are deciding whether to keep going.`,confirmLabel:"Offer next goal",cancelLabel:"Not this time"});
   if(!ok) return;
   openOffer(null,{trainee_id:eng.trainee_id,name,title:eng.goal_title?`${eng.goal_title} - next block`:""});
+}
+/* Item CD (remainder): the between-goals card. Only when the trainee has NO
+   active goal, finished one in the last 30 days, and no direct offer is
+   pending (that has its own card - two calls to action compete). Copy shifts
+   with the days since completion; the streak line says out loud what is true
+   today (CI will add the countdown when its numbers are decided). */
+async function renderHomeNextGoal(el, engs){
+  if(!el||!ME||roleOf()!=="trainee") return; el.style.display="none"; el.innerHTML="";
+  const list=engs||[]; if(list.some(e=>e.status==="active")) return;
+  const done=list.filter(e=>e.status==="completed"&&e.completed_at).sort((a,b)=>new Date(b.completed_at)-new Date(a.completed_at));
+  if(!done.length) return;
+  const last=done[0]; const days=Math.floor((Date.now()-new Date(last.completed_at).getTime())/86400000);
+  if(days>30) return;
+  try{ const { data }=await store._sb.from("offers").select("id").eq("trainee_id",ME.id).eq("kind","renewal").eq("status","pending").limit(1); if((data||[]).length) return; }catch(e){}
+  const streak=ME.week_streak_count||0;
+  const lead = days<3 ? "Take a breath - and when you're ready, the next one." : days<7 ? "A week on. The next goal is one tap away." : "It's been a while. Your last goal is a good template for the next.";
+  el.innerHTML=`<div class="card" style="padding:12px 14px">
+    <div class="eyebrow" style="margin-bottom:6px">After "${escapeHtml(last.goal_title||"your goal")}"</div>
+    <div style="font-size:13.5px;line-height:1.45">${lead}</div>
+    ${streak?`<div class="ms-row" style="padding:8px 0 2px"><span class="ms-ic">🛡</span><div><b>Your ${streak}-week streak is protected while you choose your next goal.</b><div class="ms-sub">Weeks without a goal don't count against it.</div></div></div>`:""}
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary sm" id="ng-post" style="width:auto">Post your next goal →</button><button class="btn sm ghost" id="ng-browse" style="width:auto">See offers</button></div></div>`;
+  el.style.display="";
+  $("#ng-post").addEventListener("click",()=>{ listingPrefill={title:last.goal_title?`${last.goal_title} - next block`:"",focus:null}; go("listing-new"); });
+  $("#ng-browse").addEventListener("click",()=>go("listings"));
 }
 /* Trainee homepage: a direct offer from your coach stays here until accepted or
    declined - no expiry, no dismiss. The nudge that keeps someone who planned to
@@ -5642,10 +5668,13 @@ async function acceptOffer(offerId){
 }
 
 /* trainee: post a goal */
+let listingPrefill=null;   // Item CD: "Post your next goal" carries the finished goal's title/focus
 function openListingNew(){
   pendingListingVideo=null; listingFocus=null;
-  $("#lst-title").value=""; $("#lst-details").value="";
+  $("#lst-title").value=(listingPrefill&&listingPrefill.title)||""; $("#lst-details").value="";
   $$("#lst-focus-pills .pill").forEach(p=>p.classList.remove("on"));
+  if(listingPrefill&&listingPrefill.focus){ const pill=$$("#lst-focus-pills .pill").find(p=>p.textContent.trim()===listingPrefill.focus); if(pill){ pill.classList.add("on"); listingFocus=listingPrefill.focus; } }
+  listingPrefill=null;
   const slot=$("#lst-video-slot"); slot.classList.remove("filled");
   slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your goal</div><div class="vs">Show coaches where you are and what you want. No attachments.</div>`;
 }
@@ -5672,6 +5701,7 @@ $("#lst-post").addEventListener("click",async()=>{
 
 /* coach: browse open listings */
 async function renderMarket(){
+  try{ store._sb.from("profiles").update({last_market_at:new Date().toISOString()}).eq("id",ME.id).then(()=>{}); }catch(e){}   // Item CD: daily-scan stamp for admin
   const body=$("#market-body"); body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   /* Item BA: expire week-old postings first (closes them, marks their pending
      offers expired), then read. Non-fatal if the function isn't installed. */
@@ -11081,6 +11111,18 @@ async function renderAdminInactivity(body){
     slot.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">Couldn't load review activity.</div>`;
   }
 }
+/* Item CD: is each coach keeping the daily-scan promise? (launch phase 3) */
+async function renderAdminCoachActivity(body){
+  const wrap=document.createElement("div"); wrap.className="card"; wrap.style.marginBottom="12px";
+  wrap.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Coach scan activity</div><div id="adm-scan">Loading…</div>`; body.appendChild(wrap);
+  try{
+    const { data, error }=await store._sb.rpc("admin_coach_activity"); if(error) throw error;
+    const el=$("#adm-scan"); if(!(data||[]).length){ el.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No coaches yet.</div>`; return; }
+    const ago=iso=>{ if(!iso) return "never"; const h=(Date.now()-new Date(iso).getTime())/3600000; return h<1?"just now":h<24?Math.round(h)+"h ago":Math.round(h/24)+"d ago"; };
+    el.innerHTML=data.map(r=>{ const stale=!r.last_market_at||(Date.now()-new Date(r.last_market_at).getTime())>48*3600000;
+      return `<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line2);font-size:12.5px"><div style="flex:1;min-width:0"><b>${escapeHtml(r.display_name||"Coach")}</b><div style="color:var(--faint);font-size:11.5px">last scan <span style="${stale?"color:var(--amber);font-weight:700":""}">${ago(r.last_market_at)}</span> · ${r.pitches_7d} pitch${r.pitches_7d===1?"":"es"} / 7d · ${r.pitches_30d} / 30d</div></div>${r.open_goals_unpitched?`<span class="badge pending" title="open goals this coach has neither pitched nor hidden">${r.open_goals_unpitched} unpitched</span>`:`<span class="badge accepted">all seen</span>`}</div>`; }).join("");
+  }catch(err){ console.error("coach activity",err); const el=$("#adm-scan"); if(el) el.textContent="Run migrations_coach_activity.sql to enable."; }
+}
 /* Badges (BH/BQ): the project owner assigns them from one sheet per coach.
    Verified is a fact (approval date), not a toggle. Professional carries a
    place of employment. Certified is earned: the coach uploads a certification,
@@ -11151,6 +11193,7 @@ async function openAssignBadgesSheet(c){
   await renderAdminInactivity(body);
   await renderAdminBadges(body);   // badges (BH/BQ)
   await renderAdminFeedback(body); // Item CC
+  await renderAdminCoachActivity(body); // Item CD
   if(!apps.length){ body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`); return; }
   for(const a of apps){
     const prof=a.profiles||{};

@@ -38,7 +38,7 @@ BE) are not tasks and are left out.
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
-| 27 | **CD** Retention plan - direct offer BUILT 2026-09-16 | rest open | Next-goal offer prompted only after the coach's completion survey; persistent trainee card until accepted/declined. Cards/completion buttons still to do. |
+| 27 | **CD** Retention plan - DONE 2026-09-16 | push on CE, window on CI | Survey-linked next-goal offer; persistent trainee card; between-goals card with prefilled repost; admin scan activity. |
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
@@ -250,7 +250,7 @@ server being stood up (BI).
 
 ---
 
-## CD. Post-goal-completion retention plan - DIRECT OFFER BUILT 2026-09-16
+## CD. Post-goal-completion retention plan - DONE 2026-09-16 (push and streak window on CE / CI)
 
 Requested 2026-09-15. What happens in the days after a goal completes so
 the trainee's next goal - and the coach's next client - is the default,
@@ -329,9 +329,27 @@ On the trainee side a homepage card **"🤝 Your coach wants to keep going
 declined - no dismiss, no expiry (direct offers have no `expires_at`, and
 `expire_listings` never touches them). It opens the Offers tab. This is
 the nudge aimed at the trainee who planned to stop after one goal.
-Not built yet from this item: the trainee completion-screen buttons
-("Post your next goal" prefilled), the timed day-3/7/14 cards, the
-coach's daily-scan counters on admin.
+**Remainder DONE 2026-09-16.** Needs `supabase/migrations_coach_activity.sql`.
+- *Trainee between goals:* one homepage card, "After '<goal>'", shown only
+  when there is no active goal, a goal completed within 30 days, and NO
+  direct offer pending (that has its own card - two calls to action would
+  compete). Copy shifts with the days since: under 3 "Take a breath - and
+  when you're ready, the next one"; under 7 "A week on. The next goal is
+  one tap away"; after "It's been a while. Your last goal is a good
+  template for the next". A streak line says what is true today: "🛡 Your
+  6-week streak is protected while you choose your next goal. Weeks
+  without a goal don't count against it." (CI adds the countdown once its
+  numbers are decided.) Buttons: **Post your next goal →** (the posting
+  screen opens prefilled "<goal> - next block") and **See offers**. The
+  day-14+ referral prompt is folded into this card's later copy rather
+  than a fourth card.
+- *Coach daily-scan counters on admin:* `profiles.last_market_at` stamped
+  whenever a coach opens Open goals; admin card "Coach scan activity"
+  lists each coach with last scan (amber when over 48 h), pitches in the
+  last 7 / 30 days, and "N unpitched" (open goals they have neither
+  pitched nor hidden) or "all seen". This is the phase-3 promise made
+  visible in week one.
+Item complete apart from what waits on CE (push) and CI (streak window).
 
 ---
 
