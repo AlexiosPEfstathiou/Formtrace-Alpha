@@ -43,7 +43,7 @@ BE) are not tasks and are left out.
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
-| 32 | **CI** Protect streaks between goals | Medium (decision: N weeks) | Finite, visible grace window; pending offers pause it; close_week rule + copy on home/Training/recap. |
+| 32 | **CI** Protect streaks between goals - BUILT 2026-09-16 | - | 3-week window (editable in platform_rates), pauses while an offer is pending, streak function honours it; copy on card + recap. |
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
@@ -110,7 +110,7 @@ Direct offers (no goal) are independent and not held against each other.
 
 ---
 
-## CI. Protect discipline streaks between goals
+## CI. Protect discipline streaks between goals - BUILT 2026-09-16 (3 weeks / amber 1 week, editable)
 
 Requested 2026-09-16. When a goal completes and the next one is not yet
 posted or accepted - offers being explored, a coach's direct offer
@@ -144,7 +144,36 @@ completion + N weeks at completion; pushed forward while an offer is
 pending); otherwise it is a non-neutral miss. `weekRisk()`, the badge and
 the streak-risk homepage card read the same field for the copy. The
 Monday recap (CF) carries the line too. Decide N (proposal 3) and the
-amber lead time (proposal 1 week). Not started.
+amber lead time (proposal 1 week).
+
+**BUILT 2026-09-16.** Needs `supabase/migrations_streak_grace.sql` run
+(after platform_rates). The numbers are NOT hard-coded: `platform_rates`
+rows `streak_grace_weeks` = 3 and `streak_amber_weeks` = 1, editable in
+SQL without a deploy - so the proposal ships as a default rather than
+blocking on a decision.
+**Finding that shaped it:** between goals no engagement is active, so
+`close_week` never runs and those weeks have no closure rows at all; the
+streak survived because the weeks were absent, not because of a rule.
+Mechanics:
+- `profiles.streak_grace_until` (a Monday). Set by a trigger when a
+  trainee's last active goal completes or ends: this week's Monday +
+  grace_weeks x 7. Cleared when a new goal becomes active.
+- Offer in flight (pending or countered, any kind) and no active goal ->
+  `ensure_streak_grace` pushes the window one week ahead on every refresh:
+  a coach's response time never costs the trainee.
+- `compute_week_streak`: a gap week (no closure rows) at or after the
+  window BREAKS the run; before it, the week is skipped exactly as before.
+  `refresh_my_week_streak` calls ensure_streak_grace first. Backfill: every
+  trainee currently between goals gets a fresh 3-week window from this
+  week.
+- Copy (`streakGraceCopy`) on the between-goals card (CD) and the Monday
+  recap (CF): "🛡 Your 6-week streak is protected for 2 more weeks" ->
+  amber "⚠️ Your 6-week streak unprotects on Sun 5 Oct - accept an offer
+  or post a goal before then to keep it" -> "no longer protected - the
+  next completed week starts a new run"; with an offer pending, "protected
+  while your offer is pending".
+Not built: the same line on the Training tab (the merged calendar's
+This-week card slot) - a small follow-up.
 
 ---
 

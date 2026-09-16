@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -2900,7 +2900,7 @@ let MY_RATES=null;   // effective_rates(ME.id) for a coach: {coach_commission_pc
 async function loadPlatformRates(){
   try{
     const { data }=await store._sb.from("platform_rates").select("key,value");
-    for(const r of (data||[])){ const v=Number(r.value); if(r.key==="trainee_fee_pct"&&isFinite(v)) TRAINEE_FEE_PCT=v; if(r.key==="coach_commission_pct"&&isFinite(v)) COACH_COMMISSION_PCT=v; if(r.key==="trainee_fee_min"&&isFinite(v)) MIN_SERVICE_FEE=v; }
+    for(const r of (data||[])){ const v=Number(r.value); if(r.key==="trainee_fee_pct"&&isFinite(v)) TRAINEE_FEE_PCT=v; if(r.key==="coach_commission_pct"&&isFinite(v)) COACH_COMMISSION_PCT=v; if(r.key==="trainee_fee_min"&&isFinite(v)) MIN_SERVICE_FEE=v; if(r.key==="streak_amber_weeks"&&isFinite(v)) STREAK_AMBER_WEEKS=v; }
     if(ME&&ME.role==="coach"){ const { data:er }=await store._sb.rpc("effective_rates",{p_coach:ME.id}); if(er) MY_RATES=er; }
   }catch(e){ /* migration not run yet - defaults stand */ }
 }
@@ -3801,7 +3801,8 @@ async function renderHomeWeekRecap(el, engs){
   if(!pbs.length && !streak) return;
   const names=pbs.slice(0,3).map(p=>`${escapeHtml(p.exercise_name)} ${p.weight_kg!=null?`${p.weight_kg} kg × ${p.reps}`:`${p.reps} reps`}`).join(" · ");
   const pbLine = pbs.length ? `<div class="ms-row"><span class="ms-ic">🏆</span><div><b>${pbs.length} personal best${pbs.length===1?"":"s"} last week</b><div class="ms-sub">${names}${pbs.length>3?` · +${pbs.length-3} more`:""}</div></div></div>` : "";
-  const stLine = streak ? `<div class="ms-row"><span class="ms-ic">🔥</span><div><b>${backFromBreak?`Back from your break - streak intact at ${streak} week${streak===1?"":"s"}`:`${streak}-week streak`}</b><div class="ms-sub">${backFromBreak?"Pick up where you left off.":"This week keeps it going."}</div></div></div>` : "";
+  const noActive=!(engs||[]).some(e=>e.status==="active"); const gcr=noActive?streakGraceCopy(streak,false):null;   // Item CI
+  const stLine = gcr ? `<div class="ms-row"><span class="ms-ic">${gcr.amber?"⚠️":"🛡"}</span><div><b style="${gcr.amber?"color:var(--amber)":""}">${escapeHtml(gcr.text)}</b><div class="ms-sub">${escapeHtml(gcr.sub)}</div></div></div>` : streak ? `<div class="ms-row"><span class="ms-ic">🔥</span><div><b>${backFromBreak?`Back from your break - streak intact at ${streak} week${streak===1?"":"s"}`:`${streak}-week streak`}</b><div class="ms-sub">${backFromBreak?"Pick up where you left off.":"This week keeps it going."}</div></div></div>` : "";
   el.innerHTML=`<div class="card" style="padding:12px 14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div class="eyebrow">Your week in review</div><button class="btn sm ghost" id="recap-x" style="width:auto;height:28px;padding:0 10px">Got it</button></div>${pbLine}${stLine}</div>`;
   el.style.display="";
   $("#recap-x").addEventListener("click",()=>{ try{ localStorage.setItem("ft-recap-"+thisMon,"1"); }catch(e){} el.style.display="none"; });
@@ -3920,6 +3921,16 @@ async function afterFeedbackHandoff(eng,role,kind){
    pending (that has its own card - two calls to action compete). Copy shifts
    with the days since completion; the streak line says out loud what is true
    today (CI will add the countdown when its numbers are decided). */
+/* Item CI: what to say about the streak between goals. Returns {text, sub, amber}. */
+let STREAK_AMBER_WEEKS=1;
+function streakGraceCopy(streak, pendingOffer){
+  const until=ME&&ME.streak_grace_until; if(!streak||!until) return null;
+  const thisMon=weekStartISO(new Date()); const weeksLeft=Math.round((new Date(until)-new Date(thisMon))/(7*86400000));
+  if(pendingOffer) return {text:`Your ${streak}-week streak is protected while your offer is pending.`,sub:"Decide on it and the next goal picks up where you left off.",amber:false};
+  if(weeksLeft<=0) return {text:`Your ${streak}-week streak is no longer protected.`,sub:"The next completed week starts a new run - post a goal or accept an offer today.",amber:true};
+  if(weeksLeft<=STREAK_AMBER_WEEKS) return {text:`Your ${streak}-week streak unprotects on ${fmtDay(addDaysISO(until,-1))}.`,sub:"Accept an offer or post a goal before then to keep it.",amber:true};
+  return {text:`Your ${streak}-week streak is protected for ${weeksLeft} more week${weeksLeft===1?"":"s"}.`,sub:"Weeks without a goal don't count against it - until then.",amber:false};
+}
 async function renderHomeNextGoal(el, engs){
   if(!el||!ME||roleOf()!=="trainee") return; el.style.display="none"; el.innerHTML="";
   const list=engs||[]; if(list.some(e=>e.status==="active")) return;
@@ -3928,12 +3939,13 @@ async function renderHomeNextGoal(el, engs){
   const last=done[0]; const days=Math.floor((Date.now()-new Date(last.completed_at).getTime())/86400000);
   if(days>30) return;
   try{ const { data }=await store._sb.from("offers").select("id").eq("trainee_id",ME.id).eq("kind","renewal").eq("status","pending").limit(1); if((data||[]).length) return; }catch(e){}
-  const streak=ME.week_streak_count||0;
+  let pendingOffer=false; try{ const { data }=await store._sb.from("offers").select("id").eq("trainee_id",ME.id).in("status",["pending","countered"]).limit(1); pendingOffer=(data||[]).length>0; }catch(e){}
+  const streak=ME.week_streak_count||0; const gc=streakGraceCopy(streak,pendingOffer);
   const lead = days<3 ? "Take a breath - and when you're ready, the next one." : days<7 ? "A week on. The next goal is one tap away." : "It's been a while. Your last goal is a good template for the next.";
   el.innerHTML=`<div class="card" style="padding:12px 14px">
     <div class="eyebrow" style="margin-bottom:6px">After "${escapeHtml(last.goal_title||"your goal")}"</div>
     <div style="font-size:13.5px;line-height:1.45">${lead}</div>
-    ${streak?`<div class="ms-row" style="padding:8px 0 2px"><span class="ms-ic">🛡</span><div><b>Your ${streak}-week streak is protected while you choose your next goal.</b><div class="ms-sub">Weeks without a goal don't count against it.</div></div></div>`:""}
+    ${gc?`<div class="ms-row" style="padding:8px 0 2px"><span class="ms-ic">${gc.amber?"⚠️":"🛡"}</span><div><b style="${gc.amber?"color:var(--amber)":""}">${escapeHtml(gc.text)}</b><div class="ms-sub">${escapeHtml(gc.sub)}</div></div></div>`:(streak?`<div class="ms-row" style="padding:8px 0 2px"><span class="ms-ic">🛡</span><div><b>Your ${streak}-week streak is protected while you choose your next goal.</b><div class="ms-sub">Weeks without a goal don't count against it.</div></div></div>`:"")}
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary sm" id="ng-post" style="width:auto">Post your next goal →</button><button class="btn sm ghost" id="ng-browse" style="width:auto">See offers</button></div></div>`;
   el.style.display="";
   $("#ng-post").addEventListener("click",()=>{ listingPrefill={title:last.goal_title?`${last.goal_title} - next block`:"",focus:null}; go("listing-new"); });
