@@ -44,7 +44,7 @@ BE) are not tasks and are left out.
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
 | 32 | **CI** Protect streaks between goals | Medium (decision: N weeks) | Finite, visible grace window; pending offers pause it; close_week rule + copy on home/Training/recap. |
-| 33 | **CJ** Trainee counter-offers - DONE 2026-09-16 | - | Propose a change (weeks/sessions/price + note); coach accepts the change or keeps terms; trainee decides last. |
+| 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -82,6 +82,31 @@ to every offer, including a coach's direct next-goal offer (CD). Needs
   and `respond_counter` (coach-only). New status 'countered'.
 Not built: a limit on rounds (a trainee can counter again after "kept");
 notification of the counter beyond the card (push, CE).
+
+**CK follow-up, same day (owner): safeguards and timers.** Needs
+`supabase/migrations_counter_guard.sql` run. The hole: a trainee could
+counter coach A, accept coach B while A was answering, and accept A too
+if A agreed - two goals. Closed at two levels:
+- **Database trigger** `offers_guard_accept`: a goal can have one
+  accepted offer; nothing on a goal can be accepted while another offer on
+  it is countered (waiting for the coach) or is a follow-up (coach
+  answered, trainee undecided, within the window); a countered offer can
+  never be accepted directly. Raises a plain reason. The app can't bypass
+  it.
+- **Timers, both sides, visible:** the coach has **48 h** to answer a
+  counter ("⏱ 31h to respond - after that the original terms stand"); the
+  trainee's countered card shows the same clock; once the coach answers,
+  the trainee has **48 h** to decide ("⏱ 40h to decide - accept or decline
+  this before your other offers on the goal unlock"). Unanswered counters
+  resolve as "kept" with the reply "No reply within 48 hours - the original
+  terms stand" (`expire_counters`, run when either side opens the offers
+  screens, like `expire_listings`).
+- **Hold, visible:** every OTHER pending offer on that goal shows "🔒 On
+  hold" with the reason and the running clock, Accept disabled ("Accept
+  (on hold)"), Decline still allowed. The hold lifts by itself when the
+  clock runs out, so an unresponsive coach can never freeze a trainee's
+  goal for good.
+Direct offers (no goal) are independent and not held against each other.
 
 ---
 

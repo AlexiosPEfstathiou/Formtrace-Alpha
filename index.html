@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5269,7 +5269,9 @@ let offersCompletedOpen=false;  // Completed folder, closed by default
    offer is already 1:1 with its goal by construction (accepting
    auto-declines every sibling), so there is nothing to disambiguate there. */
 async function renderOffersTab(body){
+  try{ await store._sb.rpc("expire_counters"); }catch(e){}   // Item CK: unanswered counters resolve as kept
   const offers=await store.offers.list({trainee_id:ME.id});
+  traineeOffersCache=offers;   // Item CK: holds are computed across the goal's offers inside the card renderer
   if(!offers.length){
     $("#listings-sub").textContent="No offers yet";
     body.innerHTML=`<div class="empty" style="padding:60px 20px"><div class="ic">✉</div><p>No offers yet.<br>Post a goal to attract coaches.</p></div>`;
@@ -5456,6 +5458,19 @@ function certSummary(f){
   const cs=(f&&f.certs)||[]; if(!cs.length) return "";
   return `<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">${cs.map(c=>`<div style="font-size:12.5px;color:var(--muted)">🎓 <b style="color:var(--ink)">${escapeHtml(c.title)}</b>${c.issuer?` · ${escapeHtml(c.issuer)}`:""}${c.cert_date?` · ${escapeHtml(fmtDay(String(c.cert_date).slice(0,10)))}`:""}</div>`).join("")}</div>`;
 }
+/* Item CK: counter timers and holds. 48 h for the coach to answer a counter;
+   48 h for the trainee to decide on the follow-up. While either is running, the
+   goal's other offers are on hold (enforced by a DB trigger too). */
+const COUNTER_WINDOW_MS=48*3600*1000; let traineeOffersCache=[];
+function hoursLeft(fromIso){ if(!fromIso) return null; const ms=new Date(fromIso).getTime()+COUNTER_WINDOW_MS-Date.now(); if(ms<=0) return 0; const h=ms/3600000; return h<1?Math.max(1,Math.round(h*60))+"m":Math.round(h)+"h"; }
+function isFollowUp(o){ return o.status==="pending" && o.counter_outcome && o.counter_resolved_at && (Date.now()-new Date(o.counter_resolved_at).getTime())<COUNTER_WINDOW_MS; }
+function listingHold(offers,listingId){
+  if(!listingId) return null;
+  const sib=offers.filter(x=>x.listing_id===listingId);
+  const c=sib.find(x=>x.status==="countered"); if(c) return {kind:"countered",offer:c};
+  const f=sib.find(isFollowUp); if(f) return {kind:"followup",offer:f};
+  return null;
+}
 /* Item CJ: the trainee proposes a change to weeks / sessions / weekly price. */
 function openCounterSheet(o){
   const body=$("#sheet-body"); body.innerHTML="";
@@ -5552,14 +5567,28 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     st.innerHTML=o.counter_outcome==="accepted"
       ? `<span style="color:var(--lime);font-weight:700">Your coach accepted your change</span> - the terms above are the new ones.${o.counter_reply?` "${escapeHtml(o.counter_reply)}"`:""}`
       : `<span style="color:var(--amber);font-weight:700">Your coach kept the original terms</span>.${o.counter_reply?` "${escapeHtml(o.counter_reply)}"`:""}`;
+      if(isFollowUp(o)) st.innerHTML+=` <div style="margin-top:4px"><b style="color:var(--amber)">⏱ ${hoursLeft(o.counter_resolved_at)||"0h"}</b> to decide - accept or decline this before your other offers on the goal unlock.</div>`;
     exp.appendChild(st);
   }
   if(o.status==="countered"){
     const st=document.createElement("div"); st.style.cssText="margin-top:12px;font-size:12.5px;line-height:1.5;color:var(--muted)";
-    st.innerHTML=`<b style="color:var(--ink)">You proposed a change</b> - ${o.counter_length_weeks} week${o.counter_length_weeks===1?"":"s"} · ${o.counter_sessions} / week · ${escapeHtml(((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0])}${(o.counter_weekly_cents/100).toLocaleString()} / week${o.counter_note?` · "${escapeHtml(o.counter_note)}"`:""}. Waiting for your coach.`;
+    st.innerHTML=`<b style="color:var(--ink)">You proposed a change</b> - ${o.counter_length_weeks} week${o.counter_length_weeks===1?"":"s"} · ${o.counter_sessions} / week · ${escapeHtml(((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0])}${(o.counter_weekly_cents/100).toLocaleString()} / week${o.counter_note?` · "${escapeHtml(o.counter_note)}"`:""}. Waiting for your coach - <b style="color:var(--amber)">⏱ ${hoursLeft(o.counter_at)||"0h"} left</b> to answer; after that the original terms stand. Your other offers on this goal are on hold until then.`;
     exp.appendChild(st);
   }
   if(o.status==="pending"){
+    const hold=listingHold(traineeOffersCache||[],o.listing_id);
+    if(hold && hold.offer.id!==o.id){
+      const lk=document.createElement("div"); lk.style.cssText="margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.35);font-size:12.5px;line-height:1.5;color:var(--muted)";
+      lk.innerHTML=hold.kind==="countered"
+        ? `🔒 <b style="color:var(--ink)">On hold</b> - you proposed a change on another offer for this goal; its coach has <b style="color:var(--amber)">⏱ ${hoursLeft(hold.offer.counter_at)||"0h"}</b> to answer. Accepting here unlocks after that.`
+        : `🔒 <b style="color:var(--ink)">On hold</b> - a coach answered your proposed change; decide on that offer first (<b style="color:var(--amber)">⏱ ${hoursLeft(hold.offer.counter_resolved_at)||"0h"}</b>), then this one unlocks.`;
+      exp.appendChild(lk);
+      const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;margin-top:10px";
+      row.innerHTML=`<button class="btn sm" style="flex:0 0 auto;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" disabled>Accept (on hold)</button>`;
+      exp.appendChild(row);
+      row.querySelector("[data-rej]").addEventListener("click",async()=>{ try{ await store.offers.update(o.id,{status:"rejected"}); toast("Declined",1500); renderOffersTab(); }catch(err){ toast(err.message||"Couldn't decline",3000); } });
+      return;
+    }
     const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;margin-top:14px";
     row.innerHTML=`<button class="btn sm" style="flex:0 0 auto;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn sm ghost" style="flex:1" data-counter="${o.id}">Propose a change</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
     row.querySelector("[data-counter]").addEventListener("click",()=>openCounterSheet(o));
@@ -5647,6 +5676,7 @@ async function renderMarket(){
   /* Item BA: expire week-old postings first (closes them, marks their pending
      offers expired), then read. Non-fatal if the function isn't installed. */
   try{ const { error }=await store._sb.rpc("expire_listings"); if(error) throw error; }catch(e){ console.error("expire_listings (run migrations_open_goals_hygiene.sql)",e); }
+  try{ await store._sb.rpc("expire_counters"); }catch(e){}   // Item CK: unanswered counters resolve as kept
   const [openAll,mySent,hidesRes]=await Promise.all([
     store.listings.list({status:"open"}),
     store.offers.list({coach_id:ME.id}),
@@ -5749,7 +5779,7 @@ async function renderMarket(){
         if(o.status==="countered"){
           const cur=((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0];
           const box=document.createElement("div"); box.style.cssText="margin:8px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.35);font-size:12.5px;line-height:1.5";
-          box.innerHTML=`<b style="color:var(--ink)">Trainee proposes:</b> ${o.counter_length_weeks} week${o.counter_length_weeks===1?"":"s"} · ${o.counter_sessions} / week · ${escapeHtml(cur)}${(o.counter_weekly_cents/100).toLocaleString()} / week <span style="color:var(--faint)">(you offered ${o.length_weeks||"?"} · ${o.workouts_per_week_cap||"?"} / week · ${escapeHtml(o.price_text||"")})</span>${o.counter_note?`<div style="margin-top:4px;color:var(--ink)">"${escapeHtml(o.counter_note)}"</div>`:""}
+          box.innerHTML=`<div style="font-size:11.5px;color:var(--amber);font-weight:700;margin-bottom:4px">⏱ ${hoursLeft(o.counter_at)||"0h"} to respond - after that the original terms stand and the trainee decides</div><b style="color:var(--ink)">Trainee proposes:</b> ${o.counter_length_weeks} week${o.counter_length_weeks===1?"":"s"} · ${o.counter_sessions} / week · ${escapeHtml(cur)}${(o.counter_weekly_cents/100).toLocaleString()} / week <span style="color:var(--faint)">(you offered ${o.length_weeks||"?"} · ${o.workouts_per_week_cap||"?"} / week · ${escapeHtml(o.price_text||"")})</span>${o.counter_note?`<div style="margin-top:4px;color:var(--ink)">"${escapeHtml(o.counter_note)}"</div>`:""}
             <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm ghost" style="flex:1" data-keep="${o.id}">Keep my terms</button><button class="btn primary sm" style="flex:1" data-agree="${o.id}">Accept the change</button></div>`;
           row.appendChild(box);
           const respond=async(accept)=>{ const reply=prompt(accept?"A note back (optional):":"Tell them why you're keeping your terms (optional):")||null;
