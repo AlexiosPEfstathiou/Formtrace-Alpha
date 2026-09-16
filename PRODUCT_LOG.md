@@ -42,11 +42,35 @@ BE) are not tasks and are left out.
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak notifications | Easy (card) / on CE (push) | Content from the week close; homepage-card version first, push later. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
+| 31 | **CH** Exit survey when a goal ends early | Easy | ≤8 questions, reuses goal_feedback with a kind column; gentle card; admin NPS by kind. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CH. Exit survey when a goal ends early
+
+Requested 2026-09-16. The completion questionnaire (CC) hears from people
+who finished; the more informative voice is the one who stopped. When an
+engagement moves to status **ended** (early - by the coach, the trainee,
+or inactivity), ask a SHORTER set than CC, tuned to the leaving moment:
+**Both roles, ≤ 8 questions, free text on each:**
+1. Who ended it? (I did / the other side / it lapsed) - confirms the data.
+2. The main reason (choice: time · money · the coach/trainee · the app ·
+   injury or life event · not what I expected · other) + text.
+3. When did you decide? (first week · mid-way · near the end).
+4. What would have kept you going? (text - the key question).
+5. Would you try another goal / trainee here? (0-10).
+6. Recommend? (0-10, NPS - comparable with CC).
+7. Anything else.
+**Mechanics:** reuse `goal_feedback` with a `kind` column
+('completion' | 'exit') and a second question set `FEEDBACK_Q_EXIT`;
+same homepage card pattern, gentler copy ("Sorry it didn't work out -
+one minute so we can do better?"); admin card splits NPS by kind. Show it
+once, dismissible, never twice. Depends on nothing; small. Not started.
 
 ---
 
@@ -200,8 +224,8 @@ question set from `FEEDBACK_Q` (change questions there, bump
 `FEEDBACK_VERSION`); scale buttons with labels, banded choices, textarea
 under each. Admin screen gains a "Goal feedback" card: NPS for trainees
 and coaches, and each response expandable with every answer and note.
-Not built: an exit questionnaire when a goal ENDS early (status ended) -
-arguably the more informative one; log when it comes up.
+Not built here: the exit questionnaire for goals that END early - item
+CH.
 
 ---
 
