@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -3492,8 +3492,32 @@ async function renderHome(){
       store._sb.rpc("refresh_coach_streak_scores").catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
     ]);
     $("#home-p").style.display="";
-    $("#home-p").textContent="Don't forget to check the marketplace for open offers.";
+    renderHomeNewGoals($("#home-p"));   // Item BZ: "X new goals posted today" - falls back to the generic line
   }
+
+/* Item BZ: how many open goals were posted today (coach's local day), minus
+   the ones this coach has hidden. Silent at zero - falls back to "this week",
+   then to the old generic line. Tappable: opens Open goals. */
+async function renderHomeNewGoals(p){
+  const generic="Don't forget to check the marketplace for open offers.";
+  if(!p){ return; }
+  p.style.display=""; p.textContent=generic;
+  try{
+    const dayStart=new Date(); dayStart.setHours(0,0,0,0);
+    const weekStart=new Date(dayStart); weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
+    const [{ data:rows }, { data:hid }]=await Promise.all([
+      store._sb.from("listings").select("id,created_at").eq("status","open").gte("created_at",weekStart.toISOString()),
+      store._sb.from("listing_hides").select("listing_id").eq("coach_id",ME.id)
+    ]);
+    const hidden=new Set((hid||[]).map(h=>h.listing_id));
+    const vis=(rows||[]).filter(l=>!hidden.has(l.id));
+    const today=vis.filter(l=>new Date(l.created_at)>=dayStart).length, week=vis.length;
+    if(!today && !week) return;
+    const n=today||week, when=today?"today":"this week";
+    p.innerHTML=`<a href="#" id="home-newgoals" style="color:var(--lime);font-weight:700;text-decoration:none">${n} new goal${n===1?"":"s"} posted ${when} →</a>`;
+    $("#home-newgoals").addEventListener("click",e=>{ e.preventDefault(); go("market"); });
+  }catch(e){ /* keep the generic line */ }
+}
 
   // Remember whether the goal-submission path should glisten, so the
   // persistent app tab bar can reflect it, then (re)render that bar.

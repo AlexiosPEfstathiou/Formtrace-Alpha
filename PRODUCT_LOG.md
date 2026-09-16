@@ -35,7 +35,7 @@ BE) are not tasks and are left out.
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
 | 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
-| 24 | **BZ** Coach homepage "X new goals posted today" | Easy | One count query; tappable line to Open goals; silent at zero, weekly fallback. |
+| 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
 | 27 | **CD** Post-completion retention plan | Medium | Direct offer to a past trainee first; prefilled repost; day 3/7/14 homepage cards; coach Past section; measure source of second goal. |
@@ -258,7 +258,8 @@ goal, accept an offer and follow it; target an average of **one new
 offer per day** across the month. Each gets a **€30 voucher on their
 first goal**. Numbers: with 30 goals and 3 daily-scanning coaches, ~1
 goal/day is the supply; 1 offer/day needs each goal to draw at least one
-pitch - the phase-3 promise is what makes this arithmetic hold. Voucher
+pitch - the phase-3 promise is what makes this arithmetic hold. The
+coaches' daily scan is now prompted by BZ ("3 new goals posted today →"). Voucher
 mechanics need BI (voucher = a credit against the trainee's charge; the
 coach is still paid in full, so it is a €30 subsidy per goal, **≈ €900
 budget** for 30). Before BI exists it can only be a manual refund.
@@ -313,7 +314,7 @@ only (AD/deferred).
 
 ---
 
-## BZ. Coach homepage: "X new goals posted today"
+## BZ. Coach homepage: "X new goals posted today" - DONE 2026-09-16
 
 Requested 2026-09-15. A line on the coach's homepage stating how many
 open goals were posted today - the freshest supply in the marketplace,
@@ -323,7 +324,14 @@ excluding goals the coach has hidden - BA), rendered as a tappable line
 or chip above the existing "check the marketplace" copy, e.g. "3 new
 goals posted today →" opening the Open goals tab. Say nothing when the
 count is zero rather than "0 new goals"; consider "N this week" as the
-fallback so the line still earns its place on a quiet day. Not started.
+fallback so the line still earns its place on a quiet day.
+
+**DONE 2026-09-16.** `renderHomeNewGoals` replaces the coach homepage's
+generic "check the marketplace" line with "**3 new goals posted today →**"
+(lime, tappable, opens Open goals); falls back to "N new goals posted this
+week →", then to the generic line at zero. Counts open listings created
+since local midnight / since Monday, minus the ones this coach has hidden
+(BA). No SQL.
 
 ---
 
