@@ -38,7 +38,7 @@ BE) are not tasks and are left out.
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
-| 27 | **CD** Post-completion retention plan | Medium | Direct offer to a past trainee first; prefilled repost; day 3/7/14 homepage cards; coach Past section; measure source of second goal. |
+| 27 | **CD** Retention plan - direct offer BUILT 2026-09-16 | rest open | Offer next goal from Past engagements; "From your coach" group; RLS limits it to coached trainees. Cards/completion buttons still to do. |
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
@@ -153,7 +153,7 @@ server being stood up (BI).
 
 ---
 
-## CD. Post-goal-completion retention plan
+## CD. Post-goal-completion retention plan - DIRECT OFFER BUILT 2026-09-16
 
 Requested 2026-09-15. What happens in the days after a goal completes so
 the trainee's next goal - and the coach's next client - is the default,
@@ -200,8 +200,25 @@ homepage must be the place these land.
 
 **Measure:** the two retention rates above, per cohort (month of first
 goal), plus where the second goal came from - prefilled repost, continue-
-with-coach, direct offer, or organic. Not started; the direct-offer path
-is the piece to build first when this item starts.
+with-coach, direct offer, or organic.
+
+**Direct offer BUILT 2026-09-16 (the piece to build first).** Needs
+`supabase/migrations_direct_offers.sql` run. The schema already allowed
+it (`listing_id` nullable, an unused `kind 'renewal'`) - only the
+entry point, the save path and a policy were missing:
+- Coach: the Trainees tab's **Past engagements** folder now shows "Offer
+  next goal →" on every past trainee; it opens the offer form in direct
+  mode ("Direct offer to <name>", title prefilled "<old goal> - next
+  block"), same terms and pitch video as any offer.
+- Save: `listing_id` null, `kind` 'renewal', `trainee_id` the past
+  trainee. RLS tightened: an offer without a goal is allowed ONLY to
+  someone the coach has an engagement with - never a cold offer.
+- Trainee: the Offers tab groups it under **"From your coach"**; accept /
+  decline work unchanged (the accept path already skipped the listing
+  steps when there is none).
+- Source of the second goal is recorded for free: `kind = 'renewal'`.
+Not built yet from this item: the completion-screen buttons, the timed
+day-3/7/14 homepage cards, the coach's daily-scan counters on admin.
 
 ---
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5299,7 +5299,7 @@ async function renderOffersTab(body){
       const gbar=document.createElement("div");gbar.className="mg-bar";
       gbar.innerHTML=`<button class="mg-chip${offersGoalFilter===""?" on":""}" data-gf="">All goals</button>`
         +goalIds.map(id=>{
-            const t=(listingById[id]&&listingById[id].title)||"Goal";
+            const t=(listingById[id]&&listingById[id].title)||(id==="null"||id==="undefined"||!id?"From your coach":"Goal");   // Item CD: direct offers have no goal
             return `<button class="mg-chip${offersGoalFilter===id?" on":""}" data-gf="${id}">${escapeHtml(t)}</button>`;
           }).join("");
       body.appendChild(gbar);
@@ -5685,7 +5685,21 @@ async function renderMarket(){
 
 /* coach: compose offer */
 let offerListing=null, pendingOfferVideo=null;
-async function openOffer(listingId){
+/* Item CD: direct offer to a past trainee - no posted goal needed.
+   openOffer(null, {trainee_id, name, title}) prefills and, on save, writes an
+   offer with listing_id null and kind 'renewal'. The trainee sees it under
+   "From your coach" on the Offers tab; acceptance already handles a missing
+   listing. RLS (migrations_direct_offers.sql) only allows this for someone the
+   coach has actually coached. */
+let offerDirect=null;
+async function openOffer(listingId, direct){
+  offerDirect=direct||null;
+  if(offerDirect){
+    $("#offer-sub").textContent=`Direct offer to ${offerDirect.name||"your trainee"}`;
+    offerListing=null; pendingOfferVideo=null;
+    $("#of-title").value=offerDirect.title||""; $("#of-focus").value=offerDirect.focus||"";
+    go("offer"); renderCadencePreview(); return;
+  }
   /* Latency: screen used to appear only after the listing fetch. Switch first. */
   $("#offer-sub").textContent="Loading…"; $("#of-title").value="";
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-offer").classList.add("active");
@@ -5771,7 +5785,7 @@ $("#of-send").addEventListener("click",async()=>{
   try{
     const path=await store.video.upload(pendingOfferVideo.blob,"webm"); persistTrim(path,pendingOfferVideo);
     await store.offers.add({
-      listing_id:offerListing.id,coach_id:ME.id,trainee_id:offerListing.trainee_id,kind:"offer",
+      listing_id:offerDirect?null:offerListing.id,coach_id:ME.id,trainee_id:offerDirect?offerDirect.trainee_id:offerListing.trainee_id,kind:offerDirect?"renewal":"offer",
       title,focus:$("#of-focus").value.trim(),length_text,
       start_text,sessions_text,
       price_text,pitch_video_path:path,status:"pending",
@@ -5784,7 +5798,7 @@ $("#of-send").addEventListener("click",async()=>{
       start_date:start,      // Item BH: real date, so the card can state the last day
       noshow_fraction_pct:Math.max(0,Math.min(100,Number($("#of-noshow").value)||0))
     });
-    toast("Offer sent ✓"); go("market");
+    toast(offerDirect?"Offer sent to your trainee ✓":"Offer sent ✓"); go(offerDirect?"trainee-home":"market"); offerDirect=null;
   }catch(err){console.error(err);toast(err.message||"Couldn't send offer",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
@@ -5866,6 +5880,13 @@ async function renderTraineeHome(){
         <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}${(WEEK_MODEL&&e.status==="active")?(()=>{const w=wkByEng[e.id]||{n:0,done:0};const t=capByEng[e.id]??w.n;return t?` · <b style="color:${w.done>=t?"#F5C542":"var(--ink)"}">${w.done}/${t}</b> this week`:" · nothing assigned this week";})():""}</div></div>
         <span class="badge ${e.status}">${e.status}</span></div>`;
     div.addEventListener("click",()=>openEngagement(e.id));
+    /* Item CD: the retention mechanic - propose the next goal to a past trainee. */
+    if(e.status!=="active" && roleOf()==="coach"){
+      const b=document.createElement("button"); b.className="btn sm"; b.style.cssText="width:auto;margin:6px 0 0 auto;display:block";
+      b.textContent="Offer next goal →";
+      b.addEventListener("click",ev=>{ ev.stopPropagation(); openOffer(null,{trainee_id:e.trainee_id,name:other.display_name||"your trainee",title:e.goal_title?`${e.goal_title} - next block`:""}); });
+      div.appendChild(b);
+    }
     return div;
   };
 
