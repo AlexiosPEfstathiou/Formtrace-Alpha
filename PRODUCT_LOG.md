@@ -40,7 +40,7 @@ BE) are not tasks and are left out.
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
 | 27 | **CD** Post-completion retention plan | Medium | Direct offer to a past trainee first; prefilled repost; day 3/7/14 homepage cards; coach Past section; measure source of second goal. |
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
-| 29 | **CF** Monday PBs + streak notifications | Easy (card) / on CE (push) | Content from the week close; homepage-card version first, push later. |
+| 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
 | 31 | **CH** Exit survey when a goal ends early | Easy | ≤8 questions, reuses goal_feedback with a kind column; gentle card; admin NPS by kind. |
 
@@ -93,7 +93,7 @@ which is a visible progression moment worth celebrating. Not started.
 
 ---
 
-## CF. Weekly Monday notification: personal bests and streak
+## CF. Weekly Monday notification: personal bests and streak - CARD DONE 2026-09-16, push on CE
 
 Requested 2026-09-16. Two recurring nudges, both on Monday morning:
 - **"X personal bests achieved last week"** - counts PBs (weight or reps)
@@ -106,7 +106,17 @@ Requested 2026-09-16. Two recurring nudges, both on Monday morning:
 Both need a delivery channel: push (CE) when it exists; until then, a
 homepage card on the first open of the week (the same content, seen on
 open rather than pushed). Build the card version first - it is the same
-data and the copy carries over unchanged to push. Not started.
+data and the copy carries over unchanged to push.
+
+**Card version DONE 2026-09-16.** `renderHomeWeekRecap` on the trainee
+homepage: "Your week in review" with up to two rows - "🏆 3 personal bests
+last week · Squat 80 kg × 5 · Pull-up 6 reps · …" (PBs whose `achieved_at`
+falls in last Mon-Sun; up to three named, "+N more") and "🔥 4-week streak
+- this week keeps it going", or after a vacation week ("paused" closure)
+"Back from your break - streak intact at 4 weeks". Silent when there are
+no PBs and no streak. "Got it" hides it for the rest of that week
+(localStorage, per week). No SQL. The push version reuses these two
+strings verbatim when CE exists.
 
 ---
 
