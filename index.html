@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1199,6 +1199,7 @@
       <div id="home-callproposal" class="home-call" style="display:none"></div>
     <div id="home-certstatus" class="home-reviews" style="display:none"></div>
     <div id="home-milestone" class="home-milestone" style="display:none"></div>
+    <div id="home-renewal" class="home-call" style="display:none"></div>
     <div id="home-recap" class="home-milestone" style="display:none"></div>
     <div id="home-feedback" class="home-reviews" style="display:none"></div>
       <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
@@ -3464,6 +3465,7 @@ async function renderHome(){
     ]);
     await Promise.all([
       renderHomeStreakRisk($("#home-streakrisk"), engs),
+      renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
       renderHomeWeekRecap($("#home-recap"), engs),   // Item CF (card version)
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       renderHomeVacation($("#home-vacation")),
@@ -3860,7 +3862,7 @@ async function renderHomeGoalFeedback(el){
   let pending=[];
   try{
     const col=role==="coach"?"coach_id":"trainee_id";
-    const { data:engs, error }=await store._sb.from("engagements").select("id,goal_title,completed_at,status").eq(col,ME.id).in("status",["completed","ended"]).order("completed_at",{ascending:false,nullsFirst:false}).limit(10);
+    const { data:engs, error }=await store._sb.from("engagements").select("id,goal_title,completed_at,status,trainee_id,coach_id").eq(col,ME.id).in("status",["completed","ended"]).order("completed_at",{ascending:false,nullsFirst:false}).limit(10);
     if(error) throw error; if(!(engs||[]).length) return;
     const { data:done }=await store._sb.from("goal_feedback").select("engagement_id,kind").eq("user_id",ME.id).eq("role",role).in("engagement_id",engs.map(e=>e.id));
     const seen=new Set((done||[]).map(d=>d.engagement_id+":"+(d.kind||"completion")));
@@ -3873,7 +3875,7 @@ async function renderHomeGoalFeedback(el){
     <button class="btn sm ghost" id="fb-skip" style="width:auto;align-self:center">Not now</button></div>`;
   el.style.display="";
   $("#fb-open").addEventListener("click",()=>openFeedbackSheet(eng,role,el,kind));
-  $("#fb-skip").addEventListener("click",async()=>{ try{ await store._sb.from("goal_feedback").insert({engagement_id:eng.id,user_id:ME.id,role,kind,version:FEEDBACK_VERSION,answers:null,dismissed_at:new Date().toISOString()}); }catch(e){} el.style.display="none"; });
+  $("#fb-skip").addEventListener("click",async()=>{ try{ await store._sb.from("goal_feedback").insert({engagement_id:eng.id,user_id:ME.id,role,kind,version:FEEDBACK_VERSION,answers:null,dismissed_at:new Date().toISOString()}); }catch(e){} el.style.display="none"; afterFeedbackHandoff(eng,role,kind); });
 }
 function openFeedbackSheet(eng,role,homeEl,kind="completion"){
   const qs=kind==="exit"?FEEDBACK_Q.exit:FEEDBACK_Q[role]; const body=$("#sheet-body"); body.innerHTML="";
@@ -3896,9 +3898,33 @@ function openFeedbackSheet(eng,role,homeEl,kind="completion"){
     const btn=$("#fb-send"); btn.disabled=true; btn.textContent="Sending…";
     try{
       const { error }=await store._sb.from("goal_feedback").upsert({engagement_id:eng.id,user_id:ME.id,role,kind,version:FEEDBACK_VERSION,answers,dismissed_at:null,submitted_at:new Date().toISOString()},{onConflict:"engagement_id,role,kind"}); if(error) throw error;
-      toast("Thank you - that genuinely helps 🙏",3000); closeSheet(); if(homeEl) homeEl.style.display="none";
+      toast("Thank you - that genuinely helps 🙏",3000); closeSheet(); if(homeEl) homeEl.style.display="none"; afterFeedbackHandoff(eng,role,kind);
     }catch(err){ console.error("feedback (run migrations_goal_feedback.sql)",err); toast(err.message||"Couldn't send",4000); btn.disabled=false; btn.textContent="Send feedback"; }
   });
+}
+/* Item CD (owner direction 2026-09-16): the ONLY way a coach offers a next goal
+   is right here - the moment they submit or skip the completion survey. No
+   button elsewhere. Skipped for goals that ended early. */
+async function afterFeedbackHandoff(eng,role,kind){
+  if(role!=="coach"||kind!=="completion"||!eng||!eng.trainee_id) return;
+  let name="your trainee";
+  try{ const { data }=await store._sb.from("profiles").select("display_name").eq("id",eng.trainee_id).maybeSingle(); if(data&&data.display_name) name=data.display_name; }catch(e){}
+  const ok=await openConfirm({title:`Offer ${name} their next goal?`,body:`"${eng.goal_title||"Their goal"}" is complete. Proposing the next block now is the best moment - they are deciding whether to keep going.`,confirmLabel:"Offer next goal",cancelLabel:"Not this time"});
+  if(!ok) return;
+  openOffer(null,{trainee_id:eng.trainee_id,name,title:eng.goal_title?`${eng.goal_title} - next block`:""});
+}
+/* Trainee homepage: a direct offer from your coach stays here until accepted or
+   declined - no expiry, no dismiss. The nudge that keeps someone who planned to
+   stop after one goal. */
+async function renderHomeRenewalOffer(el){
+  if(!el||!ME||roleOf()!=="trainee") return; el.style.display="none"; el.innerHTML="";
+  let rows=[];
+  try{ const { data }=await store._sb.from("offers").select("id,title,coach_id,created_at").eq("trainee_id",ME.id).eq("kind","renewal").eq("status","pending").order("created_at",{ascending:false}); rows=data||[]; }catch(e){ return; }
+  if(!rows.length) return;
+  let names={}; try{ const { data }=await store._sb.from("profiles").select("id,display_name").in("id",[...new Set(rows.map(r=>r.coach_id))]); for(const p of (data||[])) names[p.id]=p.display_name; }catch(e){}
+  el.innerHTML=`<div class="rv-title">🤝 Your coach wants to keep going</div><div class="rv-row">${rows.map(r=>`<button class="rv-chip" data-renewal="${r.id}"><span class="rv-ic">📨</span><span class="rv-tx"><b>${escapeHtml(names[r.coach_id]||"Your coach")} offered you a next goal</b><span>${escapeHtml(r.title||"")} · tap to see the terms and accept or decline</span></span></button>`).join("")}</div>`;
+  el.style.display="";
+  el.querySelectorAll("[data-renewal]").forEach(b=>b.addEventListener("click",()=>go("listings")));
 }
 /* Admin: responses, newest first, with NPS. */
 async function renderAdminFeedback(body){
@@ -5880,13 +5906,6 @@ async function renderTraineeHome(){
         <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}${(WEEK_MODEL&&e.status==="active")?(()=>{const w=wkByEng[e.id]||{n:0,done:0};const t=capByEng[e.id]??w.n;return t?` · <b style="color:${w.done>=t?"#F5C542":"var(--ink)"}">${w.done}/${t}</b> this week`:" · nothing assigned this week";})():""}</div></div>
         <span class="badge ${e.status}">${e.status}</span></div>`;
     div.addEventListener("click",()=>openEngagement(e.id));
-    /* Item CD: the retention mechanic - propose the next goal to a past trainee. */
-    if(e.status!=="active" && roleOf()==="coach"){
-      const b=document.createElement("button"); b.className="btn sm"; b.style.cssText="width:auto;margin:6px 0 0 auto;display:block";
-      b.textContent="Offer next goal →";
-      b.addEventListener("click",ev=>{ ev.stopPropagation(); openOffer(null,{trainee_id:e.trainee_id,name:other.display_name||"your trainee",title:e.goal_title?`${e.goal_title} - next block`:""}); });
-      div.appendChild(b);
-    }
     return div;
   };
 

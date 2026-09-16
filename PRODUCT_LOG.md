@@ -38,16 +38,55 @@ BE) are not tasks and are left out.
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
-| 27 | **CD** Retention plan - direct offer BUILT 2026-09-16 | rest open | Offer next goal from Past engagements; "From your coach" group; RLS limits it to coached trainees. Cards/completion buttons still to do. |
+| 27 | **CD** Retention plan - direct offer BUILT 2026-09-16 | rest open | Next-goal offer prompted only after the coach's completion survey; persistent trainee card until accepted/declined. Cards/completion buttons still to do. |
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
+| 32 | **CI** Protect streaks between goals | Medium (decision: N weeks) | Finite, visible grace window; pending offers pause it; close_week rule + copy on home/Training/recap. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CI. Protect discipline streaks between goals
+
+Requested 2026-09-16. When a goal completes and the next one is not yet
+posted or accepted - offers being explored, a coach's direct offer
+pending - the trainee has no assigned sessions, and under the week model
+a week with nothing to do closes **neutral** (`neutral_reason
+'no_sessions'`), which already means the streak neither grows nor
+breaks. So the streak is, in fact, protected today - silently and for
+ever. Two things are wrong with that: nobody is TOLD, so trainees fear
+losing it and may leave; and "for ever" removes the incentive to come
+back. Design:
+1. **Say it.** From the completion screen onward, a homepage line:
+   "🛡 Your 6-week streak is protected while you choose your next goal."
+   Also on the Training tab where the This week card would be.
+2. **Make the protection finite, and visible.** A grace window of **N
+   weeks** (proposal: 3) from completion during which no-session weeks
+   stay neutral. The line counts down: "protected for 2 more weeks", then
+   "protected until Sunday", then - one week before the end - amber:
+   "your streak unprotects on <date> - accept an offer or post a goal to
+   keep it". After the window, a no-session week counts as a miss (the
+   normal rule) and the streak resets.
+3. **Pending offer extends it.** While a direct offer (CD) or any offer on
+   a posted goal is pending, the countdown pauses - a trainee mid-decision
+   should never be punished for a coach's response time.
+4. **Coming back restores the count**, not from zero: the streak resumes
+   at its protected value once the first week of the new goal closes
+   complete. (This is what neutral weeks already do; the change is only
+   that neutral stops being unlimited.)
+**Mechanics:** `close_week` gets the rule - a `no_sessions` week is
+neutral only if within `grace_until` on the trainee's profile (set to
+completion + N weeks at completion; pushed forward while an offer is
+pending); otherwise it is a non-neutral miss. `weekRisk()`, the badge and
+the streak-risk homepage card read the same field for the copy. The
+Monday recap (CF) carries the line too. Decide N (proposal 3) and the
+amber lead time (proposal 1 week). Not started.
 
 ---
 
@@ -217,8 +256,24 @@ entry point, the save path and a policy were missing:
   decline work unchanged (the accept path already skipped the listing
   steps when there is none).
 - Source of the second goal is recorded for free: `kind = 'renewal'`.
-Not built yet from this item: the completion-screen buttons, the timed
-day-3/7/14 homepage cards, the coach's daily-scan counters on admin.
+**Redesigned same day on the owner's direction - "I don't like how manual
+this is."** The Past-folder button is REMOVED. The offer is now made at
+exactly one moment, and only there: when the coach **submits or skips the
+completion survey** (CC) for a finished goal, a prompt follows - "Offer
+<name> their next goal? '<goal>' is complete. Proposing the next block
+now is the best moment - they are deciding whether to keep going." -
+with "Offer next goal" opening the direct-offer form prefilled, or "Not
+this time". The survey and the next-goal offer are thereby one ritual,
+which is the point: continuous collaboration is the default path, not a
+menu item. Goals that ended early (exit survey) do not get the prompt.
+On the trainee side a homepage card **"🤝 Your coach wants to keep going
+- <coach> offered you a next goal"** stays until the offer is accepted or
+declined - no dismiss, no expiry (direct offers have no `expires_at`, and
+`expire_listings` never touches them). It opens the Offers tab. This is
+the nudge aimed at the trainee who planned to stop after one goal.
+Not built yet from this item: the trainee completion-screen buttons
+("Post your next goal" prefilled), the timed day-3/7/14 cards, the
+coach's daily-scan counters on admin.
 
 ---
 
