@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5295,7 +5295,7 @@ async function renderOffersTab(body){
   const engByOffer={};
   for(const e of engs){ if(e.offer_id) engByOffer[e.offer_id]=e; }
 
-  const pending=offers.filter(o=>o.status==="pending");
+  const pending=offers.filter(o=>o.status==="pending"||o.status==="countered");   // Item CJ: a countered offer is still open
   const rejected=offers.filter(o=>o.status==="rejected"||o.status==="expired");
   const accepted=offers.filter(o=>o.status==="accepted");
   const acceptedLive=accepted.filter(o=>{ const e=engByOffer[o.id]; return !e||e.status==="active"; });
@@ -5456,6 +5456,36 @@ function certSummary(f){
   const cs=(f&&f.certs)||[]; if(!cs.length) return "";
   return `<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">${cs.map(c=>`<div style="font-size:12.5px;color:var(--muted)">🎓 <b style="color:var(--ink)">${escapeHtml(c.title)}</b>${c.issuer?` · ${escapeHtml(c.issuer)}`:""}${c.cert_date?` · ${escapeHtml(fmtDay(String(c.cert_date).slice(0,10)))}`:""}</div>`).join("")}</div>`;
 }
+/* Item CJ: the trainee proposes a change to weeks / sessions / weekly price. */
+function openCounterSheet(o){
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent="Propose a change"; $("#sheet-add").style.display="none";
+  const cur=((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0];
+  const w=document.createElement("div");
+  w.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Not quite right? Suggest different terms instead of declining. Your coach can accept the change or keep the original - either way you decide last.</div>
+    <div style="display:flex;gap:10px">
+      <div class="field" style="flex:1"><label for="co-weeks">Weeks</label><input id="co-weeks" type="number" inputmode="numeric" min="1" max="104" value="${o.length_weeks||""}"></div>
+      <div class="field" style="flex:1"><label for="co-sess">Sessions / week</label><input id="co-sess" type="number" inputmode="numeric" min="1" max="14" value="${o.workouts_per_week_cap||""}"></div>
+    </div>
+    <div class="field"><label for="co-price">Price per week (${escapeHtml(cur)})</label><input id="co-price" type="number" inputmode="decimal" min="0" step="1" value="${o.rate_per_workout_cents!=null?(o.rate_per_workout_cents/100):""}"></div>
+    <div class="field"><label for="co-note">Why / what would work for you</label><textarea id="co-note" rows="3" placeholder="e.g. Two sessions a week is all I can fit around work…" style="width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:9px 12px;font-size:13px"></textarea></div>
+    <div id="co-preview" style="font-size:12.5px;color:var(--muted);margin-bottom:12px"></div>
+    <button class="btn primary" id="co-send">Send proposal</button>`;
+  body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  const prev=()=>{ const wk=Number($("#co-weeks").value)||0, s=Number($("#co-sess").value)||0, p=Number($("#co-price").value)||0; if(!wk||!s){ $("#co-preview").textContent=""; return; }
+    const total=p*wk, fee=serviceFeeFor(p,wk); $("#co-preview").innerHTML=`You would pay <b style="color:var(--ink)">${escapeHtml(cur)}${(total+fee).toLocaleString(undefined,{maximumFractionDigits:2})}</b> for ${wk*s} sessions over ${wk} week${wk===1?"":"s"} (${escapeHtml(cur)}${total.toLocaleString()} + ${TRAINEE_FEE_PCT}% service fee).`; };
+  ["co-weeks","co-sess","co-price"].forEach(id=>$("#"+id).addEventListener("input",prev)); prev();
+  $("#co-send").addEventListener("click",async()=>{
+    const wk=Number($("#co-weeks").value), s=Number($("#co-sess").value), p=Number($("#co-price").value), note=$("#co-note").value.trim();
+    if(!wk||wk<1||wk>104){ toast("Weeks: 1-104"); return; } if(!s||s<1||s>14){ toast("Sessions per week: 1-14"); return; } if(isNaN(p)||p<0){ toast("Enter a weekly price"); return; }
+    const same = wk===o.length_weeks && s===o.workouts_per_week_cap && Math.round(p*100)===o.rate_per_workout_cents;
+    if(same && !note){ toast("Change at least one term, or add a note",3000); return; }
+    const b=$("#co-send"); b.disabled=true;
+    try{ const { error }=await store._sb.rpc("counter_offer",{p_offer:o.id,p_weeks:wk,p_sessions:s,p_weekly_cents:Math.round(p*100),p_note:note||null}); if(error) throw error;
+      toast("Proposal sent to your coach ✓",2500); closeSheet(); renderOffersTab(); }
+    catch(err){ console.error("counter offer (run migrations_counter_offers.sql)",err); toast(err.message||"Couldn't send",4000); b.disabled=false; }
+  });
+}
 /* Item BH: badges + average rating shown ON the offer card. */
 function coachBadgesInline(c){
   const p=c&&c._pub||{}; const f=c&&c._facts||{};
@@ -5516,9 +5546,23 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     });
     exp.appendChild(card);
   }
+  /* Item CJ: a small disagreement should not be a stopping point. */
+  if(o.counter_outcome){
+    const st=document.createElement("div"); st.style.cssText="margin-top:12px;font-size:12.5px;line-height:1.5;color:var(--muted)";
+    st.innerHTML=o.counter_outcome==="accepted"
+      ? `<span style="color:var(--lime);font-weight:700">Your coach accepted your change</span> - the terms above are the new ones.${o.counter_reply?` "${escapeHtml(o.counter_reply)}"`:""}`
+      : `<span style="color:var(--amber);font-weight:700">Your coach kept the original terms</span>.${o.counter_reply?` "${escapeHtml(o.counter_reply)}"`:""}`;
+    exp.appendChild(st);
+  }
+  if(o.status==="countered"){
+    const st=document.createElement("div"); st.style.cssText="margin-top:12px;font-size:12.5px;line-height:1.5;color:var(--muted)";
+    st.innerHTML=`<b style="color:var(--ink)">You proposed a change</b> - ${o.counter_length_weeks} week${o.counter_length_weeks===1?"":"s"} · ${o.counter_sessions} / week · ${escapeHtml(((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0])}${(o.counter_weekly_cents/100).toLocaleString()} / week${o.counter_note?` · "${escapeHtml(o.counter_note)}"`:""}. Waiting for your coach.`;
+    exp.appendChild(st);
+  }
   if(o.status==="pending"){
     const row=document.createElement("div");row.style.cssText="display:flex;gap:10px;margin-top:14px";
-    row.innerHTML=`<button class="btn sm" style="flex:1;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
+    row.innerHTML=`<button class="btn sm" style="flex:0 0 auto;color:var(--red)" data-rej="${o.id}">Decline</button><button class="btn sm ghost" style="flex:1" data-counter="${o.id}">Propose a change</button><button class="btn primary sm" style="flex:1" data-acc="${o.id}">Accept</button>`;
+    row.querySelector("[data-counter]").addEventListener("click",()=>openCounterSheet(o));
     exp.appendChild(row);
     row.querySelector("[data-acc]").addEventListener("click",async()=>{
       const ok=await openConfirm({
@@ -5623,8 +5667,8 @@ async function renderMarket(){
      means the coach has an answer; pending on a still-open listing is the
      only case that belongs in the "✓ Pitched" tag instead. */
   const resolved=new Set(["accepted","rejected","expired"]);
-  const sentOutcomes=mySent.filter(o=>resolved.has(o.status) || !openIds.has(o.listing_id));
-  const stillPitching=mySent.filter(o=>!resolved.has(o.status) && openIds.has(o.listing_id));
+  const sentOutcomes=mySent.filter(o=>resolved.has(o.status) || o.status==="countered" || !openIds.has(o.listing_id));   // Item CJ: a counter needs the coach's answer - surface it
+  const stillPitching=mySent.filter(o=>!resolved.has(o.status) && o.status!=="countered" && openIds.has(o.listing_id));
   const pitchedIds=new Set(stillPitching.map(o=>o.listing_id));
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
@@ -5692,7 +5736,7 @@ async function renderMarket(){
   if(sentOutcomes.length){
     const wrap=document.createElement("div");wrap.style.marginTop="24px";
     wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your sent offers</div>`;
-    const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Not selected · goal expired"};
+    const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Not selected · goal expired",countered:"Change proposed"};
     const statusClass={pending:"pending",accepted:"accepted",rejected:"rejected",expired:"rejected"};
     for(const o of sentOutcomes){
       const row=document.createElement("div");row.className="offer-row";row.style.cursor="default";
@@ -5701,6 +5745,19 @@ async function renderMarket(){
           <div class="or-s">${escapeHtml(o.price_text||"—")} · ${escapeHtml(o.length_text||"")}</div>
         </div>
         <span class="badge ${statusClass[o.status]||"pending"}">${statusLabel[o.status]||o.status}</span>`;
+        /* Item CJ: the trainee proposed different terms - accept them or keep yours. */
+        if(o.status==="countered"){
+          const cur=((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0];
+          const box=document.createElement("div"); box.style.cssText="margin:8px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.35);font-size:12.5px;line-height:1.5";
+          box.innerHTML=`<b style="color:var(--ink)">Trainee proposes:</b> ${o.counter_length_weeks} week${o.counter_length_weeks===1?"":"s"} · ${o.counter_sessions} / week · ${escapeHtml(cur)}${(o.counter_weekly_cents/100).toLocaleString()} / week <span style="color:var(--faint)">(you offered ${o.length_weeks||"?"} · ${o.workouts_per_week_cap||"?"} / week · ${escapeHtml(o.price_text||"")})</span>${o.counter_note?`<div style="margin-top:4px;color:var(--ink)">"${escapeHtml(o.counter_note)}"</div>`:""}
+            <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm ghost" style="flex:1" data-keep="${o.id}">Keep my terms</button><button class="btn primary sm" style="flex:1" data-agree="${o.id}">Accept the change</button></div>`;
+          row.appendChild(box);
+          const respond=async(accept)=>{ const reply=prompt(accept?"A note back (optional):":"Tell them why you're keeping your terms (optional):")||null;
+            try{ const { error }=await store._sb.rpc("respond_counter",{p_offer:o.id,p_accept:accept,p_reply:reply}); if(error) throw error; toast(accept?"Terms updated - back to the trainee to accept ✓":"Original terms kept - back to the trainee",3000); renderMarket(); }
+            catch(err){ console.error("respond counter",err); toast(err.message||"Couldn't respond",4000); } };
+          box.querySelector("[data-agree]").addEventListener("click",()=>respond(true));
+          box.querySelector("[data-keep]").addEventListener("click",()=>respond(false));
+        }
       wrap.appendChild(row);
     }
     body.appendChild(wrap);
