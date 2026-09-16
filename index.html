@@ -3843,29 +3843,40 @@ const FEEDBACK_Q={
     {id:"else",   t:"Anything else?",                                                          type:"text"}
   ]
 };
+/* Item CH: the exit survey - for goals that ENDED early. Shorter, gentler,
+   and the one question that matters most: what would have kept you going. */
+FEEDBACK_Q.exit=[
+  {id:"who",    t:"Who ended it?",                                   type:"choice",options:["I did","The other side","It lapsed"]},
+  {id:"reason", t:"The main reason",                                  type:"choice",options:["Time","Money","The coach / trainee","The app","Injury or life event","Not what I expected","Other"]},
+  {id:"when",   t:"When did you decide?",                             type:"choice",options:["First week","Mid-way","Near the end"]},
+  {id:"kept",   t:"What would have kept you going?",                  type:"text"},
+  {id:"again",  t:"Would you try another goal here?",                 type:"scale10"},
+  {id:"nps",    t:"How likely are you to recommend FormTrace?",        type:"scale10"},
+  {id:"else",   t:"Anything else?",                                   type:"text"}
+];
 async function renderHomeGoalFeedback(el){
   if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
   const role=roleOf(); if(role!=="trainee"&&role!=="coach") return;
   let pending=[];
   try{
     const col=role==="coach"?"coach_id":"trainee_id";
-    const { data:engs, error }=await store._sb.from("engagements").select("id,goal_title,completed_at").eq(col,ME.id).eq("status","completed").order("completed_at",{ascending:false}).limit(10);
+    const { data:engs, error }=await store._sb.from("engagements").select("id,goal_title,completed_at,status").eq(col,ME.id).in("status",["completed","ended"]).order("completed_at",{ascending:false,nullsFirst:false}).limit(10);
     if(error) throw error; if(!(engs||[]).length) return;
-    const { data:done }=await store._sb.from("goal_feedback").select("engagement_id").eq("user_id",ME.id).eq("role",role).in("engagement_id",engs.map(e=>e.id));
-    const seen=new Set((done||[]).map(d=>d.engagement_id));
-    pending=engs.filter(e=>!seen.has(e.id)).slice(0,1);   // one at a time
+    const { data:done }=await store._sb.from("goal_feedback").select("engagement_id,kind").eq("user_id",ME.id).eq("role",role).in("engagement_id",engs.map(e=>e.id));
+    const seen=new Set((done||[]).map(d=>d.engagement_id+":"+(d.kind||"completion")));
+    pending=engs.map(e=>({...e,_kind:e.status==="ended"?"exit":"completion"})).filter(e=>!seen.has(e.id+":"+e._kind)).slice(0,1);   // one at a time
   }catch(e){ return; }   // migration not run, or nothing to ask
   if(!pending.length) return;
-  const eng=pending[0];
-  el.innerHTML=`<div class="rv-title">🗒 Two minutes of feedback</div><div class="rv-row">
-    <button class="rv-chip" id="fb-open"><span class="rv-ic">📝</span><span class="rv-tx"><b>How did "${escapeHtml(eng.goal_title||"your goal")}" go?</b><span>${FEEDBACK_Q[role].length} quick questions, each with room for a suggestion</span></span></button>
+  const eng=pending[0]; const kind=eng._kind||"completion"; const qset=kind==="exit"?FEEDBACK_Q.exit:FEEDBACK_Q[role];
+  el.innerHTML=`<div class="rv-title">${kind==="exit"?"🗒 One minute so we can do better":"🗒 Two minutes of feedback"}</div><div class="rv-row">
+    <button class="rv-chip" id="fb-open"><span class="rv-ic">${kind==="exit"?"💬":"📝"}</span><span class="rv-tx"><b>${kind==="exit"?`Sorry "${escapeHtml(eng.goal_title||"your goal")}" didn't work out`:`How did "${escapeHtml(eng.goal_title||"your goal")}" go?`}</b><span>${qset.length} quick questions, each with room for a suggestion</span></span></button>
     <button class="btn sm ghost" id="fb-skip" style="width:auto;align-self:center">Not now</button></div>`;
   el.style.display="";
-  $("#fb-open").addEventListener("click",()=>openFeedbackSheet(eng,role,el));
-  $("#fb-skip").addEventListener("click",async()=>{ try{ await store._sb.from("goal_feedback").insert({engagement_id:eng.id,user_id:ME.id,role,version:FEEDBACK_VERSION,answers:null,dismissed_at:new Date().toISOString()}); }catch(e){} el.style.display="none"; });
+  $("#fb-open").addEventListener("click",()=>openFeedbackSheet(eng,role,el,kind));
+  $("#fb-skip").addEventListener("click",async()=>{ try{ await store._sb.from("goal_feedback").insert({engagement_id:eng.id,user_id:ME.id,role,kind,version:FEEDBACK_VERSION,answers:null,dismissed_at:new Date().toISOString()}); }catch(e){} el.style.display="none"; });
 }
-function openFeedbackSheet(eng,role,homeEl){
-  const qs=FEEDBACK_Q[role]; const body=$("#sheet-body"); body.innerHTML="";
+function openFeedbackSheet(eng,role,homeEl,kind="completion"){
+  const qs=kind==="exit"?FEEDBACK_Q.exit:FEEDBACK_Q[role]; const body=$("#sheet-body"); body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent=`Feedback · ${eng.goal_title||"your goal"}`; $("#sheet-add").style.display="none";
   const w=document.createElement("div"); const answers={};
   w.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Honest answers help more than kind ones. Every question has space for what you'd change.</div>`+
@@ -3884,7 +3895,7 @@ function openFeedbackSheet(eng,role,homeEl){
     if(!Object.keys(answers).length){ toast("Answer at least one question - or tap Not now on the card",3000); return; }
     const btn=$("#fb-send"); btn.disabled=true; btn.textContent="Sending…";
     try{
-      const { error }=await store._sb.from("goal_feedback").upsert({engagement_id:eng.id,user_id:ME.id,role,version:FEEDBACK_VERSION,answers,dismissed_at:null,submitted_at:new Date().toISOString()},{onConflict:"engagement_id,role"}); if(error) throw error;
+      const { error }=await store._sb.from("goal_feedback").upsert({engagement_id:eng.id,user_id:ME.id,role,kind,version:FEEDBACK_VERSION,answers,dismissed_at:null,submitted_at:new Date().toISOString()},{onConflict:"engagement_id,role,kind"}); if(error) throw error;
       toast("Thank you - that genuinely helps 🙏",3000); closeSheet(); if(homeEl) homeEl.style.display="none";
     }catch(err){ console.error("feedback (run migrations_goal_feedback.sql)",err); toast(err.message||"Couldn't send",4000); btn.disabled=false; btn.textContent="Send feedback"; }
   });
@@ -3897,8 +3908,8 @@ async function renderAdminFeedback(body){
     const { data, error }=await store._sb.from("goal_feedback").select("*,engagements(goal_title)").not("answers","is",null).order("submitted_at",{ascending:false}).limit(50); if(error) throw error;
     const el=$("#adm-fb"); if(!(data||[]).length){ el.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No responses yet.</div>`; return; }
     const nps=rows=>{ const v=rows.map(r=>r.answers&&r.answers.nps&&r.answers.nps.v).filter(x=>typeof x==="number"); if(!v.length) return "—"; const p=v.filter(x=>x>=9).length, d=v.filter(x=>x<=6).length; return Math.round((p-d)/v.length*100)+" (n="+v.length+")"; };
-    el.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">NPS · trainees <b style="color:var(--ink)">${nps(data.filter(r=>r.role==="trainee"))}</b> · coaches <b style="color:var(--ink)">${nps(data.filter(r=>r.role==="coach"))}</b></div>`+
-      data.map(r=>{ const qs=FEEDBACK_Q[r.role]||[]; return `<details style="border-top:1px solid var(--line2);padding:8px 0"><summary style="font-size:13px;cursor:pointer"><b>${escapeHtml(r.role)}</b> · ${escapeHtml((r.engagements&&r.engagements.goal_title)||"goal")} · ${escapeHtml(fmtDay(String(r.submitted_at).slice(0,10)))}${r.answers.nps&&r.answers.nps.v!=null?` · NPS ${r.answers.nps.v}`:""}</summary>
+    el.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">NPS · trainees <b style="color:var(--ink)">${nps(data.filter(r=>r.role==="trainee"&&(r.kind||"completion")==="completion"))}</b> · coaches <b style="color:var(--ink)">${nps(data.filter(r=>r.role==="coach"&&(r.kind||"completion")==="completion"))}</b> · <span title="goals that ended early">exits</span> <b style="color:var(--ink)">${nps(data.filter(r=>r.kind==="exit"))}</b></div>`+
+      data.map(r=>{ const qs=r.kind==="exit"?FEEDBACK_Q.exit:(FEEDBACK_Q[r.role]||[]); return `<details style="border-top:1px solid var(--line2);padding:8px 0"><summary style="font-size:13px;cursor:pointer"><b>${escapeHtml(r.role)}</b>${r.kind==="exit"?` <span class="badge rejected">exit</span>`:""} · ${escapeHtml((r.engagements&&r.engagements.goal_title)||"goal")} · ${escapeHtml(fmtDay(String(r.submitted_at).slice(0,10)))}${r.answers.nps&&r.answers.nps.v!=null?` · NPS ${r.answers.nps.v}`:""}</summary>
         <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px">${qs.map(q=>{ const a=r.answers[q.id]; if(!a) return ""; const lab=(q.type==="scale5"&&q.labels&&a.v)?` (${escapeHtml(q.labels[a.v-1])})`:""; return `<div><span style="color:var(--faint)">${escapeHtml(q.t)}</span> → <b style="color:var(--ink)">${a.v!=null?escapeHtml(String(a.v)):""}</b>${lab}${a.note?`<div style="margin:2px 0 6px 10px;color:var(--ink)">"${escapeHtml(a.note)}"</div>`:""}</div>`; }).join("")}</div></details>`; }).join("");
   }catch(err){ console.error("feedback list",err); const el=$("#adm-fb"); if(el) el.textContent="Run migrations_goal_feedback.sql to enable."; }
 }

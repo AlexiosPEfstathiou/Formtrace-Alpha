@@ -42,7 +42,7 @@ BE) are not tasks and are left out.
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
-| 31 | **CH** Exit survey when a goal ends early | Easy | ≤8 questions, reuses goal_feedback with a kind column; gentle card; admin NPS by kind. |
+| 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -51,7 +51,7 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
-## CH. Exit survey when a goal ends early
+## CH. Exit survey when a goal ends early - DONE 2026-09-16
 
 Requested 2026-09-16. The completion questionnaire (CC) hears from people
 who finished; the more informative voice is the one who stopped. When an
@@ -70,7 +70,18 @@ or inactivity), ask a SHORTER set than CC, tuned to the leaving moment:
 ('completion' | 'exit') and a second question set `FEEDBACK_Q_EXIT`;
 same homepage card pattern, gentler copy ("Sorry it didn't work out -
 one minute so we can do better?"); admin card splits NPS by kind. Show it
-once, dismissible, never twice. Depends on nothing; small. Not started.
+once, dismissible, never twice. Depends on nothing; small.
+
+**DONE 2026-09-16.** Needs `supabase/migrations_exit_survey.sql` run
+(adds `kind` to goal_feedback; unique becomes engagement × role × kind).
+Seven questions in `FEEDBACK_Q.exit` (who ended it · main reason · when
+decided · what would have kept you going · try another goal 0-10 · NPS
+0-10 · anything else), free text on each. The homepage card for a goal
+with status **ended** reads "🗒 One minute so we can do better - Sorry
+'<goal>' didn't work out"; Not now dismisses for good. Same sheet
+component, same admin card - which now shows a third NPS figure, "exits",
+and tags exit rows. Completion and exit are tracked separately per goal
+so a goal that ended early never gets the completion questions.
 
 ---
 
