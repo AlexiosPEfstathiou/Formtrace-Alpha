@@ -44,11 +44,44 @@ BE) are not tasks and are left out.
 | 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
 | 32 | **CI** Protect streaks between goals | Medium (decision: N weeks) | Finite, visible grace window; pending offers pause it; close_week rule + copy on home/Training/recap. |
+| 33 | **CJ** Trainee counter-offers - DONE 2026-09-16 | - | Propose a change (weeks/sessions/price + note); coach accepts the change or keeps terms; trainee decides last. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CJ. Trainee counter-offers: propose a change before declining - DONE 2026-09-16
+
+Requested 2026-09-16: a small disagreement should not be a stopping
+point; the trainee can propose a change to the goal terms - weeks,
+sessions per week, weekly price - before any definite rejection. Applies
+to every offer, including a coach's direct next-goal offer (CD). Needs
+`supabase/migrations_counter_offers.sql` run.
+- Trainee: a pending offer now has **Decline · Propose a change · Accept**.
+  The sheet prefills the coach's terms; the trainee edits weeks / sessions
+  per week / price per week and writes why; a live line shows what they
+  would pay under their proposal (fee included). At least one term must
+  change, or a note be given. The offer becomes **countered** and the card
+  reads "You proposed a change - 4 weeks · 2 / week · €80 / week · '…'.
+  Waiting for your coach." A countered offer stays in the open bucket.
+- Coach: in "Your sent offers" the offer shows **Change proposed** and an
+  amber box: the trainee's terms beside the original, their note, and two
+  buttons - **Accept the change** (the offer's terms are rewritten server-
+  side and it returns to pending for the trainee to accept, so the normal
+  accept path, committed total and fee lines all just work) or **Keep my
+  terms** (returns to pending unchanged). Both take an optional reply.
+  Countered offers are surfaced in outcomes rather than hidden behind the
+  "Pitched" tag.
+- Trainee sees the outcome on the card: "Your coach accepted your change -
+  the terms above are the new ones" or "Your coach kept the original
+  terms", with the reply. Either way the trainee decides last.
+- `counter_offer` (trainee-only, one live counter, a new one replaces it)
+  and `respond_counter` (coach-only). New status 'countered'.
+Not built: a limit on rounds (a trainee can counter again after "kept");
+notification of the counter beyond the card (push, CE).
 
 ---
 
