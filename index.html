@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -614,6 +614,7 @@
   .cbadge.pro{background:rgba(255,194,74,.16);color:var(--amber);border:1px solid rgba(255,194,74,.44);}
   .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
   .cbadge.ref{background:rgba(90,176,255,.14);color:#5AB0FF;border:1px solid rgba(90,176,255,.6);}   /* Item BN referral tier */
+  .fb-opt.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CC selected answer */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
   /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
@@ -1197,6 +1198,7 @@
       <div id="home-callproposal" class="home-call" style="display:none"></div>
     <div id="home-certstatus" class="home-reviews" style="display:none"></div>
     <div id="home-milestone" class="home-milestone" style="display:none"></div>
+    <div id="home-feedback" class="home-reviews" style="display:none"></div>
       <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
       <div id="home-vacation" class="home-checkin" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
@@ -3460,6 +3462,7 @@ async function renderHome(){
     ]);
     await Promise.all([
       renderHomeStreakRisk($("#home-streakrisk"), engs),
+        renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       renderHomeVacation($("#home-vacation")),
       renderHomeReviews(engs, reviewsEl),
       renderHomePostpone(engs, $("#home-postpone")),
@@ -3485,6 +3488,7 @@ async function renderHome(){
       renderHomeVacation($("#home-vacation")),
       renderHomeCallProposal($("#home-callproposal")),
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
+      renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       store._sb.rpc("refresh_coach_streak_scores").catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
     ]);
     $("#home-p").style.display="";
@@ -3748,6 +3752,106 @@ async function renderHomePostpone(engs, el){
    covers that state adequately for anyone who visits it. This is
    specifically for surfacing something with a real 24-hour clock against
    it before that window closes unseen. */
+/* ---- Item CC: goal-completion questionnaire ----------------------------------
+   Shown once per completed goal, per role, on the homepage, AFTER the
+   celebration has had its moment (it only appears for goals already completed).
+   Every question has a free-text "recommendation" field. Questions are data:
+   change the constant, bump FEEDBACK_VERSION; answers carry question ids. */
+const FEEDBACK_VERSION=1;
+const SCALE5_EASE=["Very hard","Hard","OK","Easy","Very easy"], SCALE5_USE=["Useless","Not very","Somewhat","Useful","Very useful"], SCALE5_LIKE=["Disliked","Meh","Fine","Liked","Loved"], SCALE5_LIKELY=["Very unlikely","Unlikely","Maybe","Likely","Very likely"];
+const FEEDBACK_Q={
+  trainee:[
+    {id:"find",   t:"Finding things in the app was…",                                        type:"scale5",labels:SCALE5_EASE},
+    {id:"post",   t:"Posting your goal was…",                                                 type:"scale5",labels:SCALE5_EASE},
+    {id:"choose", t:"Choosing an offer was…",                                                 type:"scale5",labels:SCALE5_EASE},
+    {id:"ref",    t:"The coach's reference videos with the FormTrace lines were…",             type:"scale5",labels:SCALE5_USE},
+    {id:"written",t:"Written feedback from your coach",                                        type:"scale5",labels:SCALE5_LIKE},
+    {id:"voice",  t:"Voice-over feedback on your videos",                                      type:"scale5",labels:SCALE5_LIKE},
+    {id:"visual", t:"Visual feedback (form lines and tags on your video)",                    type:"scale5",labels:SCALE5_LIKE},
+    {id:"recall", t:"If your coach's previous feedback on an exercise appeared when you attempt it again, that would be…", type:"scale5",labels:SCALE5_USE},
+    {id:"pbs",    t:"Personal bests showing up",                                               type:"scale5",labels:SCALE5_LIKE},
+    {id:"bud_wk", t:"Budget you'd be comfortable with for online coaching, per week",          type:"choice",options:["Under €15","€15-30","€30-50","€50-100","Over €100"]},
+    {id:"bud_ses",t:"…per session",                                                            type:"choice",options:["Under €5","€5-10","€10-20","€20-40","Over €40"]},
+    {id:"bud_goal",t:"…per goal (a few weeks)",                                                type:"choice",options:["Under €50","€50-100","€100-200","€200-400","Over €400"]},
+    {id:"longterm",t:"How likely are you to use the app regularly for long-term goals?",       type:"scale10"},
+    {id:"nps",    t:"How likely are you to recommend FormTrace to a friend?",                  type:"scale10"},
+    {id:"else",   t:"Anything else?",                                                          type:"text"}
+  ],
+  coach:[
+    {id:"find",   t:"Finding things in the app was…",                                        type:"scale5",labels:SCALE5_EASE},
+    {id:"findtr", t:"Would you use FormTrace to find new trainees?",                           type:"scale5",labels:SCALE5_LIKELY},
+    {id:"useful", t:"How useful is the app for delivering your coaching, compared to your current tools?", type:"scale5",labels:SCALE5_USE},
+    {id:"ref",    t:"Recording reference videos with the FormTrace lines",                     type:"scale5",labels:SCALE5_USE},
+    {id:"assist", t:"The form-match assist and pose overlay when reviewing",                   type:"scale5",labels:SCALE5_USE},
+    {id:"voice",  t:"Recording voice-over reviews",                                            type:"scale5",labels:SCALE5_LIKE},
+    {id:"assign", t:"Building and assigning weeks",                                            type:"scale5",labels:SCALE5_EASE},
+    {id:"quality",t:"Did your trainees receive the quality of coaching you want to deliver?",  type:"scale5",labels:["Not at all","Partly","Mostly","Yes","Better than usual"]},
+    {id:"time",   t:"Time this saved you versus messaging + spreadsheets",                     type:"choice",options:["It took longer","About the same","Saved some","Saved a lot"]},
+    {id:"comm",   t:"What commission would you accept for these benefits?",                    type:"choice",options:["0-5%","5-10%","10-15%","15-20%","Over 20%"]},
+    {id:"again",  t:"Would you take another trainee here next month?",                        type:"choice",options:["Yes","Maybe","No"]},
+    {id:"nps",    t:"How likely are you to recommend FormTrace to another coach?",              type:"scale10"},
+    {id:"else",   t:"Anything else?",                                                          type:"text"}
+  ]
+};
+async function renderHomeGoalFeedback(el){
+  if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
+  const role=roleOf(); if(role!=="trainee"&&role!=="coach") return;
+  let pending=[];
+  try{
+    const col=role==="coach"?"coach_id":"trainee_id";
+    const { data:engs, error }=await store._sb.from("engagements").select("id,goal_title,completed_at").eq(col,ME.id).eq("status","completed").order("completed_at",{ascending:false}).limit(10);
+    if(error) throw error; if(!(engs||[]).length) return;
+    const { data:done }=await store._sb.from("goal_feedback").select("engagement_id").eq("user_id",ME.id).eq("role",role).in("engagement_id",engs.map(e=>e.id));
+    const seen=new Set((done||[]).map(d=>d.engagement_id));
+    pending=engs.filter(e=>!seen.has(e.id)).slice(0,1);   // one at a time
+  }catch(e){ return; }   // migration not run, or nothing to ask
+  if(!pending.length) return;
+  const eng=pending[0];
+  el.innerHTML=`<div class="rv-title">🗒 Two minutes of feedback</div><div class="rv-row">
+    <button class="rv-chip" id="fb-open"><span class="rv-ic">📝</span><span class="rv-tx"><b>How did "${escapeHtml(eng.goal_title||"your goal")}" go?</b><span>${FEEDBACK_Q[role].length} quick questions, each with room for a suggestion</span></span></button>
+    <button class="btn sm ghost" id="fb-skip" style="width:auto;align-self:center">Not now</button></div>`;
+  el.style.display="";
+  $("#fb-open").addEventListener("click",()=>openFeedbackSheet(eng,role,el));
+  $("#fb-skip").addEventListener("click",async()=>{ try{ await store._sb.from("goal_feedback").insert({engagement_id:eng.id,user_id:ME.id,role,version:FEEDBACK_VERSION,answers:null,dismissed_at:new Date().toISOString()}); }catch(e){} el.style.display="none"; });
+}
+function openFeedbackSheet(eng,role,homeEl){
+  const qs=FEEDBACK_Q[role]; const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=`Feedback · ${eng.goal_title||"your goal"}`; $("#sheet-add").style.display="none";
+  const w=document.createElement("div"); const answers={};
+  w.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Honest answers help more than kind ones. Every question has space for what you'd change.</div>`+
+    qs.map((q,i)=>`<div class="field" data-q="${q.id}" style="padding-bottom:12px;border-bottom:1px solid var(--line2);margin-bottom:12px">
+      <label style="font-size:13.5px;line-height:1.4">${i+1}. ${escapeHtml(q.t)}</label>
+      ${q.type==="scale5"?`<div class="fb-scale" style="display:flex;gap:6px;margin-top:8px">${q.labels.map((l,k)=>`<button type="button" class="btn sm ghost fb-opt" data-v="${k+1}" title="${escapeHtml(l)}" style="flex:1;margin:0;padding:0 4px;min-width:0"><div style="font-weight:800">${k+1}</div><div style="font-size:9.5px;color:var(--faint);line-height:1.1;white-space:normal">${escapeHtml(l)}</div></button>`).join("")}</div>`:""}
+      ${q.type==="scale10"?`<div class="fb-scale" style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">${Array.from({length:11},(_,k)=>`<button type="button" class="btn sm ghost fb-opt" data-v="${k}" style="flex:1 0 8%;margin:0;padding:0;min-width:28px;height:34px">${k}</button>`).join("")}</div><div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-top:2px"><span>Not at all</span><span>Definitely</span></div>`:""}
+      ${q.type==="choice"?`<div class="fb-scale" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${q.options.map(o=>`<button type="button" class="btn sm ghost fb-opt" data-v="${escapeHtml(o)}" style="width:auto;margin:0;padding:0 10px">${escapeHtml(o)}</button>`).join("")}</div>`:""}
+      <textarea class="fb-note" rows="2" placeholder="${q.type==="text"?"Your thoughts…":"What would you change or recommend? (optional)"}" style="margin-top:8px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:9px 12px;font-size:13px;resize:vertical"></textarea>
+    </div>`).join("")+
+    `<button class="btn primary" id="fb-send">Send feedback</button>`;
+  body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  w.querySelectorAll(".fb-scale").forEach(sc=>sc.addEventListener("click",e=>{ const b=e.target.closest(".fb-opt"); if(!b) return; sc.querySelectorAll(".fb-opt").forEach(x=>x.classList.remove("on")); b.classList.add("on"); sc.closest("[data-q]").dataset.v=b.getAttribute("data-v"); }));
+  $("#fb-send").addEventListener("click",async()=>{
+    for(const q of qs){ const blk=w.querySelector(`[data-q="${q.id}"]`); const v=blk.dataset.v; const note=blk.querySelector(".fb-note").value.trim(); if(q.type!=="text"&&v==null&&!note) continue; answers[q.id]={v:v==null?null:(isNaN(Number(v))?v:Number(v)),note:note||null}; }
+    if(!Object.keys(answers).length){ toast("Answer at least one question - or tap Not now on the card",3000); return; }
+    const btn=$("#fb-send"); btn.disabled=true; btn.textContent="Sending…";
+    try{
+      const { error }=await store._sb.from("goal_feedback").upsert({engagement_id:eng.id,user_id:ME.id,role,version:FEEDBACK_VERSION,answers,dismissed_at:null,submitted_at:new Date().toISOString()},{onConflict:"engagement_id,role"}); if(error) throw error;
+      toast("Thank you - that genuinely helps 🙏",3000); closeSheet(); if(homeEl) homeEl.style.display="none";
+    }catch(err){ console.error("feedback (run migrations_goal_feedback.sql)",err); toast(err.message||"Couldn't send",4000); btn.disabled=false; btn.textContent="Send feedback"; }
+  });
+}
+/* Admin: responses, newest first, with NPS. */
+async function renderAdminFeedback(body){
+  const wrap=document.createElement("div"); wrap.className="card"; wrap.style.marginBottom="12px";
+  wrap.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Goal feedback</div><div id="adm-fb">Loading…</div>`; body.appendChild(wrap);
+  try{
+    const { data, error }=await store._sb.from("goal_feedback").select("*,engagements(goal_title)").not("answers","is",null).order("submitted_at",{ascending:false}).limit(50); if(error) throw error;
+    const el=$("#adm-fb"); if(!(data||[]).length){ el.innerHTML=`<div style="font-size:12.5px;color:var(--faint)">No responses yet.</div>`; return; }
+    const nps=rows=>{ const v=rows.map(r=>r.answers&&r.answers.nps&&r.answers.nps.v).filter(x=>typeof x==="number"); if(!v.length) return "—"; const p=v.filter(x=>x>=9).length, d=v.filter(x=>x<=6).length; return Math.round((p-d)/v.length*100)+" (n="+v.length+")"; };
+    el.innerHTML=`<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">NPS · trainees <b style="color:var(--ink)">${nps(data.filter(r=>r.role==="trainee"))}</b> · coaches <b style="color:var(--ink)">${nps(data.filter(r=>r.role==="coach"))}</b></div>`+
+      data.map(r=>{ const qs=FEEDBACK_Q[r.role]||[]; return `<details style="border-top:1px solid var(--line2);padding:8px 0"><summary style="font-size:13px;cursor:pointer"><b>${escapeHtml(r.role)}</b> · ${escapeHtml((r.engagements&&r.engagements.goal_title)||"goal")} · ${escapeHtml(fmtDay(String(r.submitted_at).slice(0,10)))}${r.answers.nps&&r.answers.nps.v!=null?` · NPS ${r.answers.nps.v}`:""}</summary>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px">${qs.map(q=>{ const a=r.answers[q.id]; if(!a) return ""; const lab=(q.type==="scale5"&&q.labels&&a.v)?` (${escapeHtml(q.labels[a.v-1])})`:""; return `<div><span style="color:var(--faint)">${escapeHtml(q.t)}</span> → <b style="color:var(--ink)">${a.v!=null?escapeHtml(String(a.v)):""}</b>${lab}${a.note?`<div style="margin:2px 0 6px 10px;color:var(--ink)">"${escapeHtml(a.note)}"</div>`:""}</div>`; }).join("")}</div></details>`; }).join("");
+  }catch(err){ console.error("feedback list",err); const el=$("#adm-fb"); if(el) el.textContent="Run migrations_goal_feedback.sql to enable."; }
+}
 /* Coach homepage: a certification you submitted was approved or rejected.
    Shows until dismissed (seen_at); the badge itself is already live. */
 async function renderHomeCertStatus(el){
@@ -10858,6 +10962,7 @@ async function openAssignBadgesSheet(c){
   await renderAdminErrors(body);
   await renderAdminInactivity(body);
   await renderAdminBadges(body);   // badges (BH/BQ)
+  await renderAdminFeedback(body); // Item CC
   if(!apps.length){ body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:40px 20px"><div class="ic">★</div><p>No pending applications.</p></div>`); return; }
   for(const a of apps){
     const prof=a.profiles||{};

@@ -37,7 +37,7 @@ BE) are not tasks and are left out.
 | 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
 | 24 | **BZ** Coach homepage "X new goals posted today" | Easy | One count query; tappable line to Open goals; silent at zero, weekly fallback. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
-| 26 | **CC** Goal-completion questionnaire | Easy | goal_feedback table; two ≤60 s question sets; card after the celebration; admin NPS by cohort. |
+| 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
 | 27 | **CD** Post-completion retention plan | Medium | Direct offer to a past trainee first; prefilled repost; day 3/7/14 homepage cards; coach Past section; measure source of second goal. |
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak notifications | Easy (card) / on CE (push) | Content from the week close; homepage-card version first, push later. |
@@ -160,40 +160,48 @@ is the piece to build first when this item starts.
 
 ---
 
-## CC. Goal-completion questionnaire (both roles)
+## CC. Goal-completion questionnaire (both roles) - BUILT 2026-09-16
 
 Requested 2026-09-15, for CB phase 5. A short in-app questionnaire shown
 once, when a goal reaches status completed, to the trainee and to the
 coach - the structured half of "collect valuable feedback".
 
-**Trainee (≤ 60 s):**
-1. How likely are you to recommend FormTrace to a friend? 0-10 (NPS).
-2. How likely are you to start another goal here? 0-10.
-3. Rate the coach (already exists - reuse the rating, do not ask twice).
-4. Pick up to three that mattered most: form checks on my videos /
-   written feedback / voice-overs / the week streak / macros / check-in
-   photos / video calls / the price / the coach.
-5. What nearly made you stop? (free text, optional)
-6. What would you change? (free text, optional)
+**BUILT 2026-09-16 to the owner's brief (max 15 questions, free text on
+every question).** Needs `supabase/migrations_goal_feedback.sql` run.
 
-**Coach (≤ 60 s):**
-1. How likely are you to recommend FormTrace to another coach? 0-10.
-2. How much of the coaching work did the app save you, compared to
-   messaging + spreadsheets? less / same / some / a lot.
-3. Pick up to three that helped: form-match assist / pose overlay /
-   voice-over / review flow / assigning weeks / macro goals / calls /
-   the ledger.
-4. Where did the app get in the way? (free text)
-5. Would you take another trainee here next month? yes / maybe / no.
+**Trainee (15):** finding things · posting your goal · choosing an offer
+(all ease, 1-5) · reference videos with the FormTrace lines (useful 1-5) ·
+written / voice-over / visual feedback (liked 1-5, three questions) · "if
+your coach's previous feedback on an exercise appeared when you attempt
+it again" (useful 1-5 - a proposed feature, asked before building) ·
+personal bests showing up (1-5) · budget you'd be comfortable with per
+week / per session / per goal (three banded choices) · likely to use the
+app regularly for long-term goals (0-10) · recommend to a friend (0-10,
+NPS) · anything else. Every question has a "what would you change or
+recommend?" text field.
 
-**Mechanics:** `goal_feedback` table (engagement_id, role, answers jsonb,
-submitted_at) with RLS (own rows; admin reads all); shown as a card on
-the completion screen and on the homepage until answered or dismissed
-(one dismiss allowed, then it stays gone); admin screen lists responses
-with NPS by cohort. Questions live in one JS constant so they can change
-without a schema change. Ask AFTER the celebration, never before it.
-Not started; small build once the completion screen exists in its CD
-form.
+**Coach (13):** finding things (1-5) · would you use FormTrace to find
+new trainees (1-5) · how useful for delivering your coaching vs current
+tools (1-5) · reference recording with the lines · form-match assist +
+pose overlay · voice-over reviews · building and assigning weeks · did
+your trainees receive the quality of coaching you want to deliver (1-5,
+"Not at all" … "Better than usual") · time saved vs messaging +
+spreadsheets · commission you'd accept for these benefits (0-5 … >20%) ·
+another trainee next month (yes/maybe/no) · recommend to another coach
+(0-10) · anything else. Free text on every question.
+
+**Mechanics:** `goal_feedback` (one row per engagement × role; answers
+jsonb keyed by question id with value + note; dismissed rows have null
+answers); RLS own rows + admin read. Homepage card "🗒 Two minutes of
+feedback" appears for a completed goal that has no row yet - one goal at
+a time, only for goals already completed (so after the celebration) -
+with "Not now" (dismisses that goal for good). The sheet renders the
+question set from `FEEDBACK_Q` (change questions there, bump
+`FEEDBACK_VERSION`); scale buttons with labels, banded choices, textarea
+under each. Admin screen gains a "Goal feedback" card: NPS for trainees
+and coaches, and each response expandable with every answer and note.
+Not built: an exit questionnaire when a goal ENDS early (status ended) -
+arguably the more informative one; log when it comes up.
 
 ---
 
