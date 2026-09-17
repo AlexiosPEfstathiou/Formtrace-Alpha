@@ -45,11 +45,51 @@ BE) are not tasks and are left out.
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
 | 32 | **CI** Protect streaks between goals - BUILT 2026-09-16 | - | 3-week window (editable in platform_rates), pauses while an offer is pending, streak function honours it; copy on card + recap. |
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
+| 34 | **CL** Draw over video during voice-over (red/green, erase, pause/resume) | Medium | Timestamped vector events on the audio clock, replayed by the sync player; no re-encoding. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CL. Draw over the video during voice-over (telestration)
+
+Requested 2026-09-17. While recording a voice-over review the coach can
+**draw lines in red or green over the video, erase them, and pause /
+resume the video**, talking as they go - the way a sports analyst marks up
+a replay. What reaches the trainee is one piece of feedback: the video,
+the coach's voice, and the coach's drawings appearing exactly when they
+were drawn.
+
+**How to build it without re-encoding video** (which the Artifactory
+policy blocks and a phone can't afford): do NOT burn the drawings into
+the file. The voice-over already works by recording audio while the
+video plays and replaying the two in sync (`buildSyncPlayer`). Drawings
+are the same idea: record **timestamped vector events** and replay them.
+- Events: `{t, kind:"stroke", color:"red"|"green", points:[[x,y]…]}` (x,y
+  normalised 0-1 so any screen size replays correctly), `{t,kind:"erase"}`
+  (clear all; optionally undo-last), `{t,kind:"pause"}`, `{t,kind:"resume"}`.
+  `t` is the AUDIO clock, since the audio never pauses - the video does.
+  That is what makes pause/resume replay correctly: the trainee's player
+  pauses the video at the same audio moment the coach did, while the voice
+  keeps talking over the frozen frame with the drawings on it.
+- Storage: one small JSON per voice-over (kilobytes) alongside the audio
+  path - `reviews.telestration jsonb` or a `voiceover_marks` row; no new
+  media file.
+- Recording UI (coach): a transparent canvas over the video in the
+  voice-over screen; toolbar: red · green · erase · pause/resume (the
+  existing play control); finger/stylus draws; drawing while paused is the
+  main use ("look here").
+- Playback UI (trainee): the same sync player gains the overlay; the
+  strokes appear at their `t`, the video pauses and resumes on cue; a
+  small "✎ drawn by your coach" hint. Works on the coach's own preview
+  too, so they can check it before sending.
+- Downloadable single video ("share this clip") is NOT part of this; it
+  would need the burn-in. If ever wanted, it is a server job, not the app.
+Estimate: one to two days. Depends on nothing; builds on the existing
+voice-over sync player. Not started.
 
 ---
 
