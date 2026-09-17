@@ -9527,7 +9527,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
       <div id="vo-tools" style="display:none;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
         <button type="button" class="btn sm ghost vo-tool" data-tool="red" style="width:auto;border-color:#FF4D4D;color:#FF4D4D">● Red</button>
         <button type="button" class="btn sm ghost vo-tool" data-tool="green" style="width:auto;border-color:#3DDC84;color:#3DDC84">● Green</button>
-        <button type="button" class="btn sm ghost" id="vo-erase" style="width:auto">Erase</button>
+        <button type="button" class="btn sm ghost" id="vo-erase" style="width:auto" title="Clears every drawing on the video in one tap">🧹 Erase all</button>
         <button type="button" class="btn sm" id="vo-pause" style="width:auto">⏸ Pause video</button>
       </div>
       <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
@@ -9560,7 +9560,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   const endStroke=()=>{ if(cur&&cur.points.length<2){ marks.splice(marks.indexOf(cur),1); } cur=null; repaint(); };
   tele.canvas.addEventListener("pointerup",endStroke); tele.canvas.addEventListener("pointercancel",endStroke);
   $$("#vo-tools .vo-tool").forEach(b=>b.addEventListener("click",()=>{ teleColor=b.getAttribute("data-tool"); $$("#vo-tools .vo-tool").forEach(x=>x.classList.toggle("on",x===b)); }));
-  $("#vo-erase").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return; marks.push({t:now(),kind:"erase"}); repaint(); });
+  $("#vo-erase").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return; if(cur) endStroke(); marks.push({t:now(),kind:"erase"}); repaint(); status.textContent="Cleared - draw again when you're ready."; });
   $("#vo-pause").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return;
     if(!vidPausedByCoach){ vid.pause(); vidPausedByCoach=true; marks.push({t:now(),kind:"pause"}); $("#vo-pause").textContent="▶ Resume video"; status.textContent="Video paused - draw and talk, then resume."; }
     else { vidPausedByCoach=false; marks.push({t:now(),kind:"resume"}); vid.play().catch(()=>{}); $("#vo-pause").textContent="⏸ Pause video"; status.textContent="Recording… tap the video to draw, or pause it to mark a moment."; } });
