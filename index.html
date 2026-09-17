@@ -616,6 +616,7 @@
   .cbadge.ref{background:rgba(90,176,255,.14);color:#5AB0FF;border:1px solid rgba(90,176,255,.6);}   /* Item BN referral tier */
   .fb-opt.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CC selected answer */
   .vo-tool.on{box-shadow:0 0 0 2px currentColor inset;font-weight:900;}   /* Item CL selected colour */
+  .lv-pick.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CG level */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
   /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
@@ -1281,6 +1282,8 @@
     <div class="top"><div class="back" data-go="coach">←</div><div style="flex:1"><h1 id="wo-edit-title">New workout</h1></div></div>
     <div class="body">
       <div class="field"><label>Workout name</label><input id="in-wo-name" placeholder="e.g. Monday · Lower body" autocomplete="off"></div>
+      <!-- Item CG: one workout, several levels - reps and target weight scale per level -->
+      <div id="wo-levels" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-4px 0 12px;font-size:12px;color:var(--muted)"><span>Each level adds</span><div class="mini-stepper"><button data-ls="reps_step" data-d="-1">−</button><span id="ls-reps">2</span><button data-ls="reps_step" data-d="1">+</button></div><span>reps and</span><div class="mini-stepper"><button data-ls="weight_step" data-d="-1">−</button><span id="ls-weight">2.5</span><button data-ls="weight_step" data-d="1">+</button></div><span>kg · you pick the level when you assign</span></div>
       <div class="section-h"><div class="eyebrow">Exercises</div><div class="eyebrow" id="wo-item-count"></div></div>
       <div id="wo-items"></div>
       <div id="wo-items-empty" class="empty hidden" style="padding:34px 20px;"><div class="ic">▦</div><p>No exercises added.<br>Pull movements from your library.</p></div>
@@ -4793,6 +4796,9 @@ $("#btn-record-ref").addEventListener("click",()=>{
    10. Workout builder + library picker sheet   (ported)
    ========================================================================= */
 let builder=null, libCache=[];
+let builderLevelScale={reps_step:2,weight_step:2.5,max:5};   // Item CG
+function paintLevelScale(){ const a=$("#ls-reps"), b=$("#ls-weight"); if(a) a.textContent=builderLevelScale.reps_step; if(b) b.textContent=builderLevelScale.weight_step; }
+$$("#wo-levels [data-ls]").forEach(btn=>btn.addEventListener("click",()=>{ const f=btn.getAttribute("data-ls"), d=+btn.getAttribute("data-d"); if(f==="reps_step") builderLevelScale.reps_step=Math.max(0,Math.min(10,builderLevelScale.reps_step+d)); else builderLevelScale.weight_step=Math.max(0,Math.min(20,Math.round((builderLevelScale.weight_step+d*0.5)*10)/10)); paintLevelScale(); }));
 async function openBuilder(id){
   /* Latency: screen used to appear only after both fetches below finished, in
      series. Now it switches immediately with a placeholder, and the two
@@ -4805,6 +4811,7 @@ async function openBuilder(id){
            :{id:null,name:"",items:[],isNew:true};
   $("#wo-edit-title").textContent=w?"Edit workout":"New workout";
   $("#in-wo-name").value=builder.name;
+  builderLevelScale=Object.assign({reps_step:2,weight_step:2.5,max:5},(w&&w.level_scale)||{}); paintLevelScale();   // Item CG
   $("#wo-delete").style.display=w?"flex":"none";
   renderBuilderItems();
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-wo-build").classList.add("active");
@@ -4862,6 +4869,8 @@ function renderBuilderItems(){
           <div class="mini-stepper"><button data-b="sets" data-d="-1" data-i="${idx}">−</button><span id="fv-sets-${idx}">${it.sets}</span><button data-b="sets" data-d="1" data-i="${idx}">+</button></div></div>
         <div class="blk"><div class="l">Reps / set</div>
           <div class="mini-stepper"><button data-b="reps" data-d="-1" data-i="${idx}">−</button><span id="fv-reps-${idx}">${it.reps}</span><button data-b="reps" data-d="1" data-i="${idx}">+</button></div></div>
+          <div class="blk"><div class="l">Target kg <span style="color:var(--faint);font-weight:400">(L1)</span></div>
+          <div class="mini-stepper"><button data-b="weight_kg" data-d="-1" data-i="${idx}">−</button><span id="fv-weight_kg-${idx}">${it.weight_kg!=null?it.weight_kg:"—"}</span><button data-b="weight_kg" data-d="1" data-i="${idx}">+</button></div></div>
       </div>`;
     wrap.appendChild(row);
   });
@@ -4869,10 +4878,11 @@ function renderBuilderItems(){
   /* Uniform stepper wiring across all five possible fields (sets, reps,
      walk_seconds, run_seconds, rounds) — each with its own sane bounds,
      rather than the two-field special case this used to be. */
-  const FIELD_BOUNDS={sets:[1,20],reps:[1,100],walk_seconds:[10,900],run_seconds:[10,900],rounds:[1,30]};
+  const FIELD_BOUNDS={sets:[1,20],reps:[1,100],walk_seconds:[10,900],run_seconds:[10,900],rounds:[1,30],weight_kg:[0,500]};
   wrap.querySelectorAll("[data-b]").forEach(b=>b.addEventListener("click",()=>{
     const i=+b.getAttribute("data-i"),field=b.getAttribute("data-b"),d=+b.getAttribute("data-d");
     const [min,max]=FIELD_BOUNDS[field]||[1,999];
+    if(field==="weight_kg"){ const it=builder.items[i]; const cur=it.weight_kg; let nv = cur==null ? (d>0?2.5:null) : Math.round((cur+d*2.5)*10)/10; if(nv!=null && nv<0) nv=null; if(nv!=null && nv>max) nv=max; it.weight_kg=nv; const sp=$("#fv-weight_kg-"+i); if(sp) sp.textContent=nv!=null?nv:"—"; return; }   // Item CG: target weight, 2.5 kg steps, "—" = none
     builder.items[i][field]=Math.max(min,Math.min(max,builder.items[i][field]+d));
     $("#fv-"+field+"-"+i).textContent=builder.items[i][field];
   }));
@@ -5106,8 +5116,8 @@ $("#wo-save").addEventListener("click",async()=>{
      shape it actually has, rather than hardcoding one shape for all three
      item kinds this builder now needs to support. */
   const items=builder.items.map(i=>({...i,exercise_id:i.exercise_id||null,wildcard_mg:i.wildcard_mg||null}));
-  if(builder.isNew) await store.workouts.add({coach_id:ME.id,name,items});
-  else await store.workouts.update(builder.id,{name,items});
+  if(builder.isNew) await store.workouts.add({coach_id:ME.id,name,items,level_scale:builderLevelScale});
+  else await store.workouts.update(builder.id,{name,items,level_scale:builderLevelScale});
   toast("Workout saved"); go("coach");
 });
 $("#wo-delete").addEventListener("click",async()=>{ if(!builder||builder.isNew)return; await store.workouts.remove(builder.id); toast("Workout removed"); go("coach"); });
@@ -7972,18 +7982,25 @@ async function assignWorkoutFlow(targetDate){
   const wos=await store.workouts.list({coach_id:ME.id});
   if(!wos.length){toast("Build a workout in your Library first");return;}
   const body=$("#sheet-body");body.innerHTML="";$("#sheet-lib").querySelector("h3").textContent=WEEK_MODEL?("Assign · week of "+weekLabel(weekStartISO(new Date((targetDate||todayISO())+"T00:00:00")))):(targetDate?("Assign · "+fmtDay(targetDate)):"Assign which workout?");$("#sheet-add").style.display="none";
+  /* Item CG: which level for this trainee. Defaults to the engagement's remembered level; assigning at a new level updates it. */
+  let assignLevel=(currentEng&&currentEng.level)||1;
+  { const lv=document.createElement("div"); lv.style.cssText="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)"; lv.innerHTML=`<span>Level</span>${[1,2,3,4,5].map(n=>`<button type="button" class="btn sm ghost lv-pick${n===assignLevel?" on":""}" data-lv="${n}" style="width:38px;height:34px;padding:0;margin:0">${n}</button>`).join("")}<span style="color:var(--faint)">reps and target weight scale with it</span>`; body.appendChild(lv); lv.querySelectorAll("[data-lv]").forEach(b=>b.addEventListener("click",()=>{ assignLevel=+b.getAttribute("data-lv"); lv.querySelectorAll("[data-lv]").forEach(x=>x.classList.toggle("on",x===b)); })); }
   for(const w of wos){
     const row=document.createElement("div");row.className="sh-item";
     row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(w.name)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${(w.items||[]).length} exercises</div></div><div style="color:var(--lime)">→</div>`;
     row.addEventListener("click",async()=>{
       closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
-      await doAssign(w,targetDate);
+      await doAssign(w,targetDate,assignLevel);   // Item CG
     });
     body.appendChild(row);
   }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
-async function doAssign(w,targetDate){
+async function doAssign(w,targetDate,level){
+  level=Math.max(1,Math.min(10,Number(level)||(currentEng&&currentEng.level)||1));
+  const ls=Object.assign({reps_step:2,weight_step:2.5},w.level_scale||{});
+  const lvReps=r=>r!=null?Math.max(1,Math.round(r+(level-1)*(Number(ls.reps_step)||0))):r;
+  const lvWeight=k=>k!=null?Math.round((k+(level-1)*(Number(ls.weight_step)||0))*10)/10:null;
  try{
   toast("Assigning…",1500);
   const exs=await store.exercises.list({coach_id:ME.id});
@@ -8008,10 +8025,11 @@ async function doAssign(w,targetDate){
       return {exercise_id:it.exercise_id,kind:"interval",name:ex.name||"(removed)",
         walk_seconds:it.walk_seconds,run_seconds:it.run_seconds,rounds:it.rounds};
     }
-    return {exercise_id:it.exercise_id,name:ex.name||"(removed)",sets:it.sets,reps:it.reps,
+    return {exercise_id:it.exercise_id,name:ex.name||"(removed)",sets:it.sets,reps:lvReps(it.reps),weight_target_kg:lvWeight(it.weight_kg),level,
       ref_video_path:ex.ref_video_path||null, landmarks:ex.landmarks||null};
   });
-  const snapshot={name:w.name,items:snapItems};
+  const snapshot={name:w.name,items:snapItems,level};
+  if(currentEng && currentEng.level!==level){ try{ await store.engagements.update(currentEng.id,{level}); currentEng.level=level; }catch(e){ console.error("remember level (run migrations_workout_levels.sql)",e); } }
   const row={engagement_id:currentEng.id,workout_id:w.id,snapshot,status:"assigned"};
   /* Item AT step 3: under the week model a session belongs to a WEEK, and the
      trainee chooses the day. So: week_start is the Monday of whatever day the
@@ -8295,12 +8313,12 @@ function renderAssignedWorkout(){
           ? `<div class="grade-num" style="color:var(--lime);font-size:19px">${shown}</div><div class="grade-lab">reps ✓</div>`
           : `<div class="grade-num" style="font-size:19px">${shown}</div><div class="grade-lab">reps</div>`;
         inner+=`<div class="setrow done" ${r.video_path?`data-play="${i}-${s}" style="cursor:pointer"`:""}><div class="set-n">✓</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">target ${it.reps} reps${r.weight_kg!=null?` · ${r.weight_kg} kg`:""}</div></div>
+          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">target ${it.reps} reps${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}${r.weight_kg!=null?` · ${r.weight_kg} kg`:""}</div></div>
           <div class="grade-badge">${badge}</div></div>`;
       }else{
         const isNext=(s===nextUndone)&&!locked;
         inner+=`<div class="setrow"><div class="set-n">${s+1}</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${it.reps} reps target</div></div>
+          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${it.reps} reps target${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}${it.level>1?` · L${it.level}`:""}</div></div>
           <div style="display:flex;gap:6px">
             ${isNext?`<button class="set-cta ghost" data-skip-i="${i}" data-skip-s="${s}" style="flex:0 0 auto">Skip</button>`:""}
             <button class="set-cta ${isNext?"":"locked"}" data-i="${i}" data-s="${s}">${locked?"—":isNext?"● Record":"Locked"}</button>
@@ -8576,7 +8594,7 @@ $("#r-rot")?.addEventListener("click",async e=>{
 function startTraineeSet(itemIndex,setIndex){
   const it=currentAssigned.snapshot.items[itemIndex];
   openRecorder({
-    title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps`,review:true,audio:true,useLabel:"✓ Use this take",
+    title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}`,review:true,audio:true,useLabel:"✓ Use this take",
     // last time's cue, kept on screen while they set up and perform
     note:(prevSeries&&prevSeries.notes[it.name])||"",
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)

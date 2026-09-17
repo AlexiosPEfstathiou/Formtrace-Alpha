@@ -41,7 +41,7 @@ BE) are not tasks and are left out.
 | 27 | **CD** Retention plan - DONE 2026-09-16 | push on CE, window on CI | Survey-linked next-goal offer; persistent trainee card; between-goals card with prefilled repost; admin scan activity. |
 | 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
-| 30 | **CG** Workout levels (scaled reps/weight) | Medium | Per-exercise level table in the builder; level chosen at assign; snapshot stores resolved numbers. |
+| 30 | **CG** Workout levels - BUILT 2026-09-17 | - | Per-workout scale (+reps, +kg per level), optional target kg per exercise, level picked at assign and remembered per trainee, resolved numbers in the snapshot. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
 | 32 | **CI** Protect streaks between goals - BUILT 2026-09-16 | - | 3-week window (editable in platform_rates), pauses while an offer is pending, streak function honours it; copy on card + recap. |
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
@@ -273,7 +273,7 @@ so a goal that ended early never gets the completion questions.
 
 ---
 
-## CG. Workout levels: one workout, scaled reps and added weight
+## CG. Workout levels: one workout, scaled reps and added weight - BUILT 2026-09-17
 
 Requested 2026-09-16. A coach assigns a **level** to a workout (1, 2, 3
 …): the exercises stay the same, the reps and the added weight scale with
@@ -288,7 +288,24 @@ once per trainee and remembered); the snapshot (`snap_items`) stores the
 resolved reps/weight so the trainee sees numbers, not "level 2". PBs and
 the form comparison are unaffected (they key on the exercise). Also lets
 the coach "level up" a trainee mid-goal by reassigning at a higher level,
-which is a visible progression moment worth celebrating. Not started.
+which is a visible progression moment worth celebrating.
+
+**BUILT 2026-09-17.** Needs `supabase/migrations_workout_levels.sql` run.
+Design chosen: scaling is set ONCE per workout, not per exercise - the
+builder header reads "Each level adds [2] reps and [2.5] kg · you pick the
+level when you assign" (`workouts.level_scale`). Each reps exercise gains
+an optional **Target kg (L1)** stepper (2.5 kg steps; "—" = no weight
+target, which is how every existing workout reads). Assigning shows a
+Level 1-5 row above the workouts, defaulting to the trainee's remembered
+level (`engagements.level`); the chosen level resolves reps and target
+weight into the snapshot (`reps`, `weight_target_kg`, `level`), so the
+trainee sees numbers - "target 12 reps @ 27.5 kg · L3" on the set list
+and "aim 12 reps @ 27.5 kg" in the recorder - never "level 3". Assigning
+at a new level updates the engagement's level, so the next assignment
+starts there. PBs and the form comparison are untouched (they key on the
+exercise). Wildcards and interval exercises don't scale.
+Not built: a celebration when the coach raises the level (a toast at
+most today); per-exercise overrides of the scale.
 
 ---
 
