@@ -45,7 +45,7 @@ BE) are not tasks and are left out.
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
 | 32 | **CI** Protect streaks between goals - BUILT 2026-09-16 | - | 3-week window (editable in platform_rates), pauses while an offer is pending, streak function honours it; copy on card + recap. |
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
-| 34 | **CL** Draw over video during voice-over (red/green, erase, pause/resume) | Medium | Timestamped vector events on the audio clock, replayed by the sync player; no re-encoding. |
+| 34 | **CL** Telestration during voice-over - BUILT 2026-09-17 | phone test | Red/green strokes, erase, pause/resume as marks on the audio clock; shared player replays them. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -54,7 +54,7 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
-## CL. Draw over the video during voice-over (telestration)
+## CL. Draw over the video during voice-over (telestration) - BUILT 2026-09-17
 
 Requested 2026-09-17. While recording a voice-over review the coach can
 **draw lines in red or green over the video, erase them, and pause /
@@ -89,7 +89,29 @@ are the same idea: record **timestamped vector events** and replay them.
 - Downloadable single video ("share this clip") is NOT part of this; it
   would need the burn-in. If ever wanted, it is a server job, not the app.
 Estimate: one to two days. Depends on nothing; builds on the existing
-voice-over sync player. Not started.
+voice-over sync player.
+
+**BUILT 2026-09-17, as designed - no SQL** (marks travel inside the review's
+existing `per_set` JSON as `telestration`).
+- Coach, while recording: a toolbar appears under the clip - **● Red · ●
+  Green · Erase · ⏸ Pause video**. Drawing is a finger or stylus on the
+  video itself (pointer events, capture, normalised 0-1 points). Pause
+  freezes the clip and is itself a mark; the status reads "Video paused -
+  draw and talk, then resume". Strokes shorter than two points are
+  dropped. The preview after stopping replays everything.
+- Marks are on the AUDIO clock (`performance.now()` from
+  `recorder.start()`), so the video's own time is never trusted.
+- Player (`buildSyncPlayer`, shared by preview and the trainee's review):
+  a transparent canvas over the video; each frame computes `teleVideoTime`
+  (audio time minus accumulated paused time; frozen inside a pause) and
+  drives the video to it - pausing/resuming the video on cue while the
+  voice continues - then draws every stroke since the last erase whose
+  time has come. Badge "✎ drawn by your coach". Reviews without marks play
+  exactly as before.
+Not built: undo-last (erase clears all); a burned-in downloadable video
+(server job, out of scope by design). Worth a phone test: drawing
+precision with a finger on a small clip, and pause/resume timing on
+Safari, where video seeking is slower.
 
 ---
 

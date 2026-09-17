@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -615,6 +615,7 @@
   .cbadge.cert{background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;border:1px solid #F5C542;}
   .cbadge.ref{background:rgba(90,176,255,.14);color:#5AB0FF;border:1px solid rgba(90,176,255,.6);}   /* Item BN referral tier */
   .fb-opt.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CC selected answer */
+  .vo-tool.on{box-shadow:0 0 0 2px currentColor inset;font-weight:900;}   /* Item CL selected colour */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
   /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
@@ -9378,7 +9379,7 @@ async function openReview(assignedId,readonly=false){
         if(ps.voiceover_path&&r.video_path){
           const lbl=document.createElement("div");lbl.className="eyebrow";lbl.style.margin="10px 0 6px";lbl.textContent="Coach's voice-over";
           div.appendChild(lbl);
-          div.appendChild(renderVoiceoverPlayer(r.video_path,ps.voiceover_path));
+          div.appendChild(renderVoiceoverPlayer(r.video_path,ps.voiceover_path,ps.telestration||null));
         }
       }
       body.appendChild(div);
@@ -9523,6 +9524,12 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     </div>
     <div id="vo-main" style="display:none">
       <div id="vo-vid-box" style="width:100%;max-height:280px"><video id="vo-vid" muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:cover" src="${url}"></video></div>
+      <div id="vo-tools" style="display:none;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+        <button type="button" class="btn sm ghost vo-tool" data-tool="red" style="width:auto;border-color:#FF4D4D;color:#FF4D4D">● Red</button>
+        <button type="button" class="btn sm ghost vo-tool" data-tool="green" style="width:auto;border-color:#3DDC84;color:#3DDC84">● Green</button>
+        <button type="button" class="btn sm ghost" id="vo-erase" style="width:auto">Erase</button>
+        <button type="button" class="btn sm" id="vo-pause" style="width:auto">⏸ Pause video</button>
+      </div>
       <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
       <button class="btn primary" id="vo-record">🎤 Start recording</button>
       <div id="vo-review" style="display:none;margin-top:14px">
@@ -9538,6 +9545,25 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   const vid=$("#vo-vid"), status=$("#vo-status"), recordBtn=$("#vo-record"), reviewBox=$("#vo-review");
   wireRotation($("#vo-vid-box"),vid,videoPath);
   let stream=null, recorder=null, chunks=[], resultBlob=null, selectedMicId="";
+  /* Item CL: telestration while recording. Marks on the audio clock (ms since
+     recorder.start, as seconds). The overlay canvas draws live; pause freezes
+     the video and is itself a mark, so replay freezes it at the same moment. */
+  let marks=[], recStart=0, teleColor="red", vidPausedByCoach=false;
+  const vidBox=$("#vo-vid-box"); vidBox.style.position="relative";
+  const tele=teleCanvasOver(vidBox,true); tele.canvas.style.display="none";
+  const now=()=>recorder&&recorder.state!=="inactive"?Math.max(0,(performance.now()-recStart)/1000):0;
+  const repaint=()=>{ tele.fit(); teleDraw(tele.ctx,tele.canvas.width,tele.canvas.height,marks,1e9); };
+  let cur=null;
+  const pt=e=>{ const r=tele.canvas.getBoundingClientRect(); return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]; };
+  tele.canvas.addEventListener("pointerdown",e=>{ if(!recorder||recorder.state!=="recording") return; e.preventDefault(); tele.canvas.setPointerCapture(e.pointerId); cur={t:now(),kind:"stroke",color:teleColor,points:[pt(e)]}; marks.push(cur); repaint(); });
+  tele.canvas.addEventListener("pointermove",e=>{ if(!cur) return; e.preventDefault(); cur.points.push(pt(e)); repaint(); });
+  const endStroke=()=>{ if(cur&&cur.points.length<2){ marks.splice(marks.indexOf(cur),1); } cur=null; repaint(); };
+  tele.canvas.addEventListener("pointerup",endStroke); tele.canvas.addEventListener("pointercancel",endStroke);
+  $$("#vo-tools .vo-tool").forEach(b=>b.addEventListener("click",()=>{ teleColor=b.getAttribute("data-tool"); $$("#vo-tools .vo-tool").forEach(x=>x.classList.toggle("on",x===b)); }));
+  $("#vo-erase").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return; marks.push({t:now(),kind:"erase"}); repaint(); });
+  $("#vo-pause").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return;
+    if(!vidPausedByCoach){ vid.pause(); vidPausedByCoach=true; marks.push({t:now(),kind:"pause"}); $("#vo-pause").textContent="▶ Resume video"; status.textContent="Video paused - draw and talk, then resume."; }
+    else { vidPausedByCoach=false; marks.push({t:now(),kind:"resume"}); vid.play().catch(()=>{}); $("#vo-pause").textContent="⏸ Pause video"; status.textContent="Recording… tap the video to draw, or pause it to mark a moment."; } });
 
   const cleanupStream=()=>{
     if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
@@ -9709,13 +9735,16 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     // begins is harmless, but starting playback first risks the recorder
     // missing the very first instant of audio.
     recPeak=0;
-    recorder.start();
+    marks=[]; vidPausedByCoach=false; $("#vo-pause").textContent="⏸ Pause video"; $$("#vo-tools .vo-tool").forEach(x=>x.classList.toggle("on",x.getAttribute("data-tool")===teleColor));
+    recorder.start(); recStart=performance.now();
+    $("#vo-tools").style.display="flex"; tele.canvas.style.display=""; repaint();
     try{ await vid.play(); }catch(e){}
     status.textContent="Recording… talking over the clip.";
     recordBtn.textContent="⏹ Stop recording";
     recordBtn.onclick=stopRecording;
   };
   const stopRecording=()=>{
+    if(cur) endStroke(); $("#vo-tools").style.display="none"; tele.canvas.style.display="none";   // Item CL
     if(recorder&&recorder.state!=="inactive") recorder.stop();
     vid.pause();
   };
@@ -9737,7 +9766,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     else{ status.textContent="Recording finished."; }
     const slot=$("#vo-preview-slot");slot.innerHTML="";
     const audioUrl=URL.createObjectURL(resultBlob);
-    slot.appendChild(buildSyncPlayer(url,audioUrl,videoPath));
+    slot.appendChild(buildSyncPlayer(url,audioUrl,videoPath,marks.length?marks:null));   // Item CL: preview replays the drawings
   };
 
   recordBtn.onclick=startRecording;
@@ -9751,7 +9780,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     try{
       const ext=(resultBlob.type||"").includes("mp4")?"m4a":"webm";
       const path=await store.video.upload(resultBlob,ext);
-      reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:setIndex+1,exercise:exName,voiceover_path:path};
+      reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:setIndex+1,exercise:exName,voiceover_path:path,telestration:marks.length?marks:null};   // Item CL
       if(btnEl) btnEl.textContent="✓ Voice-over recorded — re-record";
       toast("Voice-over saved ✓");
       closeSheet();
@@ -9774,7 +9803,36 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
    audio entirely. It must be wired IN-LINE to destination: source →
    analyser → destination, so the meter reads the signal without ever
    cutting it off. */
-function buildSyncPlayer(videoUrl,audioUrl,videoPath){
+/* ---- Item CL: telestration - draw over the video during a voice-over ------------
+   Marks are timestamped vector events on the AUDIO clock (the audio never
+   pauses; the video does): {t,kind:"stroke",color,points:[[x,y],...]} with x,y
+   normalised 0-1; {t,kind:"erase"}; {t,kind:"pause"}; {t,kind:"resume"}. Replay:
+   video time = audio time minus the paused time accumulated so far; strokes
+   since the last erase with t <= audio time are drawn. Nothing is re-encoded. */
+const TELE_COLORS={red:"#FF4D4D",green:"#3DDC84"};
+/* video time for an audio time, and whether the video should be frozen there */
+function teleVideoTime(marks,t){
+  let off=0, pauseAt=null;
+  for(const m of (marks||[])){ if(m.t>t) break; if(m.kind==="pause"&&pauseAt==null) pauseAt=m.t; else if(m.kind==="resume"&&pauseAt!=null){ off+=m.t-pauseAt; pauseAt=null; } }
+  if(pauseAt!=null) return {vt:pauseAt-off,frozen:true};
+  return {vt:t-off,frozen:false};
+}
+function teleDraw(ctx,W,H,marks,t){
+  ctx.clearRect(0,0,W,H);
+  let lastErase=-1; for(const m of (marks||[])){ if(m.t<=t&&m.kind==="erase") lastErase=m.t; }
+  ctx.lineCap="round"; ctx.lineJoin="round"; ctx.lineWidth=Math.max(3,W*0.008);
+  for(const m of (marks||[])){ if(m.kind!=="stroke"||m.t>t||m.t<lastErase||!m.points||m.points.length<2) continue;
+    ctx.strokeStyle=TELE_COLORS[m.color]||m.color||TELE_COLORS.red; ctx.beginPath();
+    m.points.forEach((p,i)=>{ const x=p[0]*W,y=p[1]*H; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke(); }
+}
+/* transparent canvas that tracks its box; returns {canvas, ctx, fit()} */
+function teleCanvasOver(box,pointer){
+  const c=document.createElement("canvas"); c.style.cssText="position:absolute;inset:0;width:100%;height:100%;border-radius:12px;pointer-events:"+(pointer?"auto":"none")+";touch-action:none;z-index:2";
+  box.appendChild(c); const ctx=c.getContext("2d");
+  const fit=()=>{ const r=box.getBoundingClientRect(); const W=Math.max(1,Math.round(r.width)),H=Math.max(1,Math.round(r.height)); if(c.width!==W||c.height!==H){ c.width=W; c.height=H; } };
+  fit(); return {canvas:c,ctx,fit};
+}
+function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
   const box=document.createElement("div");box.style.cssText="position:relative;max-height:240px";
   box.innerHTML=`<video muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:cover" src="${videoUrl}"></video>
     <audio src="${audioUrl}" style="display:none"></audio>
@@ -9782,6 +9840,7 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath){
     <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
       <div class="vo-meter-track"><div class="vo-meter-fill"></div></div></div>`;
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
+  const tele=(marks&&marks.length)?teleCanvasOver(box,false):null; if(tele) box.insertAdjacentHTML("beforeend",'<div style="position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:2px 7px">✎ drawn by your coach</div>');
   wireRotation(box,v,videoPath);
   const meterFill=box.querySelector(".vo-meter-fill");
   let syncInt=null, meterCtx=null, meterRAF=null, meterWired=false;
@@ -9817,13 +9876,18 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath){
   };
   const play=async()=>{
     await wireMeter();
-    v.currentTime=a.currentTime;
-    Promise.all([v.play(),a.play()]).catch(()=>{});
+    if(tele){ const s=teleVideoTime(marks,a.currentTime); v.currentTime=s.vt; a.play().catch(()=>{}); if(!s.frozen) v.play().catch(()=>{}); }
+    else { v.currentTime=a.currentTime; Promise.all([v.play(),a.play()]).catch(()=>{}); }
     btn.textContent="⏸";
     stopSync();
     syncInt=setInterval(()=>{
       if(videoEnded)return;   // video is already at its true last frame — stop trying to nudge it further
-      if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime;
+      if(tele){
+      const {vt,frozen}=teleVideoTime(marks,a.currentTime);
+      if(frozen){ if(!v.paused) v.pause(); if(Math.abs(v.currentTime-vt)>0.2) v.currentTime=vt; }
+      else { if(v.paused&&!videoEnded) v.play().catch(()=>{}); if(Math.abs(v.currentTime-vt)>0.35) v.currentTime=vt; }
+      tele.fit(); teleDraw(tele.ctx,tele.canvas.width,tele.canvas.height,marks,a.currentTime);
+    } else if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime;
     },800);
   };
   const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); if(meterRAF){cancelAnimationFrame(meterRAF);meterRAF=null;} meterFill.style.width="0%"; };
@@ -9844,12 +9908,12 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath){
 /* Read-only render of a saved voice-over — same sync player, just resolving
    the trainee's clip through a signed URL first (it's stored by path, not
    a raw URL, same as every other video in the app). */
-function renderVoiceoverPlayer(videoPath,voiceoverPath){
+function renderVoiceoverPlayer(videoPath,voiceoverPath,marks){
   const box=document.createElement("div");box.style.marginTop="10px";
   box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Loading…</div>`;
   Promise.all([playable(videoPath),playable(voiceoverPath)]).then(([vUrl,aUrl])=>{
     box.innerHTML="";
-    box.appendChild(buildSyncPlayer(vUrl,aUrl,videoPath));
+    box.appendChild(buildSyncPlayer(vUrl,aUrl,videoPath,marks));
   }).catch(e=>{ console.error("voiceover player",e); box.innerHTML=`<div style="font-size:12px;color:var(--faint)">Couldn't load the voice-over.</div>`; });
   return box;
 }
