@@ -21,7 +21,7 @@ BE) are not tasks and are left out.
 | 7 | **BC** Video trim - DONE 2026-09-14 (offsets) | - | Handles on the review step; frames sliced before grading; playback honours offsets. |
 | 8 | **AA** Voice-over: no sound in preview - MITIGATED 2026-09-14 | blocked on repro | Earlier fixes confirmed present; low-level warning on the preview added. |
 | 9 | **AH** Pose overlay sometimes missing - MITIGATED 2026-09-14 | blocked on repro | Rebuild retries with backoff + manual retry; pose-coverage number on every set. |
-| 10 | **AE / F** NFC "Friendlist" / Team tab | Hard, paused | Web NFC is Android-Chrome-only; paused pending the installability question (AD). |
+| 10 | **AE / F** -> superseded by **CM In Touch** (2026-09-18) | - | NFC phone-to-phone is impossible on the web; replaced by knock-to-connect. Challenges still out of scope. |
 | 11 | **AY part 2** Google Meet link on accepted calls - DONE 2026-09-14 | - | Create/paste/Join on the card, calendar and homepage; OAuth auto-mint later once there is a server. |
 | 12 | **BI** Commission plan + escrow payments | Hardest | Stripe Connect; rates DECIDED (5.9% trainee fee, 11.9% coach commission, 0/8.9/5.9 overrides). Unblock: open a Stripe account. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
@@ -46,11 +46,73 @@ BE) are not tasks and are left out.
 | 32 | **CI** Protect streaks between goals - BUILT 2026-09-16 | - | 3-week window (editable in platform_rates), pauses while an offer is pending, streak function honours it; copy on card + recap. |
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
 | 34 | **CL** Telestration during voice-over - BUILT 2026-09-17 | phone test | Red/green strokes, erase, pause/resume as marks on the audio clock; shared player replays them. |
+| 35 | **CM** In Touch - knock to connect + congratulate/clap | Medium-hard | Simultaneous-motion matching + face confirm; PB/achievement cards; Congratulate button -> clapping animation. Attorney hour + gym threshold session first. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CM. "In Touch" - knock phones to connect; celebrate each other's PBs and achievements
+
+Opened 2026-09-18; **supersedes and unpauses AE and the connection half
+of F.** The social layer, kept exclusive to people you have met in person.
+
+**Connecting - the knock.** Two people open *In Touch → Connect* on their
+phones and knock them together. Each phone's motion sensor registers the
+jolt; both report it (server receive time, coarse location, spike size);
+the server pairs the two jolts - within ~500 ms and ~50 m, both users in
+connect mode - and each phone shows the other's face: "Connect with
+Alex?" Both confirm. That is the whole exclusivity mechanism: you cannot
+knock phones with someone who is not standing next to you, and the
+face-and-confirm step catches the rare same-second coincidence in a busy
+gym.
+- Feasibility (explored 2026-09-18): Web NFC cannot do phone-to-phone
+  (tags only, no peer mode, no card emulation) and Web Bluetooth cannot
+  advertise, so the "tap" cannot be radio. Simultaneous-motion matching is
+  how the original Bump app (2009) worked; it needs only DeviceMotion
+  (Chrome Android; Safari on iPhone after a one-tap permission),
+  geolocation (already granted for runs) and a server match. Works on
+  iPhone too - which NFC never would have.
+- Legal notes: Bump the company was acquired by Google (2013) and shut
+  (2014) - nothing to partner with or license. Google holds Bump's patents
+  on time-and-place device matching (filed ~2009-11, running to roughly
+  2029-31); practical risk is low but **one IP-attorney hour before
+  launch**, with the trademark work. Never call the feature "Bump" - that
+  name is Google's trademark. Ours is **In Touch**; the action is
+  **Knock to connect**.
+- Fallback when motion permission is denied: a live rotating QR code
+  (60-second server-signed token, scanned in-app) - same in-person
+  guarantee, less magic. Fallback only.
+- Tuning: the jolt threshold must be set on real phones in a real gym
+  (walking and putting a phone down must not count).
+
+**Being in touch - notifications.** Once connected, each person receives
+a notification when the other sets a **personal best** or earns an
+**achievement** (streak milestone, badge, Top 1%, goal completed).
+Delivered as a homepage card now; push (CE) later, same content.
+- Under each such notification, one button: **"Congratulate <name>"**.
+- Pressing it puts a card on the OTHER person's homepage: "<name>
+  congratulated you". Tapping that plays a **short clapping animation** -
+  the congratulator's profile picture, clapping hands, and the PB or
+  achievement being celebrated. Two to three seconds, once; a "clap
+  back" is deliberately not offered, to keep it a gift and not a loop.
+- Privacy: connections see PBs and achievements only - never videos,
+  weights logged, macros, check-in photos or goals' prices. Either side
+  can disconnect; a disconnected person's past claps stay.
+
+**Mechanics:** `connections` (a, b, status pending/confirmed, connected_at,
+via knock|qr); `knocks` (user, received_at, lat, lng, magnitude) with
+`register_knock()` returning a match; `celebrations` (from, to, event_kind,
+event_ref, created_at, seen_at) for the congratulate → clap flow; the PB
+and achievement events already exist in the data (personal_bests,
+milestones, badges, engagement completion). In Touch tab: connect button,
+list of connections with their latest achievement, the feed of theirs to
+congratulate. Challenges (F's other half) remain out of scope.
+Estimate: knock 2-3 days; celebrations 1-2 days. Not started; the knock
+threshold session and the attorney hour are the two external steps.
 
 ---
 
