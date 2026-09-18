@@ -46,7 +46,7 @@ BE) are not tasks and are left out.
 | 32 | **CI** Protect streaks between goals - BUILT 2026-09-16 | - | 3-week window (editable in platform_rates), pauses while an offer is pending, streak function honours it; copy on card + recap. |
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
 | 34 | **CL** Telestration during voice-over - BUILT 2026-09-17 | phone test | Red/green strokes, erase, pause/resume as marks on the audio clock; shared player replays them. |
-| 35 | **CM** In Touch - knock to connect + congratulate/clap | Medium-hard | Simultaneous-motion matching + face confirm; PB/achievement cards; Congratulate button -> clapping animation. Attorney hour + gym threshold session first. |
+| 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -55,7 +55,7 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
-## CM. "In Touch" - knock phones to connect; celebrate each other's PBs and achievements
+## CM. "In Touch" - knock phones to connect; celebrate each other's PBs and achievements - BUILT 2026-09-18 (gym tuning + IP hour pending)
 
 Opened 2026-09-18; **supersedes and unpauses AE and the connection half
 of F.** The social layer, kept exclusive to people you have met in person.
@@ -111,8 +111,39 @@ and achievement events already exist in the data (personal_bests,
 milestones, badges, engagement completion). In Touch tab: connect button,
 list of connections with their latest achievement, the feed of theirs to
 congratulate. Challenges (F's other half) remain out of scope.
-Estimate: knock 2-3 days; celebrations 1-2 days. Not started; the knock
-threshold session and the attorney hour are the two external steps.
+Estimate: knock 2-3 days; celebrations 1-2 days.
+
+**BUILT 2026-09-18 - whole flow, pending the two external steps (gym
+threshold session; attorney hour).** Needs `supabase/migrations_in_touch.sql`.
+- *Screen:* Profile → **In Touch** (both roles). "Knock to connect" asks
+  motion permission (iPhone one-tap), reads location if allowed, then
+  listens for a jolt above `KNOCK_THRESHOLD` (18 m/s² above gravity - a
+  starting value; a **live bar** under the button shows the sensor so the
+  gym session can tune it). On a jolt it calls `register_knock`, then polls
+  up to 5 × 0.7 s for the other phone's report; a match shows "Connect
+  with <name>?" with their face; both confirm (`confirm_connection`);
+  15-second timeout with a plain message.
+- *Fallback:* "Show my code" - a 60-second server token the other person
+  types (`issue_connect_token` / `connect_by_token`). Built as a typed code
+  rather than a camera-scanned QR: same in-person guarantee, no scanning
+  library needed; the QR form can follow if the code feels clumsy.
+- *Server matching:* jolts within 600 ms and ~60 m among users in connect
+  mode, each knock consumed once; pairs stored in `connections` (ordered
+  pair, unique, via knock|qr, both-side flags, pending → confirmed → ended).
+- *Their wins:* `in_touch_feed` - connections' PBs and goal completions,
+  last 30 days, with a **Congratulate <name>** button (one per person per
+  event; `congratulate` refuses non-connections). Sent = "👏 sent".
+- *Homepage (both roles):* an "🤝 In Touch" block with connection requests
+  (Confirm / No), **"<name> congratulated you"** chips, and up to three of
+  your people's latest wins with Congratulate. Tapping a congratulation
+  plays the **clap**: full-screen, the congratulator's photo pulsing,
+  clapping hands animating, "<name> is clapping for you" and the PB or
+  goal; ~3 s, a short vibration pattern, tap to dismiss; marked seen.
+- *Privacy as decided:* PBs and goal completions only; Disconnect on each
+  row; no clap-back.
+To do before launch: knock threshold on real phones in a gym; the IP hour;
+push delivery when CE exists. Streak milestones and badges as feed events
+are a small follow-up (only PBs and goal completions today).
 
 ---
 

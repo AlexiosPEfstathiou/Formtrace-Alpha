@@ -617,6 +617,7 @@
   .fb-opt.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CC selected answer */
   .vo-tool.on{box-shadow:0 0 0 2px currentColor inset;font-weight:900;}   /* Item CL selected colour */
   .lv-pick.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CG level */
+  @keyframes clap{0%,100%{transform:scale(1) rotate(-6deg);}50%{transform:scale(1.25) rotate(6deg);}}  #clap-overlay.on{display:flex;}  #clap-overlay.on #clap-hands{animation:clap .28s ease-in-out 7;}  #clap-overlay.on #clap-avatar{animation:top1-pulse 1.4s ease-in-out infinite;}   /* Item CM */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
   /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
@@ -1201,6 +1202,7 @@
       <div id="home-callproposal" class="home-call" style="display:none"></div>
     <div id="home-certstatus" class="home-reviews" style="display:none"></div>
     <div id="home-milestone" class="home-milestone" style="display:none"></div>
+    <div id="home-intouch" class="home-reviews" style="display:none"></div>
     <div id="home-renewal" class="home-call" style="display:none"></div>
     <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
     <div id="home-recap" class="home-milestone" style="display:none"></div>
@@ -1462,6 +1464,18 @@
     <div class="top"><div class="back" id="goals-back">←</div><div style="flex:1"><h1>My goals</h1><div class="sub" id="goals-sub"></div></div></div>
     <div class="body" id="goals-body"></div>
   </section>
+
+  <!-- ============ IN TOUCH (Item CM) ============ -->
+  <section class="screen" id="s-intouch">
+    <div class="top"><div class="back" id="it-back">←</div><div style="flex:1"><h1>In Touch</h1><div class="sub">People you've met - knock phones to connect</div></div></div>
+    <div class="body" id="it-body"></div>
+  </section>
+  <div id="clap-overlay" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(11,14,17,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px">
+    <div id="clap-avatar" class="avatar" style="width:96px;height:96px;font-size:34px"></div>
+    <div id="clap-hands" style="font-size:64px;line-height:1">👏</div>
+    <div id="clap-name" style="font-weight:800;font-size:18px"></div>
+    <div id="clap-text" style="font-size:14px;color:var(--muted)"></div>
+  </div>
 
   <!-- ============ SUBMISSION REVIEW (coach) ============ -->
   <section class="screen" id="s-review">
@@ -3470,6 +3484,7 @@ async function renderHome(){
     ]);
     await Promise.all([
       renderHomeStreakRisk($("#home-streakrisk"), engs),
+      renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
       renderHomeNextGoal($("#home-nextgoal"), engs),   // Item CD: between-goals nudge
       renderHomeWeekRecap($("#home-recap"), engs),   // Item CF (card version)
@@ -3499,6 +3514,7 @@ async function renderHome(){
       renderHomeVacation($("#home-vacation")),
       renderHomeCallProposal($("#home-callproposal")),
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
+      renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       store._sb.rpc("refresh_coach_streak_scores").catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
     ]);
@@ -3919,6 +3935,134 @@ async function afterFeedbackHandoff(eng,role,kind){
   const ok=await openConfirm({title:`Offer ${name} their next goal?`,body:`"${eng.goal_title||"Their goal"}" is complete. Proposing the next block now is the best moment - they are deciding whether to keep going.`,confirmLabel:"Offer next goal",cancelLabel:"Not this time"});
   if(!ok) return;
   openOffer(null,{trainee_id:eng.trainee_id,name,title:eng.goal_title?`${eng.goal_title} - next block`:""});
+}
+/* ---- Item CM: In Touch ------------------------------------------------------------
+   Connect by KNOCKING phones: each phone's motion sensor sees the jolt; both report
+   it; the server pairs jolts within 600 ms / ~60 m among users in connect mode; each
+   side then sees the other's face and confirms. Fallback (motion denied): a 60-second
+   code the other person types. Once connected, each sees the other's PBs and goal
+   completions with one "Congratulate" button; the recipient gets a homepage card
+   that plays a short clap. */
+const KNOCK_THRESHOLD=18;   // m/s² above gravity; tune on real phones (see the live readout on the Connect screen)
+let knockState=null;
+function avatarHtml(p,size){ return `<div class="avatar" data-avatar="${escapeHtml((p&&p.avatar_path)||"")}" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.36)}px">${escapeHtml((p&&p.avatar_initials)||initials((p&&p.display_name)||"?"))}</div>`; }
+async function renderInTouch(){
+  const body=$("#it-body"); body.innerHTML=`<div class="empty" style="padding:30px"><div class="spin" style="margin:0 auto"></div></div>`;
+  $("#it-back").onclick=()=>go("profile");
+  try{
+    const [connRes,feedRes]=await Promise.all([
+      store._sb.from("connections").select("*").or(`a.eq.${ME.id},b.eq.${ME.id}`),
+      store._sb.rpc("in_touch_feed")
+    ]);
+    const conns=(connRes.data||[]).filter(c=>c.status!=="ended"); const feed=feedRes.data||[];
+    const otherIds=[...new Set(conns.map(c=>c.a===ME.id?c.b:c.a))];
+    let profs={}; if(otherIds.length){ const { data }=await store._sb.from("profiles").select("id,display_name,avatar_path,avatar_initials,role").in("id",otherIds); for(const p of (data||[])) profs[p.id]=p; }
+    body.innerHTML="";
+    // connect card
+    const cc=document.createElement("div"); cc.className="card"; cc.style.marginBottom="12px";
+    cc.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Connect with someone here</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Both of you open this screen and tap <b style="color:var(--ink)">Knock to connect</b>, then knock your phones together. You each see the other's face and confirm.</div>
+      <button class="btn primary" id="it-knock">🤝 Knock to connect</button>
+      <div id="it-knock-status" style="font-size:12.5px;color:var(--muted);margin-top:10px;min-height:18px"></div>
+      <div id="it-knock-meter" style="height:6px;border-radius:3px;background:var(--panel);overflow:hidden;margin-top:6px;display:none"><div style="height:100%;width:0;background:var(--lime)"></div></div>
+      <details style="margin-top:10px"><summary style="font-size:12px;color:var(--faint);cursor:pointer">Phone won't knock? Use a code instead</summary>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button class="btn sm ghost" id="it-code-show" style="width:auto">Show my code</button><b id="it-code" style="font-size:20px;letter-spacing:.12em"></b><span id="it-code-ttl" style="font-size:11px;color:var(--faint)"></span></div>
+        <div style="display:flex;gap:8px;margin-top:8px"><input id="it-code-in" placeholder="Type their code" style="flex:1;text-transform:uppercase"><button class="btn sm" id="it-code-go" style="width:auto">Connect</button></div></details>`;
+    body.appendChild(cc);
+    $("#it-knock").addEventListener("click",()=>startKnock($("#it-knock-status"),$("#it-knock-meter")));
+    $("#it-code-show").addEventListener("click",async()=>{ try{ const { data, error }=await store._sb.rpc("issue_connect_token"); if(error) throw error; $("#it-code").textContent=data; let s=60; const tick=()=>{ $("#it-code-ttl").textContent=s>0?`valid ${s}s`:"expired - show again"; if(s-->0) setTimeout(tick,1000); else $("#it-code").textContent=""; }; tick(); }catch(e){ toast(e.message||"Couldn't make a code",3000); } });
+    $("#it-code-go").addEventListener("click",async()=>{ const code=$("#it-code-in").value.trim(); if(!code) return; try{ const { data, error }=await store._sb.rpc("connect_by_token",{p_token:code}); if(error) throw error; toast(`Request sent to ${data.other.display_name} - they confirm on their phone`,3500); $("#it-code-in").value=""; renderInTouch(); }catch(e){ toast(e.message||"Couldn't connect",4000); } });
+    // pending
+    const pend=conns.filter(c=>c.status==="pending");
+    if(pend.length){ const pc=document.createElement("div"); pc.className="card"; pc.style.marginBottom="12px"; pc.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Waiting</div>`+pend.map(c=>{ const oid=c.a===ME.id?c.b:c.a, p=profs[oid]||{}, mine=(c.a===ME.id?c.a_ok:c.b_ok); return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0">${avatarHtml(p,36)}<div style="flex:1"><b>${escapeHtml(p.display_name||"Someone")}</b><div style="font-size:11.5px;color:var(--faint)">${mine?"waiting for them to confirm":"wants to connect with you"}</div></div>${mine?"":`<button class="btn sm ghost" data-conn-no="${c.id}" style="width:auto">No</button><button class="btn primary sm" data-conn-yes="${c.id}" style="width:auto">Confirm</button>`}</div>`; }).join(""); body.appendChild(pc); wireConnButtons(pc,()=>renderInTouch()); }
+    // connections
+    const conf=conns.filter(c=>c.status==="confirmed");
+    const lc=document.createElement("div"); lc.className="card"; lc.style.marginBottom="12px";
+    lc.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Your people · ${conf.length}</div>`+(conf.length?conf.map(c=>{ const oid=c.a===ME.id?c.b:c.a, p=profs[oid]||{}; return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0">${avatarHtml(p,36)}<div style="flex:1"><b>${escapeHtml(p.display_name||"Someone")}</b><div style="font-size:11.5px;color:var(--faint)">${p.role==="coach"?"coach":"trainee"} · since ${escapeHtml(fmtDay(String(c.confirmed_at||c.created_at).slice(0,10)))}</div></div><button class="btn sm ghost" data-conn-no="${c.id}" style="width:auto;color:var(--faint)">Disconnect</button></div>`; }).join(""):`<div style="font-size:12.5px;color:var(--faint)">Nobody yet - knock phones with someone you train with.</div>`);
+    body.appendChild(lc); wireConnButtons(lc,()=>renderInTouch());
+    // feed
+    const fc=document.createElement("div"); fc.className="card";
+    fc.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Their wins · last 30 days</div>`+(feed.length?feed.map(ev=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line2)">${avatarHtml(ev,34)}<div style="flex:1;min-width:0"><div style="font-size:13px"><b>${escapeHtml(ev.display_name||"")}</b> · ${ev.kind==="pb"?"🏆 PB":"🎯"} ${escapeHtml(ev.text)}</div><div style="font-size:11px;color:var(--faint)">${escapeHtml(fmtDay(String(ev.at).slice(0,10)))}</div></div>${ev.congratulated?`<span style="font-size:12px;color:var(--lime);font-weight:700">👏 sent</span>`:`<button class="btn sm" data-congrat="${ev.user_id}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto">Congratulate ${escapeHtml((ev.display_name||"").split(" ")[0])}</button>`}</div>`).join(""):`<div style="font-size:12.5px;color:var(--faint)">Nothing yet. PBs and completed goals of your people show up here.</div>`);
+    body.appendChild(fc); wireCongrats(fc);
+    hydrateAvatars(body);
+  }catch(err){ console.error("in touch (run migrations_in_touch.sql)",err); body.innerHTML=`<div class="empty" style="padding:40px 20px"><div class="ic">🤝</div><p>In Touch isn't available yet.</p></div>`; }
+}
+function wireConnButtons(root,after){
+  root.querySelectorAll("[data-conn-yes]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:b.getAttribute("data-conn-yes"),p_accept:true}); if(error) throw error; toast("Connected 🤝",2000); after&&after(); }catch(e){ toast(e.message||"Couldn't confirm",3000); } }));
+  root.querySelectorAll("[data-conn-no]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:b.getAttribute("data-conn-no"),p_accept:false}); if(error) throw error; after&&after(); }catch(e){ toast(e.message||"Couldn't update",3000); } }));
+}
+function wireCongrats(root){
+  root.querySelectorAll("[data-congrat]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { error }=await store._sb.rpc("congratulate",{p_to:b.getAttribute("data-congrat"),p_kind:b.getAttribute("data-kind"),p_ref:b.getAttribute("data-ref"),p_text:b.getAttribute("data-text")}); if(error) throw error; b.replaceWith(Object.assign(document.createElement("span"),{textContent:"👏 sent",style:"font-size:12px;color:var(--lime);font-weight:700"})); }catch(e){ toast(e.message||"Couldn't send",3000); b.disabled=false; } }));
+}
+/* The knock. Listens to devicemotion for up to 15 s, reports the first jolt above
+   the threshold, then polls the server briefly for the other phone's report. */
+async function startKnock(statusEl,meterEl){
+  if(knockState){ return; }
+  const say=t=>{ if(statusEl) statusEl.textContent=t; };
+  try{
+    if(typeof DeviceMotionEvent!=="undefined" && typeof DeviceMotionEvent.requestPermission==="function"){ const r=await DeviceMotionEvent.requestPermission().catch(()=>"denied"); if(r!=="granted"){ say("Motion permission denied - use a code below."); return; } }
+    if(!("DeviceMotionEvent" in window)){ say("This phone can't sense a knock - use a code below."); return; }
+  }catch(e){}
+  let pos=null; try{ pos=await new Promise(res=>{ const t=setTimeout(()=>res(null),2500); navigator.geolocation.getCurrentPosition(p=>{ clearTimeout(t); res(p.coords); },()=>{ clearTimeout(t); res(null); },{maximumAge:60000,timeout:2500}); }); }catch(e){}
+  knockState={done:false}; if(meterEl) meterEl.style.display="";
+  say("Ready - knock your phones together now.");
+  let fired=false; const bar=meterEl&&meterEl.firstElementChild;
+  const onMotion=async e=>{
+    const a=e.acceleration||{}; let x=a.x,y=a.y,z=a.z;
+    if(x==null&&e.accelerationIncludingGravity){ const g=e.accelerationIncludingGravity; x=g.x; y=g.y; z=(g.z||0)-9.81; }
+    const mag=Math.hypot(x||0,y||0,z||0);
+    if(bar) bar.style.width=Math.min(100,mag/KNOCK_THRESHOLD*100)+"%";
+    if(fired||mag<KNOCK_THRESHOLD) return;
+    fired=true; window.removeEventListener("devicemotion",onMotion);
+    say("Knock felt - looking for the other phone…");
+    try{
+      let res=await store._sb.rpc("register_knock",{p_lat:pos?pos.latitude:null,p_lng:pos?pos.longitude:null,p_magnitude:+mag.toFixed(1)});
+      let d=res.data; for(let i=0;i<5 && !(d&&d.matched);i++){ await new Promise(r=>setTimeout(r,700)); res=await store._sb.rpc("register_knock",{p_lat:null,p_lng:null,p_magnitude:0,p_poll_only:true}); d=res.data; }
+      if(d&&d.matched) showKnockMatch(d,statusEl); else say("No matching knock. Make sure you both tapped Knock first, then try again.");
+    }catch(err){ console.error("knock",err); say(err.message||"Couldn't register the knock."); }
+    knockState=null;
+  };
+  window.addEventListener("devicemotion",onMotion);
+  setTimeout(()=>{ if(!fired){ window.removeEventListener("devicemotion",onMotion); knockState=null; say("Timed out - tap Knock to connect and try again."); if(meterEl) meterEl.style.display="none"; } },15000);
+}
+async function showKnockMatch(d,statusEl){
+  const o=d.other||{};
+  const ok=await openConfirm({title:`Connect with ${o.display_name||"this person"}?`,body:`Your phones knocked. You'll see each other's PBs and achievements - nothing else.`,confirmLabel:"Connect",cancelLabel:"Not them"});
+  try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:d.connection_id,p_accept:!!ok}); if(error) throw error;
+    if(ok){ toast(`🤝 ${o.display_name||"Connected"} - waiting for them to confirm too`,3000); } renderInTouch(); }
+  catch(e){ toast(e.message||"Couldn't confirm",3000); }
+}
+/* Homepage: connection requests to confirm, claps received, and connections' wins to congratulate. */
+async function renderHomeInTouch(el){
+  if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
+  try{
+    const [cr,cl,fd]=await Promise.all([
+      store._sb.from("connections").select("*").eq("status","pending").or(`a.eq.${ME.id},b.eq.${ME.id}`),
+      store._sb.from("celebrations").select("*").eq("to_user",ME.id).is("seen_at",null).order("created_at",{ascending:false}),
+      store._sb.rpc("in_touch_feed")
+    ]);
+    const pend=(cr.data||[]).filter(c=>(c.a===ME.id?!c.a_ok:!c.b_ok)); const claps=cl.data||[]; const feed=(fd.data||[]).filter(ev=>!ev.congratulated).slice(0,3);
+    if(!pend.length&&!claps.length&&!feed.length) return;
+    const ids=[...new Set([...pend.map(c=>c.a===ME.id?c.b:c.a),...claps.map(c=>c.from_user)])]; let profs={};
+    if(ids.length){ const { data }=await store._sb.from("profiles").select("id,display_name,avatar_path,avatar_initials").in("id",ids); for(const p of (data||[])) profs[p.id]=p; }
+    let h=`<div class="rv-title">🤝 In Touch</div><div class="rv-row">`;
+    for(const c of pend){ const p=profs[c.a===ME.id?c.b:c.a]||{}; h+=`<div class="rv-chip" style="cursor:default"><span class="rv-ic">🤝</span><span class="rv-tx"><b>${escapeHtml(p.display_name||"Someone")} wants to connect</b><span style="display:flex;gap:8px;margin-top:6px"><button class="btn sm ghost" data-conn-no="${c.id}" style="width:auto">No</button><button class="btn primary sm" data-conn-yes="${c.id}" style="width:auto">Confirm</button></span></span></div>`; }
+    for(const c of claps){ const p=profs[c.from_user]||{}; h+=`<button class="rv-chip" data-clap="${c.id}"><span class="rv-ic">👏</span><span class="rv-tx"><b>${escapeHtml(p.display_name||"Someone")} congratulated you</b><span>${escapeHtml(c.event_text)} · tap</span></span></button>`; }
+    for(const ev of feed){ h+=`<div class="rv-chip" style="cursor:default"><span class="rv-ic">${ev.kind==="pb"?"🏆":"🎯"}</span><span class="rv-tx"><b>${escapeHtml(ev.display_name||"")} · ${escapeHtml(ev.text)}</b><span><button class="btn sm" data-congrat="${ev.user_id}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto;margin-top:6px">Congratulate ${escapeHtml((ev.display_name||"").split(" ")[0])}</button></span></span></div>`; }
+    el.innerHTML=h+`</div>`; el.style.display="";
+    wireConnButtons(el,()=>renderHomeInTouch(el)); wireCongrats(el);
+    el.querySelectorAll("[data-clap]").forEach(b=>b.addEventListener("click",async()=>{ const c=claps.find(x=>x.id===b.getAttribute("data-clap")); const p=profs[c.from_user]||{}; playClap(p,c.event_text); try{ await store._sb.from("celebrations").update({seen_at:new Date().toISOString()}).eq("id",c.id); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; }));
+  }catch(e){ /* migration not run */ }
+}
+function playClap(p,text){
+  const ov=$("#clap-overlay"); if(!ov) return;
+  $("#clap-avatar").outerHTML=avatarHtml(p,96).replace('class="avatar"','class="avatar" id="clap-avatar"');
+  $("#clap-name").textContent=`${p.display_name||"Someone"} is clapping for you`;
+  $("#clap-text").textContent=text||"";
+  ov.classList.add("on"); hydrateAvatars(ov);
+  try{ navigator.vibrate&&navigator.vibrate([60,40,60,40,60]); }catch(e){}
+  const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); };
+  ov.addEventListener("click",close); setTimeout(close,3200);
 }
 /* Item CD (remainder): the between-goals card. Only when the trainee has NO
    active goal, finished one in the last 30 days, and no direct offer is
@@ -10560,6 +10704,9 @@ async function renderProfile(){
 
   }
 
+  /* Item CM: In Touch entry point - both roles. */
+  html+=`<div class="section-h"><div class="eyebrow">In Touch</div></div>
+  <div class="card" style="margin:0 0 12px;display:flex;align-items:center;gap:12px;cursor:pointer" id="it-open"><div style="font-size:26px">🤝</div><div style="flex:1"><div style="font-weight:700">People you've met</div><div style="font-size:12px;color:var(--muted)">Knock phones to connect. Cheer each other's PBs and achievements.</div></div><div style="color:var(--faint)">›</div></div>`;
   /* Item BX: the coach's standing on the trainees'-streaks ranking. */
   if(roleOf()==="coach"){
     html+=`<div class="section-h"><div class="eyebrow">Your trainees' streaks</div></div>
@@ -10627,6 +10774,7 @@ async function renderProfile(){
   wireReferralCard();   // Item BN: copy/share + live counts for the referral card
   wireCertCard();       // certifications (BH badge system)
   wireTop1Card();       // Item BX standing
+  $("#it-open")?.addEventListener("click",()=>{ go("intouch"); renderInTouch(); });   // Item CM
   $("#pf-save").addEventListener("click",async()=>{
     try{ ME=await store.auth.updateProfile({display_name:$("#pf-name").value.trim(),city:$("#pf-city").value.trim(),bio:$("#pf-bio").value.trim()}); toast("Profile saved ✓"); }
     catch(err){console.error(err);toast("Couldn't save profile",4000);}
