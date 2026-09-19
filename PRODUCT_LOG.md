@@ -251,9 +251,18 @@ Tester's words in quotes. Not yet fixed unless marked.**
   fails. The next "not playing" report comes with a cause attached.
   Leading suspects meanwhile: an iPhone playing Android-recorded WebM
   (code 4), or expired signed URLs on a screen left open (http 400).
-- **CN-5/6 update:** videos played again on the coach side later in the day
-  with no change made; the trainee's review view still would not play.
-  Unresolved; diagnosis now depends on CN-16's log entries.
+- **CN-5/6 ROOT CAUSE FOUND 2026-09-19, via the error log the owner pasted:
+  "trims is not defined" (unhandled promise, trainee-workout / listings).**
+  In `hydrateVideos` the video-trim work (BC, 2026-09-15) declared
+  `let trims={}` INSIDE a try block; the read `trims[path]` further down
+  was outside it, so the function threw before rendering and no video card
+  on that screen ever appeared. The voice-over player does not use
+  hydrateVideos - hence "some videos play, some don't", and the coach's
+  later "they play now" (a screen without trim metadata took a path that
+  happened not to throw). Fixed: `trims` declared at function scope.
+  Lesson: the smoke test parses; it does not execute renderers - CN-16's
+  logging is what surfaced this, and the unhandled-promise hook had been
+  recording it all along. Read the error log FIRST on every test day.
 - Also recorded: while fixing CN-5 a duplicate declaration was pushed
   before the parse check ran; the live app did not parse for ~2 minutes
   until reverted. Rule restated: the parse check gates every push.

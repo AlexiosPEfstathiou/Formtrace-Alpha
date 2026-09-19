@@ -2567,12 +2567,12 @@ async function hydrateVideos(root){
   /* Rotation overrides, fetched once for everything on screen rather than
      per video. Keyed on the storage path, so a clip corrected in review is
      also corrected on the dashboard, in the feed, anywhere. */
-  let rots={};
+  let rots={}, trims={};   // CN-5/6 root cause: trims was declared inside the try below, out of scope where it is read - every screen with a video card threw "trims is not defined"
   try{
     const paths=[...scope.querySelectorAll("[data-video]:not([data-hydrated])")]
       .map(n=>n.getAttribute("data-video")).filter(Boolean);
     if(paths.length&&store.videoRotations) rots=await store.videoRotations(paths);
-    let trims={}; try{ if(paths.length&&store.videoMeta){ const meta=await store.videoMeta(paths); for(const p in meta){ if(meta[p].trim_in!=null||meta[p].trim_out!=null) trims[p]=meta[p]; } } }catch(e){ console.error("video trims",e); }   // Item BC
+    try{ if(paths.length&&store.videoMeta){ const meta=await store.videoMeta(paths); for(const p in meta){ if(meta[p].trim_in!=null||meta[p].trim_out!=null) trims[p]=meta[p]; } } }catch(e){ console.error("video trims",e); }   // Item BC
   }catch(e){ console.error("video rotations (run migrations_video_rotation.sql)",e); }
   /* Latency: signed-URL requests used to run one at a time, awaited in series
      per element - a screen with N videos paid N sequential round trips before
