@@ -4193,13 +4193,13 @@ async function renderHomeCallProposal(el){
     const otherName=eng?(eng.coach_id===ME.id?"your trainee":"your coach"):"someone";
     return `<button class="rv-chip" data-callprop-eng="${p.engagement_id}">
         <span class="rv-ic">🎥</span>
-        <span class="rv-tx"><b>${p.recur_every_days?"Recurring call":"Call"} proposed by ${otherName}</b><span>${escapeHtml(fmtDay(p.proposed_date))} · ${fmtTimeRange(p.start_time,p.end_time)}${p.recur_every_days?` · ${recurLabel(p.recur_every_days)}`:""}</span></span>
+        <span class="rv-tx"><b>${p.recur_every_days?"Recurring call":"Call"} proposed by ${otherName}</b><span>${escapeHtml(fmtDay(callLocal(p).date))} · ${callTimeRange(p)}${p.recur_every_days?` · ${recurLabel(p.recur_every_days)}`:""}</span></span>
       </button>`;
   }).join("");
   const todayChips=todayCalls.map(p=>{ const eng=engById[p.engagement_id]; const who=eng?(eng.coach_id===ME.id?"your trainee":"your coach"):"someone";
     return `<a class="rv-chip" style="text-decoration:none" ${p.meeting_url?`href="${escapeHtml(p.meeting_url)}" target="_blank" rel="noopener"`:`data-callprop-eng="${p.engagement_id}"`}>
       <span class="rv-ic">📹</span>
-      <span class="rv-tx"><b>Call today with ${who} · ${fmtTimeRange(p.start_time,p.end_time)}</b><span>${p.meeting_url?"Tap to join":"No link yet - tap to add one"}</span></span></a>`; }).join("");
+      <span class="rv-tx"><b>Call today with ${who} · ${callTimeRange(p)}</b><span>${p.meeting_url?"Tap to join":"No link yet - tap to add one"}</span></span></a>`; }).join("");
   el.innerHTML=(todayChips?`<div class="rv-title">📹 Call today</div><div class="rv-row">${todayChips}</div>`:"")+(chips?`<div class="rv-title" style="${todayChips?"margin-top:10px":""}">📅 Call proposal - respond within 24 hours</div><div class="rv-row">${chips}</div>`:"");
   el.style.display="";
   el.querySelectorAll("[data-callprop-eng]").forEach(b=>b.addEventListener("click",()=>{
@@ -6750,10 +6750,10 @@ async function renderEngagement(skipFetch){
     if(error) throw error;
     pendingCallByDate={};
     for(const p of (data||[])){
-      if(p.status==="pending"){ if(new Date(p.expires_at)>=new Date()) pendingCallByDate[p.proposed_date]=p; continue; }
-      if(!p.recur_every_days){ coachingDaysByDate[p.proposed_date]=p; continue; }
+      if(p.status==="pending"){ if(new Date(p.expires_at)>=new Date()) pendingCallByDate[callLocal(p).date]=p; continue; }
+      if(!p.recur_every_days){ coachingDaysByDate[callLocal(p).date]=p; continue; }
       // Item AY part 2: a recurring series - materialise a year of occurrences for display
-      let d=p.proposed_date, g=0; const horizon=addDaysISO(todayISO(),365);
+      let d=callLocal(p).date, g=0; const horizon=addDaysISO(todayISO(),365);
       while(d<=horizon && g++<400){ coachingDaysByDate[d]=coachingDaysByDate[d]||p; d=addDaysISO(d,p.recur_every_days); }
     }
   }catch(e){ console.error("coaching days load (run migrations_scheduled_calls.sql)",e); }
@@ -6858,8 +6858,8 @@ async function renderEngagement(skipFetch){
       const cell=document.createElement("div");
       cell.className="cal-day cal-tap cal-coaching"+(iso===today?" cal-today":"");
       cell.innerHTML=`<div class="dn">${d}</div><div class="cal-badge">🎥</div>`;
-      cell.title="Coaching call · "+fmtTimeRange(p.start_time,p.end_time);
-      cell.addEventListener("click",()=>{ if(p.meeting_url && iso===today){ window.open(p.meeting_url,"_blank","noopener"); return; } toast("Coaching call · "+fmtTimeRange(p.start_time,p.end_time)+(p.meeting_url?(iso===today?"":" · link on the Video call card"):" · no link yet - add one on the Video call card"),3200); });
+      cell.title="Coaching call · "+callTimeRange(p);
+      cell.addEventListener("click",()=>{ if(p.meeting_url && iso===today){ window.open(p.meeting_url,"_blank","noopener"); return; } toast("Coaching call · "+callTimeRange(p)+(p.meeting_url?(iso===today?"":" · link on the Video call card"):" · no link yet - add one on the Video call card"),3200); });
       addCell(cell);
       continue;
     }
@@ -6989,7 +6989,7 @@ async function renderEngagement(skipFetch){
       const pp=pendingCallByDate[iso]; const mine=pp.proposed_by===ME.id;
       cell.classList.add("cal-callpending"); if(!mine) cell.classList.add("cal-glisten");
       const bd=cell.querySelector(".cal-badge"); if(bd) bd.textContent="📅"; else cell.insertAdjacentHTML("beforeend",'<div class="cal-badge">📅</div>');
-      cell.title=(mine?"Your proposed call":"Proposed call - needs your response")+" · "+fmtTimeRange(pp.start_time,pp.end_time);
+      cell.title=(mine?"Your proposed call":"Proposed call - needs your response")+" · "+callTimeRange(pp);
     }
     addCell(cell);
   }
@@ -7531,10 +7531,28 @@ function renderDashboard(container, iAmCoach){
    for it to lead yet.
    ========================================================================= */
 function fmtTimeRange(a,b){ return a.slice(0,5)+"–"+b.slice(0,5); }
+/* CN-2: a proposal is a wall-clock date + time in the PROPOSER's zone (p.tz). A viewer in
+   another zone sees it converted to their own, with the zone named. Older rows without tz
+   are shown as written. */
+const MY_TZ=(()=>{ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||null; }catch(e){ return null; } })();
+function tzOffsetMin(zone,utcMs){ const f=new Intl.DateTimeFormat("en-US",{timeZone:zone,hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); const q={}; for(const p of f.formatToParts(new Date(utcMs))) q[p.type]=p.value; return (Date.UTC(+q.year,+q.month-1,+q.day,+q.hour,+q.minute,+q.second)-utcMs)/60000; }
+function zonedToUTC(dateISO,hm,zone){ const [y,m,d]=dateISO.split("-").map(Number); const [hh,mi]=hm.split(":").map(Number); const guess=Date.UTC(y,m-1,d,hh,mi||0); let off=tzOffsetMin(zone,guess); let utc=guess-off*60000; const off2=tzOffsetMin(zone,utc); if(off2!==off) utc=guess-off2*60000; return utc; }
+function callLocal(p){
+  if(!p) return {date:"",start:"",end:"",converted:false};
+  const base={date:p.proposed_date,start:(p.start_time||"").slice(0,5),end:(p.end_time||"").slice(0,5),converted:false};
+  if(!p.tz||!MY_TZ||p.tz===MY_TZ) return base;
+  try{
+    const s=new Date(zonedToUTC(p.proposed_date,base.start,p.tz)), e=new Date(zonedToUTC(p.proposed_date,base.end,p.tz));
+    const loc=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`, hm=d=>`${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    let zone=MY_TZ; try{ zone=new Intl.DateTimeFormat("en-GB",{timeZone:MY_TZ,timeZoneName:"short"}).formatToParts(s).find(x=>x.type==="timeZoneName").value; }catch(err){}
+    return {date:loc(s),start:hm(s),end:hm(e),converted:true,zone,theirZone:p.tz};
+  }catch(err){ return base; }
+}
+function callTimeRange(p){ const l=callLocal(p); return l.start+"-"+l.end+(l.converted?` (${l.zone}, your time)`:""); }
 /* Item AY part 2: recurring calls. recur_every_days null = one-time. */
 function recurLabel(n){ n=Number(n)||0; if(!n) return "one-time"; return n%7===0 ? (n===7?"every week":`every ${n/7} weeks`) : (n===1?"every day":`every ${n} days`); }
 function nextOccurrence(p, fromISO){
-  let d=p.proposed_date; if(!p.recur_every_days) return d>=fromISO?d:null;
+  let d=callLocal(p).date; if(!p.recur_every_days) return d>=fromISO?d:null;
   let g=0; while(d<fromISO && g++<2000) d=addDaysISO(d,p.recur_every_days);
   return d;
 }
@@ -7556,8 +7574,8 @@ async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
      thread exists at a time by construction. */
   const today=todayISO();
   const series = rows.find(r=>r.status==="accepted" && r.recur_every_days);
-  const oneTime = rows.find(r=>r.status==="accepted" && !r.recur_every_days && r.proposed_date>=today);
-  const lastPast = rows.find(r=>r.status==="accepted" && !r.recur_every_days && r.proposed_date<today);
+  const oneTime = rows.find(r=>r.status==="accepted" && !r.recur_every_days && callLocal(r).date>=today);
+  const lastPast = rows.find(r=>r.status==="accepted" && !r.recur_every_days && callLocal(r).date<today);
   const proposal = rows.find(r=>r.status==="pending") || null;
   const isExpired = proposal && new Date(proposal.expires_at) < new Date();
   body.innerHTML="";
@@ -7569,19 +7587,19 @@ async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
   if(series){
     const nxt=nextOccurrence(series,today);
     const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime)">🔁 Recurring call · ${recurLabel(series.recur_every_days)}</div>
-      <div style="font-size:15px;font-weight:700;margin-top:6px">${fmtTimeRange(series.start_time,series.end_time)} · next ${escapeHtml(fmtDay(nxt))}</div>`);
+      <div style="font-size:15px;font-weight:700;margin-top:6px">${callTimeRange(series)} · next ${escapeHtml(fmtDay(nxt))}</div>`);
     d.appendChild(meetingLinkBlock(series,()=>renderEngagement(true)));
     d.appendChild(cancelBtn(series,"Stop recurring"));
   }
   if(oneTime){
     const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime);margin-top:${series?"14px":"0"}">✓ Call scheduled</div>
-      <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(oneTime.proposed_date))} · ${fmtTimeRange(oneTime.start_time,oneTime.end_time)}</div>`);
+      <div style="font-size:15px;font-weight:700;margin-top:6px">${escapeHtml(fmtDay(callLocal(oneTime).date))} · ${callTimeRange(oneTime)}</div>`);
     d.appendChild(meetingLinkBlock(oneTime,()=>renderEngagement(true)));
     d.appendChild(cancelBtn(oneTime,"Cancel call"));
   }
   if(proposal && !isExpired){
     const iProposedIt=(proposal.proposed_by===ME.id);
-    const when=`${escapeHtml(fmtDay(proposal.proposed_date))} · ${fmtTimeRange(proposal.start_time,proposal.end_time)}${proposal.recur_every_days?` · <span style="color:var(--lime)">${recurLabel(proposal.recur_every_days)}</span>`:""}`;
+    const when=`${escapeHtml(fmtDay(callLocal(proposal).date))} · ${callTimeRange(proposal)}${proposal.recur_every_days?` · <span style="color:var(--lime)">${recurLabel(proposal.recur_every_days)}</span>`:""}`;
     if(iProposedIt){
       const d=add(`<div style="font-size:13px;color:var(--muted);margin-top:${(series||oneTime)?"14px":"0"}">Waiting for ${escapeHtml((other||{}).display_name||"a response")}</div>
         <div style="font-size:15px;font-weight:700;margin-top:6px">${when}</div>`);
@@ -7664,6 +7682,7 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
           {p_engagement_id:eng.id,p_date:dateStr,p_start_time:startT,p_end_time:end,p_recur_every_days:recur});
         if(error) throw error;
       }
+      try{ if(MY_TZ){ const { data:mine }=await store._sb.from("call_proposals").select("id").eq("engagement_id",eng.id).eq("proposed_by",ME.id).order("created_at",{ascending:false}).limit(1); if(mine&&mine[0]) await store._sb.rpc("set_call_tz",{p_id:mine[0].id,p_tz:MY_TZ}); } }catch(e){ console.error("set call tz (run migrations_call_tz.sql)",e); }   // CN-2
       toast(isCounter?"Suggestion sent ✓":"Proposal sent ✓");
       closeSheet();
       renderEngagement();
@@ -9295,8 +9314,10 @@ async function openReview(assignedId,readonly=false){
   const subs=await store.submissions.list({assigned_id:assignedId});
   currentSubmission=subs[0];
   if(!currentSubmission){toast("No submission found");return;}
+  /* CN-8: the review may belong to any of this workout's submissions (a retake, a resubmission) - find it across all of them and open THAT submission, so the trainee sees the coach's notes rather than a bare summary. */
+  let existing=null;
+  if(readonly){ try{ const { data }=await store._sb.from("reviews").select("*").in("submission_id",subs.map(s=>s.id)).order("created_at",{ascending:false}); existing=(data||[])[0]||null; if(existing){ currentSubmission=subs.find(s=>s.id===existing.submission_id)||currentSubmission; } }catch(e){ console.error("review load",e); } }
   const rep=currentSubmission.report||{};
-  const existing=readonly?(await store.reviews.list({submission_id:currentSubmission.id}))[0]:null;
   // per-set label rows carry the trainee's rep verdict and the coach's grade
   let labelBy={};
   try{

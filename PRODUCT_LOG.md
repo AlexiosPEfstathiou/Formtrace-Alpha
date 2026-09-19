@@ -85,14 +85,24 @@ Tester's words in quotes. Not yet fixed unless marked.**
   The confirmation shows the committed total as a bare number. Show the
   offer's currency symbol (from `price_text`, as the offer card already
   does) on every money line of the dialogue. Quick.
-- **CN-2 · Call proposal has time-zone discrepancies.** The proposed time
+- **CN-2 · Call proposal has time-zone discrepancies.** FIXED 2026-09-19
+  (`migrations_call_tz.sql`): proposals now record the proposer's IANA
+  zone; a viewer in another zone sees date and time converted to their own
+  with the zone named ("16:00-16:30 (BST, your time)"), on the card, the
+  homepage chips and the calendar placement. Older rows without a zone show
+  as written. Verified in code: 18:00 Athens → 16:00 London. The proposed time
   is likely stored or displayed in UTC on one side and local on the other
   (`proposed_at` as timestamptz rendered with a UTC slice somewhere). Fix:
   store as timestamptz, render with the viewer's local time everywhere,
   and print the zone abbreviation next to the time on both cards so a
   cross-zone coach/trainee see the same moment. Verify on both phones.
 - **CN-3 · Call proposal must have Accept / Decline for the receiving
-  party, working the same both ways.** The card shows Accept/Decline only
+  party, working the same both ways.** Checked 2026-09-19: the card already
+  gives the receiver Accept / Decline / Suggest another time regardless of
+  role (`proposed_by !== ME.id`), on the engagement screen and the
+  homepage. The reported symptom is most likely CN-2 (a zone-shifted
+  proposal reading as expired or mistimed). Re-test after CN-2; reopen with
+  a screenshot if the buttons are still missing on one side. The card shows Accept/Decline only
   in one direction (the trainee-side path was added later - AY part 2).
   Make one `renderCallProposal(el, proposal, iAmReceiver)` used by both
   homepages and both calendars; the receiver always gets Accept / Decline
@@ -125,7 +135,14 @@ Tester's words in quotes. Not yet fixed unless marked.**
   risk", never "your streak is 0" - re-check the rule.
 - **CN-8 · Reviewed workout is not clickable by the trainee in the
   calendar to see the notes; on the homepage it looks reviewed but opens
-  a summary without any coach feedback.** Two paths, one screen: the
+  a summary without any coach feedback.** PARTLY FIXED 2026-09-19: the
+  read-only review view looked for the review on the FIRST submission of
+  the workout only; with more than one submission (retake, resubmission)
+  the review sat on another and the trainee got a bare summary. It now
+  finds the review across all of the workout's submissions and opens the
+  right one. The calendar tap path (`engDayAction`) routes reviewed
+  sessions to the same view; if a day still opens nothing for the
+  trainee, that is a separate wiring fault - re-test and report. Two paths, one screen: the
   calendar day-tap opens the plain completed-workout summary instead of
   the review view (`openReviewedWorkout`) when a review exists; the
   homepage "Reviewed" chip resolves to the same summary. Route both to
