@@ -174,6 +174,15 @@ Tester's words in quotes. Not yet fixed unless marked.**
   `migrations_in_touch_fix.sql` (poll reads the latest knock regardless and
   returns the connection); match window widened to 0.8 s; the client now
   polls for 7 s instead of 3.5. **Fixed 2026-09-19** - run the SQL.
+- **CN-13 · In Touch, three from the second run - all fixed 2026-09-19.**
+  (a) Both phones now get the same screen: "<Name> wants to connect!" with
+  **Connect** / **No thanks!** (b) "Tester got notifications for my past
+  PBs" - the feed looked back 30 days regardless of when you connected;
+  now only wins after the connection was made (`migrations_in_touch_feed_since.sql`).
+  (c) "Clicked the congratulation, phone vibrated, nothing showed" - the
+  clap overlay had an inline `display:none`, which an `.on` class can
+  never override; moved to a stylesheet rule. Lesson: no inline display
+  on anything a class toggles.
 - Also recorded: while fixing CN-5 a duplicate declaration was pushed
   before the parse check ran; the live app did not parse for ~2 minutes
   until reverted. Rule restated: the parse check gates every push.

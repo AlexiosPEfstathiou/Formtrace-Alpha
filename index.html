@@ -617,7 +617,7 @@
   .fb-opt.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CC selected answer */
   .vo-tool.on{box-shadow:0 0 0 2px currentColor inset;font-weight:900;}   /* Item CL selected colour */
   .lv-pick.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CG level */
-  @keyframes clap{0%,100%{transform:scale(1) rotate(-6deg);}50%{transform:scale(1.25) rotate(6deg);}}  #clap-overlay.on{display:flex;}  #clap-overlay.on #clap-hands{animation:clap .28s ease-in-out 7;}  #clap-overlay.on #clap-avatar{animation:top1-pulse 1.4s ease-in-out infinite;}   /* Item CM */
+  @keyframes clap{0%,100%{transform:scale(1) rotate(-6deg);}50%{transform:scale(1.25) rotate(6deg);}}  #clap-overlay{display:none;}  #clap-overlay.on{display:flex;}  #clap-overlay.on #clap-hands{animation:clap .28s ease-in-out 7;}  #clap-overlay.on #clap-avatar{animation:top1-pulse 1.4s ease-in-out infinite;}   /* Item CM */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
   /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
@@ -1471,7 +1471,7 @@
     <div class="top"><div class="back" id="it-back">←</div><div style="flex:1"><h1>In Touch</h1><div class="sub">People you've met - knock phones to connect</div></div></div>
     <div class="body" id="it-body"></div>
   </section>
-  <div id="clap-overlay" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(11,14,17,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px">
+  <div id="clap-overlay" style="position:fixed;inset:0;z-index:250;background:rgba(11,14,17,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px">
     <div id="clap-avatar" class="avatar" style="width:96px;height:96px;font-size:34px"></div>
     <div id="clap-hands" style="font-size:64px;line-height:1">👏</div>
     <div id="clap-name" style="font-weight:800;font-size:18px"></div>
@@ -4028,7 +4028,7 @@ async function startKnock(statusEl,meterEl){
 }
 async function showKnockMatch(d,statusEl){
   const o=d.other||{};
-  const ok=await openConfirm({title:`Connect with ${o.display_name||"this person"}?`,body:`Your phones knocked. You'll see each other's PBs and achievements - nothing else.`,confirmLabel:"Connect",cancelLabel:"Not them"});
+  const ok=await openConfirm({title:`${o.display_name||"Someone"} wants to connect!`,body:`Your phones knocked. Connect and you'll see each other's PBs and achievements - nothing else.`,confirmLabel:"Connect",cancelLabel:"No thanks!"});
   try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:d.connection_id,p_accept:!!ok}); if(error) throw error;
     if(ok){ toast(`🤝 ${o.display_name||"Connected"} - waiting for them to confirm too`,3000); } renderInTouch(); }
   catch(e){ toast(e.message||"Couldn't confirm",3000); }
