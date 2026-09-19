@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1414,6 +1414,11 @@
   <section class="screen" id="s-profile">
     <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Profile</h1></div><div class="signout" id="prof-signout">Sign out</div></div>
     <div class="body" id="profile-body"></div>
+  </section>
+  <!-- ============ SETTINGS (CQ-6) - sections moved here from Profile at render time ============ -->
+  <section class="screen" id="s-settings">
+    <div class="top"><div class="back" data-go="profile">←</div><div style="flex:1"><h1>Settings</h1><div class="sub">Social profile · appearance · install · account</div></div></div>
+    <div class="body" id="settings-body"></div>
   </section>
 
   <!-- ============ COACH APPLICATION ============ -->
@@ -3182,7 +3187,8 @@ function go(name){
   if(name==="trainee-home")R(renderTraineeHome);
   if(name==="trainee-workout")R(renderAssignedWorkout);
   if(name==="listings")R(renderListings);
-  if(name==="profile")R(renderProfile);
+  if(name==="profile")R(async()=>{ await renderProfile(); moveSettingsSections(); });   // CQ-6
+  if(name==="settings")R(async()=>{ if(!$("#settings-body").children.length){ await renderProfile(); } moveSettingsSections(); });   // CQ-6
   if(name==="admin")R(renderAdmin);
   renderAppTabs(name);
 }
@@ -3208,11 +3214,11 @@ const TAB_SECTION={ // screen -> which tab should light up
   listings:"listings", "listing-new":"listings",
   coach:"coach", "ex-edit":"coach", "wo-build":"coach",
   market:"market",
-  profile:"profile", admin:"admin", notifications:"notifications", intouch:"intouch"
+  profile:"profile", settings:"profile", admin:"admin", notifications:"notifications", intouch:"intouch"
 };
 // Top-level destinations show the persistent bar; deep/editor screens hide it
 // so it never covers their own bottom action buttons.
-const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","admin","engagement","notifications","intouch"]);
+const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","settings","admin","engagement","notifications","intouch"]);
 function renderAppTabs(current){
   const bar=$("#app-tabbar"); if(!bar)return;
   if(!ME || !TAB_TOPLEVEL.has(current)){ bar.style.display="none"; showHeader(false); return; }
@@ -3251,7 +3257,7 @@ function showHeader(on){
   const sb=$("#streak-badge"), slot=$("#hdr-streak-slot"); if(sb&&slot&&sb.parentElement!==slot) slot.appendChild(sb);
   if(!_hdrWired){ _hdrWired=true;
     $("#hdr-profile").addEventListener("click",()=>go("profile"));
-    $("#hdr-settings").addEventListener("click",async()=>{ go("profile"); for(let i=0;i<12;i++){ const t=[...document.querySelectorAll("#s-profile .eyebrow")].find(e=>/Appearance/i.test(e.textContent)); if(t){ t.scrollIntoView({behavior:"smooth",block:"start"}); return; } await new Promise(r=>setTimeout(r,200)); } });
+    $("#hdr-settings").addEventListener("click",()=>go("settings"));   // CQ-6
   }
 }
 /* Notifications tab: a red count of visible cards. */
@@ -5275,6 +5281,9 @@ function renderIvEditor(){
       </div>`;
   }
   body.innerHTML=html;
+  /* CQ-6: avatar tap = view or replace; coach badges under the name */
+  try{ const av=$("#pf-avatar"); if(av){ hydrateAvatars(av.parentElement); av.addEventListener("click",async()=>{ const view=ME.avatar_path?await openConfirm({title:"Profile photo",body:"View it full size, or replace it?",confirmLabel:"View",cancelLabel:"Replace"}):false; if(view){ try{ const u=await playable(ME.avatar_path); if(u) openPhotoLightbox(u); }catch(e){} } else { const inp=$("#sp-photo-input"); if(inp) inp.click(); else toast("Open Settings → Social profile to add a photo",3000); } }); } }catch(e){}
+  (async()=>{ try{ if(ME.role==="coach"){ const facts=await loadCoachFacts([ME.id]); const el=$("#pf-badges"); if(el&&facts&&facts[ME.id]) el.innerHTML=badgeSpans(facts[ME.id],false); } }catch(e){} })();
   wireIvEditor();
 }
 function wireIvEditor(){
@@ -10776,6 +10785,21 @@ async function wireReferralCard(){
       +(s.next_at?`<div style="margin-top:4px;color:var(--faint)">${s.next_at-(s.qualified||0)} more qualified referral${(s.next_at-(s.qualified||0))===1?"":"s"} to ${s.next_at===3?"Recruiter":s.next_at===10?"Ambassador":"Partner"}</div>`:"");
   }catch(e){ console.error("referral stats (run migrations_referrals.sql)",e); const el=$("#ref-stats"); if(el) el.textContent="Referral counts aren't available yet."; }
 }
+/* CQ-6: Profile is identity; these sections live on the Settings screen. The nodes are
+   MOVED after Profile renders (listeners travel with them), so no wiring is duplicated. */
+const SETTINGS_SECTIONS=["Social profile","Appearance","Install FormTrace","Danger zone"];
+function moveSettingsSections(){
+  const from=$("#profile-body"), to=$("#settings-body"); if(!from||!to) return;
+  const kids=[...from.children]; let cur=null; const moving=[]; const dropping=[];
+  for(const k of kids){
+    const eb=k.classList.contains("section-h")?k.querySelector(".eyebrow"):null;
+    if(eb){ cur=eb.textContent.trim(); }
+    if(cur && SETTINGS_SECTIONS.some(s=>cur.startsWith(s))) moving.push(k);
+    else if(cur && cur.startsWith("In Touch")) dropping.push(k);   // Social tab owns this now
+  }
+  if(moving.length){ to.innerHTML=""; for(const k of moving) to.appendChild(k); }
+  for(const k of dropping) k.remove();
+}
 async function renderProfile(){
   const body=$("#profile-body");
   const r=roleOf();
@@ -10784,9 +10808,10 @@ async function renderProfile(){
   try{ ratings=(await store._sb.from("ratings").select("stars").eq("ratee_id",ME.id)).data||[]; }catch(e){}
   const avg=ratings.length?ratings.reduce((s,x)=>s+x.stars,0)/ratings.length:0;
   let html=`<div class="prof-head">
-      <div class="avatar lg">${escapeHtml(ME.avatar_initials||initials(ME.display_name))}</div>
+      <div class="avatar lg" id="pf-avatar" data-avatar="${escapeHtml(ME.avatar_path||"")}" data-nolightbox="1" style="cursor:pointer" title="Tap to view or replace">${escapeHtml(ME.avatar_initials||initials(ME.display_name))}</div>
       <div><div class="nm">${escapeHtml(ME.display_name||"—")}</div>
         <div style="margin-top:6px"><span class="badge ${r}">${r}</span>${isAdmin()?' <span class="badge admin">admin</span>':""}</div>
+        <div class="cbadges" id="pf-badges" style="margin-top:6px"></div>
         <div class="ct">${ratings.length?`${starsHtml(avg)} ${avg.toFixed(1)} · ${ratings.length} rating${ratings.length>1?"s":""}`:"No ratings yet"}</div></div>
     </div>`;
   html+=`<div class="card" style="margin-top:18px">
@@ -10943,6 +10968,9 @@ async function renderProfile(){
     }
   }catch(e){console.error("completed goals",e);}
   body.innerHTML=html;
+  /* CQ-6: avatar tap = view or replace; coach badges under the name */
+  try{ const av=$("#pf-avatar"); if(av){ hydrateAvatars(av.parentElement); av.addEventListener("click",async()=>{ const view=ME.avatar_path?await openConfirm({title:"Profile photo",body:"View it full size, or replace it?",confirmLabel:"View",cancelLabel:"Replace"}):false; if(view){ try{ const u=await playable(ME.avatar_path); if(u) openPhotoLightbox(u); }catch(e){} } else { const inp=$("#sp-photo-input"); if(inp) inp.click(); else toast("Open Settings → Social profile to add a photo",3000); } }); } }catch(e){}
+  (async()=>{ try{ if(ME.role==="coach"){ const facts=await loadCoachFacts([ME.id]); const el=$("#pf-badges"); if(el&&facts&&facts[ME.id]) el.innerHTML=badgeSpans(facts[ME.id],false); } }catch(e){} })();
   wireReferralCard();   // Item BN: copy/share + live counts for the referral card
   wireCertCard();       // certifications (BH badge system)
   wireTop1Card();       // Item BX standing
