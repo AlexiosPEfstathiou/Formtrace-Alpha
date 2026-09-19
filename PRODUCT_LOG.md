@@ -49,7 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-11) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
+| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-15) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -192,6 +192,22 @@ Tester's words in quotes. Not yet fixed unless marked.**
   (pending or confirmed) may read each other's profile row
   (`migrations_in_touch_profiles.sql`). Noted as the first trainee <->
   trainee relationship in the app; the opening is name, photo, initials only.
+- **CN-15 · New users without a coach should not see an empty Training
+  tab.** Today a trainee with no accepted offer lands on a Training tab
+  that is essentially blank until a coach assigns something - the worst
+  possible first impression, and it makes the app look dependent on
+  finding a coach before it does anything. Everything that is the
+  TRAINEE'S own data should work from day one, coach or not: **macros**
+  (daily logging and the ring), the **dashboard**, **weight trend**
+  (check-ins), the **calendar** (their own logged days, check-in photo
+  days, PBs), streak - and the week model should count self-logged
+  activity as neutral rather than empty. What stays coach-only is what
+  needs a coach: assigned workouts, reviews, calls, the committed-week
+  card. Copy for the empty coached slots: one gentle line pointing to
+  Find a coach, not a blank. This also serves retention (CD/CI): a
+  trainee between goals keeps a living Training tab instead of a dead one.
+  Audit each Training-tab card for "does this need an engagement?" and
+  unhide the ones that don't. Not started.
 - Also recorded: while fixing CN-5 a duplicate declaration was pushed
   before the parse check ran; the live app did not parse for ~2 minutes
   until reverted. Rule restated: the parse check gates every push.
