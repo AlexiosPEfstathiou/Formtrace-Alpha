@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -367,6 +367,9 @@
   /* persistent app-level bottom navigation (sits above screens, below modals) */
   #app-tabbar{z-index:9;}
   body.rec-open #app-header{display:none!important;}   /* CQ-4 */
+  body.hdr-on .screen.active>.top>.back{display:none;}   /* CR-1: no back arrows on top-level screens - the header and tabs do that */
+  .pay-details>summary{cursor:pointer;font-size:12px;font-weight:800;color:var(--ink);list-style:none;display:flex;align-items:center;gap:6px;}  .pay-details>summary::before{content:"▸";transition:transform .15s;}  .pay-details[open]>summary::before{transform:rotate(90deg);}  .pay-details>summary::-webkit-details-marker{display:none;}   /* CR-2 */
+  .legend.collapsed>details>summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none;}  .legend.collapsed>details>summary::-webkit-details-marker{display:none;}   /* CR-6 */
   #app-header{position:absolute;top:0;left:0;right:0;z-index:70;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none;}  #app-header>*{pointer-events:auto;}  .hdr-right{display:flex;align-items:center;gap:8px;}  .hdr-btn{background:var(--panel2);border:1px solid var(--line2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;color:var(--ink);}  .hdr-gear{font-size:18px;}  #hdr-streak-slot #streak-badge{position:static;top:auto;right:auto;}  body.hdr-on .screen.active>.top{padding-top:calc(env(safe-area-inset-top) + 62px);}  body.hdr-on #s-home .hero{padding-top:calc(env(safe-area-inset-top) + 56px);}   /* Item CP */
   /* Several screens are shown without going through go(), so renderAppTabs
      never runs for them and a stale tab bar would sit on top of their bottom
@@ -1351,7 +1354,7 @@
     <div class="body">
       <div id="tr-list"></div>
       <div id="tr-empty" class="empty hidden"><div class="ic">◉</div><p>No assigned workouts yet.<br>Find a coach in the marketplace to get started.</p>
-        <button class="btn sm" style="margin-top:18px;display:inline-flex;width:auto;padding:0 20px" data-go="listings">Find a coach</button></div>
+        <button class="btn sm" style="margin-top:18px;display:inline-flex;width:auto;padding:0 20px" data-go="listing-new">Post a goal</button></div>
     </div>
   </section>
 
@@ -1374,13 +1377,10 @@
 
   <!-- ============ TRAINEE: marketplace (my listings) ============ -->
   <section class="screen" id="s-listings">
-    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Find a coach</h1><div class="sub" id="listings-sub">Post a goal, receive video offers</div></div></div>
+    <div class="top"><div class="back" data-go="home">←</div><div style="flex:1"><h1>Goal</h1><div class="sub" id="listings-sub">Post a goal, receive video offers</div></div></div>
     <div class="body with-tabs" id="listings-body"></div>
-    <div class="fab-row" style="bottom:122px;"><button class="btn primary" id="listings-fab">+ Post a goal</button></div>
-    <div class="tabbar">
-      <button data-ltab="goals"><span class="i">◎</span>My goals</button>
-      <button data-ltab="offers" class="on"><span class="i">✉</span>Offers</button>
-    </div>
+    <div class="fab-row" style="bottom:80px;"><button class="btn primary" id="listings-fab">+ Post a goal</button></div>
+      <!-- CR-4: no subtabs - Offers is the Goal tab -->
   </section>
 
   <!-- ============ TRAINEE: post a goal listing ============ -->
@@ -3247,6 +3247,19 @@ function renderAppTabs(current){
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
 }
+/* CR-5: swipe left / right between tabs. Only when the tab bar is showing, no overlay or
+   sheet is open, and the gesture did not start on something that scrolls sideways or
+   takes input. */
+(function(){
+  let sx=0,sy=0,st=0,skip=false;
+  const ph=document.getElementById("phone")||document.body;
+  ph.addEventListener("touchstart",e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now();
+    skip=!!e.target.closest("input,textarea,select,canvas,video,.mg-bar,.hm-row,.wk-slots,.strip,[data-noswipe],.sheet,#rec,#photocap,#clap-overlay") || document.body.classList.contains("rec-open") || $("#sheet-lib")?.classList.contains("on"); },{passive:true});
+  ph.addEventListener("touchend",e=>{ if(skip) return; const bar=$("#app-tabbar"); if(!bar||bar.style.display==="none") return;
+    const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy; if(Date.now()-st>700||Math.abs(dx)<70||Math.abs(dy)>50) return;
+    const btns=[...bar.querySelectorAll("button[data-go]")]; const i=btns.findIndex(b=>b.classList.contains("on")); if(i<0) return;
+    const j=dx<0?i+1:i-1; if(j<0||j>=btns.length) return; go(btns[j].getAttribute("data-go")); },{passive:true});
+})();
 /* Item CP: persistent header. Profile (avatar) top-left; settings gear and the streak badge top-right. */
 let _hdrWired=false;
 function showHeader(on){
@@ -5706,6 +5719,8 @@ async function renderOffersTab(body){
     const shownPending=offersGoalFilter?pending.filter(o=>o.listing_id===offersGoalFilter):pending;
     for(const o of shownPending) body.appendChild(mkRow(o,false));
   }
+  /* CR-4: My goals is gone - an open goal with no offers yet shows here, with its days left and Cancel */
+  for(const l of Object.values(listingById)){ if(l.status!=="open" || pending.some(o=>o.listing_id===l.id)) continue; const days=Math.max(0,7-Math.floor((Date.now()-new Date(l.created_at).getTime())/86400000)); const row=document.createElement("div"); row.className="offer-row"; row.style.cursor="default"; row.innerHTML=`<div class="or-main"><div class="or-t">${escapeHtml(l.title||"Goal")}</div><div class="or-s">No offers yet · ${days} day${days===1?"":"s"} left for coaches to pitch</div></div><button class="btn sm ghost" style="width:auto;color:var(--faint)" data-cancel-listing="${l.id}">Cancel</button>`; row.querySelector("[data-cancel-listing]").addEventListener("click",()=>cancelListing(l.id,l.title)); body.appendChild(row); }
 
   // ---- Rejected / Completed: closed folders, opened on tap ----
   const folder=(label,items,openState,setOpen)=>{
@@ -5912,13 +5927,13 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
   if(o.rate_per_workout_cents!=null && o.workouts_per_week_cap){
     const card=document.createElement("div");
     card.className="card";card.style.cssText="background:var(--accent-surface);border-color:var(--accent-border);margin-top:4px";
-    card.innerHTML=cadenceExplainer({
+    card.innerHTML=`<details class="pay-details"><summary>Payment details</summary><div style="margin-top:8px">`+cadenceExplainer({
       sessions:o.workouts_per_week_cap,
       price:o.rate_per_workout_cents/100,
       cur:(o.price_text||"$").trim()[0]||"$",
       noshow:o.noshow_fraction_pct||0,
       perspective:"trainee", weeks:o.length_weeks||0
-    });
+    })+`</div></details>`;   // CR-2: collapsed by default
     exp.appendChild(card);
   }
   /* Item CJ: a small disagreement should not be a stopping point. */
@@ -6405,8 +6420,11 @@ async function openTraineeCalendar(engs){
   traineeMerged=true; traineeEngs=engs||[];
   engById={}; for(const e of traineeEngs) engById[e.id]=e;
   currentEng=null; currentEngOther=null;
-  $("#eng-title").textContent="Training calendar";
-  $("#eng-sub").textContent=traineeEngs.length>1?`${traineeEngs.length} goals`:(traineeEngs[0]?.goal_title||"Your schedule");
+  /* CR-7: goal name, coach name and status - once */
+  const act=traineeEngs.filter(e=>e.status==="active"); const one=act.length===1?act[0]:(traineeEngs.length===1?traineeEngs[0]:null);
+  $("#eng-title").textContent=one?(one.goal_title||"Your goal"):(act.length>1?`${act.length} active goals`:"Training calendar");
+  $("#eng-sub").textContent=one?one.status:(traineeEngs.length?`${traineeEngs.length} goals`:"Your schedule");
+  if(one){ store._sb.from("profiles").select("display_name").eq("id",one.coach_id).maybeSingle().then(({data})=>{ if(data&&data.display_name) $("#eng-sub").textContent=`Coach ${data.display_name} · ${one.status}`; }).catch(()=>{}); }
   $("#eng-back").onclick=()=>go("home");
   await renderEngagement();
   $$(".screen").forEach(s=>s.classList.remove("active"));
@@ -6927,11 +6945,7 @@ async function renderEngagement(skipFetch){
 
   // banner — single goal, or a single "My Goals" button in merged mode (calendar is primary)
   if(traineeMerged){
-    const glist = await shouldGlistenGoal(traineeEngs);
-    const btn=document.createElement("button");btn.className="btn sm"+(glist?" glisten":"");btn.style.marginBottom="14px";
-    btn.innerHTML=`<span>◎ My Goals</span>`;
-    btn.addEventListener("click",()=>openGoals());
-    body.appendChild(btn);
+    /* CR-7/CR-4: the My Goals button is gone - the Goal tab is one tap away */
   }else{
     const banner=document.createElement("div");banner.className="card";banner.style.cssText="background:var(--accent-surface);border-color:var(--accent-border)";
     banner.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
@@ -7137,7 +7151,7 @@ async function renderEngagement(skipFetch){
   }
 
   // legend
-  const legend=document.createElement("div");legend.className="legend";
+  const legend=document.createElement("div");legend.className="legend collapsed";
   legend.innerHTML = iAmCoach ? `
       <div class="leg-item"><span class="leg-sw" style="background:var(--lime)"></span>Scheduled</div>
       <div class="leg-item"><span class="leg-sw" style="background:rgba(255,194,74,.15);border-color:rgba(255,194,74,.45)"></span>Submitted — review</div>
@@ -7156,6 +7170,7 @@ async function renderEngagement(skipFetch){
       <div class="leg-item"><span class="leg-sw" style="border:2px dashed #5AB0FF;background:transparent"></span>📅 Proposed call · awaiting a response</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>📷 Check-in photo · glistens when this week's is due</div>
       <div class="leg-item"><span class="leg-sw" style="background:var(--panel)"></span>Tap any day to log macros</div>`;
+  legend.innerHTML=`<details><summary>Legend - what the colours and icons mean</summary><div style="margin-top:8px">${legend.innerHTML}</div></details>`;   // CR-6: collapsed by default
   body.appendChild(legend);
 
   // dashboard (both roles): macros stacked bars + weight line + check-in timelapse

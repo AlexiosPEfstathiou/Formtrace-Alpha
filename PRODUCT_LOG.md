@@ -49,7 +49,8 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 39 | **CQ** Second test-day batch (CQ-1…CQ-8) | Mixed | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
+| 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
+| 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
 | 38 | **CP** Navigation v2 - BUILT 2026-09-19 | settings screen later | Five tabs per role (+Review for admins); header with profile / settings / streak; Notifications screen with count; Social tab. |
 | 37 | **CO** Trainee homepage v2 - BUILT 2026-09-19 | - | Welcome → workouts remaining (View) → diet plan + 4-metric log → reviewed workouts (View) → weight trend. |
 | 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-16) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
@@ -58,6 +59,28 @@ Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CR. Third batch (owner, 2026-09-19) - BUILT same evening
+
+- **CR-1** Back arrows removed from every top-level screen (one CSS rule:
+  hidden whenever the header shows) - the header and tabs do that job.
+- **CR-2** "How payment works" on a pitched / accepted goal is a collapsed
+  **Payment details** disclosure; tap to expand.
+- **CR-3** A brand-new trainee's Training tab button goes straight to
+  **Post a goal**, skipping the Goal tab.
+- **CR-4** Goal tab has no subtabs: Offers IS the tab (title "Goal"); an
+  open goal with no offers yet appears in Pending as "No offers yet · N
+  days left" with Cancel, so nothing is lost from the removed My goals.
+  The merged calendar's "My Goals" button is gone too.
+- **CR-5** Swipe left / right between tabs on the phone - only when the
+  tab bar shows, nothing is recording or open in a sheet, and the gesture
+  did not start on an input, video, canvas or a sideways-scrolling strip.
+- **CR-6** The calendar legend is collapsed by default ("Legend - what the
+  colours and icons mean"), expands on tap.
+- **CR-7** Training header once: goal title as the title, "Coach <name> ·
+  <status>" as the subtitle (multi-goal: "N active goals").
 
 ---
 
