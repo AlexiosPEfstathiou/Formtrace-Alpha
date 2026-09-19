@@ -183,6 +183,15 @@ Tester's words in quotes. Not yet fixed unless marked.**
   clap overlay had an inline `display:none`, which an `.on` class can
   never override; moved to a stylesheet rule. Lesson: no inline display
   on anything a class toggles.
+- **CN-14 · "I see their name in the connected list; they see me as
+  Someone; but my PBs show as Alex."** Two code paths, two permission
+  models: the feed runs as `security definer` (reads any name); the
+  connected list reads `profiles` under RLS, where a trainee's row is
+  visible only to people with an engagement or offer with them - a
+  connection was not one of those. Fixed with a policy: In Touch parties
+  (pending or confirmed) may read each other's profile row
+  (`migrations_in_touch_profiles.sql`). Noted as the first trainee <->
+  trainee relationship in the app; the opening is name, photo, initials only.
 - Also recorded: while fixing CN-5 a duplicate declaration was pushed
   before the parse check ran; the live app did not parse for ~2 minutes
   until reverted. Rule restated: the parse check gates every push.
