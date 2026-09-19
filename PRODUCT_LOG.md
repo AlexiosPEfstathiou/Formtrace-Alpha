@@ -81,7 +81,7 @@ words where given. Fixed same day unless marked.
 **Notes from the test (2026-09-19), one item each - CN-1 … CN-11.
 Tester's words in quotes. Not yet fixed unless marked.**
 
-- **CN-1 · "Accept this offer" dialogue needs the currency mentioned.**
+- **CN-1 · "Accept this offer" dialogue needs the currency mentioned.** FIXED 2026-09-19 - symbol taken from the offer's price text.
   The confirmation shows the committed total as a bare number. Show the
   offer's currency symbol (from `price_text`, as the offer card already
   does) on every money line of the dialogue. Quick.
@@ -98,7 +98,9 @@ Tester's words in quotes. Not yet fixed unless marked.**
   homepages and both calendars; the receiver always gets Accept / Decline
   / Propose another time; the proposer sees "waiting" + Cancel.
 - **CN-4 · When a certification is attached, admin needs an unmissable
-  notification.** Today it sits inside the Admin › Coach badges list with
+  notification.** FIXED 2026-09-19 - red count on the Review tab (pending
+  certifications + coach applications, refreshed each minute) and an admin
+  homepage card that stays until the queue is empty. Push on CE. Today it sits inside the Admin › Coach badges list with
   an "N to review" flag. Add: a red count on the Admin tab itself, a
   homepage card for the admin ("2 certifications to review") that stays
   until handled, and (on CE) a push. Quick for the first two.
@@ -131,7 +133,9 @@ Tester's words in quotes. Not yet fixed unless marked.**
   assigned workout; show tags, notes, form match and the voice-over with
   drawings there.
 - **CN-9 · Pending sessions from a terminated goal still show in the
-  trainee's calendar; only completed ones should.** When an engagement
+  trainee's calendar; only completed ones should.** FIXED 2026-09-19 in
+  the calendar loader: for any goal that is not active, only sessions that
+  were actually done are kept (both the RPC path and the fallback). When an engagement
   ends (ended or completed), assigned-but-unstarted sessions must be
   removed or hidden. Do it in the same server call that ends the goal
   (delete `assigned_workouts` with status 'assigned' for that engagement)

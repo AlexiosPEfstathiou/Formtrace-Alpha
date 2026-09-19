@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -617,6 +617,7 @@
   .fb-opt.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CC selected answer */
   .vo-tool.on{box-shadow:0 0 0 2px currentColor inset;font-weight:900;}   /* Item CL selected colour */
   .lv-pick.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CG level */
+  #app-tabbar button{position:relative;}  .tab-dot{position:absolute;top:4px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center;}   /* CN-4 */
   @keyframes clap{0%,100%{transform:scale(1) rotate(-6deg);}50%{transform:scale(1.25) rotate(6deg);}}  #clap-overlay{display:none;}  #clap-overlay.on{display:flex;}  #clap-overlay.on #clap-hands{animation:clap .28s ease-in-out 7;}  #clap-overlay.on #clap-avatar{animation:top1-pulse 1.4s ease-in-out infinite;}   /* Item CM */
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
@@ -1203,6 +1204,7 @@
       <div id="home-callproposal" class="home-call" style="display:none"></div>
     <div id="home-certstatus" class="home-reviews" style="display:none"></div>
     <div id="home-milestone" class="home-milestone" style="display:none"></div>
+    <div id="home-adminq" class="home-reviews" style="display:none"></div>
     <div id="home-intouch" class="home-reviews" style="display:none"></div>
     <div id="home-renewal" class="home-call" style="display:none"></div>
     <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
@@ -3195,6 +3197,17 @@ function renderAppTabs(current){
   }
   bar.innerHTML=tabs;
   bar.style.display="flex";
+  if(ME.is_admin) refreshAdminDot();   // CN-4
+}
+/* CN-4: unmissable admin count - certifications and coach applications awaiting review. */
+let adminDotCache=null;
+async function refreshAdminDot(){
+  const btn=document.querySelector('#app-tabbar [data-go="admin"]'); if(!btn) return;
+  try{
+    if(adminDotCache==null||Date.now()-adminDotCache.t>60000){ const [c1,c2]=await Promise.all([store._sb.from("coach_certifications").select("id",{count:"exact",head:true}).eq("status","pending"), store._sb.from("coach_applications").select("id",{count:"exact",head:true}).eq("status","pending")]); adminDotCache={t:Date.now(),n:(c1.count||0)+(c2.count||0)}; }
+    let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); }
+    dot.textContent=adminDotCache.n; dot.style.display=adminDotCache.n?"":"none";
+  }catch(e){}
 }
 
 /* ---- Device back button keeps the user inside the app ----
@@ -3485,6 +3498,7 @@ async function renderHome(){
     ]);
     await Promise.all([
       renderHomeStreakRisk($("#home-streakrisk"), engs),
+      renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
       renderHomeNextGoal($("#home-nextgoal"), engs),   // Item CD: between-goals nudge
@@ -3515,6 +3529,7 @@ async function renderHome(){
       renderHomeVacation($("#home-vacation")),
       renderHomeCallProposal($("#home-callproposal")),
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
+      renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       store._sb.rpc("refresh_coach_streak_scores").catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
@@ -4065,6 +4080,15 @@ function playClap(p,text){
   const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); };
   ov.addEventListener("click",close); setTimeout(close,3200);
   return getComputedStyle(ov).display!=="none";   // CN-13: only report shown if it actually rendered
+}
+/* CN-4: admin homepage card - stays until the reviews are done. */
+async function renderHomeAdminQueue(el){
+  if(!el||!ME||!ME.is_admin) return; el.style.display="none"; el.innerHTML="";
+  try{ const [c1,c2]=await Promise.all([store._sb.from("coach_certifications").select("id",{count:"exact",head:true}).eq("status","pending"), store._sb.from("coach_applications").select("id",{count:"exact",head:true}).eq("status","pending")]);
+    const certs=c1.count||0, apps=c2.count||0; if(!certs&&!apps) return;
+    el.innerHTML=`<div class="rv-title">🛠 Admin</div><div class="rv-row"><button class="rv-chip" id="adm-queue"><span class="rv-ic">🔔</span><span class="rv-tx"><b>${[certs?`${certs} certification${certs===1?"":"s"}`:"",apps?`${apps} coach application${apps===1?"":"s"}`:""].filter(Boolean).join(" · ")} to review</b><span>Coaches are waiting on you - tap to open Review</span></span></button></div>`; el.style.display="";
+    $("#adm-queue").addEventListener("click",()=>go("admin"));
+  }catch(e){}
 }
 /* Item CD (remainder): the between-goals card. Only when the trainee has NO
    active goal, finished one in the last 30 days, and no direct offer is
@@ -5791,7 +5815,7 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     row.querySelector("[data-acc]").addEventListener("click",async()=>{
       const ok=await openConfirm({
         title:"Accept this offer?",
-        body:`This will auto-decline all other offers for this goal.${(o&&o.length_weeks&&o.rate_per_workout_cents!=null)?` You are committing to ${o.length_weeks} week${o.length_weeks===1?"":"s"} - at most ${((o.rate_per_workout_cents/100)*o.length_weeks).toLocaleString()} in total, charged only for sessions that get reviewed.`:""} Would you like to proceed?`,
+        body:`This will auto-decline all other offers for this goal.${(o&&o.length_weeks&&o.rate_per_workout_cents!=null)?` You are committing to ${o.length_weeks} week${o.length_weeks===1?"":"s"} - at most ${escapeHtml(((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0])}${((o.rate_per_workout_cents/100)*o.length_weeks).toLocaleString()} in total, charged only for sessions that get reviewed.`:""} Would you like to proceed?`,
         confirmLabel:"Accept",cancelLabel:"Cancel"
       });
       if(!ok)return;
@@ -6429,7 +6453,10 @@ async function assignedLiteByEng(engs){
   let rows=null;
   try{ const { data, error } = await store._sb.rpc("calendar_rows",{p_engagements:ids}); if(error) throw error; rows=data||[]; }
   catch(e){ console.error("calendar_rows (run migrations_snapshot_lite.sql) - falling back to full rows",e); }
-  if(rows==null){ const lists=await Promise.all(ids.map(id=>store.assignedWorkouts.list({engagement_id:id}))); return engs.map(e=>lists[ids.indexOf(e.id)]||[]); }
+  if(rows==null){ const lists=await Promise.all(ids.map(id=>store.assignedWorkouts.list({engagement_id:id}))); return engs.map(e=>(lists[ids.indexOf(e.id)]||[]).filter(r=>e.status==="active"||(r.status&&r.status!=="assigned"))); }
+  /* CN-9: a goal that ended or completed keeps only its DONE sessions on the calendar - never the ones still "assigned". */
+  const inactive=new Set(engs.filter(e=>e.status&&e.status!=="active").map(e=>e.id));
+  rows=rows.filter(r=>!inactive.has(r.engagement_id) || (r.status&&r.status!=="assigned"));
   return engs.map(e=>rows.filter(r=>r.engagement_id===e.id));
 }
 /* Item AX: the nutrition goal in force for a week - an exact row for that week,
