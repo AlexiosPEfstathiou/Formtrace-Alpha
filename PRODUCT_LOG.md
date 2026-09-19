@@ -327,7 +327,15 @@ Tester's words in quotes. Not yet fixed unless marked.**
 - **CN-9 · Pending sessions from a terminated goal still show in the
   trainee's calendar; only completed ones should.** FIXED 2026-09-19 in
   the calendar loader: for any goal that is not active, only sessions that
-  were actually done are kept (both the RPC path and the fallback). When an engagement
+  were actually done are kept (both the RPC path and the fallback).
+  **Second pass 2026-09-19 (owner: "streak yellow on Home, flashing red
+  once I open Training, then red everywhere - the cancelled goal's
+  sessions").** The Training tab loaded its rows by passing bare `{id}`
+  objects, so the status-based filter above could not see which goals were
+  inactive; the cancelled goal's undone sessions fed the streak-risk
+  ("3 sessions still to do") and the "N left" count, and the red badge
+  state then persisted across tabs. Fixed at the source (real engagement
+  objects passed) and the risk is computed from active goals only. When an engagement
   ends (ended or completed), assigned-but-unstarted sessions must be
   removed or hidden. Do it in the same server call that ends the goal
   (delete `assigned_workouts` with status 'assigned' for that engagement)

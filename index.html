@@ -6868,7 +6868,7 @@ async function renderEngagement(skipFetch){
      snapshot.name and the item names/count). calendar_rows() returns the rows
      with snapshot slimmed to exactly that, under the caller's own RLS. Falls
      back to the old full fetch only if the function isn't installed yet. */
-  assigned=(await assignedLiteByEng(atEngIds.map(id=>({id})))).flat();
+  assigned=(await assignedLiteByEng(traineeMerged ? traineeEngs : [currentEng])).flat();   // CN-9 fix 2: pass the real engagement objects (with status) so a cancelled goal's undone sessions are dropped here too - they were feeding the streak-risk and "N left" counts
   // index assigned workouts by due_date
   engAssignedByDate={};
   for(const a of assigned){
@@ -6930,7 +6930,8 @@ async function renderEngagement(skipFetch){
   }
   // discipline streak (trainee only)
   if(WEEK_MODEL){
-    const r=weekRisk(assigned);
+    const activeIds=new Set((traineeMerged?traineeEngs:[currentEng]).filter(e=>e&&e.status==="active").map(e=>e.id));
+    const r=weekRisk(assigned.filter(a=>activeIds.has(a.engagement_id)));   // CN-9: risk from active goals only
     const W=(ME.week_streak_count||0);
     streakInfo = iAmCoach ? {count:0,unit:"week",weeks:0,danger:false,broken:false}
                : (W<3 ? {count:0,unit:"day",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft}   // day count filled in below from the span
