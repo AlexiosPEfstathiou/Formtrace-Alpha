@@ -106,7 +106,18 @@ dropped from Profile; the Profile avatar shows the photo and offers View
 with this week's uncongratulated count; per-person wins by recency with
 Congratulate, **Congratulate all** (`congratulate_all` - one visible
 "week" celebration, every current win silently marked, count clears;
-needs `migrations_in_touch_week.sql`) and Disconnect. CQ-8 still open.
+needs `migrations_in_touch_week.sql`) and Disconnect. CQ-8 CLOSED - the header showed on the next refresh (screenshot
+2026-09-19 evening); the earlier miss was the cropped screenshot.
+**CQ-9 … CQ-12 (owner, same evening) - BUILT:** CQ-9 check-in photos also
+deletable from the Training tab's check-in strip (own photos, Delete
+under each). CQ-10 header avatar shows a default 👤 until a photo exists,
+then only the photo (the initials had been painted over the image because
+the hydrated element was re-labelled on every header refresh). CQ-11 the
+daily macro + weight prompt is a Notification until logged or dismissed
+("Not today", per day); the coach's diet plan line moved onto the
+homepage week card. CQ-12 Social: the knock / code flow sits behind one
+**Add friends** button; "Your people" → **Friends**, sorted by this
+week's uncongratulated wins, most first.
 
 ---
 
