@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -3944,7 +3944,7 @@ async function afterFeedbackHandoff(eng,role,kind){
    code the other person types. Once connected, each sees the other's PBs and goal
    completions with one "Congratulate" button; the recipient gets a homepage card
    that plays a short clap. */
-const KNOCK_THRESHOLD=18;   // m/s² above gravity; tune on real phones (see the live readout on the Connect screen)
+const KNOCK_THRESHOLD=11;   // m/s² above gravity; tune on real phones (see the live readout on the Connect screen)
 let knockState=null;
 function avatarHtml(p,size){ return `<div class="avatar" data-avatar="${escapeHtml((p&&p.avatar_path)||"")}" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.36)}px">${escapeHtml((p&&p.avatar_initials)||initials((p&&p.display_name)||"?"))}</div>`; }
 async function renderInTouch(){
@@ -4018,7 +4018,7 @@ async function startKnock(statusEl,meterEl){
     say("Knock felt - looking for the other phone…");
     try{
       let res=await store._sb.rpc("register_knock",{p_lat:pos?pos.latitude:null,p_lng:pos?pos.longitude:null,p_magnitude:+mag.toFixed(1)});
-      let d=res.data; for(let i=0;i<5 && !(d&&d.matched);i++){ await new Promise(r=>setTimeout(r,700)); res=await store._sb.rpc("register_knock",{p_lat:null,p_lng:null,p_magnitude:0,p_poll_only:true}); d=res.data; }
+      let d=res.data; for(let i=0;i<10 && !(d&&d.matched);i++){ await new Promise(r=>setTimeout(r,700)); res=await store._sb.rpc("register_knock",{p_lat:null,p_lng:null,p_magnitude:0,p_poll_only:true}); d=res.data; }
       if(d&&d.matched) showKnockMatch(d,statusEl); else say("No matching knock. Make sure you both tapped Knock first, then try again.");
     }catch(err){ console.error("knock",err); say(err.message||"Couldn't register the knock."); }
     knockState=null;

@@ -163,6 +163,21 @@ Tester's words in quotes. Not yet fixed unless marked.**
   sizes a `.btn` to its content inside flex rows, plus a scan of the file
   for `<button class="btn` inside `display:flex` containers.
 
+- **CN-12 · Knock to connect: "the knock needs to be very hard, and then
+  only one person gets the confirmation."** Two causes, both mine. (a) The
+  starting threshold (18 m/s² above gravity) was too high - a natural knock
+  lands at 8-12; lowered to 11 (still above walking / setting the phone
+  down; the live bar remains for tuning). (b) A real bug: the phone whose
+  knock arrived FIRST polled for its knock `where matched is null` - but
+  the match had just filled that field, so it was told "no match" and
+  never saw the confirmation, while the second phone did. Fixed in
+  `migrations_in_touch_fix.sql` (poll reads the latest knock regardless and
+  returns the connection); match window widened to 0.8 s; the client now
+  polls for 7 s instead of 3.5. **Fixed 2026-09-19** - run the SQL.
+- Also recorded: while fixing CN-5 a duplicate declaration was pushed
+  before the parse check ran; the live app did not parse for ~2 minutes
+  until reverted. Rule restated: the parse check gates every push.
+
 Order of attack: CN-5/6 first (video is the product), then CN-8, CN-9,
 CN-3, CN-2, CN-7, CN-11, CN-1, CN-4, CN-12; CN-10 is a proper feature and
 goes in as its own build.
