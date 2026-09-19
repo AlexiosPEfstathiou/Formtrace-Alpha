@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -8044,6 +8044,7 @@ function openTraineeDay(iso){
     crow.innerHTML=`<div style="width:24px;height:24px;border-radius:7px;background:var(--amber);display:flex;align-items:center;justify-content:center;color:#3a2c00;font-weight:800;flex-shrink:0">📸</div><div style="flex:1"><div style="font-size:15px;font-weight:700">Weekly check-in photo</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Open camera for your Saturday progress photo</div></div><div style="color:var(--faint)">›</div>`;
     crow.addEventListener("click",()=>{ startCheckin(iso); });
     body.appendChild(crow);
+    /* CQ-2: a photo already taken for this day can be deleted */     (async()=>{ try{ const ex=(await store.checkins.list({trainee_id:ME.id,checkin_date:iso}))[0]; if(!ex||!ex.photo_path) return; const del=document.createElement("button"); del.className="btn sm ghost"; del.style.cssText="width:auto;margin:-4px 0 10px auto;display:block;color:var(--red)"; del.textContent="Delete this check-in photo"; del.addEventListener("click",async()=>{ const ok=await openConfirm({title:"Delete this check-in photo?",body:`The photo from ${fmtDay(iso)} will be removed for you and your coach.`,confirmLabel:"Delete",cancelLabel:"Keep",danger:true}); if(!ok) return; try{ await store.checkins.update(ex.id,{photo_path:null}); toast("Photo deleted",1500); closeSheet(); renderTraineeHome(); }catch(e){ console.error("delete checkin",e); toast(e.message||"Could not delete",3000); } }); crow.insertAdjacentElement("afterend",del); }catch(e){} })();
   }
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
