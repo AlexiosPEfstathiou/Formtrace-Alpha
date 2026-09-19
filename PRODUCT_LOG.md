@@ -91,6 +91,22 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
   desktop frame; tab bar appeared higher than before. Under diagnosis -
   bounding rects requested.
 Status per sub-item is kept inline below as they land.
+**2026-09-19 evening - CQ-1 to CQ-7 BUILT.** CQ-1 sections Accepted ·
+Pending (header only when empty) · Completed · Rejected. CQ-2 "Delete
+this check-in photo" under the Saturday row when a photo exists
+(photo_path cleared; confirm). CQ-3 the Call-today chip is filtered by the
+call's end time in the viewer's zone. CQ-4 the header hides while the
+recorder OR the check-in camera overlay is open (both toggle
+`body.rec-open`). CQ-5 the header avatar carries `data-nolightbox` and
+navigates. CQ-6 a Settings screen (header gear) receives Social profile,
+Appearance, Install and Danger zone - the DOM nodes are moved after
+Profile renders, so their wiring is untouched; the In Touch card is
+dropped from Profile; the Profile avatar shows the photo and offers View
+/ Replace; coaches see their badges under their name. CQ-7 Social: people
+with this week's uncongratulated count; per-person wins by recency with
+Congratulate, **Congratulate all** (`congratulate_all` - one visible
+"week" celebration, every current win silently marked, count clears;
+needs `migrations_in_touch_week.sql`) and Disconnect. CQ-8 still open.
 
 ---
 

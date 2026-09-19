@@ -3284,7 +3284,7 @@ async function refreshAdminDot(){
    screen stack. At the root we re-seed a state so the page never unloads. */
 function closeTopOverlay(){
   if($("#rec")?.classList.contains("on")){ closeRecorder(); return true; }
-  if($("#photocap")?.classList.contains("on")){ try{pcStopCam();}catch(e){} $("#photocap").classList.remove("on"); checkinDate=null; return true; }
+  if($("#photocap")?.classList.contains("on")){ try{pcStopCam();}catch(e){} $("#photocap").classList.remove("on"); document.body.classList.remove("rec-open"); checkinDate=null; return true; }
   if($("#confirm-box")?.classList.contains("on")){ closeConfirm(false); return true; }
   if($("#sheet-lib")?.classList.contains("on")){ closeSheet(); return true; }
   return false;
@@ -8052,7 +8052,7 @@ let checkinDate=null, pcStream=null, pcFacing="user", pcBlob=null;
 function startCheckin(iso){
   checkinDate=iso;
   closeSheet();
-  $("#photocap").classList.add("on");
+  $("#photocap").classList.add("on"); document.body.classList.add("rec-open");   // CQ-4: header must not cover the capture controls
   $("#pc-still").style.display="none";$("#pc-video").style.display="block";
   $("#pc-ctrls").style.display="flex";$("#pc-review").style.display="none";
   $("#pc-ttl").textContent="Check-in · "+fmtDay(iso);
@@ -8116,7 +8116,7 @@ $("#pc-hand").addEventListener("click",async()=>{
   if(on){ toast("Hold an open palm up to start",3600); await ensureGesture(); syncCaptureTools(); }
   else{ cancelCountdown(); toast("Touchless off",1600); }
 });
-$("#pc-close").addEventListener("click",()=>{ pcStopCam(); $("#photocap").classList.remove("on"); checkinDate=null; });
+$("#pc-close").addEventListener("click",()=>{ pcStopCam(); $("#photocap").classList.remove("on"); document.body.classList.remove("rec-open"); checkinDate=null; });
 $("#pc-flip").addEventListener("click",()=>{ pcFacing=pcFacing==="user"?"environment":"user"; pcOpenCam(); });
 $("#pc-shoot").addEventListener("click",()=>{
   const v=$("#pc-video"); if(!v.videoWidth)return;
@@ -8149,7 +8149,7 @@ $("#pc-use").addEventListener("click",async()=>{
   const btn=$("#pc-use");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
   try{
     await saveCheckinBlob(pcBlob,"jpg",iso);
-    pcStopCam();$("#photocap").classList.remove("on");checkinDate=null;
+    pcStopCam();$("#photocap").classList.remove("on"); document.body.classList.remove("rec-open");checkinDate=null;
     toast("Check-in saved ✓");
     if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
     else renderEngagement();
@@ -8165,7 +8165,7 @@ async function saveCheckinBlob(blob,ext,iso){
 /* fallback: device file picker (only used if camera unavailable) */
 $("#checkin-input").addEventListener("change",async e=>{
   const file=e.target.files&&e.target.files[0]; const iso=checkinDate; checkinDate=null;
-  $("#photocap").classList.remove("on");
+  $("#photocap").classList.remove("on"); document.body.classList.remove("rec-open");
   if(!file||!iso)return;
   toast("Uploading your check-in…",3000);
   try{
