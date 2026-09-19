@@ -1225,7 +1225,8 @@
       <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
-        <div id="home-measure" class="home-checkin" style="display:none"></div>
+        <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div><!-- kept as a target: the macro save path still refreshes it; nothing renders into it on the homepage (CN-18) -->
+    <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
   </section>
 
@@ -3740,6 +3741,7 @@ function weightSparkline(wpts){
    go back and fill them in. Excludes today (not "forgotten" yet) and yesterday
    (the quick-log strip above already covers that one). */
 async function renderHomeMacroGaps(el){
+  if(el){ el.style.display="none"; el.innerHTML=""; } return;   // CN-18: retired from the homepage by the owner
   el.style.display="none"; el.innerHTML="";
   const today=todayISO();
   let byDate={};
