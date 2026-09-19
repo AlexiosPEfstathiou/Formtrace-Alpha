@@ -49,6 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 39 | **CQ** Second test-day batch (CQ-1…CQ-8) | Mixed | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
 | 38 | **CP** Navigation v2 - BUILT 2026-09-19 | settings screen later | Five tabs per role (+Review for admins); header with profile / settings / streak; Notifications screen with count; Social tab. |
 | 37 | **CO** Trainee homepage v2 - BUILT 2026-09-19 | - | Welcome → workouts remaining (View) → diet plan + 4-metric log → reviewed workouts (View) → weight trend. |
 | 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-16) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
@@ -57,6 +58,39 @@ Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CQ. Second test-day batch (owner, 2026-09-19) - CQ-1 … CQ-8
+
+- **CQ-1 · Goal tab sections:** Accepted, Pending, Completed, Rejected -
+  in that order; Pending collapses to its header when empty.
+- **CQ-2 · Training: weekly check-in photos deletable** (own photos only;
+  confirm; the calendar badge and the check-in card update).
+- **CQ-3 · Notifications: "Call today" disappears at the call's END time**
+  (10:00-10:30 → gone at 10:30), not at midnight.
+- **CQ-4 · Weekly check-in from Notifications: the capture screen's top
+  buttons (Cancel etc.) are hidden** - the new persistent header sits over
+  them. The header must hide whenever the recorder / capture overlay is
+  open, not only on deep screens.
+- **CQ-5 · Header avatar tap opened the photo lightbox** instead of the
+  Profile. The header avatar must not be a lightbox target; it navigates.
+- **CQ-6 · Profile tab reduced to identity:** profile picture (tap to
+  inspect / replace), name, badges, general rating, display name, city,
+  bio; **Referral link** and **Completed goals** stay. **Social profile,
+  Appearance, Install, Danger zone move to a Settings screen** (the header
+  gear). The In Touch card leaves Profile - it is the Social tab now.
+- **CQ-7 · Social tab redesign:** a list of names, each with a number =
+  that person's PBs / achievements THIS WEEK that you have not yet
+  congratulated. Tap a name → their wins sorted by recency, each with
+  Congratulate; a **Congratulate all** button that sends ONE celebration
+  reading "<Name> congratulated you for this week's progress" and clears
+  the whole number; and Disconnect. Knock-to-connect and the code
+  fallback stay at the top of the screen.
+- **CQ-8 · (from the same screenshot)** header not visible on the owner's
+  desktop frame; tab bar appeared higher than before. Under diagnosis -
+  bounding rects requested.
+Status per sub-item is kept inline below as they land.
 
 ---
 
