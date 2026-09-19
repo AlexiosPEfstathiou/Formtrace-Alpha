@@ -7904,7 +7904,10 @@ function openTraineeDay(iso){
     const row=document.createElement("div");row.className="sh-item";
     const stcol=isMissed?"var(--red)":a.status==="reviewed"?"var(--amber)":a.status==="submitted"?"var(--blue)":"var(--lime-dim)";
     row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml(snap.name||"Workout")}</div><div style="font-size:11px;color:${stcol};margin-top:2px;font-weight:600">${isMissed?"missed — locked":a.status} · ${(snap.items||[]).length} exercises</div></div><div style="color:var(--faint)">›</div>`;
-    row.addEventListener("click",()=>{ if(isMissed){toast("Missed workout — locked",2600);return;} closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library"; engDayAction(a,false); });
+    row.addEventListener("click",()=>{ if(isMissed){toast("Missed workout — locked",2600);return;} closeSheet();$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
+          /* CN-8: a reviewed session opens the COACH REVIEW - always. Set the engagement context for this row first; the merged calendar may have currentEng pointing at another goal. */
+          if(a.status==="reviewed"){ const eng=(typeof traineeEngs!=="undefined"&&traineeEngs?traineeEngs:[]).find(e=>e.id===a.engagement_id); if(eng){ currentEng=eng; currentEngOther=null; } openReview(a.id,true); return; }
+          engDayAction(a,false); });
     body.appendChild(row);
   }
   // macro log row
@@ -9328,6 +9331,10 @@ function triggerDownload(blob,filename){
    ========================================================================= */
 let currentSubmission=null, reviewState=null, reviewReadonly=false;
 async function openReview(assignedId,readonly=false){
+  try{ return await _openReview(assignedId,readonly); }
+  catch(e){ console.error("openReview",e); reportError("open-review", (e&&e.message)||String(e), e&&e.stack); toast("Couldn't open the review - "+((e&&e.message)||"unknown error"),5000); }
+}
+async function _openReview(assignedId,readonly=false){
   reviewReadonly=readonly;
   const subs=await store.submissions.list({assigned_id:assignedId});
   currentSubmission=subs[0];
@@ -9374,7 +9381,7 @@ async function openReview(assignedId,readonly=false){
      context on demand so the header and the back button both work. Fetched
      once and reused below for loadPrevSeries rather than fetching twice. */
   const assignedRow=currentAssigned&&currentAssigned.id===assignedId?currentAssigned:await store.assignedWorkouts.get(assignedId).catch(()=>null);
-  if(!currentEng||!currentEngOther){
+  if(!currentEng||!currentEngOther||(assignedRow&&assignedRow.engagement_id&&currentEng.id!==assignedRow.engagement_id)){   // CN-8: also when the loaded goal is not this workout's goal
     try{
       const a=assignedRow;
       if(a&&a.engagement_id){

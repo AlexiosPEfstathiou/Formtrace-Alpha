@@ -153,7 +153,18 @@ Tester's words in quotes. Not yet fixed unless marked.**
   view; and the review view says plainly when no review row is found, so
   the next report tells us which case we are in. If the tester sees the
   card and the view is still empty, the fault is in matching per-set
-  entries (exercise name + set number) and we need their assigned id. Two paths, one screen: the
+  entries (exercise name + set number) and we need their assigned id.
+  **Third pass (owner: "clicking the reviewed session in the calendar
+  SHOULD OPEN THE COACH REVIEW").** The Training-tab calendar (`openTraineeDay`)
+  did route to `openReview(id,true)` - and then it failed silently: the
+  merged calendar leaves `currentEng` pointing at whichever goal was last
+  opened, the context loader only ran when it was MISSING, and any throw
+  inside opened nothing. Now: the reviewed-session tap sets the row's own
+  engagement as context and calls the review directly; the context loader
+  also reloads when the loaded goal differs from the workout's; and
+  `openReview` is wrapped so any failure shows a toast with the message and
+  lands in the error log. Videos inside the view were blocked by the
+  `trims` scope bug (CN-5/6), now fixed - so the view should also play. Two paths, one screen: the
   calendar day-tap opens the plain completed-workout summary instead of
   the review view (`openReviewedWorkout`) when a review exists; the
   homepage "Reviewed" chip resolves to the same summary. Route both to
