@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4294,7 +4294,7 @@ async function renderHomeCallProposal(el){
     const now=new Date();
     mine=(data||[]).filter(p=>p.status==="pending" && p.proposed_by!==ME.id && new Date(p.expires_at)>now);
     // Item AY part 2: accepted calls happening TODAY (one-time, or a series occurrence)
-    todayCalls=(data||[]).filter(p=>p.status==="accepted" && nextOccurrence(p,todayISO())===todayISO());
+    todayCalls=(data||[]).filter(p=>{ if(p.status!=="accepted"||nextOccurrence(p,todayISO())!==todayISO()) return false; const l=callLocal(p); const [eh,em]=(l.end||"23:59").split(":").map(Number); const endAt=new Date(); endAt.setHours(eh,em||0,0,0); return endAt>now; });   // CQ-3: gone at the end time
   }catch(e){ console.error("home call proposal (run migrations_scheduled_calls.sql)",e); return; }
   if(!mine.length && !todayCalls.length)return;
   const engById={}; active.forEach(e=>engById[e.id]=e);
@@ -5645,11 +5645,19 @@ async function renderOffersTab(body){
     return wrap;
   };
 
+  // ---- Accepted: shown fully expanded, no collapse-by-default ----
+  body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Accepted</div><div class="eyebrow">${acceptedLive.length}</div></div>`);
+  if(!acceptedLive.length){
+    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:24px 20px"><p>No accepted offers yet.</p></div>`);
+  }else{
+    for(const o of acceptedLive) body.appendChild(mkRow(o,true));
+  }
+
   // ---- Pending: flashing, grouped by goal (the only bucket where several
   // offers can share one goal — accepted/completed are 1:1 by construction) ----
-  body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Pending</div><div class="eyebrow">${pending.length}</div></div>`);
+  body.insertAdjacentHTML("beforeend",`<div class="section-h" style="margin-top:18px"><div class="eyebrow">Pending</div><div class="eyebrow">${pending.length}</div></div>`);
   if(!pending.length){
-    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:24px 20px"><p>No pending offers.</p></div>`);
+    /* CQ-1: minimised - header only when empty */
   }else{
     const goalIds=[...new Set(pending.map(o=>o.listing_id).filter(Boolean))];
     if(goalIds.length>1){
@@ -5668,14 +5676,6 @@ async function renderOffersTab(body){
     for(const o of shownPending) body.appendChild(mkRow(o,false));
   }
 
-  // ---- Accepted: shown fully expanded, no collapse-by-default ----
-  body.insertAdjacentHTML("beforeend",`<div class="section-h" style="margin-top:18px"><div class="eyebrow">Accepted</div><div class="eyebrow">${acceptedLive.length}</div></div>`);
-  if(!acceptedLive.length){
-    body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:24px 20px"><p>No accepted offers yet.</p></div>`);
-  }else{
-    for(const o of acceptedLive) body.appendChild(mkRow(o,true));
-  }
-
   // ---- Rejected / Completed: closed folders, opened on tap ----
   const folder=(label,items,openState,setOpen)=>{
     const f=document.createElement("div");f.className="offer-folder";
@@ -5687,8 +5687,8 @@ async function renderOffersTab(body){
       for(const o of items) f.appendChild(mkRow(o,false));
     }
   };
+  folder("Completed",completed,offersCompletedOpen,v=>offersCompletedOpen=v);   // CQ-1 order: Accepted, Pending, Completed, Rejected
   folder("Rejected",rejected,offersRejectedOpen,v=>offersRejectedOpen=v);
-  folder("Completed",completed,offersCompletedOpen,v=>offersCompletedOpen=v);
 
   hydrateVideos(body);
   hydrateAvatars(body);
