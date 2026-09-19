@@ -1497,7 +1497,7 @@
 
   <!-- ============ IN TOUCH (Item CM) ============ -->
   <section class="screen" id="s-intouch">
-    <div class="top"><div class="back" id="it-back">←</div><div style="flex:1"><h1 style="cursor:pointer" title="Your friends">In Touch</h1><div class="sub">Friends you've met in person</div></div></div>
+    <div class="top"><div class="back" id="it-back">←</div><div style="flex:1"><h1>In Touch</h1><div class="sub">Friends you've met in person</div></div></div>
     <div class="body" id="it-body"></div>
   </section>
   <div id="clap-overlay" style="position:fixed;inset:0;z-index:250;background:rgba(11,14,17,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px">
@@ -4096,7 +4096,7 @@ let knockState=null;
 function avatarHtml(p,size){ return `<div class="avatar" data-avatar="${escapeHtml((p&&p.avatar_path)||"")}" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.36)}px">${escapeHtml((p&&p.avatar_initials)||initials((p&&p.display_name)||"?"))}</div>`; }
 async function renderInTouch(){
   const body=$("#it-body"); body.innerHTML=`<div class="empty" style="padding:30px"><div class="spin" style="margin:0 auto"></div></div>`;
-  $("#it-back").onclick=()=>go("home"); const ttl0=document.querySelector("#s-intouch .top h1"); if(ttl0) ttl0.onclick=()=>renderInTouch();
+  $("#it-back").onclick=()=>go("home"); const ttl0=document.querySelector("#s-intouch .top h1"); if(ttl0){ ttl0.textContent="In Touch"; ttl0.style.cursor=""; ttl0.title=""; ttl0.onclick=null; } const sub0=document.querySelector("#s-intouch .top .sub"); if(sub0) sub0.textContent="Friends you've met in person";
   try{
     const [connRes,feedRes]=await Promise.all([
       store._sb.from("connections").select("*").or(`a.eq.${ME.id},b.eq.${ME.id}`),
@@ -4150,7 +4150,8 @@ function renderInTouchPerson(uid,connId,p,wins){
   const list=document.createElement("div"); list.className="card";
   list.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Wins · newest first</div>`+(wins.length?wins.map(ev=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)"><span style="font-size:18px">${ev.kind==="pb"?"🏆":"🎯"}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px">${escapeHtml(ev.text)}</div><div style="font-size:11px;color:var(--faint)">${escapeHtml(fmtDay(String(ev.at).slice(0,10)))}${String(ev.at).slice(0,10)>=thisMon?" · this week":""}</div></div>${ev.congratulated?`<span style="font-size:12px;color:var(--lime);font-weight:700">👏 sent</span>`:`<button class="btn sm" data-congrat="${uid}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto">Congratulate</button>`}</div>`).join(""):`<div style="font-size:12.5px;color:var(--faint)">No PBs or completed goals since you connected.</div>`);
   body.appendChild(list); wireCongrats(list); hydrateAvatars(body);
-  const ttl=document.querySelector("#s-intouch .top h1"); if(ttl){ ttl.style.cursor="pointer"; ttl.title="Back to your friends"; ttl.onclick=()=>renderInTouch(); }   // the screen title is the way back
+  /* the screen title becomes an unmistakable link back to the list while a friend is open */
+  const ttl=document.querySelector("#s-intouch .top h1"); if(ttl){ ttl.style.cursor="pointer"; ttl.title="Back to your friends"; ttl.innerHTML=`<span style="color:var(--lime);font-size:15px;font-weight:800;display:inline-flex;align-items:center;gap:6px"><span style="font-size:20px;line-height:1">‹</span> All friends</span>`; ttl.onclick=()=>renderInTouch(); } const sub=document.querySelector("#s-intouch .top .sub"); if(sub) sub.textContent=p.display_name||"";
   const all=$("#itp-all"); if(all) all.addEventListener("click",async()=>{ all.disabled=true; try{ const { error }=await store._sb.rpc("congratulate_all",{p_to:uid,p_text:"this week's progress"}); if(error) throw error; toast(`👏 Sent - ${p.display_name||"they"} will see "${(ME.display_name||"Someone")} congratulated you for this week's progress"`,3500); renderInTouch(); }catch(e){ console.error("congratulate all (run migrations_in_touch_week.sql)",e); toast(e.message||"Couldn't send",3500); all.disabled=false; } });
   $("#itp-disc").addEventListener("click",async()=>{ const ok=await openConfirm({title:`Disconnect from ${p.display_name||"this person"}?`,body:"You will stop seeing each other's wins. Past congratulations stay.",confirmLabel:"Disconnect",cancelLabel:"Keep",danger:true}); if(!ok) return; try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:connId,p_accept:false}); if(error) throw error; toast("Disconnected",1500); renderInTouch(); }catch(e){ toast(e.message||"Couldn't disconnect",3000); } });
 }
