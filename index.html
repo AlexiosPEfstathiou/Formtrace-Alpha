@@ -10003,6 +10003,7 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
     <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
       <div class="vo-meter-track"><div class="vo-meter-fill"></div></div></div>`;
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
+  let videoEnded=false; v.addEventListener("ended",()=>{ videoEnded=true; }); v.addEventListener("seeking",()=>{ if(v.currentTime<v.duration-0.2) videoEnded=false; });   // CN-5/6: was referenced without being declared
   const tele=(marks&&marks.length)?teleCanvasOver(box,false):null; if(tele) box.insertAdjacentHTML("beforeend",'<div style="position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:2px 7px">✎ drawn by your coach</div>');
   wireRotation(box,v,videoPath);
   const meterFill=box.querySelector(".vo-meter-fill");
