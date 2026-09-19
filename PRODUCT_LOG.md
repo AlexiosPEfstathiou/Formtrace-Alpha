@@ -142,7 +142,18 @@ Tester's words in quotes. Not yet fixed unless marked.**
   finds the review across all of the workout's submissions and opens the
   right one. The calendar tap path (`engDayAction`) routes reviewed
   sessions to the same view; if a day still opens nothing for the
-  trainee, that is a separate wiring fault - re-test and report. Two paths, one screen: the
+  trainee, that is a separate wiring fault - re-test and report.
+  **Still failing after that (tester, same day): "video and comment
+  feedback not accessible through the homepage notification nor a
+  clickable session in the calendar."** Second pass: the trainee's taps
+  most likely land on the completed-workout SUMMARY screen (`openAssigned`)
+  - which never showed feedback - rather than the review view. Added: on a
+  reviewed workout that screen now opens with an amber card "Your coach
+  reviewed this workout - See feedback" at the top, routing to the review
+  view; and the review view says plainly when no review row is found, so
+  the next report tells us which case we are in. If the tester sees the
+  card and the view is still empty, the fault is in matching per-set
+  entries (exercise name + set number) and we need their assigned id. Two paths, one screen: the
   calendar day-tap opens the plain completed-workout summary instead of
   the review view (`openReviewedWorkout`) when a review exists; the
   homepage "Reviewed" chip resolves to the same summary. Route both to

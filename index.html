@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1373,6 +1373,7 @@
   <section class="screen" id="s-trainee-workout">
     <div class="top"><div class="back" data-go="trainee-home">←</div><div style="flex:1"><h1 id="tw-title">Workout</h1><div class="sub" id="tw-sub"></div></div></div>
     <div class="body">
+      <div id="tw-feedback" class="card" style="display:none;border-color:rgba(255,176,32,.5);background:rgba(255,176,32,.08);margin-bottom:12px"></div>
       <div id="tw-progress-card" class="card" style="background:var(--accent-surface);border-color:var(--accent-border);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div><div class="eyebrow" style="color:var(--lime-dim)">Progress</div><div style="font-size:22px;font-weight:800;margin-top:6px;" id="tw-progress-txt">0 / 0 sets</div></div>
@@ -8314,6 +8315,8 @@ async function openAssigned(id){
   }catch(e){ console.error("restore results",e); }
   await loadPrevSeries(currentAssigned);
   await loadMyPBs();
+  /* CN-8: a reviewed workout opens here as a summary - make the coach's feedback one obvious tap away. */
+  try{ const fb=$("#tw-feedback"); if(fb){ fb.style.display="none"; if(currentAssigned.status==="reviewed"){ fb.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:24px">📝</div><div style="flex:1"><div style="font-weight:800">Your coach reviewed this workout</div><div style="font-size:12.5px;color:var(--muted)">Tags, notes, voice-over and drawings on your sets</div></div><button class="btn primary sm" id="tw-feedback-open" style="width:auto">See feedback</button></div>`; fb.style.display=""; $("#tw-feedback-open").addEventListener("click",()=>openReview(currentAssigned.id,true)); } } }catch(e){}
   go("trainee-workout");
 }
 /* Personal bests (item R) for the "can you beat it" note. Loaded once per
@@ -9317,6 +9320,7 @@ async function openReview(assignedId,readonly=false){
   /* CN-8: the review may belong to any of this workout's submissions (a retake, a resubmission) - find it across all of them and open THAT submission, so the trainee sees the coach's notes rather than a bare summary. */
   let existing=null;
   if(readonly){ try{ const { data }=await store._sb.from("reviews").select("*").in("submission_id",subs.map(s=>s.id)).order("created_at",{ascending:false}); existing=(data||[])[0]||null; if(existing){ currentSubmission=subs.find(s=>s.id===existing.submission_id)||currentSubmission; } }catch(e){ console.error("review load",e); } }
+  if(readonly && !existing && roleOf()!=="coach"){ toast("No coach feedback is saved for this workout yet - if your coach says they reviewed it, tell us (CN-8)",5000); }
   const rep=currentSubmission.report||{};
   // per-set label rows carry the trainee's rep verdict and the coach's grade
   let labelBy={};
