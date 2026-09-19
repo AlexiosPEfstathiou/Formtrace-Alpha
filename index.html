@@ -4052,11 +4052,11 @@ async function renderHomeInTouch(el){
     for(const ev of feed){ h+=`<div class="rv-chip" style="cursor:default"><span class="rv-ic">${ev.kind==="pb"?"🏆":"🎯"}</span><span class="rv-tx"><b>${escapeHtml(ev.display_name||"")} · ${escapeHtml(ev.text)}</b><span><button class="btn sm" data-congrat="${ev.user_id}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto;margin-top:6px">Congratulate ${escapeHtml((ev.display_name||"").split(" ")[0])}</button></span></span></div>`; }
     el.innerHTML=h+`</div>`; el.style.display="";
     wireConnButtons(el,()=>renderHomeInTouch(el)); wireCongrats(el);
-    el.querySelectorAll("[data-clap]").forEach(b=>b.addEventListener("click",async()=>{ const c=claps.find(x=>x.id===b.getAttribute("data-clap")); const p=profs[c.from_user]||{}; playClap(p,c.event_text); try{ await store._sb.from("celebrations").update({seen_at:new Date().toISOString()}).eq("id",c.id); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; }));
+    el.querySelectorAll("[data-clap]").forEach(b=>b.addEventListener("click",async()=>{ const c=claps.find(x=>x.id===b.getAttribute("data-clap")); const p=profs[c.from_user]||{}; const shown=playClap(p,c.event_text); if(!shown){ toast("Couldn't show the clap - try again",2500); return; } try{ await store._sb.from("celebrations").update({seen_at:new Date().toISOString()}).eq("id",c.id); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; }));
   }catch(e){ /* migration not run */ }
 }
 function playClap(p,text){
-  const ov=$("#clap-overlay"); if(!ov) return;
+  const ov=$("#clap-overlay"); if(!ov) return false;
   $("#clap-avatar").outerHTML=avatarHtml(p,96).replace('class="avatar"','class="avatar" id="clap-avatar"');
   $("#clap-name").textContent=`${p.display_name||"Someone"} is clapping for you`;
   $("#clap-text").textContent=text||"";
@@ -4064,6 +4064,7 @@ function playClap(p,text){
   try{ navigator.vibrate&&navigator.vibrate([60,40,60,40,60]); }catch(e){}
   const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); };
   ov.addEventListener("click",close); setTimeout(close,3200);
+  return getComputedStyle(ov).display!=="none";   // CN-13: only report shown if it actually rendered
 }
 /* Item CD (remainder): the between-goals card. Only when the trainee has NO
    active goal, finished one in the last 30 days, and no direct offer is
