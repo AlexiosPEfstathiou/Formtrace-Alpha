@@ -66,6 +66,14 @@ words where given. Fixed same day unless marked.
   Fixed: explicit `width:auto; min-width:0` on all three (and on the
   on-hold row). Lesson recorded: any `.btn` placed in a flex row needs
   `width:auto` - the default is full width.
+- **"Your sent offers does not fit well into the UI."** Three things
+  shared one line: a long goal title with no shrink allowance, an
+  uppercase badge ("NOT SELECTED · GOAL EXPIRED") that wrapped, and the
+  CJ counter box appended as a third flex child beside them. Fixed: title
+  column `flex:1; min-width:0` with wrapping, badge `nowrap` and the expired
+  label shortened to "Goal expired", the row wraps and the counter box
+  takes a full line beneath (`flex:1 0 100%`), its two buttons sized like
+  the offer-card row.
 
 ---
 
