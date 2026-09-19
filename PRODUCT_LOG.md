@@ -240,6 +240,20 @@ Tester's words in quotes. Not yet fixed unless marked.**
   trainee between goals keeps a living Training tab instead of a dead one.
   Audit each Training-tab card for "does this need an engagement?" and
   unhide the ones that don't. Not started.
+- **CN-16 · Video playback failures were invisible - now logged.** Three
+  reports on the test day ("all videos not playing", then "they play now",
+  then "not playable" in the review view) with nothing to diagnose from.
+  Every player now reports to Admin › Error log on failure: the media
+  error code (1 aborted · 2 network · 3 decode · 4 source not supported),
+  the storage path, the signed URL's HTTP status and content type, whether
+  the device can play WebM / MP4, and the screen; also when no signed URL
+  could be produced, when playback stalls, and when a voice-over's audio
+  fails. The next "not playing" report comes with a cause attached.
+  Leading suspects meanwhile: an iPhone playing Android-recorded WebM
+  (code 4), or expired signed URLs on a screen left open (http 400).
+- **CN-5/6 update:** videos played again on the coach side later in the day
+  with no change made; the trainee's review view still would not play.
+  Unresolved; diagnosis now depends on CN-16's log entries.
 - Also recorded: while fixing CN-5 a duplicate declaration was pushed
   before the parse check ran; the live app did not parse for ~2 minutes
   until reverted. Rule restated: the parse check gates every push.

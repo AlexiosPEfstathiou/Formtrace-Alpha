@@ -2549,6 +2549,19 @@ async function hydrateAvatars(root){
   }
 }
 /* Fill a container that has data-video="<path>" with a playable <video>. */
+/* CN-16: playback failures are invisible on the phone - record them. Media error
+   code (1 aborted, 2 network, 3 decode, 4 src not supported), the storage path,
+   the signed URL's HTTP status and content type, and the device. Same reporter
+   as uncaught errors; shows in Admin › Error log. */
+function watchVideoErrors(vid,path,url,where){
+  if(!vid||vid._ftWatched) return; vid._ftWatched=true;
+  vid.addEventListener("error",async()=>{
+    const me=vid.error||{}; let http="", ctype="";
+    try{ const r=await fetch(url,{method:"HEAD"}); http=String(r.status); ctype=r.headers.get("content-type")||""; }catch(e){ http="fetch-failed"; }
+    reportError("video", `${where||"video"}: code ${me.code||"?"} (${["","aborted","network","decode","src not supported"][me.code]||""}) · path ${path||"?"} · http ${http} · type ${ctype} · canPlay webm=${vid.canPlayType("video/webm")||"no"} mp4=${vid.canPlayType("video/mp4")||"no"}`, null);
+  });
+  vid.addEventListener("stalled",()=>{ reportError("video-stalled", `${where||"video"}: stalled · path ${path||"?"}`, null); },{once:true});
+}
 async function hydrateVideos(root){
   const scope=root||document;
   /* Rotation overrides, fetched once for everything on screen rather than
@@ -2574,12 +2587,14 @@ async function hydrateVideos(root){
     const el=vEls[vi];
     const path=el.getAttribute("data-video");
     const url=vUrls[vi];
+    if(!url){ reportError("video-url", `no playable URL for path ${path||"?"} on ${activeScreenName()}`, null); }   // CN-16
     if(url){ el.innerHTML=`<video src="${url}" muted playsinline preload="metadata"></video><div class="play-big">▶</div>`;
       /* Cards are styled 9/16 with object-fit:cover, which crops a landscape
          take down to a zoomed centre strip. Read the real dimensions once
          metadata arrives and let the container adopt them. Small thumbnails
          keep the square crop — letterboxing a 58px tile looks worse. */
       const vid=el.querySelector("video");
+      watchVideoErrors(vid,path,url,"card:"+activeScreenName());   // CN-16
       if(trims[path]) wireTrim(vid,trims[path]);   // Item BC
       const isPlayer=el.classList.contains("video-card");
       let rot=rots[path]||0;
@@ -10056,6 +10071,7 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
     <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
       <div class="vo-meter-track"><div class="vo-meter-fill"></div></div></div>`;
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
+  watchVideoErrors(v,videoPath,videoUrl,"voiceover:"+activeScreenName()); if(a){ a.addEventListener("error",()=>reportError("audio",`voiceover audio: code ${(a.error||{}).code||"?"} · url ${String(audioUrl||"").slice(0,80)}`,null)); }   // CN-16
   const tele=(marks&&marks.length)?teleCanvasOver(box,false):null; if(tele) box.insertAdjacentHTML("beforeend",'<div style="position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:2px 7px">✎ drawn by your coach</div>');
   wireRotation(box,v,videoPath);
   const meterFill=box.querySelector(".vo-meter-fill");
