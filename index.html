@@ -3243,8 +3243,8 @@ function renderAppTabs(current){
 let _hdrWired=false;
 function showHeader(on){
   const h=$("#app-header"); if(!h) return;
-  if(!on||!ME){ h.style.display="none"; document.body.classList.remove("hdr-on"); const sb=$("#streak-badge"); if(sb&&sb.parentElement&&sb.parentElement.id==="hdr-streak-slot") document.body.appendChild(sb); return; }
-  h.style.display="flex"; document.body.classList.add("hdr-on");
+  if(!on||!ME){ h.style.display="none"; document.body.classList.remove("hdr-on"); const sb=$("#streak-badge"); if(sb&&sb.parentElement&&sb.parentElement.id==="hdr-streak-slot") ($("#phone")||document.body).insertBefore(sb,$("#phone")?$("#phone").firstChild:null); return; }
+  h.style.display="flex"; document.body.classList.add("hdr-on"); const ph=$("#phone"); if(ph&&h.parentElement===ph&&ph.lastElementChild!==h) ph.appendChild(h);
   const av=$("#hdr-avatar"); if(av){ av.setAttribute("data-avatar",ME.avatar_path||""); av.textContent=ME.avatar_initials||initials(ME.display_name||"?"); hydrateAvatars(h); }
   const sb=$("#streak-badge"), slot=$("#hdr-streak-slot"); if(sb&&slot&&sb.parentElement!==slot) slot.appendChild(sb);
   if(!_hdrWired){ _hdrWired=true;
