@@ -47,6 +47,7 @@ BE) are not tasks and are left out.
 | 33 | **CJ/CK** Trainee counter-offers + safeguards - DONE 2026-09-16 | - | Propose a change; DB trigger prevents double acceptance and accepting during a live counter; 48 h timers both sides; other offers on hold. |
 | 34 | **CL** Telestration during voice-over - BUILT 2026-09-17 | phone test | Red/green strokes, erase, pause/resume as marks on the audio clock; shared player replays them. |
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
+| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-11) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -74,6 +75,88 @@ words where given. Fixed same day unless marked.
   label shortened to "Goal expired", the row wraps and the counter box
   takes a full line beneath (`flex:1 0 100%`), its two buttons sized like
   the offer-card row.
+
+**Notes from the test (2026-09-19), one item each - CN-1 … CN-11.
+Tester's words in quotes. Not yet fixed unless marked.**
+
+- **CN-1 · "Accept this offer" dialogue needs the currency mentioned.**
+  The confirmation shows the committed total as a bare number. Show the
+  offer's currency symbol (from `price_text`, as the offer card already
+  does) on every money line of the dialogue. Quick.
+- **CN-2 · Call proposal has time-zone discrepancies.** The proposed time
+  is likely stored or displayed in UTC on one side and local on the other
+  (`proposed_at` as timestamptz rendered with a UTC slice somewhere). Fix:
+  store as timestamptz, render with the viewer's local time everywhere,
+  and print the zone abbreviation next to the time on both cards so a
+  cross-zone coach/trainee see the same moment. Verify on both phones.
+- **CN-3 · Call proposal must have Accept / Decline for the receiving
+  party, working the same both ways.** The card shows Accept/Decline only
+  in one direction (the trainee-side path was added later - AY part 2).
+  Make one `renderCallProposal(el, proposal, iAmReceiver)` used by both
+  homepages and both calendars; the receiver always gets Accept / Decline
+  / Propose another time; the proposer sees "waiting" + Cancel.
+- **CN-4 · When a certification is attached, admin needs an unmissable
+  notification.** Today it sits inside the Admin › Coach badges list with
+  an "N to review" flag. Add: a red count on the Admin tab itself, a
+  homepage card for the admin ("2 certifications to review") that stays
+  until handled, and (on CE) a push. Quick for the first two.
+- **CN-5 · All videos in the app are not playing.** Highest priority -
+  diagnose FIRST. Suspects, in order: (a) the CL change to
+  `buildSyncPlayer` - the telestration branch references `videoEnded`,
+  which may not be defined in that scope (a ReferenceError there would kill
+  every player that shares the code path); (b) signed-URL expiry / bucket
+  policy on the tester's account; (c) the phone's codec for the recorded
+  container (Android Chrome records WebM; Safari cannot play it). Check the
+  error log (AB) for the tester's session before changing anything.
+- **CN-6 · Voice-over does not play the video, so the coach cannot talk
+  and draw.** Almost certainly the same fault as CN-5 (same player). Fix
+  CN-5, retest; if it persists, the recorder's `vid.play()` is being
+  blocked by autoplay policy on that phone - start playback from the
+  Record tap gesture itself.
+- **CN-7 · Streak went from 0 to 1 but is still flashing red.** The streak
+  badge reads `ME.week_streak_count` and the risk card reads `weekRisk()`;
+  after the week close the profile was refreshed but the badge's "at
+  risk" class was not recomputed. Recompute the risk class whenever the
+  streak number changes; also the red flash should mean "this week is at
+  risk", never "your streak is 0" - re-check the rule.
+- **CN-8 · Reviewed workout is not clickable by the trainee in the
+  calendar to see the notes; on the homepage it looks reviewed but opens
+  a summary without any coach feedback.** Two paths, one screen: the
+  calendar day-tap opens the plain completed-workout summary instead of
+  the review view (`openReviewedWorkout`) when a review exists; the
+  homepage "Reviewed" chip resolves to the same summary. Route both to
+  the review view when `reviews.status = 'submitted'` for that
+  assigned workout; show tags, notes, form match and the voice-over with
+  drawings there.
+- **CN-9 · Pending sessions from a terminated goal still show in the
+  trainee's calendar; only completed ones should.** When an engagement
+  ends (ended or completed), assigned-but-unstarted sessions must be
+  removed or hidden. Do it in the same server call that ends the goal
+  (delete `assigned_workouts` with status 'assigned' for that engagement)
+  and filter defensively in the calendar for existing data.
+- **CN-10 · Trainee has no way to end a goal early.** Important: a goal
+  reached early, a coach who does not deliver, or a dispute. Under the
+  accepted goal on the Find-a-coach / My goals tab add two buttons:
+  **"Goal achieved"** and **"Cancel goal"**. Both end the engagement, both
+  ask for a reason (achieved early · coach not responding · quality · my
+  circumstances · other + text) and both feed the exit survey (CH).
+  Compensation depends on the reason and is a BI decision: achieved early
+  → no refund, remaining sessions forfeited by choice; coach not
+  responding / quality → refund of unreviewed sessions (the existing
+  ledger rule) and a flag on the coach; circumstances → refund of unused
+  weeks minus fee. Log the reason on the engagement (`ended_by`,
+  `end_reason`). Coach side gets a card "Goal ended by <name> - <reason>".
+- **CN-11 · The "personal bests last week" card keeps reappearing after
+  Got it.** The dismiss writes `ft-recap-<monday>` to localStorage;
+  suspects: localStorage unavailable/cleared in the installed app on that
+  phone, or the card the tester means is the milestone card (different
+  dismiss). Reproduce with the tester's phone; if localStorage is the
+  issue, store the dismiss server-side (a `dismissals` row) like the
+  feedback card does.
+
+Order of attack: CN-5/6 first (video is the product), then CN-8, CN-9,
+CN-3, CN-2, CN-7, CN-11, CN-1, CN-4; CN-10 is a proper feature and
+goes in as its own build.
 
 ---
 
