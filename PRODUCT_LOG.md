@@ -49,6 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
 | 38 | **CP** Navigation v2 - BUILT 2026-09-19 | settings screen later | Five tabs per role (+Review for admins); header with profile / settings / streak; Notifications screen with count; Social tab. |
@@ -59,6 +60,29 @@ Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CS. Weekly check-in photo: full resolution, body-filling frame
+
+Requested 2026-09-19. Two changes to the Saturday check-in capture:
+1. **Highest possible resolution.** Request the camera at its maximum
+   (`getUserMedia` with `width/height: {ideal: 4096}` and read the actual
+   track settings), capture the still from the video's native dimensions,
+   and upload at full size (JPEG ~0.92). The set-video capture already
+   went through this exercise (item on max-quality photos); the check-in
+   path still captures at the preview size.
+2. **Frame that fits the whole body with minimal spare room.** Today the
+   guide is a head oval plus foot marks in a fixed portrait frame, which
+   leaves a lot of empty space around a body. Replace with a body-shaped
+   guide that spans ~92% of the frame height (head at the top margin,
+   feet at the bottom), and crop the saved photo to the guide's bounding
+   box (plus a small margin) so the stored image is the body, not the
+   room. Keep the same crop every week so the timelapse (dashboard strip
+   and playback) lines up frame to frame - that is the point of the guide.
+Also worth doing at the same time: mirror the preview but save
+un-mirrored, and lock orientation (portrait) so the strip stays uniform.
+Estimate: half a day. Not started.
 
 ---
 
@@ -79,6 +103,9 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
   did not start on an input, video, canvas or a sideways-scrolling strip.
 - **CR-6** The calendar legend is collapsed by default ("Legend - what the
   colours and icons mean"), expands on tap.
+- **CR-8 (same evening)** Social: friend names rendered in the browser's
+  default button black - now inherit the theme colour; the per-friend view
+  drops its back arrow and the "In Touch" title is the way back to the list.
 - **CR-7** Training header once: goal title as the title, "Coach <name> ·
   <status>" as the subtitle (multi-goal: "N active goals").
 
