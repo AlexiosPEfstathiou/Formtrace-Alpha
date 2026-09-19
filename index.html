@@ -366,6 +366,7 @@
   .with-tabs{padding-bottom:190px;}
   /* persistent app-level bottom navigation (sits above screens, below modals) */
   #app-tabbar{z-index:9;}
+  #app-header{position:absolute;top:0;left:0;right:0;z-index:70;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none;}  #app-header>*{pointer-events:auto;}  .hdr-right{display:flex;align-items:center;gap:8px;}  .hdr-btn{background:var(--panel2);border:1px solid var(--line2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;color:var(--ink);}  .hdr-gear{font-size:18px;}  #hdr-streak-slot #streak-badge{position:static;top:auto;right:auto;}  body.hdr-on .screen.active>.top{padding-top:calc(env(safe-area-inset-top) + 62px);}  body.hdr-on #s-home .hero{padding-top:calc(env(safe-area-inset-top) + 56px);}   /* Item CP */
   /* Several screens are shown without going through go(), so renderAppTabs
      never runs for them and a stale tab bar would sit on top of their bottom
      controls (it covered "Send offer" entirely). #app-tabbar follows every
@@ -1207,26 +1208,8 @@
     <div id="home-macro" class="home-macro" style="display:none"></div>
     <div id="home-reviews" class="home-reviews" style="display:none"></div>
     <div id="home-weight" class="home-milestone" style="display:none"></div>
-    <div id="home-callproposal" class="home-call" style="display:none"></div>
-    <div id="home-certstatus" class="home-reviews" style="display:none"></div>
-    <div id="home-milestone" class="home-milestone" style="display:none"></div>
-    <div id="home-adminq" class="home-reviews" style="display:none"></div>
-    <div id="home-intouch" class="home-reviews" style="display:none"></div>
-    <div id="home-renewal" class="home-call" style="display:none"></div>
-    <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
-    <div id="home-recap" class="home-milestone" style="display:none"></div>
-    <div id="home-feedback" class="home-reviews" style="display:none"></div>
-      <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
-      <div id="home-vacation" class="home-checkin" style="display:none"></div>
-      <div id="home-checkin" class="home-checkin" style="display:none"></div>
-      <div id="home-postpone" class="home-reviews" style="display:none"></div>
-            <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
-      <div id="home-declined" class="home-checkin" style="display:none"></div>
-      <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
-        <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div><!-- kept as a target: the macro save path still refreshes it; nothing renders into it on the homepage (CN-18) -->
-    <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
   </section>
 
@@ -1471,6 +1454,40 @@
     <div class="top"><div class="back" id="goals-back">←</div><div style="flex:1"><h1>My goals</h1><div class="sub" id="goals-sub"></div></div></div>
     <div class="body" id="goals-body"></div>
   </section>
+
+  <!-- ============ NOTIFICATIONS (Item CP) ============ -->
+  <section class="screen" id="s-notifications">
+    <div class="top"><div style="flex:1"><h1>Notifications</h1><div class="sub" id="notif-sub">Everything that needs you</div></div></div>
+    <div class="body" id="notif-body">
+      <div id="home-callproposal" class="home-call" style="display:none"></div>
+      <div id="home-certstatus" class="home-reviews" style="display:none"></div>
+      <div id="home-milestone" class="home-milestone" style="display:none"></div>
+      <div id="home-adminq" class="home-reviews" style="display:none"></div>
+      <div id="home-intouch" class="home-reviews" style="display:none"></div>
+      <div id="home-renewal" class="home-call" style="display:none"></div>
+      <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
+      <div id="home-recap" class="home-milestone" style="display:none"></div>
+      <div id="home-feedback" class="home-reviews" style="display:none"></div>
+      <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
+      <div id="home-vacation" class="home-checkin" style="display:none"></div>
+      <div id="home-checkin" class="home-checkin" style="display:none"></div>
+      <div id="home-postpone" class="home-reviews" style="display:none"></div>
+      <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
+      <div id="home-declined" class="home-checkin" style="display:none"></div>
+      <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
+      <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div>
+      <div id="home-measure" class="home-checkin" style="display:none"></div>
+      <div id="notif-empty" class="empty" style="padding:40px 20px;display:none"><div class="ic">🔔</div><p>Nothing needs you right now.</p></div>
+    </div>
+  </section>
+  <!-- Item CP: persistent header - profile (left), settings + streak (right). Shown on top-level tabs only. -->
+  <div id="app-header" style="display:none">
+    <button id="hdr-profile" class="hdr-btn" aria-label="Profile"><div class="avatar" id="hdr-avatar" style="width:34px;height:34px;font-size:13px"></div></button>
+    <div class="hdr-right">
+      <button id="hdr-settings" class="hdr-btn hdr-gear" aria-label="Settings">⚙</button>
+      <div id="hdr-streak-slot"></div>
+    </div>
+  </div>
 
   <!-- ============ IN TOUCH (Item CM) ============ -->
   <section class="screen" id="s-intouch">
@@ -3156,6 +3173,8 @@ function go(name){
   }
   const R=fn=>{ try{ const p=fn(); if(p&&p.catch)p.catch(err=>{console.error(name+" render failed",err);toast((err&&err.message)||"Something went wrong loading this screen",4500);}); }catch(err){console.error(name+" render threw",err);toast((err&&err.message)||"Something went wrong",4500);} };
   if(name==="home")R(renderHome);
+  if(name==="notifications")R(async()=>{ await renderHome(); refreshNotifDot(); });   // Item CP: the cards render through renderHome into the notifications screen
+  if(name==="intouch")R(renderInTouch);   // Item CP: Social tab
   if(name==="coach")R(renderCoach);
   if(name==="market")R(renderMarket);
   if(name==="trainee-home")R(renderTraineeHome);
@@ -3187,14 +3206,14 @@ const TAB_SECTION={ // screen -> which tab should light up
   listings:"listings", "listing-new":"listings",
   coach:"coach", "ex-edit":"coach", "wo-build":"coach",
   market:"market",
-  profile:"profile", admin:"admin"
+  profile:"profile", admin:"admin", notifications:"notifications", intouch:"intouch"
 };
 // Top-level destinations show the persistent bar; deep/editor screens hide it
 // so it never covers their own bottom action buttons.
-const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","admin","engagement"]);
+const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","admin","engagement","notifications","intouch"]);
 function renderAppTabs(current){
   const bar=$("#app-tabbar"); if(!bar)return;
-  if(!ME || !TAB_TOPLEVEL.has(current)){ bar.style.display="none"; return; }
+  if(!ME || !TAB_TOPLEVEL.has(current)){ bar.style.display="none"; showHeader(false); return; }
   const base = ME.role==="coach" ? "coach" : "trainee";
   const section = TAB_SECTION[current] || (base==="coach"?"home":"home");
   const glisten = (base!=="coach") ? window._ftGlistenGoal : false;
@@ -3205,18 +3224,41 @@ function renderAppTabs(current){
     tabs+=tab("coach","✎","Library");
     tabs+=tab("market","◎","Open goals");
     tabs+=tab("trainee-home","◉","Trainees");
+    tabs+=tab("intouch","🤝","Social");
     if(ME.is_admin) tabs+=tab("admin","★","Review");
-    tabs+=tab("profile","☰","Profile");
   }else{
     tabs+=tab("home","⌂","Home");
     tabs+=tab("trainee-home","◉","Training",glisten);
-    tabs+=tab("listings","◎","Find a coach",glisten);
+    tabs+=tab("listings","◎","Goal",glisten);
+    tabs+=tab("notifications","🔔","Notifications");
+    tabs+=tab("intouch","🤝","Social");
     if(ME.is_admin) tabs+=tab("admin","★","Review");
-    tabs+=tab("profile","☰","Profile");
   }
   bar.innerHTML=tabs;
   bar.style.display="flex";
   if(ME.is_admin) refreshAdminDot();   // CN-4
+  showHeader(true); refreshNotifDot();   // Item CP
+}
+/* Item CP: persistent header. Profile (avatar) top-left; settings gear and the streak badge top-right. */
+let _hdrWired=false;
+function showHeader(on){
+  const h=$("#app-header"); if(!h) return;
+  if(!on||!ME){ h.style.display="none"; document.body.classList.remove("hdr-on"); const sb=$("#streak-badge"); if(sb&&sb.parentElement&&sb.parentElement.id==="hdr-streak-slot") document.body.appendChild(sb); return; }
+  h.style.display="flex"; document.body.classList.add("hdr-on");
+  const av=$("#hdr-avatar"); if(av){ av.setAttribute("data-avatar",ME.avatar_path||""); av.textContent=ME.avatar_initials||initials(ME.display_name||"?"); hydrateAvatars(h); }
+  const sb=$("#streak-badge"), slot=$("#hdr-streak-slot"); if(sb&&slot&&sb.parentElement!==slot) slot.appendChild(sb);
+  if(!_hdrWired){ _hdrWired=true;
+    $("#hdr-profile").addEventListener("click",()=>go("profile"));
+    $("#hdr-settings").addEventListener("click",async()=>{ go("profile"); for(let i=0;i<12;i++){ const t=[...document.querySelectorAll("#s-profile .eyebrow")].find(e=>/Appearance/i.test(e.textContent)); if(t){ t.scrollIntoView({behavior:"smooth",block:"start"}); return; } await new Promise(r=>setTimeout(r,200)); } });
+  }
+}
+/* Notifications tab: a red count of visible cards. */
+function refreshNotifDot(){
+  const btn=document.querySelector('#app-tabbar [data-go="notifications"]'); if(!btn) return;
+  const n=[...document.querySelectorAll("#notif-body > div[id^=home-]")].filter(d=>d.style.display!=="none"&&d.innerHTML.trim()).length;
+  let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); }
+  dot.textContent=n; dot.style.display=n?"":"none";
+  const empty=$("#notif-empty"); if(empty) empty.style.display=n?"none":"";
 }
 /* CN-4: unmissable admin count - certifications and coach applications awaiting review. */
 let adminDotCache=null;
@@ -3495,6 +3537,8 @@ async function renderHome(){
   const dcEl=$("#home-declined"); if(dcEl) dcEl.style.display="none";
 
   let noActiveGoal=false;
+  /* Item CP: the event-card containers live in the Notifications screen for trainees (who have that tab) and on Home for coaches (who do not). Move the nodes, not the code. */
+  try{ const cards=[...document.querySelectorAll("#notif-body > div[id^=home-], #s-home .hero > div[id^=home-]")].filter(d=>!/^home-(today|macro|reviews|weight|coach|news)$/.test(d.id)); const target=(base==="trainee")?$("#notif-body"):$("#s-home .hero"); const emptyEl=$("#notif-empty"); for(const d of cards){ if(d.parentElement!==target){ if(target===$("#notif-body")&&emptyEl) target.insertBefore(d,emptyEl); else target.appendChild(d); } } if(base!=="trainee"&&emptyEl) emptyEl.style.display="none"; }catch(e){}
   if(base==="trainee" && ME){
     let engs=[];
     try{ engs=await store.engagements.list({trainee_id:ME.id}); }catch(e){}
@@ -3532,6 +3576,7 @@ async function renderHome(){
       renderHomeMeasure(measureEl),
       renderHomeCallProposal($("#home-callproposal"))
     ]);
+    refreshNotifDot();   // Item CP
   }else{
     // Coach welcome + summary + active-trainee list
     $("#home-h").innerHTML=`Welcome back <span class="g">Coach ${firstName}</span>.`;
@@ -4027,7 +4072,7 @@ let knockState=null;
 function avatarHtml(p,size){ return `<div class="avatar" data-avatar="${escapeHtml((p&&p.avatar_path)||"")}" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.36)}px">${escapeHtml((p&&p.avatar_initials)||initials((p&&p.display_name)||"?"))}</div>`; }
 async function renderInTouch(){
   const body=$("#it-body"); body.innerHTML=`<div class="empty" style="padding:30px"><div class="spin" style="margin:0 auto"></div></div>`;
-  $("#it-back").onclick=()=>go("profile");
+  $("#it-back").onclick=()=>go("home");
   try{
     const [connRes,feedRes]=await Promise.all([
       store._sb.from("connections").select("*").or(`a.eq.${ME.id},b.eq.${ME.id}`),

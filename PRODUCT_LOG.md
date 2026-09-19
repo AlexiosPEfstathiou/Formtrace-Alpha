@@ -49,6 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 38 | **CP** Navigation v2 - BUILT 2026-09-19 | settings screen later | Five tabs per role (+Review for admins); header with profile / settings / streak; Notifications screen with count; Social tab. |
 | 37 | **CO** Trainee homepage v2 - BUILT 2026-09-19 | - | Welcome → workouts remaining (View) → diet plan + 4-metric log → reviewed workouts (View) → weight trend. |
 | 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-16) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
 
@@ -56,6 +57,34 @@ Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CP. Navigation v2: five tabs, persistent header - BUILT 2026-09-19
+
+Owner's spec, same day: everyone has five tabs (admins six, with Review);
+Profile leaves the bar and becomes the header.
+- **Trainee tabs:** Home · Training · **Goal** (was "Find a coach") ·
+  **Notifications** (new) · **Social** (In Touch). **Coach tabs:** Home ·
+  Library · Open goals · Trainees · Social. Admins: + Review.
+- **Header, always on top-level screens:** top-left the user's **profile
+  picture** → Profile; top-right the **streak badge** (the existing one,
+  moved into the header); left of it a **settings gear** → Profile,
+  scrolled to Appearance (the settings section). Hidden on deep screens
+  (recorder, review, builder) exactly like the tab bar, so it never
+  covers their own controls. Screen headers gain top padding while it is
+  shown.
+- **Notifications screen:** the event cards that used to sit on the
+  homepage - call proposals, direct offers, In Touch requests and claps,
+  surveys, milestones, the Monday recap, streak risk, vacation, check-in,
+  postpone decisions, review-due - now render there for trainees; the tab
+  shows a red count of visible cards; empty state "Nothing needs you right
+  now". The renderers are unchanged - only the container nodes moved (and
+  are moved back onto Home at runtime for coaches, who have no
+  Notifications tab). Home keeps CO's structured section.
+Not done: a real Settings screen (the gear points at the Profile's
+Appearance section for now); coach notification count (their cards are on
+Home).
 
 ---
 
