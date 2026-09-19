@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -444,7 +444,8 @@
   .sheet{position:absolute;left:0;right:0;bottom:0;z-index:31;background:var(--bg2);border-radius:24px 24px 0 0;
     border-top:1px solid var(--line2);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
     max-height:82%;display:flex;flex-direction:column;padding-bottom:calc(env(safe-area-inset-bottom) + 14px);}
-  .sheet.on{transform:none;}
+  .sheet{visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s linear .28s;}   /* CN-18: the closed sheet's header peeked above the tab bar on a phone - hide it outright when closed */
+  .sheet.on{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s;}
   .sheet .sh-h{padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between;}
   .sheet .sh-h h3{font-size:17px;font-weight:700;}
   .sheet .sh-h .x{width:32px;height:32px;border-radius:9px;background:var(--panel2);border:none;color:var(--ink);font-size:16px;cursor:pointer;}
@@ -1224,8 +1225,7 @@
       <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
-      <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div>
-      <div id="home-measure" class="home-checkin" style="display:none"></div>
+        <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
   </section>
 
@@ -3527,8 +3527,7 @@ async function renderHome(){
       renderHomePostpone(engs, $("#home-postpone")),
       renderHomeMacro(macroEl),
     renderHomeWeight($("#home-weight")),   // Item CO
-      renderHomeMacroGaps($("#home-macrogaps")),
-      renderHomeCheckin(checkinEl),
+        renderHomeCheckin(checkinEl),
       renderHomeMeasure(measureEl),
       renderHomeCallProposal($("#home-callproposal"))
     ]);
@@ -3612,7 +3611,7 @@ async function renderHomeWeekStatus(engs, el){
   const planned=Math.max(caps, rows.length);
   const done=rows.length-remaining;
   el.className="home-today";
-  el.innerHTML=`<div class="ht-head"><span class="ht-eyebrow">This week</span></div>
+  el.innerHTML=`<div class="eyebrow">This week</div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
       <div style="flex:1"><div style="font-size:20px;font-weight:800">${remaining? `${remaining} workout${remaining===1?"":"s"} remaining this week`:"No more workouts for this week"}</div>
       <div style="font-size:12.5px;color:var(--muted);margin-top:2px">${planned?`${done} of ${planned} done`:"Nothing assigned yet"}${remaining?" · your coach's plan is on the calendar":" · nice work"}</div></div>
@@ -3771,7 +3770,7 @@ async function renderHomeWeight(el){
     const wpts=logs.filter(l=>l.weight_kg!=null).sort((a,b)=>a.log_date<b.log_date?-1:1).slice(-30).map(l=>({d:l.log_date,w:Number(l.weight_kg)}));
     if(wpts.length<2) return;
     const first=wpts[0].w, last=wpts[wpts.length-1].w, d=Math.round((last-first)*10)/10;
-    el.innerHTML=`<div class="card" style="padding:12px 14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="eyebrow">Weight trend</div><div style="font-size:12.5px;color:var(--muted)"><b style="color:var(--ink)">${last} kg</b> · ${d>0?"+":""}${d} kg since ${escapeHtml(fmtDay(wpts[0].d))}</div></div><div style="margin-top:8px">${weightSparkline(wpts)}</div></div>`;
+    el.innerHTML=weightSparkline(wpts);
     el.style.display="";
   }catch(e){ console.error("home weight",e); }
 }

@@ -291,6 +291,17 @@ Tester's words in quotes. Not yet fixed unless marked.**
   trainee between goals keeps a living Training tab instead of a dead one.
   Audit each Training-tab card for "does this need an engagement?" and
   unhide the ones that don't. Not started.
+- **CN-17 · Smoke test must execute the renderers.** The `trims` scope bug
+  (CN-5/6) parsed cleanly and threw only at run time. Add a check that
+  invokes the main render functions against a stub DOM and stub store so a
+  ReferenceError inside a renderer fails the check. Not started.
+- **CN-18 · "Add from library" sheet header visible at the bottom of every
+  tab** (screenshot). The closed sheet relies on `translateY(100%)` to be
+  off-screen; on the tester's phone its header peeked above the tab bar.
+  Fixed: the closed sheet is `visibility:hidden` outright (transition
+  preserved), so it can never peek. Also from the same screenshot: the
+  "N earlier days without macros" card removed from the homepage (owner);
+  the weight-trend card no longer doubles the sparkline's own header.
 - **CN-16 · Video playback failures were invisible - now logged.** Three
   reports on the test day ("all videos not playing", then "they play now",
   then "not playable" in the review view) with nothing to diagnose from.
