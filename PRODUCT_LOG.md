@@ -164,7 +164,19 @@ Tester's words in quotes. Not yet fixed unless marked.**
   also reloads when the loaded goal differs from the workout's; and
   `openReview` is wrapped so any failure shows a toast with the message and
   lands in the error log. Videos inside the view were blocked by the
-  `trims` scope bug (CN-5/6), now fixed - so the view should also play. Two paths, one screen: the
+  `trims` scope bug (CN-5/6), now fixed - so the view should also play.
+  **Fourth pass - the screenshot settled it.** The tester's long-press
+  selected the tile's TEXT: the week-row session tiles ("Session 1 · Arm
+  Day · Sat 19 Sept") had no tap handler at all in the DONE state - the one
+  state that lacked one (empty -> Assign, filled -> Start / Remove, missed
+  -> none by design, done -> nothing). The three earlier passes fixed the
+  day sheet, which the tester was never using. Now a done tile reads
+  "Reviewed - open" (or "Review" for the coach) and opens the coach review
+  with the row's engagement as context; a submitted-but-unreviewed tile
+  opens the summary for the trainee and the grading view for the coach.
+  Lesson, recorded: ask for a screenshot on the FIRST report of "not
+  clickable" - it identifies the component in one glance where reading
+  code took four attempts. Two paths, one screen: the
   calendar day-tap opens the plain completed-workout summary instead of
   the review view (`openReviewedWorkout`) when a review exists; the
   homepage "Reviewed" chip resolves to the same summary. Route both to

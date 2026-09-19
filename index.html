@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -6572,8 +6572,9 @@ function weekHeaderEl(monISO, iAmCoach){
         if(iAmCoach && active){ s.classList.add("tap"); s.innerHTML=label+"+ Assign"; s.addEventListener("click",()=>assignWorkoutFlow(monISO)); }
         else s.innerHTML=label+(iAmCoach?"—":"Not assigned yet");
       }else if(isDone(a)){
-        s.classList.add("done");
-        s.innerHTML=label+`${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}${a.due_date?`<br><span style="font-weight:600;opacity:.75">${fmtDay(a.due_date)}</span>`:""}`;
+        s.classList.add("done","tap");
+        s.innerHTML=label+`${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}${a.due_date?`<br><span style="font-weight:600;opacity:.75">${fmtDay(a.due_date)}</span>`:""}${a.status==="reviewed"?`<br><span style="color:var(--amber);font-weight:800">Reviewed - open ▸</span>`:(iAmCoach?`<br><span style="color:var(--blue);font-weight:800">Review ▸</span>`:"")}`;
+        /* CN-8: done slots were the ONE state with no tap handler - the week row is where trainees look. Reviewed -> the coach review; submitted -> coach grades it / trainee sees the summary. */         s.addEventListener("click",()=>{           const eng=(typeof traineeEngs!=="undefined"&&traineeEngs?traineeEngs:[]).find(e=>e.id===a.engagement_id); if(eng){ currentEng=eng; currentEngOther=null; }           if(a.status==="reviewed") openReview(a.id,true);           else if(iAmCoach) openReview(a.id);           else openAssigned(a.id);         });
       }else{
         const carried=a.created_at&&a.week_start&&isoOf(new Date(a.created_at))<a.week_start;
         const name=escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")+(carried?` <span style="color:var(--attn)">· carried</span>`:"");
