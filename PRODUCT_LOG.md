@@ -55,6 +55,20 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
+## CN. Test day 2026-09-19 - findings
+
+Live findings from the first alpha test day, one per line, in the tester's
+words where given. Fixed same day unless marked.
+- **"Coach pitch has a Decline button that covers the entire screen; the
+  rest of the options are hidden off to the right."** Cause: the CJ row
+  gave Decline `flex:0 0 auto` while `.btn` defaults to `width:100%`, so
+  it took the full row and pushed Propose a change / Accept off-screen.
+  Fixed: explicit `width:auto; min-width:0` on all three (and on the
+  on-hold row). Lesson recorded: any `.btn` placed in a flex row needs
+  `width:auto` - the default is full width.
+
+---
+
 ## CM. "In Touch" - knock phones to connect; celebrate each other's PBs and achievements - BUILT 2026-09-18 (gym tuning + IP hour pending)
 
 Opened 2026-09-18; **supersedes and unpauses AE and the connection half
