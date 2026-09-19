@@ -49,12 +49,40 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-15) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
+| 37 | **CO** Trainee homepage v2 - BUILT 2026-09-19 | - | Welcome → workouts remaining (View) → diet plan + 4-metric log → reviewed workouts (View) → weight trend. |
+| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-16) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CO. Trainee homepage v2 - BUILT 2026-09-19
+
+Owner's restructure after the test day: "a completed workout should not
+display on Today's program; this is a list of pending items." The
+homepage now reads, in this order:
+1. **Welcome back <Name>.**
+2. **"X workouts remaining this week"** with **View** (opens the Training
+   tab and scrolls to this week's row); when everything is done, **"No
+   more workouts for this week"**; sub-line "2 of 3 done". Replaces
+   "Today's program", which listed completed sessions as if pending.
+3. **"Coach's diet plan for this week: 1,800 kcal, 140 g protein"**
+   (the macro goal in force, carried forward if not reset), then **"Please
+   log your current weight and yesterday's macros"** and the 4-metric
+   log (protein · carbs · fat · weight). Once yesterday is logged the
+   form gives way to "Yesterday's log is in ✓" under the plan line.
+4. **"X workouts have been reviewed by your coach with feedback"** with
+   **View** (calendar, at the newest review's week); the per-review
+   chips remain beneath for a direct open.
+5. **Weight trend** - last 30 logged weights, current weight and the
+   change since the first point.
+Event cards (call proposals, direct offers, In Touch, surveys,
+milestones, recap, streak risk, check-in) follow, unchanged. Nothing was
+deleted server-side; `renderHomeToday` remains in the file, unused, for
+one release in case the owner wants the today view back as an option.
 
 ---
 

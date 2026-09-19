@@ -1201,7 +1201,12 @@
       <div class="logo">FORM<b>TRACE</b> · COACH</div>
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
-      <div id="home-callproposal" class="home-call" style="display:none"></div>
+      <!-- Item CO: trainee homepage v2 - the structured section first -->
+    <div id="home-today" class="home-today" style="display:none"></div>
+    <div id="home-macro" class="home-macro" style="display:none"></div>
+    <div id="home-reviews" class="home-reviews" style="display:none"></div>
+    <div id="home-weight" class="home-milestone" style="display:none"></div>
+    <div id="home-callproposal" class="home-call" style="display:none"></div>
     <div id="home-certstatus" class="home-reviews" style="display:none"></div>
     <div id="home-milestone" class="home-milestone" style="display:none"></div>
     <div id="home-adminq" class="home-reviews" style="display:none"></div>
@@ -1213,15 +1218,12 @@
       <div id="home-streakrisk" class="home-checkin" style="display:none"></div>
       <div id="home-vacation" class="home-checkin" style="display:none"></div>
       <div id="home-checkin" class="home-checkin" style="display:none"></div>
-      <div id="home-today" class="home-today" style="display:none"></div>
-      <div id="home-reviews" class="home-reviews" style="display:none"></div>
       <div id="home-postpone" class="home-reviews" style="display:none"></div>
             <div id="home-reviewdue" class="home-checkin" style="display:none"></div>
       <div id="home-declined" class="home-checkin" style="display:none"></div>
       <div id="home-postponerequests" class="home-checkin" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
       <div id="home-news" class="home-news" style="display:none"></div>
-      <div id="home-macro" class="home-macro" style="display:none"></div>
       <div id="home-macrogaps" class="home-macrogaps" style="display:none"></div>
       <div id="home-measure" class="home-checkin" style="display:none"></div>
     </div>
@@ -3509,7 +3511,7 @@ async function renderHome(){
        renderHomeToday has no such coupling with milestone, so it joins that
        first phase instead of waiting on it needlessly. */
     await Promise.all([
-      renderHomeToday(engs, todayEl),
+      renderHomeWeekStatus(engs, todayEl),   // Item CO: replaces Today's program
       renderHomeMilestone($("#home-milestone"))
     ]);
     await Promise.all([
@@ -3524,6 +3526,7 @@ async function renderHome(){
       renderHomeReviews(engs, reviewsEl),
       renderHomePostpone(engs, $("#home-postpone")),
       renderHomeMacro(macroEl),
+    renderHomeWeight($("#home-weight")),   // Item CO
       renderHomeMacroGaps($("#home-macrogaps")),
       renderHomeCheckin(checkinEl),
       renderHomeMeasure(measureEl),
@@ -3591,6 +3594,32 @@ async function renderHomeNewGoals(p){
   if($("#s-home")?.classList.contains("active")) renderAppTabs("home");
 }
 /* Trainee homepage: today's assigned workout (or Rest day) */
+/* ---- Item CO: trainee homepage v2 ---------------------------------------------
+   Welcome → workouts remaining this week (View → that week on the calendar) →
+   coach's diet plan + yesterday's log → reviewed workouts (View) → weight trend.
+   Completed workouts never appear as "today's program"; that block is retired. */
+async function goToCalendarWeek(monISO){
+  go("trainee-home");
+  for(let i=0;i<12;i++){ const el=document.querySelector(`.cal-week[data-week="${monISO}"]`); if(el){ el.scrollIntoView({behavior:"smooth",block:"start"}); return; } await new Promise(r=>setTimeout(r,250)); }
+}
+async function renderHomeWeekStatus(engs, el){
+  if(!el) return; el.style.display="none"; el.innerHTML="";
+  const active=(engs||[]).filter(e=>e.status==="active"); if(!active.length) return;
+  const thisMon=weekStartISO(new Date());
+  let rows=[]; try{ rows=(await assignedLiteByEng(active)).flat().filter(a=>a.week_start===thisMon); }catch(e){ console.error("home week status",e); return; }
+  const remaining=rows.filter(a=>a.status==="assigned").length;
+  const caps=active.map(e=>e.workouts_per_week_cap||0).reduce((s,x)=>s+x,0);
+  const planned=Math.max(caps, rows.length);
+  const done=rows.length-remaining;
+  el.className="home-today";
+  el.innerHTML=`<div class="ht-head"><span class="ht-eyebrow">This week</span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+      <div style="flex:1"><div style="font-size:20px;font-weight:800">${remaining? `${remaining} workout${remaining===1?"":"s"} remaining this week`:"No more workouts for this week"}</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:2px">${planned?`${done} of ${planned} done`:"Nothing assigned yet"}${remaining?" · your coach's plan is on the calendar":" · nice work"}</div></div>
+      <button class="btn sm ${remaining?"primary":"ghost"}" id="ht-view" style="width:auto">View</button></div>`;
+  el.style.display="";
+  $("#ht-view").addEventListener("click",()=>goToCalendarWeek(thisMon));
+}
 async function renderHomeToday(engs, el){
   const active=(engs||[]).filter(e=>e.status==="active");
   const iso=todayISO();
@@ -3734,14 +3763,29 @@ async function renderHomeMacroGaps(el){
 }
 /* Trainee homepage: compact quick-log strip for yesterday's macros.
    Hidden entirely once yesterday is logged (until the next day). */
+/* Item CO: weight trend on the homepage - last 30 logged weights. */
+async function renderHomeWeight(el){
+  if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
+  try{
+    const logs=await store.logs.list({trainee_id:ME.id});
+    const wpts=logs.filter(l=>l.weight_kg!=null).sort((a,b)=>a.log_date<b.log_date?-1:1).slice(-30).map(l=>({d:l.log_date,w:Number(l.weight_kg)}));
+    if(wpts.length<2) return;
+    const first=wpts[0].w, last=wpts[wpts.length-1].w, d=Math.round((last-first)*10)/10;
+    el.innerHTML=`<div class="card" style="padding:12px 14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="eyebrow">Weight trend</div><div style="font-size:12.5px;color:var(--muted)"><b style="color:var(--ink)">${last} kg</b> · ${d>0?"+":""}${d} kg since ${escapeHtml(fmtDay(wpts[0].d))}</div></div><div style="margin-top:8px">${weightSparkline(wpts)}</div></div>`;
+    el.style.display="";
+  }catch(e){ console.error("home weight",e); }
+}
 async function renderHomeMacro(el){
   const iso=addDaysISO(todayISO(),-1);
   let existing=null;
   try{ existing=(await store.logs.list({trainee_id:ME.id,log_date:iso}))[0]||null; }catch(e){}
-  if(macrosLogged(existing)){ el.style.display="none"; el.innerHTML=""; return; }
+  /* Item CO: the coach's plan for this week heads the card; the log form is the 4-metric entry. */
+  let plan=null; try{ const thisMon=weekStartISO(new Date()); const { data:engs }=await store._sb.from("engagements").select("id").eq("trainee_id",ME.id).eq("status","active"); const ids=(engs||[]).map(e=>e.id); if(ids.length){ const { data:mg }=await store._sb.from("macro_goals").select("*").in("engagement_id",ids).lte("week_start",thisMon).order("week_start",{ascending:false}).order("updated_at",{ascending:false}).limit(1); plan=(mg||[])[0]||null; } }catch(e){}
+  const planLine=plan?`<div style="font-size:13px;margin-bottom:8px"><span style="color:var(--muted)">Coach's diet plan for this week:</span> <b>${plan.kcal?`${Number(plan.kcal).toLocaleString()} kcal`:""}${plan.kcal&&plan.protein_g?", ":""}${plan.protein_g?`${plan.protein_g} g protein`:""}</b></div>`:"";
+  if(macrosLogged(existing)){ if(!plan){ el.style.display="none"; el.innerHTML=""; return; } el.className="home-macro"; el.innerHTML=planLine+`<div style="font-size:12.5px;color:var(--faint)">Yesterday's log is in ✓</div>`; el.style.display=""; return; }
   el.className="home-macro";
-  el.innerHTML=`
-    <div class="hm-title">Don't forget to log yesterday's macros</div>
+  el.innerHTML=planLine+`
+    <div class="hm-title">Please log your current weight and yesterday's macros</div>
     <div class="hm-row">
       <input id="hm-p" type="number" inputmode="decimal" min="0" step="any" placeholder="Protein" aria-label="Protein (g)">
       <input id="hm-c" type="number" inputmode="decimal" min="0" step="any" placeholder="Carbs" aria-label="Carbs (g)">
@@ -3786,9 +3830,11 @@ async function renderHomeReviews(engs, el){
     const nm=(aw.snapshot&&aw.snapshot.name)||"Workout";
     return `<button class="rv-chip" data-rev="${aw.id}"><span class="rv-ic">▶</span><span class="rv-tx"><b>New review</b><span>${escapeHtml(nm)}</span></span></button>`;
   }).join("");
-  el.innerHTML=`<div class="rv-title">${unviewed.length} new form review${unviewed.length>1?"s":""} from your coach</div><div class="rv-row">${chips}</div>`;
+  /* Item CO: one line + View (to the calendar week of the newest review). Tapping a chip still opens that review directly. */
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="flex:1"><div style="font-size:15px;font-weight:800">${unviewed.length} workout${unviewed.length===1?" has":"s have"} been reviewed by your coach with feedback</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Tags, notes and voice-over on your sets</div></div><button class="btn primary sm" id="rv-view" style="width:auto">View</button></div><div class="rv-row" style="margin-top:8px">${chips}</div>`;
   el.style.display="";
-  el.querySelectorAll("[data-rev]").forEach(b=>b.addEventListener("click",()=>openReview(b.getAttribute("data-rev"),true)));
+  $("#rv-view").addEventListener("click",()=>goToCalendarWeek(unviewed[0].week_start||weekStartISO(new Date())));
+  el.querySelectorAll("[data-rev]").forEach(b=>b.addEventListener("click",()=>{ const aw=unviewed.find(x=>x.id===b.getAttribute("data-rev")); const eng=(engs||[]).find(e=>aw&&e.id===aw.engagement_id); if(eng){ currentEng=eng; currentEngOther=null; } openReview(b.getAttribute("data-rev"),true); }));
 }
 /* Trainee homepage: the coach's decision on a postpone request, shown once.
    Tapping (or dismissing) acknowledges it via ack_postpone — postpone_*
