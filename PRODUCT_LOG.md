@@ -49,6 +49,9 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
+| 43 | **CU** Camera permission denied - re-ask every time + per-browser steps | Small | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
+| 42 | **CT** Share wins to WhatsApp / Instagram / Snapchat | Medium | Web Share API with a generated image card + referral link; own wins, or a friend's with opt-in. |
 | 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
@@ -60,6 +63,75 @@ Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CV. Goal video is required - explore alternatives for the socially anxious
+
+Requested 2026-09-20. Posting a goal requires a video pitch. For a first-
+time user with social anxiety that may be the moment they leave. Explore
+before deciding - the video exists for a reason (coaches pitch better when
+they see the person and the movement), so the question is how to keep the
+value without the barrier:
+- **Make it optional with a visible cost:** "Goals with a video get 3x
+  more offers" (measure the real number) and a badge on the listing that
+  shows coaches which goals have one. Trainees choose.
+- **Lower the bar, not remove it:** a 15-second cap; a "no face" option
+  (frame from the shoulders down, or record the movement only); voice-over
+  a still photo; text-only with a structured form (what, where you are,
+  what you tried) that coaches can pitch to.
+- **Defer it:** post without a video; the app asks for one after the first
+  offer arrives ("Giorgos would like to see your squat - 15 seconds, no
+  face needed"), when there is a real person on the other side.
+- **Coach-side substitute:** the coach's pitch video already carries the
+  relationship; a trainee's first video could be the first assigned
+  session instead, recorded in private.
+Decide after the trainee survey (CC) returns its "posting your goal was…"
+scores and comments. Not started.
+
+---
+
+## CU. Camera permission denied once - no way back
+
+Requested 2026-09-20. If a user denies camera (or microphone) permission,
+the app currently shows the denied state and offers nothing further; the
+browser will not re-prompt on its own, and most people do not know the
+site-settings path. Fix:
+- On every camera open, if permission is `denied` (Permissions API where
+  available; otherwise the `NotAllowedError` from getUserMedia), show a
+  card explaining exactly how to re-enable it for THIS browser: Chrome
+  Android (lock icon → Permissions → Camera), Safari iOS (Settings → Safari
+  → Camera, or the aA menu → Website Settings), desktop Chrome (camera icon
+  in the address bar). Detect the browser and show one set of steps.
+- Offer a **Try again** button that calls getUserMedia again - some
+  browsers do re-prompt when the user has since changed the setting, and
+  it costs nothing to ask.
+- Never cache "denied" in the app; ask each time the camera opens (the
+  owner's request). The browser's own memory is the only one.
+- Same treatment for the microphone (voice-over) and, later, motion
+  (knock) and location.
+Small; half a day with the per-browser copy. Not started.
+
+---
+
+## CT. Share a wins feed with a friend outside the app
+
+Requested 2026-09-20: share "a Social" - a friend's or your own recent
+wins / a congratulation moment - to WhatsApp, Instagram, Snapchat.
+- **Mechanism:** the Web Share API (`navigator.share`) with an image file
+  - the same path the streak share image already uses (Item AT step 5),
+  which hands off to WhatsApp / Instagram Stories / Snapchat natively on
+  the phone. No per-network integration needed; Instagram and Snapchat
+  accept an image share, not a link.
+- **What is shared:** a generated image card - the person's photo and
+  name, "3 personal bests this week", the list, FormTrace mark - plus the
+  referral link (BN) in the text, so every share is also an invitation.
+- **Privacy:** only share YOUR OWN wins, or a friend's with their prior
+  opt-in ("Friends may share my wins" toggle, default off) - a friend's
+  PBs are theirs. The congratulation clap can be shared by the receiver.
+- Entry points: a Share button on your own wins in Social and on the clap
+  overlay ("Share this").
+Estimate: a day, reusing the share-image generator. Not started.
 
 ---
 
