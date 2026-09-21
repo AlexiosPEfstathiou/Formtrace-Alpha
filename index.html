@@ -1903,8 +1903,10 @@ window.addEventListener("unhandledrejection",e=>{
     try{
       const first=args[0];
       const err=args.find(a=>a instanceof Error);
+      /* include the message of any error-like argument (Supabase errors are plain objects, not Error instances) */
+      const detail=args.slice(1).map(a=>a instanceof Error?a.message:(a&&typeof a==="object"&&(a.message||a.details||a.hint||a.code))?[a.code,a.message,a.details,a.hint].filter(Boolean).join(" · "):(typeof a==="string"?a:"")).filter(Boolean).join(" | ");
       reportError("handled",
-        typeof first==="string"?first:(first&&first.message)||"console.error",
+        (typeof first==="string"?first:(first&&first.message)||"console.error")+(detail?" — "+detail:""),
         err&&err.stack);
     }catch(_){}
   };
