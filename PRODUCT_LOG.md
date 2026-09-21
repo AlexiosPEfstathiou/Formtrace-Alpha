@@ -39,7 +39,7 @@ BE) are not tasks and are left out.
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
 | 27 | **CD** Retention plan - DONE 2026-09-16 | push on CE, window on CI | Survey-linked next-goal offer; persistent trainee card; between-goals card with prefilled repost; admin scan activity. |
-| 28 | **CE** Push notifications | Hard (server) | Web Push + VAPID + Edge Function sender + SW push handler; opt-in per type; build with BI's server. |
+| 28 | **CE** Push notifications - BUILT 2026-09-21 | 4 dashboard steps | Outbox + triggers compose; push-send Edge Function sends; Settings toggle + per-type switches; SW click routing. docs/PUSH_SETUP.md. |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels - BUILT 2026-09-17 | - | Per-workout scale (+reps, +kg per level), optional target kg per exercise, level picked at assign and remembered per trainee, resolved numbers in the snapshot. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
@@ -1034,7 +1034,7 @@ strings verbatim when CE exists.
 
 ---
 
-## CE. Mobile phone notifications (push)
+## CE. Mobile phone notifications (push) - BUILT 2026-09-21 (dashboard setup pending)
 
 Requested 2026-09-16, now that the app installs. Push is what makes the
 timed nudges real: call reminders (AY), the week-close and PB/streak
@@ -1051,8 +1051,35 @@ which is consistent with the deferred iOS stance. The server side is the
 same one BI needs, so build them together.
 **Rules:** opt-in from Profile with a clear list of what will be sent;
 quiet hours; every notification type individually switchable; nothing
-marketing-flavoured in v1. Not started; depends on the Edge Function
-server being stood up (BI).
+marketing-flavoured in v1.
+
+**BUILT 2026-09-21 - app side deployed; four dashboard steps to switch on
+(docs/PUSH_SETUP.md).** Owner's question that triggered it: "do these
+show in the Android notification bar?" - until now, no; everything was an
+in-app card.
+- *Data:* `push_subscriptions` (endpoint, keys, own rows), `push_config`
+  (public VAPID key only), `profiles.push_prefs` (per-type opt-outs),
+  `push_outbox` (one row per recipient per event; service role only).
+- *Composition in SQL:* triggers write outbox rows for claps, shared
+  handles, knock requests and confirmations, offers (new · change proposed
+  · change answered · accepted), reviews, call proposals and acceptances -
+  with the copy that the in-app cards already use, and a deep link
+  (`/#notifications`, `/#intouch`, `/#listings`, `/#market`,
+  `/#trainee-home`).
+- *Sending:* Edge Function `push-send` (Deno, web-push, service role) called
+  by a Database Webhook on outbox INSERT; honours per-type mutes; prunes
+  404/410 subscriptions; records sent_at / error on the row.
+- *Client:* Settings → **Notifications** card - master toggle (permission
+  prompt, VAPID subscribe, local test buzz) and six per-type switches
+  (offers · reviews · calls · friend requests · congratulations · shared
+  handles). Service worker gained `push` and `notificationclick`; a click
+  focuses the open app or opens it, and the hash routes to the screen.
+- *Not yet:* quiet hours; call reminders (need a scheduled job → outbox,
+  not a trigger); server-side dismiss of in-app cards (the two remain
+  independent for now). iPhone requires the home-screen install.
+Setup is four steps in the dashboard - SQL, VAPID key (public in
+push_config, private in function secrets), paste the function via the
+editor, create the webhook - none of which needs the CLI or npm.
 
 ---
 

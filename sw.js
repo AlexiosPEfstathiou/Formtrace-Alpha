@@ -17,3 +17,26 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(event.request));
 });
+
+/* Item CE: Web Push. The server sends {title, body, url, kind, tag}. */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: "FormTrace", body: event.data ? event.data.text() : "" }; }
+  const title = data.title || "FormTrace";
+  event.waitUntil(self.registration.showNotification(title, {
+    body: data.body || "",
+    icon: "icon-192.png",
+    badge: "icon-192.png",
+    tag: data.tag || undefined,
+    renotify: !!data.tag,
+    data: { url: data.url || "/" }
+  }));
+});
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data && event.notification.data.url ? event.notification.data.url : "/", self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if (c.url.startsWith(self.location.origin)) { c.focus(); c.navigate(target).catch(() => {}); return; } }
+    return self.clients.openWindow(target);
+  }));
+});

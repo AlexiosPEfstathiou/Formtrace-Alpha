@@ -3203,6 +3203,7 @@ function renderAppTabs(current){
   bar.style.display="flex";
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
+  try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
 }
 /* CR-5: swipe left / right between tabs. Only when the tab bar is showing, no overlay or
    sheet is open, and the gesture did not start on something that scrolls sideways or
@@ -3217,6 +3218,27 @@ function renderAppTabs(current){
     const btns=[...bar.querySelectorAll("button[data-go]")]; const i=btns.findIndex(b=>b.classList.contains("on")); if(i<0) return;
     const j=dx<0?i+1:i-1; if(j<0||j>=btns.length) return; go(btns[j].getAttribute("data-go")); },{passive:true});
 })();
+/* ---- Item CE: Web Push client ------------------------------------------------------
+   Subscribe with the public VAPID key from push_config; store the subscription in
+   push_subscriptions (own row). The server (push-send Edge Function) sends. */
+function b64ToU8(b64){ const pad="=".repeat((4-b64.length%4)%4); const s=(b64+pad).replace(/-/g,"+").replace(/_/g,"/"); const raw=atob(s); return Uint8Array.from([...raw].map(ch=>ch.charCodeAt(0))); }
+async function pushIsSubscribed(){ try{ const reg=await navigator.serviceWorker.getRegistration(); const sub=reg?await reg.pushManager.getSubscription():null; return !!sub; }catch(e){ return false; } }
+async function pushSubscribe(){
+  const perm=await Notification.requestPermission(); if(perm!=="granted") throw new Error("Notifications were not allowed - check the site settings for this browser");
+  const { data:cfg, error }=await store._sb.from("push_config").select("value").eq("key","vapid_public").maybeSingle(); if(error) throw error;
+  if(!cfg||!cfg.value||/REPLACE/.test(cfg.value)) throw new Error("Push is not configured on the server yet (VAPID key)");
+  const reg=await navigator.serviceWorker.ready;
+  const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(cfg.value)});
+  const j=sub.toJSON();
+  const { error:e2 }=await store._sb.from("push_subscriptions").upsert({endpoint:j.endpoint,user_id:ME.id,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,200)},{onConflict:"endpoint"}); if(e2) throw e2;
+  try{ reg.showNotification("FormTrace",{body:"Push is on. You'll hear about offers, reviews, calls and friends here.",icon:"icon-192.png",tag:"test"}); }catch(e){}
+}
+async function pushUnsubscribe(){
+  const reg=await navigator.serviceWorker.getRegistration(); const sub=reg?await reg.pushManager.getSubscription():null;
+  if(sub){ try{ await store._sb.from("push_subscriptions").delete().eq("endpoint",sub.endpoint); }catch(e){} await sub.unsubscribe(); }
+}
+/* notification click → the right screen: the URL carries a hash */
+window.addEventListener("hashchange",()=>{ const h=(location.hash||"").replace("#",""); if(h&&ME&&TAB_TOPLEVEL.has(h)){ go(h); history.replaceState(null,"",location.pathname); } });
 /* Item CP: persistent header. Profile (avatar) top-left; settings gear and the streak badge top-right. */
 let _hdrWired=false;
 function showHeader(on){
@@ -5308,6 +5330,10 @@ function renderIvEditor(){
       </div>`;
   }
   body.innerHTML=html;
+  /* Item CE: push wiring */
+  try{ const sw=$("#push-switch"); if(sw){ (async()=>{ const on=await pushIsSubscribed(); sw.checked=on; $("#push-kinds").style.display=on?"":"none"; })();
+    sw.addEventListener("change",async()=>{ sw.disabled=true; try{ if(sw.checked){ await pushSubscribe(); $("#push-kinds").style.display=""; toast("Push on - a test buzz is on its way",2500); } else { await pushUnsubscribe(); $("#push-kinds").style.display="none"; toast("Push off",1500); } }catch(e){ console.error("push toggle",e); sw.checked=!sw.checked; toast(e.message||"Couldn't change push",4000); } sw.disabled=false; });
+    document.querySelectorAll("#push-kinds [data-pk]").forEach(cb=>cb.addEventListener("change",async()=>{ const prefs={}; document.querySelectorAll("#push-kinds [data-pk]").forEach(x=>{ if(!x.checked) prefs[x.getAttribute("data-pk")]=false; }); try{ const { error }=await store._sb.rpc("set_push_prefs",{p_prefs:prefs}); if(error) throw error; ME.push_prefs=prefs; }catch(e){ console.error("push prefs",e); toast(e.message||"Couldn't save",3000); } })); } }catch(e){}
   /* CQ-6: avatar tap = view or replace; coach badges under the name */
   try{ const av=$("#pf-avatar"); if(av){ hydrateAvatars(av.parentElement); av.addEventListener("click",async()=>{ const view=ME.avatar_path?await openConfirm({title:"Profile photo",body:"View it full size, or replace it?",confirmLabel:"View",cancelLabel:"Replace"}):false; if(view){ try{ const u=await playable(ME.avatar_path); if(u) openPhotoLightbox(u); }catch(e){} } else { const inp=$("#sp-photo-input"); if(inp) inp.click(); else toast("Open Settings → Social profile to add a photo",3000); } }); } }catch(e){}
   (async()=>{ try{ if(ME.role==="coach"){ const facts=await loadCoachFacts([ME.id]); const el=$("#pf-badges"); if(el&&facts&&facts[ME.id]) el.innerHTML=badgeSpans(facts[ME.id],false); } }catch(e){} })();
@@ -10897,6 +10923,16 @@ async function renderProfile(){
         </div>
       </div>
     </div>`;
+  // ---- Item CE: push notifications (installed app) ----
+  const pushSupported=("serviceWorker" in navigator)&&("PushManager" in window)&&("Notification" in window);
+  const pp=(ME.push_prefs&&typeof ME.push_prefs==="object")?ME.push_prefs:{};
+  const PUSH_KINDS=[["offer","Offers and counter-offers"],["review","Coach reviews"],["call","Video calls"],["knock","Friend requests"],["clap","Congratulations"],["connect","Shared handles"]];
+  html+=`<div class="section-h"><div class="eyebrow">Notifications</div></div>
+  <div class="card" style="margin:0 0 12px">
+    <label class="row-toggle" style="display:flex;align-items:center;gap:12px;cursor:pointer"><div style="flex:1"><div style="font-weight:700">Push notifications</div><div style="font-size:12px;color:var(--muted)" id="push-sub">${pushSupported?"Get a buzz for offers, reviews, calls and friends - even when the app is closed.":"Not available in this browser. Install the app from Chrome on Android, or Safari on iPhone (home screen), then enable here."}</div></div>
+      <span class="switch"><input type="checkbox" id="push-switch" ${pushSupported?"":"disabled"}><span class="track"></span></span></label>
+    <div id="push-kinds" style="display:none;margin-top:12px;border-top:1px solid var(--line2);padding-top:8px">${PUSH_KINDS.map(([k,l])=>`<label style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:13px;cursor:pointer"><span>${l}</span><span class="switch"><input type="checkbox" data-pk="${k}" ${pp[k]===false?"":"checked"}><span class="track"></span></span></label>`).join("")}<div style="font-size:11.5px;color:var(--faint);margin-top:6px">A test buzz is sent when you turn this on.</div></div>
+  </div>`;
   // ---- Appearance: theme + colorblind-safe mode ----
   const curTheme=(function(){try{return localStorage.getItem("ft-theme")||"system";}catch(e){return "system";}})();
   const curCb=(function(){try{return localStorage.getItem("ft-cb")==="1";}catch(e){return false;}})();
@@ -11008,6 +11044,10 @@ async function renderProfile(){
     }
   }catch(e){console.error("completed goals",e);}
   body.innerHTML=html;
+  /* Item CE: push wiring */
+  try{ const sw=$("#push-switch"); if(sw){ (async()=>{ const on=await pushIsSubscribed(); sw.checked=on; $("#push-kinds").style.display=on?"":"none"; })();
+    sw.addEventListener("change",async()=>{ sw.disabled=true; try{ if(sw.checked){ await pushSubscribe(); $("#push-kinds").style.display=""; toast("Push on - a test buzz is on its way",2500); } else { await pushUnsubscribe(); $("#push-kinds").style.display="none"; toast("Push off",1500); } }catch(e){ console.error("push toggle",e); sw.checked=!sw.checked; toast(e.message||"Couldn't change push",4000); } sw.disabled=false; });
+    document.querySelectorAll("#push-kinds [data-pk]").forEach(cb=>cb.addEventListener("change",async()=>{ const prefs={}; document.querySelectorAll("#push-kinds [data-pk]").forEach(x=>{ if(!x.checked) prefs[x.getAttribute("data-pk")]=false; }); try{ const { error }=await store._sb.rpc("set_push_prefs",{p_prefs:prefs}); if(error) throw error; ME.push_prefs=prefs; }catch(e){ console.error("push prefs",e); toast(e.message||"Couldn't save",3000); } })); } }catch(e){}
   /* CQ-6: avatar tap = view or replace; coach badges under the name */
   try{ const av=$("#pf-avatar"); if(av){ hydrateAvatars(av.parentElement); av.addEventListener("click",async()=>{ const view=ME.avatar_path?await openConfirm({title:"Profile photo",body:"View it full size, or replace it?",confirmLabel:"View",cancelLabel:"Replace"}):false; if(view){ try{ const u=await playable(ME.avatar_path); if(u) openPhotoLightbox(u); }catch(e){} } else { const inp=$("#sp-photo-input"); if(inp) inp.click(); else toast("Open Settings → Social profile to add a photo",3000); } }); } }catch(e){}
   (async()=>{ try{ if(ME.role==="coach"){ const facts=await loadCoachFacts([ME.id]); const el=$("#pf-badges"); if(el&&facts&&facts[ME.id]) el.innerHTML=badgeSpans(facts[ME.id],false); } }catch(e){} })();
