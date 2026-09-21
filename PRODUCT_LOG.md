@@ -49,6 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 45 | **CW** Camera portrait mode (BT) scrapped - start over | Medium | Remove the BT code; define the quality bar; measure smoothed-mask live blur, else blur-in-review or pose-based crop. |
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
 | 43 | **CU** Camera permission denied - re-ask every time + per-browser steps | Small | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
 | 42 | **CT** Connect - share your WhatsApp / Instagram / Snapchat handle with a friend | Medium | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
@@ -63,6 +64,42 @@ Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
+
+---
+
+## CW. Camera "portrait mode" (background blur, item BT) - scrapped; start over
+
+Owner, 2026-09-21: "Camera portrait mode simply doesn't work well. Scrap
+it and start over." The BT build (MediaPipe selfie segmentation on every
+second frame, blurred camera composited under the person mask, "Blur bg"
+tool button) is retired: the button is to be removed from the recorder and
+the code path deleted rather than left behind a flag - dead code has
+already cost us once this week (the `trims` scope bug lived in
+half-finished code).
+
+**Before rebuilding, write down what "works well" means**, because the
+first attempt never had a target: a steady frame rate on a mid-range
+Android (no lower than the un-blurred recorder), no edge flicker or halo
+around arms in motion, no colour shift on the person, and no effect on
+the pose overlay or rep counting. If those cannot be met in the browser
+on a phone, the honest answer is not to ship it in the web app and to
+revisit inside the native wrapper (AD), where the platform's own portrait
+pipeline is available.
+
+**Candidates for the second attempt, to be measured against that bar:**
+1. Segmentation at recording resolution but at 10-12 fps with temporal
+   smoothing of the mask (the flicker is a per-frame-mask problem, not a
+   model problem), blur computed once per mask update rather than per
+   frame.
+2. Blur applied in REVIEW rather than live: record clean, let the coach or
+   trainee toggle a blurred background on playback, where frame budget is
+   not a constraint. Cheaper and more reliable; loses nothing since the
+   video is private to the two parties anyway.
+3. Drop the blur; offer a **frame crop** instead (the recorder already
+   knows where the person is from the pose landmarks) - it removes most
+   of the room without any segmentation.
+Decide after (1) is measured on a real phone for one hour; if it misses,
+ship (2) or (3). Not started; removal of the old code is the first step.
 
 ---
 
