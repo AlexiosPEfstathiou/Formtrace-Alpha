@@ -52,7 +52,7 @@ BE) are not tasks and are left out.
 | 45 | **CW** Camera portrait mode (BT) scrapped - start over | Medium | Remove the BT code; define the quality bar; measure smoothed-mask live blur, else blur-in-review or pose-based crop. |
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
 | 43 | **CU** Camera permission denied - BUILT 2026-09-21 | - | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
-| 42 | **CT** Connect - share your WhatsApp / Instagram / Snapchat handle with a friend | Medium | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
+| 42 | **CT** Connect - BUILT 2026-09-21 | - | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
 | 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
@@ -202,7 +202,20 @@ created_at, revoked_at; unique per triple) with RLS for the two parties;
 `share_handle(to, network)` refuses non-friends and empty handles; Social
 list row gets Connect (thin, right side, before the wins count); receiver
 card on Notifications and on the friend's page in Social. Estimate: one
-day. Not started.
+day.
+
+**BUILT 2026-09-21.** Needs `supabase/migrations_connect_handles.sql`.
+Settings → Social profile gains WhatsApp number, Instagram, Snapchat
+(saved on blur; @ and formatting stripped). Each friend row in Social has
+a thin **Connect**; the sheet lists the three networks with your handle
+under each - **Share** (lime) when set, grey and disabled when not, with
+the one-line hint to Settings; "shared ✓ · Revoke" once shared.
+`share_handle` refuses non-friends and empty handles; `revoke_handle`
+revokes; `confirm_connection(…, false)` (disconnect) now revokes every
+share both ways. Receiver: a "🔗 Connect" card on Notifications - "<name>
+shared their Instagram with you · @tag · Open · Copy" - until opened or
+copied, and a "Shared with you" block on that friend's page with Open.
+Deep links: wa.me, instagram.com, snapchat.com/add.
 
 ---
 

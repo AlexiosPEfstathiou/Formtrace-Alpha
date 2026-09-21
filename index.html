@@ -1470,6 +1470,7 @@
       <div id="home-milestone" class="home-milestone" style="display:none"></div>
       <div id="home-adminq" class="home-reviews" style="display:none"></div>
       <div id="home-intouch" class="home-reviews" style="display:none"></div>
+      <div id="home-handles" class="home-reviews" style="display:none"></div>
       <div id="home-renewal" class="home-call" style="display:none"></div>
       <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
       <div id="home-recap" class="home-milestone" style="display:none"></div>
@@ -3538,6 +3539,7 @@ async function renderHome(){
       renderHomeStreakRisk($("#home-streakrisk"), engs),
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeInTouch($("#home-intouch")),   // Item CM
+      renderHomeHandleShares($("#home-handles")),   // Item CT
       renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
       renderHomeNextGoal($("#home-nextgoal"), engs),   // Item CD: between-goals nudge
       renderHomeWeekRecap($("#home-recap"), engs),   // Item CF (card version)
@@ -3570,6 +3572,7 @@ async function renderHome(){
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeInTouch($("#home-intouch")),   // Item CM
+      renderHomeHandleShares($("#home-handles")),   // Item CT
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       store._sb.rpc("refresh_coach_streak_scores").catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
     ]);
@@ -4085,11 +4088,41 @@ async function renderInTouch(){
     const byUser={}; for(const ev of feed){ (byUser[ev.user_id]=byUser[ev.user_id]||[]).push(ev); }
     const weekCount=uid=>(byUser[uid]||[]).filter(ev=>String(ev.at).slice(0,10)>=thisMon && !ev.congratulated).length;
     const lc=document.createElement("div"); lc.className="card";
-    lc.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Friends · ${conf.length}</div>`+(conf.length?conf.slice().sort((x,y)=>weekCount(y.a===ME.id?y.b:y.a)-weekCount(x.a===ME.id?x.b:x.a)).map(cn=>{ const oid=cn.a===ME.id?cn.b:cn.a, p=profs[oid]||{}, n=weekCount(oid); return `<button class="sh-item" data-person="${oid}" data-conn="${cn.id}" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--ink);font:inherit;padding:8px 10px;margin-bottom:6px;min-height:0">${avatarHtml(p,30)}<div style="flex:1;min-width:0;line-height:1.2"><b style="font-size:14px">${escapeHtml(p.display_name||"Someone")}</b><div style="font-size:11px;color:var(--faint)">${p.role==="coach"?"coach":"trainee"}${(byUser[oid]||[]).length?` · last win ${escapeHtml(fmtDay(String(byUser[oid][0].at).slice(0,10)))}`:""}</div></div>${n?`<span style="min-width:24px;height:22px;border-radius:11px;background:var(--lime);color:#0B0E11;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 7px">${n}</span>`:`<span style="color:var(--faint);font-size:12px">0</span>`}</button>`; }).join(""):`<div style="font-size:12.5px;color:var(--faint)">No friends yet - tap Add friends and knock phones with someone you train with.</div>`);
+    lc.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Friends · ${conf.length}</div>`+(conf.length?conf.slice().sort((x,y)=>weekCount(y.a===ME.id?y.b:y.a)-weekCount(x.a===ME.id?x.b:x.a)).map(cn=>{ const oid=cn.a===ME.id?cn.b:cn.a, p=profs[oid]||{}, n=weekCount(oid); return `<button class="sh-item" data-person="${oid}" data-conn="${cn.id}" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--ink);font:inherit;padding:8px 10px;margin-bottom:6px;min-height:0">${avatarHtml(p,30)}<div style="flex:1;min-width:0;line-height:1.2"><b style="font-size:14px">${escapeHtml(p.display_name||"Someone")}</b><div style="font-size:11px;color:var(--faint)">${p.role==="coach"?"coach":"trainee"}${(byUser[oid]||[]).length?` · last win ${escapeHtml(fmtDay(String(byUser[oid][0].at).slice(0,10)))}`:""}</div></div><span class="btn sm ghost" data-connect="${oid}" data-name="${escapeHtml(p.display_name||"")}" style="width:auto;height:26px;padding:0 9px;margin:0;font-size:11.5px;display:inline-flex;align-items:center">Connect</span>${n?`<span style="min-width:24px;height:22px;border-radius:11px;background:var(--lime);color:#0B0E11;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 7px">${n}</span>`:`<span style="color:var(--faint);font-size:12px">0</span>`}</button>`; }).join(""):`<div style="font-size:12.5px;color:var(--faint)">No friends yet - tap Add friends and knock phones with someone you train with.</div>`);
     body.appendChild(lc);
+    lc.querySelectorAll("[data-connect]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); openConnectSheet(b.getAttribute("data-connect"),b.getAttribute("data-name")); }));   // Item CT
     lc.querySelectorAll("[data-person]").forEach(b=>b.addEventListener("click",()=>renderInTouchPerson(b.getAttribute("data-person"),b.getAttribute("data-conn"),profs[b.getAttribute("data-person")]||{},byUser[b.getAttribute("data-person")]||[])));
     hydrateAvatars(body);
   }catch(err){ console.error("in touch (run migrations_in_touch.sql)",err); body.innerHTML=`<div class="empty" style="padding:40px 20px"><div class="ic">🤝</div><p>In Touch isn't available yet.</p></div>`; }
+}
+/* ---- Item CT: Connect - hand a friend your WhatsApp / Instagram / Snapchat --------
+   Handles live on the profile (Settings → Social profile). A network whose handle is
+   empty is grey and unpressable. Sharing is per friend, per network, one-way,
+   revocable; disconnecting revokes everything both ways (server). */
+const NETS=[["whatsapp","WhatsApp","💬",h=>`https://wa.me/${String(h).replace(/[^\d]/g,"")}`],["instagram","Instagram","📸",h=>`https://instagram.com/${String(h).replace(/^@/,"")}`],["snapchat","Snapchat","👻",h=>`https://snapchat.com/add/${h}`]];
+async function openConnectSheet(uid,name){
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=`Connect with ${name||"your friend"}`; $("#sheet-add").style.display="none";
+  let shares=[]; try{ const { data }=await store._sb.from("handle_shares").select("*").eq("from_user",ME.id).eq("to_user",uid).is("revoked_at",null); shares=data||[]; }catch(e){}
+  const w=document.createElement("div");
+  w.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">Share one of your handles with ${escapeHtml(name||"them")}. They see it in the app; nothing is posted anywhere.</div>`+
+    NETS.map(([k,label,ic,link])=>{ const have=!!(ME[k]&&String(ME[k]).trim()); const shared=shares.find(s=>s.network===k); return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line2)"><span style="font-size:20px">${ic}</span><div style="flex:1;min-width:0"><b>${label}</b><div style="font-size:11.5px;color:var(--faint)">${have?escapeHtml(ME[k]):"not set"}${shared?" · shared ✓":""}</div></div>${shared?`<button class="btn sm ghost" data-revoke="${k}" style="width:auto;color:var(--faint)">Revoke</button>`:`<button class="btn sm ${have?"primary":"ghost"}" data-share="${k}" ${have?"":"disabled"} style="width:auto;${have?"":"opacity:.45"}">Share</button>`}</div>`; }).join("")+
+    (NETS.some(([k])=>!(ME[k]&&String(ME[k]).trim()))?`<div style="font-size:11.5px;color:var(--faint);margin-top:10px">Add your handles in Settings → Social profile to enable the grey ones.</div>`:"");
+  body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  w.querySelectorAll("[data-share]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { error }=await store._sb.rpc("share_handle",{p_to:uid,p_network:b.getAttribute("data-share")}); if(error) throw error; toast(`Shared with ${name||"your friend"} ✓`,2000); openConnectSheet(uid,name); }catch(e){ console.error("share handle (run migrations_connect_handles.sql)",e); toast(e.message||"Couldn't share",3500); b.disabled=false; } }));
+  w.querySelectorAll("[data-revoke]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("revoke_handle",{p_to:uid,p_network:b.getAttribute("data-revoke")}); if(error) throw error; toast("Revoked",1500); openConnectSheet(uid,name); }catch(e){ toast(e.message||"Couldn't revoke",3000); } }));
+}
+/* Receiver side: handles shared with me - a card on Notifications (until seen) and on the friend's page. */
+async function renderHomeHandleShares(el){
+  if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
+  try{
+    const { data }=await store._sb.from("handle_shares").select("*").eq("to_user",ME.id).is("revoked_at",null).is("seen_at",null).order("created_at",{ascending:false}); const rows=data||[]; if(!rows.length) return;
+    let profs={}; const ids=[...new Set(rows.map(r=>r.from_user))]; try{ const { data:p }=await store._sb.from("profiles").select("id,display_name").in("id",ids); for(const x of (p||[])) profs[x.id]=x; }catch(e){}
+    el.innerHTML=`<div class="rv-title">🔗 Connect</div><div class="rv-row">`+rows.map(r=>{ const net=NETS.find(n=>n[0]===r.network)||[r.network,r.network,"🔗",h=>"#"]; return `<div class="rv-chip" style="cursor:default"><span class="rv-ic">${net[2]}</span><span class="rv-tx"><b>${escapeHtml((profs[r.from_user]||{}).display_name||"A friend")} shared their ${net[1]} with you</b><span style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap"><b style="color:var(--ink)">${escapeHtml(r.handle)}</b><a class="btn sm primary" style="width:auto;text-decoration:none" href="${net[3](r.handle)}" target="_blank" rel="noopener" data-seen="${r.id}">Open</a><button class="btn sm ghost" style="width:auto" data-copy="${escapeHtml(r.handle)}" data-seen="${r.id}">Copy</button></span></span></div>`; }).join("")+`</div>`;
+    el.style.display="";
+    el.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>{ try{ navigator.clipboard.writeText(b.getAttribute("data-copy")); toast("Copied",1200); }catch(e){} }));
+    el.querySelectorAll("[data-seen]").forEach(b=>b.addEventListener("click",()=>{ store._sb.from("handle_shares").update({seen_at:new Date().toISOString()}).eq("id",b.getAttribute("data-seen")).then(()=>{}); }));
+  }catch(e){}
 }
 /* CQ-7: one person - wins by recency, Congratulate each, Congratulate all (one celebration
    for the week that clears their number), Disconnect. */
@@ -4104,6 +4137,8 @@ function renderInTouchPerson(uid,connId,p,wins){
   const list=document.createElement("div"); list.className="card";
   list.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Wins · newest first</div>`+(wins.length?wins.map(ev=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)"><span style="font-size:18px">${ev.kind==="pb"?"🏆":"🎯"}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px">${escapeHtml(ev.text)}</div><div style="font-size:11px;color:var(--faint)">${escapeHtml(fmtDay(String(ev.at).slice(0,10)))}${String(ev.at).slice(0,10)>=thisMon?" · this week":""}</div></div>${ev.congratulated?`<span style="font-size:12px;color:var(--lime);font-weight:700">👏 sent</span>`:`<button class="btn sm" data-congrat="${uid}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto">Congratulate</button>`}</div>`).join(""):`<div style="font-size:12.5px;color:var(--faint)">No PBs or completed goals since you connected.</div>`);
   body.appendChild(list); wireCongrats(list); hydrateAvatars(body);
+  /* Item CT: handles this friend shared with me */
+  (async()=>{ try{ const { data }=await store._sb.from("handle_shares").select("*").eq("from_user",uid).eq("to_user",ME.id).is("revoked_at",null); if(!(data||[]).length) return; const hc=document.createElement("div"); hc.className="card"; hc.style.marginTop="12px"; hc.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Shared with you</div>`+data.map(r=>{ const net=NETS.find(n=>n[0]===r.network)||[r.network,r.network,"🔗",h=>"#"]; return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span>${net[2]}</span><div style="flex:1"><b>${net[1]}</b> · ${escapeHtml(r.handle)}</div><a class="btn sm primary" style="width:auto;text-decoration:none" href="${net[3](r.handle)}" target="_blank" rel="noopener">Open</a></div>`; }).join(""); body.appendChild(hc); }catch(e){} })();
   /* the screen title becomes an unmistakable link back to the list while a friend is open */
   const ttl=document.querySelector("#s-intouch .top h1"); if(ttl){ ttl.style.cursor="pointer"; ttl.title="Back to your friends"; ttl.innerHTML=`<span style="color:var(--lime);font-size:15px;font-weight:800;display:inline-flex;align-items:center;gap:6px"><span style="font-size:20px;line-height:1">‹</span> All friends</span>`; ttl.onclick=()=>renderInTouch(); } const sub=document.querySelector("#s-intouch .top .sub"); if(sub) sub.textContent=p.display_name||"";
   const all=$("#itp-all"); if(all) all.addEventListener("click",async()=>{ all.disabled=true; try{ const { error }=await store._sb.rpc("congratulate_all",{p_to:uid,p_text:"this week's progress"}); if(error) throw error; toast(`👏 Sent - ${p.display_name||"they"} will see "${(ME.display_name||"Someone")} congratulated you for this week's progress"`,3500); renderInTouch(); }catch(e){ console.error("congratulate all (run migrations_in_touch_week.sql)",e); toast(e.message||"Couldn't send",3500); all.disabled=false; } });
@@ -6612,7 +6647,7 @@ async function saveMacroGoal(){
     refreshWeekUI(monISO);
     // a goal set for this week also changes what every LATER week inherits
     document.querySelectorAll(".cal-week[data-week]").forEach(el=>{ if(el.dataset.week>monISO) refreshWeekUI(el.dataset.week); });
-  }catch(e){ console.error("saveMacroGoal (run migrations_macro_goals.sql)",e); toast("Couldn''t save the goal: "+(e.message||e),5000); }
+  }catch(e){ console.error("saveMacroGoal (run migrations_macro_goals.sql)",e); toast("Couldn't save the goal: "+(e.message||e),5000); }
   finally{ btn.disabled=false; btn.textContent=o; }
 }
 function weekLabel(monISO){
@@ -10845,6 +10880,11 @@ async function renderProfile(){
         <div class="field" style="margin:18px 0 0"><label>Country</label>
           <select class="sel" id="sp-country"><option value="">Not set</option></select>
         </div>
+        <!-- Item CT: handles are private until shared with a specific friend via Connect -->
+        <div style="font-size:13px;font-weight:700;margin:18px 0 6px">Your handles <span style="font-weight:400;color:var(--faint)">- shared only when you press Connect on a friend</span></div>
+        <div class="field" style="margin:8px 0 0"><label>WhatsApp number</label><input id="sp-whatsapp" type="tel" inputmode="tel" placeholder="+44 7700 900000" value="${escapeHtml(ME.whatsapp||"")}" autocomplete="off"></div>
+        <div class="field" style="margin:12px 0 0"><label>Instagram</label><input id="sp-instagram" type="text" placeholder="@yourtag" value="${escapeHtml(ME.instagram||"")}" autocomplete="off"></div>
+        <div class="field" style="margin:12px 0 0"><label>Snapchat</label><input id="sp-snapchat" type="text" placeholder="yoursnap" value="${escapeHtml(ME.snapchat||"")}" autocomplete="off"></div>
         <div class="field" style="margin:18px 0 0;position:relative"><label>Languages you speak</label>
           <input id="sp-lang-input" type="text" placeholder="Start typing a language…" autocomplete="off">
           <div id="sp-lang-suggest" class="lang-suggest" style="display:none"></div>
@@ -11313,6 +11353,8 @@ function wireSocialProfile(){
     }
     sel.addEventListener("change",()=>saveSocial({country_code:sel.value||null}));
   }
+  // Item CT: handles save on blur (trim; Instagram keeps a leading @ off the stored value)
+  for(const [id,key] of [["sp-whatsapp","whatsapp"],["sp-instagram","instagram"],["sp-snapchat","snapchat"]]){ const inp=$("#"+id); if(!inp) continue; inp.addEventListener("blur",()=>{ let v=inp.value.trim(); if(key==="instagram") v=v.replace(/^@+/,""); if(key==="whatsapp") v=v.replace(/[^\d+]/g,""); const patch={}; patch[key]=v||null; saveSocial(patch); ME[key]=v||null; }); }
   // languages (item L, redesigned 2026-08-11) — the full ~35-chip grid took
   // too much visible space, so this is a compact type-ahead instead: type,
   // pick a suggestion (or the top match on Enter), get a small chip. Still
