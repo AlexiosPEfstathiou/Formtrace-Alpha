@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
 | 43 | **CU** Camera permission denied - re-ask every time + per-browser steps | Small | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
-| 42 | **CT** Connect - share your WhatsApp / Instagram / Snapchat handle with a friend | Medium | Handles on the profile; per-friend, per-network share; receiver card with Open + Share back; revocable. |
+| 42 | **CT** Connect - share your WhatsApp / Instagram / Snapchat handle with a friend | Medium | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
 | 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
@@ -136,13 +136,14 @@ actually talk on.
   (deep link: `https://instagram.com/<tag>`, `https://wa.me/<number>`,
   `https://snapchat.com/add/<id>`) and Copy. Nothing is sent to the
   network itself - it is a handle handed over inside FormTrace.
-- **One-way by default, nudged to mutual:** the receiver's card ends with
-  "Share yours back?" and the same three buttons. Shares can be revoked
-  (the card disappears for them; the handle was seen, but the link is
-  gone).
-- **If a handle is empty** when the user taps that network: inline prompt
-  "Add your Instagram tag to share it" with a field right there, saved to
-  the profile, then shared.
+- **One-way, no "share back" prompt** (owner, 2026-09-21): the receiver
+  simply gets the handle; if they want to reciprocate they press Connect
+  on their side like anyone else. **Revocable:** the card disappears for
+  them (the handle was seen, but the link is gone).
+- **If a handle is empty**, that network's button is **grey and
+  unpressable** (owner, 2026-09-21) - with a one-line hint under the three
+  buttons: "Add your handles in Settings → Social profile". No inline
+  entry mid-flow.
 - **Privacy notes:** handles are shared only with confirmed friends;
   disconnecting revokes all shares both ways; handles never appear on the
   public coach profile or anywhere but the receiving friend's card.
