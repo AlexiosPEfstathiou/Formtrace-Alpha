@@ -6,6 +6,7 @@
 -- daily-scan promise (launch timeline phase 3).
 -- =====================================================================
 alter table public.profiles add column if not exists last_market_at timestamptz;
+grant update (last_market_at) on public.profiles to authenticated;   -- column-level grants on profiles
 
 create or replace function public.admin_coach_activity()
 returns table (coach_id uuid, display_name text, last_market_at timestamptz, pitches_7d integer, pitches_30d integer, open_goals_unpitched integer)

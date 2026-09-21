@@ -6,6 +6,8 @@ alter table public.profiles
   add column if not exists whatsapp  text,
   add column if not exists instagram text,
   add column if not exists snapchat  text;
+-- profiles has column-level update grants (migrations_coach_profiles.sql revoked table-wide update) - every new column the app writes needs its own grant
+grant update (whatsapp, instagram, snapchat) on public.profiles to authenticated;
 
 create table if not exists public.handle_shares (
   id         uuid primary key default gen_random_uuid(),

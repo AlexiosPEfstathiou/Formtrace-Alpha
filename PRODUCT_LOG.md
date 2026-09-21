@@ -216,6 +216,17 @@ share both ways. Receiver: a "🔗 Connect" card on Notifications - "<name>
 shared their Instagram with you · @tag · Open · Copy" - until opened or
 copied, and a "Shared with you" block on that friend's page with Open.
 Deep links: wa.me, instagram.com, snapchat.com/add.
+**Test-day finding (owner, 2026-09-21): "permission denied for table
+profiles" when saving a handle.** Not RLS - `profiles` has COLUMN-LEVEL
+update grants (`migrations_coach_profiles.sql` revoked table-wide update
+and re-granted named columns), so every new column the app writes needs
+`grant update (col) on public.profiles to authenticated`. Added to this
+migration and to `migrations_coach_activity.sql` (whose `last_market_at`
+stamp had been failing silently for the same reason). **Rule for every
+future profiles column the client writes: grant it in the same migration.**
+Also: handle fields now save as you type (debounced) and on blur with a
+lime flash, and errors are shown naming the field - blur-only saving was
+unreliable when leaving the screen.
 
 ---
 
