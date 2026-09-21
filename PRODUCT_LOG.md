@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
 | 43 | **CU** Camera permission denied - re-ask every time + per-browser steps | Small | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
-| 42 | **CT** Share wins to WhatsApp / Instagram / Snapchat | Medium | Web Share API with a generated image card + referral link; own wins, or a friend's with opt-in. |
+| 42 | **CT** Connect - share your WhatsApp / Instagram / Snapchat handle with a friend | Medium | Handles on the profile; per-friend, per-network share; receiver card with Open + Share back; revocable. |
 | 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
@@ -114,24 +114,46 @@ Small; half a day with the per-browser copy. Not started.
 
 ---
 
-## CT. Share a wins feed with a friend outside the app
+## CT. "Connect" - share your WhatsApp, Instagram or Snapchat with a friend
 
-Requested 2026-09-20: share "a Social" - a friend's or your own recent
-wins / a congratulation moment - to WhatsApp, Instagram, Snapchat.
-- **Mechanism:** the Web Share API (`navigator.share`) with an image file
-  - the same path the streak share image already uses (Item AT step 5),
-  which hands off to WhatsApp / Instagram Stories / Snapchat natively on
-  the phone. No per-network integration needed; Instagram and Snapchat
-  accept an image share, not a link.
-- **What is shared:** a generated image card - the person's photo and
-  name, "3 personal bests this week", the list, FormTrace mark - plus the
-  referral link (BN) in the text, so every share is also an invitation.
-- **Privacy:** only share YOUR OWN wins, or a friend's with their prior
-  opt-in ("Friends may share my wins" toggle, default off) - a friend's
-  PBs are theirs. The congratulation clap can be shared by the receiver.
-- Entry points: a Share button on your own wins in Social and on the clap
-  overlay ("Share this").
-Estimate: a day, reusing the share-image generator. Not started.
+Requested 2026-09-20; **corrected by the owner 2026-09-21** (I had read it
+as sharing content TO those apps - it is the opposite). In the Social
+tab, next to each friend, a **Connect** button. Tapping it offers three
+options - **WhatsApp · Instagram · Snapchat** - and choosing one shares
+YOUR handle for that network with THAT friend: your phone number for
+WhatsApp, your Instagram tag, your Snapchat ID. The knock made you
+friends in person; Connect lets you take the friendship to the app you
+actually talk on.
+
+**Design:**
+- **Handles live on the profile, entered once:** Settings → Social profile
+  gains three optional fields (WhatsApp number, Instagram @tag, Snapchat
+  ID). Nothing is shared until the user presses Connect for a specific
+  friend - the fields themselves are private.
+- **Sharing is per friend, per network, explicit.** Tapping Instagram for
+  Kimia creates a `handle_shares` row (from, to, network) and Kimia sees a
+  card: "Alex shared their Instagram with you: @alex_lifts" with **Open**
+  (deep link: `https://instagram.com/<tag>`, `https://wa.me/<number>`,
+  `https://snapchat.com/add/<id>`) and Copy. Nothing is sent to the
+  network itself - it is a handle handed over inside FormTrace.
+- **One-way by default, nudged to mutual:** the receiver's card ends with
+  "Share yours back?" and the same three buttons. Shares can be revoked
+  (the card disappears for them; the handle was seen, but the link is
+  gone).
+- **If a handle is empty** when the user taps that network: inline prompt
+  "Add your Instagram tag to share it" with a field right there, saved to
+  the profile, then shared.
+- **Privacy notes:** handles are shared only with confirmed friends;
+  disconnecting revokes all shares both ways; handles never appear on the
+  public coach profile or anywhere but the receiving friend's card.
+
+**Mechanics:** `profiles.whatsapp`, `profiles.instagram`, `profiles.snapchat`
+(text, own-row update); `handle_shares` (from_user, to_user, network,
+created_at, revoked_at; unique per triple) with RLS for the two parties;
+`share_handle(to, network)` refuses non-friends and empty handles; Social
+list row gets Connect (thin, right side, before the wins count); receiver
+card on Notifications and on the friend's page in Social. Estimate: one
+day. Not started.
 
 ---
 
