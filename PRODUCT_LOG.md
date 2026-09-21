@@ -226,7 +226,14 @@ stamp had been failing silently for the same reason). **Rule for every
 future profiles column the client writes: grant it in the same migration.**
 Also: handle fields now save as you type (debounced) and on blur with a
 lime flash, and errors are shown naming the field - blur-only saving was
-unreliable when leaving the screen.
+unreliable when leaving the screen. Root cause of the refusal turned out
+to be simpler than either theory: the `set_my_handles` function had not
+yet been created in the database ("Could not find the function … in the
+schema cache") - visible only once the error log started carrying the
+database's message. Handles now save through that function. **Owner
+2026-09-21: the three handle fields moved from Settings onto the Profile
+screen** (identity card, under the name), since they are part of who you
+are, not how the app behaves.
 
 ---
 

@@ -10831,6 +10831,8 @@ function moveSettingsSections(){
   }
   if(moving.length){ to.innerHTML=""; for(const k of moving) to.appendChild(k); }
   for(const k of dropping) k.remove();
+  /* the three handle fields belong on Profile (owner): pull them out of the moved Social-profile section */
+  const h=$("#sp-handles"); if(h){ const first=from.querySelector(".card"); if(first&&first.nextSibling) from.insertBefore(h,first.nextSibling); else from.appendChild(h); h.style.display=""; }
 }
 async function renderProfile(){
   const body=$("#profile-body");
@@ -10882,11 +10884,12 @@ async function renderProfile(){
         <div class="field" style="margin:18px 0 0"><label>Country</label>
           <select class="sel" id="sp-country"><option value="">Not set</option></select>
         </div>
-        <!-- Item CT: handles are private until shared with a specific friend via Connect -->
-        <div style="font-size:13px;font-weight:700;margin:18px 0 6px">Your handles <span style="font-weight:400;color:var(--faint)">- shared only when you press Connect on a friend</span></div>
+        <!-- Item CT: handles are private until shared with a specific friend via Connect. Rendered here, MOVED onto the Profile screen after render (owner, 2026-09-21). -->
+        <div id="sp-handles" class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:6px">Your handles</div><div style="font-size:12px;color:var(--faint);margin-bottom:4px">Shared only when you press Connect on a friend</div>
         <div class="field" style="margin:8px 0 0"><label>WhatsApp number</label><input id="sp-whatsapp" type="tel" inputmode="tel" placeholder="+44 7700 900000" value="${escapeHtml(ME.whatsapp||"")}" autocomplete="off"></div>
         <div class="field" style="margin:12px 0 0"><label>Instagram</label><input id="sp-instagram" type="text" placeholder="@yourtag" value="${escapeHtml(ME.instagram||"")}" autocomplete="off"></div>
         <div class="field" style="margin:12px 0 0"><label>Snapchat</label><input id="sp-snapchat" type="text" placeholder="yoursnap" value="${escapeHtml(ME.snapchat||"")}" autocomplete="off"></div>
+        </div>
         <div class="field" style="margin:18px 0 0;position:relative"><label>Languages you speak</label>
           <input id="sp-lang-input" type="text" placeholder="Start typing a language…" autocomplete="off">
           <div id="sp-lang-suggest" class="lang-suggest" style="display:none"></div>
