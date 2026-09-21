@@ -2575,6 +2575,20 @@ async function hydrateAvatars(root){
   }
 }
 /* Fill a container that has data-video="<path>" with a playable <video>. */
+/* ---- Item CU: a denied camera / microphone must not be a dead end ----------------
+   Browsers never re-prompt on their own; most people do not know the site-settings
+   path. On every failure show the steps for THIS browser and a Try again button.
+   "denied" is never remembered by the app - only the browser's own memory counts. */
+function permHelpHtml(kind,retryFnName){
+  const ua=navigator.userAgent||""; const ios=/iPhone|iPad|iPod/.test(ua); const android=/Android/.test(ua); const chrome=/Chrome|CriOS|Edg/.test(ua); const safari=ios&&!/CriOS|FxiOS/.test(ua);
+  const what=kind==="mic"?"microphone":"camera";
+  let steps;
+  if(safari) steps=`Tap <b>aA</b> (left of the address bar) → <b>Website Settings</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. If FormTrace is installed on your home screen: iPhone <b>Settings → Safari → ${what[0].toUpperCase()+what.slice(1)}</b> → Allow, then reopen the app.`;
+  else if(android&&chrome) steps=`Tap the <b>lock icon</b> (left of the address bar) → <b>Permissions</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. Installed as an app: long-press the FormTrace icon → <b>App info → Permissions</b>.`;
+  else if(chrome) steps=`Click the <b>${what} icon</b> in the address bar (right side) and choose <b>Always allow</b>, then Try again.`;
+  else steps=`Open your browser's site settings for this page and allow the ${what}, then Try again.`;
+  return `<div style="text-align:left;font-size:12.5px;line-height:1.55"><b style="color:var(--amber)">${what[0].toUpperCase()+what.slice(1)} access was denied.</b><div style="margin-top:6px">${steps}</div><button class="btn sm primary" style="width:auto;margin-top:10px" onclick="${retryFnName}()">Try again</button></div>`;
+}
 /* CN-16: playback failures are invisible on the phone - record them. Media error
    code (1 aborted, 2 network, 3 decode, 4 src not supported), the storage path,
    the signed URL's HTTP status and content type, and the device. Same reporter
@@ -8030,7 +8044,7 @@ $("#pc-guide-toggle").addEventListener("click",()=>{
   const g=$("#pc-guide"); const off=g.classList.toggle("off");
   toast(off?"Guide hidden":"Guide shown",1200);
 });
-async function pcOpenCam(){
+async function pcOpenCam(){ window.pcOpenCam=pcOpenCam;
   try{
     if(pcStream)pcStream.getTracks().forEach(t=>t.stop());
     /* Item: check-in photos at maximum possible quality, on request -
@@ -8048,7 +8062,7 @@ async function pcOpenCam(){
     if(!pcRAF) pcLoop();
   }catch(err){
     console.error(err);
-    $("#pc-hint").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS. You can still pick a photo from your device.";
+    $("#pc-hint").innerHTML=(err&&(err.name==="NotAllowedError"||err.name==="PermissionDeniedError"))?permHelpHtml("camera","pcOpenCam"):"Camera needs HTTPS. You can still pick a photo from your device.";
     // graceful fallback to file picker
     $("#pc-ctrls").style.display="none";
     setTimeout(()=>{ $("#checkin-input").value="";$("#checkin-input").click(); },300);
@@ -9977,8 +9991,8 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
       await populateDeviceLists();
     }catch(e){
       console.error("voiceover mic check",e);
-      statusEl.textContent="Microphone access is needed to record a voice-over.";
-      toast("Microphone access is needed to record a voice-over",4000);
+      if(e&&(e.name==="NotAllowedError"||e.name==="PermissionDeniedError")){ statusEl.innerHTML=permHelpHtml("mic","retryVoiceoverMic"); window.retryVoiceoverMic=()=>initMicCheck(); }   // Item CU
+      else { statusEl.textContent="Microphone access is needed to record a voice-over."; toast("Microphone access is needed to record a voice-over",4000); }
     }
   };
   $("#vo-mic-select").addEventListener("change",async e=>{
@@ -11723,7 +11737,8 @@ function updateDims(){
   const vw=rvideo.videoWidth||0, vh=rvideo.videoHeight||0;
   rDims.textContent=`cam ${vw}x${vh} · ${vw>vh?"LANDSCAPE":vh>vw?"portrait":"square"}`;
 }
-async function openRecorder(opts){
+let lastRecorderOpts=null;
+async function openRecorder(opts){ lastRecorderOpts=opts;
   recOpts=opts||{};
   $("#rec").classList.add("on"); document.body.classList.add("rec-open");   // CQ-4: the persistent header must not cover the recorder's controls
   rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";
@@ -11777,7 +11792,8 @@ async function openRecorder(opts){
     if(gestureEnabled()) ensureGesture().then(syncCaptureTools);
     rLoop();
   }catch(err){console.error(err);$("#r-spin").classList.add("hidden");
-    $("#r-statmsg").innerHTML=(err&&err.name==="NotAllowedError")?"Camera permission denied. Allow it and reopen.":"Camera needs HTTPS (or localhost). Open this over https and retry.";}
+    $("#r-statmsg").innerHTML=(err&&(err.name==="NotAllowedError"||err.name==="PermissionDeniedError"))?permHelpHtml("camera","retryRecorderCamera"):"Camera needs HTTPS (or localhost). Open this over https and retry.";}
+window.retryRecorderCamera=function(){ try{ if(lastRecorderOpts) openRecorder(lastRecorderOpts); }catch(e){} };   // Item CU
 }
 function closeRecorder(){document.body.classList.remove("rec-open");cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");hidePoseWarn();
   /* Undo the landscape turn on the way out, or the rotated box and its

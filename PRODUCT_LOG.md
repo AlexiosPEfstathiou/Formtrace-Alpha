@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 45 | **CW** Camera portrait mode (BT) scrapped - start over | Medium | Remove the BT code; define the quality bar; measure smoothed-mask live blur, else blur-in-review or pose-based crop. |
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
-| 43 | **CU** Camera permission denied - re-ask every time + per-browser steps | Small | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
+| 43 | **CU** Camera permission denied - BUILT 2026-09-21 | - | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
 | 42 | **CT** Connect - share your WhatsApp / Instagram / Snapchat handle with a friend | Medium | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
 | 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
@@ -99,7 +99,9 @@ pipeline is available.
    knows where the person is from the pose landmarks) - it removes most
    of the room without any segmentation.
 Decide after (1) is measured on a real phone for one hour; if it misses,
-ship (2) or (3). Not started; removal of the old code is the first step.
+ship (2) or (3). **Step 1 done 2026-09-21:** the BT code is gone -
+segmenter, compositing, the "Blur bg" button, the import and the capture
+flags; zero references remain.
 
 ---
 
@@ -147,7 +149,16 @@ site-settings path. Fix:
   owner's request). The browser's own memory is the only one.
 - Same treatment for the microphone (voice-over) and, later, motion
   (knock) and location.
-Small; half a day with the per-browser copy. Not started.
+Small; half a day with the per-browser copy.
+
+**BUILT 2026-09-21.** `permHelpHtml(kind, retry)` renders the denied state
+with the steps for the detected browser (Safari iOS incl. the installed-
+app path; Chrome Android incl. App info; desktop Chrome/Edge; generic
+fallback) and a **Try again** button, on all three surfaces: the check-in
+camera (`pcOpenCam`), the set recorder (re-opens with the same options)
+and the voice-over microphone (`initMicCheck`). Nothing is cached - every
+open asks the browser afresh. Motion (knock) and location still show a
+plain message; same treatment when CM tuning happens.
 
 ---
 
