@@ -1653,7 +1653,6 @@
       <button class="captool" id="r-timer">⏱ 3s timer</button>
       <button class="captool" id="r-orient">▯ Portrait</button>
       <button class="captool" id="r-hand">✋ Touchless</button>
-          <button class="captool" id="r-blur" title="Blur everything behind you in the recording - for public gyms">🫥 Blur bg</button>
     </div>
     <div id="rreview">
           <!-- Item BC: trim the start and end before using the clip. Offsets, not a recut. -->
@@ -1840,7 +1839,7 @@
 <script src="store.supabase.js"></script>
 
 <script type="module">
-import { PoseLandmarker, GestureRecognizer, ImageSegmenter, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+import { PoseLandmarker, GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
 /* =========================================================================
    0. helpers
@@ -2782,66 +2781,7 @@ function setGestureEnabled(on){
 }
 /* The gesture model is a second, separate download — only fetch it once the
    user actually turns touchless capture on. */
-/* ---- Item BT: privacy background blur while recording (public gyms) ----------
-   Off by default, remembered per device. Person segmentation runs on-device
-   (MediaPipe selfie segmenter, same bundle as pose) against the raw camera
-   frame; the RECORDED canvas is composed as blurred camera + the person cut out
-   sharp on top. Pose detection keeps reading the raw video, so the skeleton and
-   the form comparison are unaffected. Segmentation runs every 2nd painted frame
-   and the last mask is reused - phones have to run pose + this + encoding. */
-let segmenter=null, segLoading=false, segTs=0, segMaskCanvas=null, segFrame=0, segFailed=0, blurTakeOff=false;
-function blurEnabled(){ try{ return localStorage.getItem("ft-blur")==="1"; }catch(e){ return false; } }
-function setBlurEnabled(on){ try{ localStorage.setItem("ft-blur",on?"1":"0"); }catch(e){} }
-async function ensureSegmenter(){
-  if(segmenter||segLoading) return segmenter;
-  segLoading=true;
-  try{
-    const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-    segmenter=await ImageSegmenter.createFromOptions(fileset,{
-      baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",delegate:"GPU"},
-      runningMode:"VIDEO",outputCategoryMask:false,outputConfidenceMasks:true});
-  }catch(e){ console.error("segmenter load failed",e); toast("Couldn't load background blur on this device",3600); setBlurEnabled(false); }
-  finally{ segLoading=false; }
-  return segmenter;
-}
-/* One segmentation pass -> updates segMaskCanvas (white where the person is,
-   alpha = confidence). Never throws into the paint loop. */
-function segmentTick(videoEl){
-  if(!segmenter||!videoEl||videoEl.readyState<2) return;
-  try{
-    segTs=Math.max(segTs+1, Math.round(performance.now()));
-    const res=segmenter.segmentForVideo(videoEl,segTs);
-    const masks=res&&res.confidenceMasks; if(!masks||!masks.length) return;
-    // selfie segmenter: with two masks the second is "person"; with one, it IS the person
-    const m=masks[masks.length-1]; const w=m.width, h=m.height; const data=m.getAsFloat32Array();
-    if(!segMaskCanvas||segMaskCanvas.width!==w||segMaskCanvas.height!==h){ segMaskCanvas=document.createElement("canvas"); segMaskCanvas.width=w; segMaskCanvas.height=h; }
-    const ctx=segMaskCanvas.getContext("2d"); const img=ctx.createImageData(w,h); const px=img.data;
-    for(let i=0,j=0;i<data.length;i++,j+=4){ px[j]=255; px[j+1]=255; px[j+2]=255; const c=data[i]; px[j+3]=c<0.35?0:c>0.75?255:Math.round((c-0.35)/0.4*255); }
-    ctx.putImageData(img,0,0);
-    masks.forEach(mk=>{ try{ mk.close&&mk.close(); }catch(e){} });
-    segFailed=0;
-  }catch(e){ segFailed++; if(segFailed===1||segFailed%30===0) console.error("segment failed x"+segFailed,e); if(segFailed>=20){ blurTakeOff=true; console.warn("background blur disabled for this take"); } }
-}
-/* Draw the camera frame into ctx (already transformed) with the background
-   blurred. Blur is a downscale/upscale (works in every browser; ctx.filter is
-   not universal). scratch canvases are reused. */
-let blurLow=null, personCanvas=null;
-function drawCameraBlurred(ctx,video,x,y,dw,dh){
-  if(!segMaskCanvas){ ctx.drawImage(video,x,y,dw,dh); return; }
-  const lw=Math.max(16,Math.round(dw/14)), lh=Math.max(16,Math.round(dh/14));
-  if(!blurLow){ blurLow=document.createElement("canvas"); }
-  if(blurLow.width!==lw||blurLow.height!==lh){ blurLow.width=lw; blurLow.height=lh; }
-  const lctx=blurLow.getContext("2d"); lctx.drawImage(video,0,0,lw,lh); lctx.drawImage(blurLow,0,0,lw,lh,0,0,lw,lh);
-  ctx.imageSmoothingEnabled=true; ctx.drawImage(blurLow,x,y,dw,dh);
-  const pw=Math.round(dw), ph=Math.round(dh);
-  if(!personCanvas){ personCanvas=document.createElement("canvas"); }
-  if(personCanvas.width!==pw||personCanvas.height!==ph){ personCanvas.width=pw; personCanvas.height=ph; }
-  const pctx=personCanvas.getContext("2d");
-  pctx.globalCompositeOperation="source-over"; pctx.clearRect(0,0,pw,ph); pctx.drawImage(video,0,0,pw,ph);
-  pctx.globalCompositeOperation="destination-in"; pctx.drawImage(segMaskCanvas,0,0,pw,ph);
-  pctx.globalCompositeOperation="source-over";
-  ctx.drawImage(personCanvas,x,y,dw,dh);
-}
+/* Item BT (background blur) removed 2026-09-21 - see CW. */
 async function ensureGesture(){
   if(gestureRec||gestureLoading)return gestureRec;
   gestureLoading=true;
@@ -9232,7 +9172,7 @@ async function runAnalysis(itemIndex,setIndex,capture){
     try{ const ext=(capture.blob.type||"").includes("mp4")?"mp4":"webm"; video_path=await store.video.upload(capture.blob,ext); persistTrim(video_path,capture); }
     catch(e){ console.error("set video upload failed",e); toast("Video didn't upload — set still saved",3600); }
   }
-  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path,form,pose_coverage:capture.pose_coverage??null,blurred:!!capture.blurred};
+  const result={reps:rc.reps,reps_label:null,reps_corrected:null,weight_kg:null,video_path,form,pose_coverage:capture.pose_coverage??null};
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
   saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
@@ -11818,7 +11758,6 @@ async function openRecorder(opts){
   }
   if(recOpts.mode==="preview"){ $("#r-note")?.classList.remove("on"); return; }
   $("#r-use").textContent=recOpts.useLabel||"✓ Use this trace";
-  if(blurEnabled()) ensureSegmenter().then(()=>syncCaptureTools());   // Item BT
   $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
   try{
     try{
@@ -11949,8 +11888,7 @@ function startRec(){
     recCtx.translate(w/2,h/2);
     if(rot) recCtx.rotate(rot);
     if(mirror) recCtx.scale(-1,1);
-    if(blurEnabled()&&segmenter&&!blurTakeOff){ if((segFrame++&1)===0) segmentTick(rvideo); drawCameraBlurred(recCtx,rvideo,-dw/2,-dh/2,dw,dh); }   // Item BT
-    else recCtx.drawImage(rvideo,-dw/2,-dh/2,dw,dh);
+        recCtx.drawImage(rvideo,-dw/2,-dh/2,dw,dh);
     recCtx.restore();
     recCtx.save();
     recCtx.translate(w/2,h/2);
@@ -11961,7 +11899,7 @@ function startRec(){
     recPaintRAF=requestAnimationFrame(paint);
   };
   paint();
-  const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capSeen=0;capStart=performance.now();blurTakeOff=false;segFrame=0;segFailed=0;
+  const cs=recCanvas.captureStream(30),mime=pickMime();rChunks=[];capFrames=[];capSeen=0;capStart=performance.now();
   // A canvas stream has NO audio track, so the mic has to be merged in
   // explicitly — otherwise pitch videos record silently even with mic access.
   const aud=rStream?rStream.getAudioTracks():[];
@@ -12019,7 +11957,7 @@ function onRecStop(){
   rBlob=new Blob(rChunks,{type});if(rURL)URL.revokeObjectURL(rURL);rURL=URL.createObjectURL(rBlob);
   if(rRecorder._silent)return;
   const fps=capFrames.length/Math.max(0.001,(performance.now()-capStart)/1000);
-  lastCapture={frames:capFrames.slice(),fps,blob:rBlob,pose_coverage:capSeen?+(capFrames.length/capSeen).toFixed(2):(capFrames.length?1:0),blurred:!!(blurEnabled()&&segmenter&&!blurTakeOff)};   // Item AH / BT
+  lastCapture={frames:capFrames.slice(),fps,blob:rBlob,pose_coverage:capSeen?+(capFrames.length/capSeen).toFixed(2):(capFrames.length?1:0)};   // Item AH / BT
   if(recOpts.review){
     rvideo.style.display="none";roverlay.style.display="none";rplay.src=rURL;rplay.style.display="block";
     $("#r-deck").style.display="none";$("#rreview").style.display="flex";$("#r-tools").style.display="none";cancelAnimationFrame(rRAF);
@@ -12035,26 +11973,11 @@ $("#r-timer").addEventListener("click",()=>{
   if(rRecording){ toast("Already recording"); return; }
   if(countingDown()){ cancelCountdown(); return; }
   startCountdown(3,()=>{ if(!rRecording)startRec(); },"Recording starts in…");
-});
-$("#r-blur")?.addEventListener("click",async()=>{
-  if(rRecording){ toast("Stop recording to change this",2000); return; }
-  const on=!blurEnabled(); setBlurEnabled(on); syncCaptureTools();
-  if(on){ toast("Background blur on - the recording blurs everything behind you. Your live preview stays sharp.",4200); await ensureSegmenter(); syncCaptureTools(); }
-  else toast("Background blur off",1500);
-});   // Item BT
-$("#r-hand").addEventListener("click",async()=>{
-  const on=!gestureEnabled();
-  setGestureEnabled(on);
-  syncCaptureTools();
-  if(on){ toast("Hold an open palm up to start",3600); await ensureGesture(); syncCaptureTools(); }
-  else{ cancelCountdown(); toast("Touchless off",1600); }
-});
-/* Reflect the touchless setting on both capture screens. */
+});/* Reflect the touchless setting on both capture screens. */
 function syncCaptureTools(){
   syncOrientBtn();
   const on=gestureEnabled();
   const label=on?(gestureRec?"✋ Touchless on":"✋ Loading…"):"✋ Touchless";
-  { const b=$("#r-blur"); if(b){ const bon=blurEnabled(); b.classList.toggle("on",bon); b.textContent=bon?(segmenter?"🫥 Blur on":"🫥 Loading…"):"🫥 Blur bg"; } }   // Item BT
   ["#r-hand","#pc-hand"].forEach(sel=>{
     const b=$(sel); if(!b)return;
     b.classList.toggle("on",on);
