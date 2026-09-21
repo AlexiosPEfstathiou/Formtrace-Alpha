@@ -73,4 +73,17 @@ begin
   return c;
 end; $$;
 
+
+-- Handle saves go through a security-definer function: the direct update was refused with
+-- "permission denied for table profiles" on the test phone even with column grants in place.
+create or replace function public.set_my_handles(p_whatsapp text, p_instagram text, p_snapchat text)
+returns void language sql security definer set search_path = public as $$
+  update public.profiles
+     set whatsapp  = nullif(trim(coalesce(p_whatsapp,  whatsapp)),  ''),
+         instagram = nullif(trim(coalesce(p_instagram, instagram)), ''),
+         snapchat  = nullif(trim(coalesce(p_snapchat,  snapchat)),  '')
+   where id = auth.uid();
+$$;
+revoke execute on function public.set_my_handles(text,text,text) from public;
+grant  execute on function public.set_my_handles(text,text,text) to authenticated;
 select 'connect' as check, count(*) from information_schema.tables where table_schema='public' and table_name='handle_shares';
