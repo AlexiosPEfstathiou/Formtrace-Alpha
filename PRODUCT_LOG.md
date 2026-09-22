@@ -67,7 +67,7 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
-## CY. Achievements
+## CY. Achievements - BUILT 2026-09-22 (friends-only)
 
 Requested 2026-09-22. A defined list of achievements, shown on the Profile
 **greyed out until earned, colourful once completed**; earning one creates
@@ -116,7 +116,30 @@ later idea - not for the first set.
 - **Feed:** `in_touch_feed` gains kind 'achievement'; congratulate works on
   it like a PB; `congratulate_all` counts it.
 Estimate: a day and a half (rules are the bulk; keep each a single SQL
-predicate). Not started.
+predicate).
+
+**Policy confirmed by the owner 2026-09-22: achievements are NEVER public -
+visible to the owner and to In Touch friends only.**
+
+**BUILT 2026-09-22** (`migrations_achievements.sql`). Catalogue of 18 in
+five families (Start · Discipline · Effort · Journey · Social), each a
+single SQL predicate in `check_achievements(user)` - idempotent, awards
+only what the data justifies, writes a push-outbox row per unlock.
+Triggers run it on week close, engagement status/level change, review
+insert and connection confirmation; the client runs it once per sign-in
+and after sending a congratulation. RLS: own rows + `are_connected`
+friends. **Profile:** an Achievements card - a 4-column grid, grey and
+faded until earned, colour with the date after, "N of 18 · visible to
+friends only", tap for the how. **Notifications:** "🏅 Achievement
+unlocked" chips until tapped; tapping plays the unlock (the clap overlay
+pattern: icon, title, blurb, short buzz). **Social:** a friend's page
+shows a compact 6-column grid of what they've earned; the wins feed
+carries achievements as a third event type with the 🏅 icon; Congratulate
+and Congratulate all work on them. Push copy ("🏅 Achievement unlocked ·
+icon title - blurb") goes out via CE when switched on.
+Not built: hidden achievements; a max-streak record (streak rules read the
+current streak, so a streak broken before the check would not award - the
+week-close trigger makes that window tiny).
 
 ---
 

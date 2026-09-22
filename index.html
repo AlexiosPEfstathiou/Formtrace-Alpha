@@ -1473,6 +1473,7 @@
       <div id="home-goalended" class="home-reviews" style="display:none"></div>
       <div id="home-intouch" class="home-reviews" style="display:none"></div>
       <div id="home-handles" class="home-reviews" style="display:none"></div>
+      <div id="home-achievements" class="home-reviews" style="display:none"></div>
       <div id="home-renewal" class="home-call" style="display:none"></div>
       <div id="home-nextgoal" class="home-milestone" style="display:none"></div>
       <div id="home-recap" class="home-milestone" style="display:none"></div>
@@ -3207,6 +3208,7 @@ function renderAppTabs(current){
   bar.style.display="flex";
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
+  if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); }   // Item CY: catch-up once per session
   try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
 }
 /* CR-5: swipe left / right between tabs. Only when the tab bar is showing, no overlay or
@@ -3569,6 +3571,7 @@ async function renderHome(){
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
+      renderHomeAchievements($("#home-achievements")),   // Item CY
       renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
       renderHomeNextGoal($("#home-nextgoal"), engs),   // Item CD: between-goals nudge
       renderHomeWeekRecap($("#home-recap"), engs),   // Item CF (card version)
@@ -3603,6 +3606,7 @@ async function renderHome(){
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
+      renderHomeAchievements($("#home-achievements")),   // Item CY
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
       Promise.resolve(store._sb.rpc("refresh_coach_streak_scores")).catch(()=>{})   // Item BX: keeps the Top 1% ranking fresh (server skips if <6h old)
     ]);
@@ -4071,6 +4075,45 @@ async function afterFeedbackHandoff(eng,role,kind){
   if(!ok) return;
   openOffer(null,{trainee_id:eng.trainee_id,name,title:eng.goal_title?`${eng.goal_title} - next block`:""});
 }
+/* ---- Item CY: Achievements - friends-only, never public --------------------------------
+   Catalogue in `achievements`; earned rows in `user_achievements`; awarding is server-side
+   (`check_achievements`), called on sign-in and after the user's own earning actions, and
+   by triggers for server-side events. */
+let achCatalogue=null;
+async function loadAchievementCatalogue(){ if(achCatalogue) return achCatalogue; try{ const { data }=await store._sb.from("achievements").select("*").order("sort"); achCatalogue=data||[]; }catch(e){ achCatalogue=[]; } return achCatalogue; }
+async function checkAchievements(){ try{ const { data }=await store._sb.rpc("check_achievements"); if(data>0) refreshNotifDot(); }catch(e){} }
+function achGridHtml(cat,earnedMap,compact){
+  return `<div style="display:grid;grid-template-columns:repeat(${compact?6:4},1fr);gap:${compact?6:10}px">`+cat.map(a=>{ const e=earnedMap[a.code]; return `<div class="ach ${e?"on":""}" data-ach="${a.code}" title="${escapeHtml(a.title)} - ${escapeHtml(a.blurb)}${e?` · ${escapeHtml(fmtDay(String(e).slice(0,10)))}`:""}" style="text-align:center;cursor:help"><div style="font-size:${compact?20:28}px;line-height:1.1;${e?"":"filter:grayscale(1);opacity:.35"}">${a.icon}</div>${compact?"":`<div style="font-size:10.5px;margin-top:4px;color:${e?"var(--ink)":"var(--faint)"};font-weight:${e?"700":"400"};line-height:1.2">${escapeHtml(a.title)}</div>`}</div>`; }).join("")+`</div>`;
+}
+/* Profile card: grey until earned, colour + date once earned. Tap = the "how". */
+async function renderProfileAchievements(target){
+  if(!target||!ME) return;
+  const cat=await loadAchievementCatalogue(); if(!cat.length) return;
+  let earned={}; try{ const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",ME.id); for(const r of (data||[])) earned[r.code]=r.earned_at; }catch(e){}
+  const n=Object.keys(earned).length;
+  const card=document.createElement("div"); card.className="card"; card.style.margin="0 0 12px"; card.id="pf-achievements";
+  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="eyebrow">Achievements</div><div style="font-size:12px;color:var(--muted)">${n} of ${cat.length} · visible to friends only</div></div>`+achGridHtml(cat,earned,false);
+  target.appendChild(card);
+  card.querySelectorAll("[data-ach]").forEach(el=>el.addEventListener("click",()=>{ const a=cat.find(x=>x.code===el.getAttribute("data-ach")); if(!a) return; toast(`${a.icon} ${a.title} - ${a.blurb}${earned[a.code]?` · earned ${fmtDay(String(earned[a.code]).slice(0,10))}`:""}`,3500); }));
+}
+/* Notifications: newly earned, until tapped; tapping plays the unlock. */
+async function renderHomeAchievements(el){
+  if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
+  try{
+    const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",ME.id).is("seen_at",null).order("earned_at",{ascending:false}); const rows=data||[]; if(!rows.length) return;
+    const cat=await loadAchievementCatalogue(); const by={}; for(const a of cat) by[a.code]=a;
+    el.innerHTML=`<div class="rv-title">🏅 Achievement unlocked</div><div class="rv-row">`+rows.map(r=>{ const a=by[r.code]||{icon:"🏅",title:r.code,blurb:""}; return `<button class="rv-chip" data-unlock="${r.code}"><span class="rv-ic">${a.icon}</span><span class="rv-tx"><b>${escapeHtml(a.title)}</b><span>${escapeHtml(a.blurb)} · tap</span></span></button>`; }).join("")+`</div>`;
+    el.style.display="";
+    el.querySelectorAll("[data-unlock]").forEach(b=>b.addEventListener("click",async()=>{ const a=by[b.getAttribute("data-unlock")]; playUnlock(a); try{ await store._sb.from("user_achievements").update({seen_at:new Date().toISOString()}).eq("user_id",ME.id).eq("code",b.getAttribute("data-unlock")); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; refreshNotifDot(); }));
+  }catch(e){}
+}
+function playUnlock(a){
+  const ov=$("#clap-overlay"); if(!ov||!a) return;
+  const av=$("#clap-avatar"); if(av){ av.outerHTML=`<div id="clap-avatar" style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:64px">${a.icon}</div>`; }
+  $("#clap-hands").textContent="🏅"; $("#clap-name").textContent=a.title; $("#clap-text").textContent=a.blurb;
+  ov.classList.add("on"); try{ navigator.vibrate&&navigator.vibrate([40,30,80]); }catch(e){}
+  const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); }; ov.addEventListener("click",close); setTimeout(close,3000);
+}
 /* ---- Item CM: In Touch ------------------------------------------------------------
    Connect by KNOCKING phones: each phone's motion sensor sees the jolt; both report
    it; the server pairs jolts within 600 ms / ~60 m among users in connect mode; each
@@ -4165,8 +4208,10 @@ function renderInTouchPerson(uid,connId,p,wins){
   head.innerHTML=`<div style="display:flex;align-items:center;gap:10px">${avatarHtml(p,36)}<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px;line-height:1.2">${escapeHtml(p.display_name||"Someone")}</div><div style="font-size:11.5px;color:var(--muted)">${pending.length?`${pending.length} win${pending.length===1?"":"s"} this week to cheer`:"You're up to date"}</div></div>${pending.length?`<button class="btn primary sm" id="itp-all" style="width:auto;height:30px;padding:0 10px;margin:0;font-size:12px">👏 All (${pending.length})</button>`:""}<button class="btn sm ghost" id="itp-disc" style="width:auto;height:30px;padding:0 10px;margin:0;font-size:12px;color:var(--faint)">Disconnect</button></div>`;
   body.appendChild(head);
   const list=document.createElement("div"); list.className="card";
-  list.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Wins · newest first</div>`+(wins.length?wins.map(ev=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)"><span style="font-size:18px">${ev.kind==="pb"?"🏆":"🎯"}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px">${escapeHtml(ev.text)}</div><div style="font-size:11px;color:var(--faint)">${escapeHtml(fmtDay(String(ev.at).slice(0,10)))}${String(ev.at).slice(0,10)>=thisMon?" · this week":""}</div></div>${ev.congratulated?`<span style="font-size:12px;color:var(--lime);font-weight:700">👏 sent</span>`:`<button class="btn sm" data-congrat="${uid}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto">Congratulate</button>`}</div>`).join(""):`<div style="font-size:12.5px;color:var(--faint)">No PBs or completed goals since you connected.</div>`);
+  list.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Wins · newest first</div>`+(wins.length?wins.map(ev=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)"><span style="font-size:18px">${ev.kind==="pb"?"🏆":ev.kind==="achievement"?"🏅":"🎯"}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px">${escapeHtml(ev.text)}</div><div style="font-size:11px;color:var(--faint)">${escapeHtml(fmtDay(String(ev.at).slice(0,10)))}${String(ev.at).slice(0,10)>=thisMon?" · this week":""}</div></div>${ev.congratulated?`<span style="font-size:12px;color:var(--lime);font-weight:700">👏 sent</span>`:`<button class="btn sm" data-congrat="${uid}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto">Congratulate</button>`}</div>`).join(""):`<div style="font-size:12.5px;color:var(--faint)">No PBs or completed goals since you connected.</div>`);
   body.appendChild(list); wireCongrats(list); hydrateAvatars(body);
+  /* Item CY: this friend's achievements, compact (friends-only by policy) */
+  (async()=>{ try{ const cat=await loadAchievementCatalogue(); const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",uid); const earned={}; for(const r of (data||[])) earned[r.code]=r.earned_at; if(!Object.keys(earned).length) return; const ac=document.createElement("div"); ac.className="card"; ac.style.marginTop="12px"; ac.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Achievements · ${Object.keys(earned).length}</div>`+achGridHtml(cat,earned,true); body.appendChild(ac); }catch(e){} })();
   /* Item CT: handles this friend shared with me */
   (async()=>{ try{ const { data }=await store._sb.from("handle_shares").select("*").eq("from_user",uid).eq("to_user",ME.id).is("revoked_at",null); if(!(data||[]).length) return; const hc=document.createElement("div"); hc.className="card"; hc.style.marginTop="12px"; hc.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Shared with you</div>`+data.map(r=>{ const net=NETS.find(n=>n[0]===r.network)||[r.network,r.network,"🔗",h=>"#"]; return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span>${net[2]}</span><div style="flex:1"><b>${net[1]}</b> · ${escapeHtml(r.handle)}</div><a class="btn sm primary" style="width:auto;text-decoration:none" href="${net[3](r.handle)}" target="_blank" rel="noopener">Open</a></div>`; }).join(""); body.appendChild(hc); }catch(e){} })();
   /* the screen title becomes an unmistakable link back to the list while a friend is open */
@@ -4179,7 +4224,7 @@ function wireConnButtons(root,after){
   root.querySelectorAll("[data-conn-no]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:b.getAttribute("data-conn-no"),p_accept:false}); if(error) throw error; after&&after(); }catch(e){ toast(e.message||"Couldn't update",3000); } }));
 }
 function wireCongrats(root){
-  root.querySelectorAll("[data-congrat]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { error }=await store._sb.rpc("congratulate",{p_to:b.getAttribute("data-congrat"),p_kind:b.getAttribute("data-kind"),p_ref:b.getAttribute("data-ref"),p_text:b.getAttribute("data-text")}); if(error) throw error; b.replaceWith(Object.assign(document.createElement("span"),{textContent:"👏 sent",style:"font-size:12px;color:var(--lime);font-weight:700"})); }catch(e){ toast(e.message||"Couldn't send",3000); b.disabled=false; } }));
+  root.querySelectorAll("[data-congrat]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { error }=await store._sb.rpc("congratulate",{p_to:b.getAttribute("data-congrat"),p_kind:b.getAttribute("data-kind"),p_ref:b.getAttribute("data-ref"),p_text:b.getAttribute("data-text")}); if(error) throw error; checkAchievements(); b.replaceWith(Object.assign(document.createElement("span"),{textContent:"👏 sent",style:"font-size:12px;color:var(--lime);font-weight:700"})); }catch(e){ toast(e.message||"Couldn't send",3000); b.disabled=false; } }));
 }
 /* The knock. Listens to devicemotion for up to 15 s, reports the first jolt above
    the threshold, then polls the server briefly for the other phone's report. */
@@ -4235,7 +4280,7 @@ async function renderHomeInTouch(el){
     let h=`<div class="rv-title">🤝 In Touch</div><div class="rv-row">`;
     for(const c of pend){ const p=profs[c.a===ME.id?c.b:c.a]||{}; h+=`<div class="rv-chip" style="cursor:default"><span class="rv-ic">🤝</span><span class="rv-tx"><b>${escapeHtml(p.display_name||"Someone")} wants to connect</b><span style="display:flex;gap:8px;margin-top:6px"><button class="btn sm ghost" data-conn-no="${c.id}" style="width:auto">No</button><button class="btn primary sm" data-conn-yes="${c.id}" style="width:auto">Confirm</button></span></span></div>`; }
     for(const c of claps){ const p=profs[c.from_user]||{}; h+=`<button class="rv-chip" data-clap="${c.id}"><span class="rv-ic">👏</span><span class="rv-tx"><b>${escapeHtml(p.display_name||"Someone")} congratulated you${c.event_kind==="week"?` for ${escapeHtml(c.event_text)}`:""}</b><span>${c.event_kind==="week"?"tap to celebrate":escapeHtml(c.event_text)+" · tap"}</span></span></button>`; }
-    for(const ev of feed){ h+=`<div class="rv-chip" style="cursor:default"><span class="rv-ic">${ev.kind==="pb"?"🏆":"🎯"}</span><span class="rv-tx"><b>${escapeHtml(ev.display_name||"")} · ${escapeHtml(ev.text)}</b><span><button class="btn sm" data-congrat="${ev.user_id}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto;margin-top:6px">Congratulate ${escapeHtml((ev.display_name||"").split(" ")[0])}</button></span></span></div>`; }
+    for(const ev of feed){ h+=`<div class="rv-chip" style="cursor:default"><span class="rv-ic">${ev.kind==="pb"?"🏆":ev.kind==="achievement"?"🏅":"🎯"}</span><span class="rv-tx"><b>${escapeHtml(ev.display_name||"")} · ${escapeHtml(ev.text)}</b><span><button class="btn sm" data-congrat="${ev.user_id}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto;margin-top:6px">Congratulate ${escapeHtml((ev.display_name||"").split(" ")[0])}</button></span></span></div>`; }
     el.innerHTML=h+`</div>`; el.style.display="";
     wireConnButtons(el,()=>renderHomeInTouch(el)); wireCongrats(el);
     el.querySelectorAll("[data-clap]").forEach(b=>b.addEventListener("click",async()=>{ const c=claps.find(x=>x.id===b.getAttribute("data-clap")); const p=profs[c.from_user]||{}; const shown=playClap(p,c.event_kind==="week"?`for ${c.event_text}`:c.event_text); if(!shown){ toast("Couldn't show the clap - try again",2500); return; } try{ await store._sb.from("celebrations").update({seen_at:new Date().toISOString()}).eq("id",c.id); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; }));
@@ -10911,6 +10956,8 @@ function moveSettingsSections(){
   for(const k of dropping) k.remove();
   /* the three handle fields belong on Profile (owner): pull them out of the moved Social-profile section */
   const h=$("#sp-handles"); if(h){ const first=from.querySelector(".card"); if(first&&first.nextSibling) from.insertBefore(h,first.nextSibling); else from.appendChild(h); h.style.display=""; }
+  /* Item CY: achievements grid under the handles */
+  if(!from.querySelector("#pf-achievements")){ const anchor=$("#sp-handles")||from.querySelector(".card"); const holder=document.createElement("div"); if(anchor&&anchor.nextSibling) from.insertBefore(holder,anchor.nextSibling); else from.appendChild(holder); renderProfileAchievements(holder); }
 }
 async function renderProfile(){
   const body=$("#profile-body");
