@@ -629,6 +629,17 @@ Tester's words in quotes. Not yet fixed unless marked.**
   (CN-5/6) parsed cleanly and threw only at run time. Add a check that
   invokes the main render functions against a stub DOM and stub store so a
   ReferenceError inside a renderer fails the check. Not started.
+- **CN-19 · Voice-over sheet shows the video preview with no play / record
+  controls - "not allowing progress"** (owner screenshot, 2026-09-22).
+  Cause: `#vo-vid-box` had `max-height:280px` but no height, and the
+  `<video>` inside is `height:100%`; against a max-height-only box that
+  resolves to the clip's intrinsic size, so a portrait clip several hundred
+  px tall overflowed the box and covered the tools, status and **Start
+  recording** below. The CL canvas overlay making the box
+  `position:relative` is what tipped it. FIXED same day: the box has a
+  fixed height (`min(280px, 42vh)`), `overflow:hidden`, and the video is
+  `object-fit:contain` so nothing is cut. Blocking for coaches - deploy
+  first.
 - **CN-18 · "Add from library" sheet header visible at the bottom of every
   tab** (screenshot). The closed sheet relies on `translateY(100%)` to be
   off-screen; on the tester's phone its header peeked above the tab bar.
