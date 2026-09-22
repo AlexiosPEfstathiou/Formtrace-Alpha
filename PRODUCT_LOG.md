@@ -661,7 +661,19 @@ Tester's words in quotes. Not yet fixed unless marked.**
 - **CN-17 · Smoke test must execute the renderers.** The `trims` scope bug
   (CN-5/6) parsed cleanly and threw only at run time. Add a check that
   invokes the main render functions against a stub DOM and stub store so a
-  ReferenceError inside a renderer fails the check. Not started.
+  ReferenceError inside a renderer fails the check.
+  **BUILT 2026-09-22 - `tools/render-check.mjs`.** Exposes every module-scope
+  `render*` function, signs in a stub trainee and then a stub coach (admin),
+  gives them an open engagement, and calls each renderer against a
+  permissive DOM and a Supabase-like store whose builders are thenable
+  but have NO `.catch` (the shape that bit us). 112 calls per run; fails on
+  ReferenceError / TypeError signatures, including ones a renderer logs and
+  swallows. **Proof:** with CN-21's line reintroduced it fails on exactly
+  `renderHome (coach): store._sb.rpc(...).catch is not a function`; the
+  current build passes clean. `tools/gate.ps1` runs smoke + top-level +
+  renderers and gives one verdict; nothing is pushed unless it passes.
+  Skipped by design: the two editors that need an open workout and the
+  retired Goals screen.
 - **CN-20 · Coach opens a trainee's calendar → the bottom bar disappears**
   (owner, 2026-09-22) - and, since CR-1, so had the back arrow: the coach
   was stuck with no way out. The drill-down hides the tab bar on purpose
