@@ -671,7 +671,19 @@ Tester's words in quotes. Not yet fixed unless marked.**
   drill-down (no `.tab-level`) → header hidden → back arrow visible; the
   trainee's merged calendar keeps header and bar as before. Lesson:
   "hide back arrows where the header shows" needs the header to show only
-  where a tab is truly the way back.
+  where a tab is truly the way back. **Second pass same day:** the first
+  fix never ran - the coach path activates the calendar screen directly
+  without the tab renderer. It now calls it, so header and bar hide together
+  and the back arrow shows.
+- **CN-21 · Coach homepage empty below the welcome; toast
+  "store._sb.rpc(...).catch is not a function"** (owner, 2026-09-22).
+  Supabase's `rpc()` returns a thenable query builder with no `.catch`;
+  the Top 1% refresh line (BX, 2026-09-15) called `.catch` on it directly,
+  which threw while the coach homepage batch was being assembled - so NO
+  coach card rendered, on every load, for a week. FIXED: wrapped in
+  `Promise.resolve(...)`. The three other rpc chains go through `.then()`
+  first and were fine. Lesson: the smoke test (CN-17, still open) would
+  have caught this on day one.
 - **CN-19 · Voice-over sheet shows the video preview with no play / record
   controls - "not allowing progress"** (owner screenshot, 2026-09-22).
   Cause: `#vo-vid-box` had `max-height:280px` but no height, and the
