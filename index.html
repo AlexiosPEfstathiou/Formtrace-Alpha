@@ -395,6 +395,7 @@
   .screen .body.with-tabs{padding-bottom:190px;}
   /* when the calendar keeps the tab bar, its content needs to clear it */
   #s-engagement.tab-level .body{padding-bottom:180px;}
+  #s-engagement.tab-level .fab-row{bottom:calc(env(safe-area-inset-bottom) + 78px);}   /* action row above the tab bar */
   /* per-screen SUB tab bars (coach library/workouts, listings goals/offers)
      stack directly above the persistent app bar instead of overlapping it */
   #s-coach .tabbar, #s-listings .tabbar{bottom:calc(env(safe-area-inset-bottom) + 62px);border-top:1px solid var(--line);}
@@ -6625,7 +6626,7 @@ async function cancelGoal_legacy(e){
 async function openEngagement(id){
   traineeMerged=false;
   // drill-down, not a tab destination: it has its own bottom action row
-  $("#s-engagement").classList.remove("tab-level");
+  $("#s-engagement").classList.add("tab-level");   // owner 2026-09-22: the coach's trainee view keeps the tab bar, like the trainee's own calendar; its action row sits above the bar
   /* Latency (perceived): this screen used to be activated only at the very
      END of this function - after the engagement fetch, the counterpart
      profile fetch, and the whole renderEngagement() load. Tapping a trainee
