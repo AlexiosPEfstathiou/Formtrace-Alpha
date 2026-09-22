@@ -67,6 +67,39 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
+## CX. iPhone installation
+
+Requested 2026-09-22. iOS was explicitly deferred (AD); this un-defers the
+install path only - not an App Store app. On iPhone the app is installed
+from **Safari → Share → Add to Home Screen**; there is no install prompt
+and no `beforeinstallprompt`, so the in-app Install card must teach the
+gesture instead of offering a button.
+**What to build / check:**
+1. **Install card, iOS variant:** detect iOS Safari (not Chrome-on-iOS,
+   which cannot install); show the three-step instruction with the Share
+   icon; hide the Android button. Detect standalone mode
+   (`navigator.standalone` / `display-mode: standalone`) and show
+   "Installed ✓" once running from the home screen.
+2. **Manifest and head tags:** `apple-touch-icon` 180 px is present; add
+   `apple-mobile-web-app-title`; confirm `display: standalone` and
+   `theme_color`; splash images are optional (iOS generates a plain one).
+3. **Behaviour audit on the installed app (the real work):** camera and
+   microphone permission prompts inside standalone Safari; `getUserMedia`
+   resolution and the WebM question (Safari cannot play Android-recorded
+   WebM - recording on iPhone produces MP4/H.264, which Android plays, so
+   the cross-device case that fails is Android-recorded → iPhone-viewed;
+   decide: record MP4 on Android where supported, or transcode);
+   DeviceMotion permission for the knock (one-tap `requestPermission`);
+   Web Push only when installed, iOS 16.4+ (CE already handles it);
+   background audio for interval cues under the screen lock; the 100vh
+   and safe-area quirks in standalone mode; the sheet and header layouts
+   (CN-18 style peeking) on the notch.
+4. **Test-day pack:** an iPhone column - the checklist steps that differ.
+Owner's iPhone is the test device; a half day of checking, then fixes as
+found. Not started.
+
+---
+
 ## CW. Camera "portrait mode" (background blur, item BT) - scrapped; start over
 
 Owner, 2026-09-21: "Camera portrait mode simply doesn't work well. Scrap
