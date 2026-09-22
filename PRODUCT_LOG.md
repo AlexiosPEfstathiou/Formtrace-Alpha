@@ -553,6 +553,18 @@ Tester's words in quotes. Not yet fixed unless marked.**
   ledger rule) and a flag on the coach; circumstances → refund of unused
   weeks minus fee. Log the reason on the engagement (`ended_by`,
   `end_reason`). Coach side gets a card "Goal ended by <name> - <reason>".
+  **BUILT 2026-09-22** (`migrations_end_goal_early.sql`). On the Goal tab,
+  the expanded accepted offer of an active goal has **Goal achieved** and
+  **Cancel goal**. Each opens a sheet with reasons as chips (achieved:
+  reached early · got what I needed · other; cancel: coach not responding
+  · coaching quality · no time · cost · injury or life event · not what I
+  expected · other) and an optional note. `end_goal_early` (trainee only,
+  active only) sets completed or ended, stamps `ended_by / end_kind /
+  end_reason / end_note`, deletes never-started sessions, and writes a
+  push for the coach. Then: rate the coach, and the completion (CC) or
+  exit (CH) survey appears on Notifications. Coach homepage: "Goal ended
+  by your trainee" with reason and note, until **Got it** (`ack_goal_end`).
+  Compensation by reason remains a BI decision - the data is now recorded.
 - **CN-11 · The "personal bests last week" card keeps reappearing after
   Got it.** The dismiss writes `ft-recap-<monday>` to localStorage;
   suspects: localStorage unavailable/cleared in the installed app on that
