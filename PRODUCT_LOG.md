@@ -162,6 +162,32 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DA. Achievement unlock animation
+
+Requested 2026-09-22 (catalogue v2 live: 27 total, 26 approved). The
+unlock today borrows the clap overlay - icon, title, blurb, a short buzz.
+An achievement deserves its own moment. Design:
+- **Sequence (~2.5 s, skippable by tap):** dim → the badge icon drops in
+  and lands with a squash; a ring of light sweeps once round it; "Achievement
+  Unlocked" fades in above, then the **Name** in the lime display size,
+  then the explanation in muted grey; a burst of a few particles (CSS
+  only, no library) on the landing; haptic pattern on the landing.
+- **Colour comes from the family:** Start lime · Discipline gold ·
+  Effort orange · Body blue · Journey purple · Social pink - the same
+  colours the Profile grid uses once earned, so the animation and the grid
+  agree.
+- **Stacking:** several unlocks at once (the sign-in catch-up) play one
+  after another, not on top of each other; the Notifications chips remain
+  the record.
+- **Reduced motion:** static card with the same content, no particles, no
+  sweep - `prefers-reduced-motion` already guards the glisten and aura.
+- **Same overlay for friends' feed later:** tapping a friend's
+  achievement in Social could replay the animation in their colour with
+  "<Name> unlocked …" - not in v1.
+Half a day, CSS + a little JS; no server work. Not started.
+
+---
+
 ## CZ. Scalable achievements - tiers that grow with the users
 
 Requested 2026-09-22 with the catalogue review: plan for the day users
