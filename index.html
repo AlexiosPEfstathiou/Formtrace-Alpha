@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1469,6 +1469,7 @@
       <div id="home-certstatus" class="home-reviews" style="display:none"></div>
       <div id="home-milestone" class="home-milestone" style="display:none"></div>
       <div id="home-adminq" class="home-reviews" style="display:none"></div>
+      <div id="home-goalended" class="home-reviews" style="display:none"></div>
       <div id="home-intouch" class="home-reviews" style="display:none"></div>
       <div id="home-handles" class="home-reviews" style="display:none"></div>
       <div id="home-renewal" class="home-call" style="display:none"></div>
@@ -3562,6 +3563,7 @@ async function renderHome(){
     await Promise.all([
       renderHomeStreakRisk($("#home-streakrisk"), engs),
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
+      renderHomeGoalEnded($("#home-goalended")),   // CN-10
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
       renderHomeRenewalOffer($("#home-renewal")),   // Item CD: persistent until accepted/declined
@@ -3595,6 +3597,7 @@ async function renderHome(){
       renderHomeCallProposal($("#home-callproposal")),
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
+      renderHomeGoalEnded($("#home-goalended")),   // CN-10
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
       renderHomeGoalFeedback($("#home-feedback")),   // Item CC
@@ -4245,6 +4248,18 @@ function playClap(p,text){
   const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); };
   ov.addEventListener("click",close); setTimeout(close,3200);
   return getComputedStyle(ov).display!=="none";   // CN-13: only report shown if it actually rendered
+}
+/* CN-10: coach sees who ended a goal early and why, until acknowledged. */
+async function renderHomeGoalEnded(el){
+  if(!el||!ME||roleOf()!=="coach") return; el.style.display="none"; el.innerHTML="";
+  try{
+    const { data }=await store._sb.from("engagements").select("id,goal_title,trainee_id,end_kind,end_reason,end_note,completed_at").eq("coach_id",ME.id).not("end_kind","is",null).is("end_ack_at",null).order("completed_at",{ascending:false}).limit(5); const rows=data||[]; if(!rows.length) return;
+    let names={}; try{ const { data:p }=await store._sb.from("profiles").select("id,display_name").in("id",[...new Set(rows.map(r=>r.trainee_id))]); for(const x of (p||[])) names[x.id]=x.display_name; }catch(e){}
+    const label=k=>(Object.values(END_REASONS).flat().find(([x])=>x===k)||[k,k])[1];
+    el.innerHTML=`<div class="rv-title">${rows.some(r=>r.end_kind==="cancelled")?"⏹":"🎯"} Goal ended by your trainee</div><div class="rv-row">`+rows.map(r=>`<div class="rv-chip" style="cursor:default"><span class="rv-ic">${r.end_kind==="achieved"?"🎯":"⏹"}</span><span class="rv-tx"><b>${escapeHtml(names[r.trainee_id]||"Your trainee")} ${r.end_kind==="achieved"?"marked":"ended"} "${escapeHtml(r.goal_title||"the goal")}"${r.end_kind==="achieved"?" achieved":""}</b><span>${escapeHtml(label(r.end_reason))}${r.end_note?` · "${escapeHtml(r.end_note)}"`:""}</span><span style="display:block;margin-top:6px"><button class="btn sm ghost" data-ack="${r.id}" style="width:auto">Got it</button></span></span></div>`).join("")+`</div>`;
+    el.style.display="";
+    el.querySelectorAll("[data-ack]").forEach(b=>b.addEventListener("click",async()=>{ try{ await store._sb.rpc("ack_goal_end",{p_eng:b.getAttribute("data-ack")}); }catch(e){} renderHomeGoalEnded(el); }));
+  }catch(e){}
 }
 /* CN-4: admin homepage card - stays until the reviews are done. */
 async function renderHomeAdminQueue(el){
@@ -5691,6 +5706,7 @@ async function renderOffersTab(body){
   const pending=offers.filter(o=>o.status==="pending"||o.status==="countered");   // Item CJ: a countered offer is still open
   const rejected=offers.filter(o=>o.status==="rejected"||o.status==="expired");
   const accepted=offers.filter(o=>o.status==="accepted");
+  traineeEngByOffer=engByOffer;   // CN-10: the expanded accepted row needs the engagement
   const acceptedLive=accepted.filter(o=>{ const e=engByOffer[o.id]; return !e||e.status==="active"; });
   const completed=accepted.filter(o=>{ const e=engByOffer[o.id]; return e&&e.status!=="active"; });
 
@@ -5997,6 +6013,8 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     });
     row.querySelector("[data-rej]").addEventListener("click",async()=>{ await store.offers.update(o.id,{status:"rejected"}); toast("Offer declined"); renderListings(); });
   }
+  /* CN-10: the trainee can end an active goal here - achieved early, or cancelled - with a reason. */
+  if(goalActive && o.status==="accepted" && traineeEngByOffer && traineeEngByOffer[o.id] && traineeEngByOffer[o.id].status==="active"){ const eng=traineeEngByOffer[o.id]; const act=document.createElement("div"); act.style.cssText="display:flex;gap:8px;margin-top:14px"; act.innerHTML=`<button class="btn sm" style="flex:1;width:auto;min-width:0;margin:0;color:var(--lime);border-color:var(--lime)" data-end="achieved">🎯 Goal achieved</button><button class="btn sm ghost" style="flex:1;width:auto;min-width:0;margin:0;color:var(--red)" data-end="cancelled">Cancel goal</button>`; exp.appendChild(act); act.querySelectorAll("[data-end]").forEach(b=>b.addEventListener("click",()=>endGoalEarly(eng,b.getAttribute("data-end")))); }
   exp.querySelector(".oe-close").addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,o.status==="pending",coachName,goalActive));
   wrap.innerHTML="";wrap.appendChild(exp);
   hydrateVideos(exp);
@@ -6561,7 +6579,35 @@ function openGoalRecap(e,coach){
   body.appendChild(openBtn);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
-async function cancelGoal(e){
+let traineeEngByOffer=null;
+/* CN-10: end a goal early. Both paths ask for a reason; achieved → completed (completion
+   survey follows), cancelled → ended (exit survey follows). Compensation by reason is a
+   BI decision - the reason is recorded for it. */
+const END_REASONS={
+  achieved:[["early","I reached the goal early"],["enough","I got what I needed"],["other","Other"]],
+  cancelled:[["coach_unresponsive","Coach not responding"],["quality","Coaching quality"],["time","No time right now"],["money","Cost"],["injury","Injury or life event"],["expect","Not what I expected"],["other","Other"]]
+};
+async function endGoalEarly(e,kind){
+  const isA=kind==="achieved"; const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=isA?"Goal achieved 🎯":"Cancel this goal"; $("#sheet-add").style.display="none";
+  const w=document.createElement("div"); let reason=null;
+  w.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">${isA?`Congratulations. Ending "${escapeHtml(e.goal_title||"the goal")}" now marks it complete; sessions not yet started are removed. Your coach will be told.`:`"${escapeHtml(e.goal_title||"This goal")}" will end now; sessions not yet started are removed and your coach will be told. Tell us why - it decides what happens next.`}</div>
+    <div class="eyebrow" style="margin-bottom:6px">Why?</div><div style="display:flex;gap:6px;flex-wrap:wrap">${END_REASONS[kind].map(([k,l])=>`<button type="button" class="btn sm ghost fb-opt" data-r="${k}" style="width:auto;margin:0">${l}</button>`).join("")}</div>
+    <textarea id="eg-note" rows="3" placeholder="${isA?"Anything for your coach? (optional)":"What would have kept you going? (optional)"}" style="margin-top:10px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:11px;color:var(--ink);padding:9px 12px;font-size:13px"></textarea>
+    <button class="btn ${isA?"primary":""}" id="eg-go" style="margin-top:12px;${isA?"":"color:var(--red)"}" disabled>${isA?"Mark achieved":"End goal"}</button>`;
+  body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
+  w.querySelectorAll("[data-r]").forEach(b=>b.addEventListener("click",()=>{ w.querySelectorAll("[data-r]").forEach(x=>x.classList.remove("on")); b.classList.add("on"); reason=b.getAttribute("data-r"); $("#eg-go").disabled=false; }));
+  $("#eg-go").addEventListener("click",async()=>{ const btn=$("#eg-go"); btn.disabled=true; try{
+      const { data, error }=await store._sb.rpc("end_goal_early",{p_eng:e.id,p_kind:kind,p_reason:reason,p_note:$("#eg-note").value.trim()||null}); if(error) throw error;
+      closeSheet(); toast(isA?"Goal marked achieved 🎯":"Goal ended",2500);
+      currentEng=data||await store.engagements.get(e.id);
+      try{ const {data:p}=await store._sb.from("profiles").select("*").eq("id",currentEng.coach_id).single(); currentEngOther=p||{}; }catch(_){ currentEngOther={}; }
+      try{ await store._sb.rpc("refresh_my_week_streak"); }catch(_){}
+      openRate();   // review the coach, then the completion / exit survey appears on the homepage
+    }catch(err){ console.error("end goal early (run migrations_end_goal_early.sql)",err); toast(err.message||"Couldn't end the goal",4000); btn.disabled=false; } });
+}
+async function cancelGoal(e){ return endGoalEarly(e,"cancelled"); }
+async function cancelGoal_legacy(e){
   const ok=await openConfirm({title:`Cancel "${e.goal_title||"this goal"}"?`,body:"Your coach will no longer be able to assign workouts. Afterwards you'll be asked to review your coach.",confirmLabel:"Cancel goal",cancelLabel:"Keep going",danger:true});
   if(!ok)return;
   try{
