@@ -137,9 +137,53 @@ shows a compact 6-column grid of what they've earned; the wins feed
 carries achievements as a third event type with the 🏅 icon; Congratulate
 and Congratulate all work on them. Push copy ("🏅 Achievement unlocked ·
 icon title - blurb") goes out via CE when switched on.
+**Owner review 2026-09-22 → catalogue v2** (`migrations_achievements_v2.sql`,
+run after v1): format everywhere is **Achievement Unlocked: <Name> -
+<Explanation>**. Approved with names: First things first · Off to a good
+start · The first step is the hardest · Newbie / Sizable / Substantial
+gains (4/12/26) · Perfect month (every workout, plus macros and weight
+logged every day, for a whole calendar month) · Personal Best · Well
+rounded (10) · Cutting no corners (25, new) · Definition of athlete (50) ·
+I said it, I did it · Goals are temporary, progress is forever (3) ·
+Building a timelapse (12 check-ins) · Nothing unaccounted (30 macro days) ·
+Knock Knock · Encourage. **Rejected:** first_review (removed). **Added
+from the owner's suggestions:** Keeping tabs (first macros + weight) ·
+Initiate transformation (first check-in photo) · The heart is the
+strongest muscle (first measurements) · Hello Coach (first accepted video
+call) · Not quite done yet (second goal posted and an offer accepted) · I
+get it now (2 goals) · We are what we eat (7 macro days) · Weight cut /
+Bulk up (−5% / +5% from the first weight logged after a goal started).
+**Parked:** level_up - awaits the owner's answer on workout levels (CG).
+Total 27, 26 approved. The `approved` flag is the only switch; nothing
+unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## CZ. Scalable achievements - tiers that grow with the users
+
+Requested 2026-09-22 with the catalogue review: plan for the day users
+have earned everything. Design so new tiers are ROWS, not code:
+- **Series with thresholds.** Add `series` and `threshold` to
+  `achievements` (e.g. series `pb_exercises`: 1 / 10 / 25 / 50 → later 75,
+  100, 150; `streak_weeks`: 4 / 12 / 26 → 52, 104; `goals_done`: 1 / 2 /
+  3 → 5, 10, 25; `macro_days`: 7 / 30 → 100, 365; `checkins`: 1 / 12 →
+  26, 52; `friends`: 1 → 5, 10; `claps_sent`: 1 → 10, 50, 100). The rule
+  engine computes one metric per series and awards every approved row
+  whose threshold is met - adding "Definition of athlete II" is an insert.
+- **Naming for tiers:** keep the owner's voice; propose names per tier in
+  batches for approval (the `approved` flag already gates them).
+- **Visibility of the next tier:** on the Profile grid show the NEXT
+  unearned tier of each series greyed with a progress hint ("31 / 50
+  exercises") - one reachable target per series, not the whole ladder.
+- **Signals to add a tier:** when ≥ 20% of active trainees hold the top
+  tier of a series, propose the next. Admin card: per series, the share of
+  trainees at each tier.
+- **Metric-only rules stay one-offs** (Perfect month, Weight cut, Hello
+  Coach) - they can repeat instead (e.g. Perfect month ×3) if wanted later.
+Not started; do after the first catalogue has been live for a month.
 
 ---
 

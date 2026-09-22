@@ -4102,7 +4102,7 @@ async function renderHomeAchievements(el){
   try{
     const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",ME.id).is("seen_at",null).order("earned_at",{ascending:false}); const rows=data||[]; if(!rows.length) return;
     const cat=await loadAchievementCatalogue(); const by={}; for(const a of cat) by[a.code]=a;
-    el.innerHTML=`<div class="rv-title">🏅 Achievement unlocked</div><div class="rv-row">`+rows.map(r=>{ const a=by[r.code]||{icon:"🏅",title:r.code,blurb:""}; return `<button class="rv-chip" data-unlock="${r.code}"><span class="rv-ic">${a.icon}</span><span class="rv-tx"><b>${escapeHtml(a.title)}</b><span>${escapeHtml(a.blurb)} · tap</span></span></button>`; }).join("")+`</div>`;
+    el.innerHTML=`<div class="rv-title">🏅 Achievement unlocked</div><div class="rv-row">`+rows.map(r=>{ const a=by[r.code]||{icon:"🏅",title:r.code,blurb:""}; return `<button class="rv-chip" data-unlock="${r.code}"><span class="rv-ic">${a.icon}</span><span class="rv-tx"><b>Achievement Unlocked: ${escapeHtml(a.title)}</b><span>${escapeHtml(a.title)} - ${escapeHtml(a.blurb)} · tap</span></span></button>`; }).join("")+`</div>`;
     el.style.display="";
     el.querySelectorAll("[data-unlock]").forEach(b=>b.addEventListener("click",async()=>{ const a=by[b.getAttribute("data-unlock")]; playUnlock(a); try{ await store._sb.from("user_achievements").update({seen_at:new Date().toISOString()}).eq("user_id",ME.id).eq("code",b.getAttribute("data-unlock")); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; refreshNotifDot(); }));
   }catch(e){}
@@ -4110,7 +4110,7 @@ async function renderHomeAchievements(el){
 function playUnlock(a){
   const ov=$("#clap-overlay"); if(!ov||!a) return;
   const av=$("#clap-avatar"); if(av){ av.outerHTML=`<div id="clap-avatar" style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:64px">${a.icon}</div>`; }
-  $("#clap-hands").textContent="🏅"; $("#clap-name").textContent=a.title; $("#clap-text").textContent=a.blurb;
+  $("#clap-hands").textContent="🏅"; $("#clap-name").textContent="Achievement Unlocked: "+a.title; $("#clap-text").textContent=a.title+" - "+a.blurb;
   ov.classList.add("on"); try{ navigator.vibrate&&navigator.vibrate([40,30,80]); }catch(e){}
   const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); }; ov.addEventListener("click",close); setTimeout(close,3000);
 }
