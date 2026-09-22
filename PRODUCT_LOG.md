@@ -67,6 +67,59 @@ referral definition is decided, then AT step 5 once the alpha is quiet.
 
 ---
 
+## CY. Achievements
+
+Requested 2026-09-22. A defined list of achievements, shown on the Profile
+**greyed out until earned, colourful once completed**; earning one creates
+an in-app notification (and a push on CE), and it appears in friends'
+wins feeds in Social so they can congratulate it.
+
+**What exists to build on:** the milestone celebrations (AT - first
+session, first week, streak marks, goal complete), PBs (personal_bests),
+week streaks, the badge model for coaches (BH/BQ - Verified / Certified /
+Founding / referral tiers / Top 1%), and In Touch's wins feed (CM), which
+today shows only PBs and completed goals. Achievements are the trainee-side
+counterpart of the coach badges, and the feed's missing third event type.
+
+**First set (propose ~16, mixed early / long-haul):**
+- *Start:* First session · First week complete · First goal posted ·
+  First review received
+- *Discipline:* 4-week streak · 12-week streak · 26-week streak · Perfect
+  month (every assigned session done)
+- *Effort:* First PB · 10 PBs · 50 PBs · Level up (assigned at a higher
+  level than before, CG)
+- *Journey:* First goal completed · 3 goals completed · Weight check-ins
+  12 weeks running · Macros logged 30 days running
+- *Social:* First friend (knock) · First congratulation sent
+Keep names short, one line of "how", one icon each. Hidden ones are a
+later idea - not for the first set.
+
+**Mechanics:**
+- `achievements` (code pk, title, blurb, icon, sort, family) seeded from
+  the list; `user_achievements` (user_id, code, earned_at, ref) unique per
+  code; RLS own rows + friends read (`are_connected`), the same opening as
+  In Touch profiles.
+- **Awarding server-side** in one function `check_achievements(p_user)`
+  that evaluates every rule against the data (PB counts, streak, closures,
+  engagements, logs, connections, celebrations) and inserts what is newly
+  earned - idempotent, cheap to run. Called after the events that can earn
+  something: week close, PB insert, goal completion, knock confirm, clap
+  sent (triggers), and once on sign-in as a catch-up.
+- **Notification:** an outbox row (CE) plus an in-app "🏅 Achievement
+  unlocked" card on Notifications with the icon in colour, until tapped;
+  tapping plays a short unlock animation (reuse the clap overlay's
+  pattern: icon pulse, title, one line).
+- **Profile:** an Achievements card, a grid of icons - grey with a
+  lock-free muted look until earned, colour + date when earned; tap shows
+  the "how". Public coach profile stays badges-only; achievements are
+  visible to friends via Social (friend's page gets a compact row).
+- **Feed:** `in_touch_feed` gains kind 'achievement'; congratulate works on
+  it like a PB; `congratulate_all` counts it.
+Estimate: a day and a half (rules are the bulk; keep each a single SQL
+predicate). Not started.
+
+---
+
 ## CX. iPhone installation
 
 Requested 2026-09-22. iOS was explicitly deferred (AD); this un-defers the
