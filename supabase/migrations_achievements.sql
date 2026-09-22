@@ -8,7 +8,8 @@ create table if not exists public.achievements (
   title  text not null,
   blurb  text not null,
   icon   text not null,
-  sort   integer not null
+  sort   integer not null,
+  approved boolean not null default false   -- owner approves each achievement before it is awarded or shown
 );
 alter table public.achievements enable row level security;
 drop policy if exists "anyone reads the catalogue" on public.achievements;
@@ -34,6 +35,8 @@ insert into public.achievements (code, family, title, blurb, icon, sort) values
  ('first_friend','Social','First friend','Knock phones with someone','🤝',410),
  ('first_clap','Social','First cheer','Congratulate a friend','👏',420)
 on conflict (code) do update set title=excluded.title, blurb=excluded.blurb, icon=excluded.icon, sort=excluded.sort, family=excluded.family;
+alter table public.achievements add column if not exists approved boolean not null default false;
+-- approve with:  update public.achievements set approved = true where code in ('first_session', ...);
 
 create table if not exists public.user_achievements (
   user_id   uuid not null references public.profiles(id) on delete cascade,
@@ -68,7 +71,7 @@ begin
      and wc.week_start >= (date_trunc('week', current_date)::date - 28);
 
   for c in
-    select code from public.achievements a where not exists (select 1 from public.user_achievements ua where ua.user_id = u and ua.code = a.code)
+    select code from public.achievements a where a.approved and not exists (select 1 from public.user_achievements ua where ua.user_id = u and ua.code = a.code)
   loop
     if (c.code = 'first_session'     and exists (select 1 from public.assigned_workouts aw join public.engagements e on e.id = aw.engagement_id where e.trainee_id = u and aw.status in ('submitted','reviewed')))
     or (c.code = 'first_week'        and exists (select 1 from public.week_closures wc join public.engagements e on e.id = wc.engagement_id where e.trainee_id = u and not wc.neutral and wc.assigned_count > 0 and wc.completed_count >= wc.assigned_count))
@@ -134,7 +137,7 @@ returns jsonb language sql stable security definer set search_path = public as $
      where e.status = 'completed' and e.completed_at > m.since and e.completed_at > now() - interval '30 days'
     union all
     select ua.user_id, 'achievement', ua.code, ua.earned_at, a.icon || ' ' || a.title
-      from public.user_achievements ua join public.achievements a on a.code = ua.code join mine m on m.other = ua.user_id
+      from public.user_achievements ua join public.achievements a on a.code = ua.code and a.approved join mine m on m.other = ua.user_id
      where ua.earned_at > m.since and ua.earned_at > now() - interval '30 days'
   )
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -168,4 +171,4 @@ begin
   return n;
 end; $$;
 
-select 'achievements' as check, (select count(*) from public.achievements) as catalogue;
+select 'achievements' as check, (select count(*) from public.achievements) as catalogue, (select count(*) from public.achievements where approved) as approved;

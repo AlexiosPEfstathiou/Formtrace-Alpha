@@ -4080,7 +4080,7 @@ async function afterFeedbackHandoff(eng,role,kind){
    (`check_achievements`), called on sign-in and after the user's own earning actions, and
    by triggers for server-side events. */
 let achCatalogue=null;
-async function loadAchievementCatalogue(){ if(achCatalogue) return achCatalogue; try{ const { data }=await store._sb.from("achievements").select("*").order("sort"); achCatalogue=data||[]; }catch(e){ achCatalogue=[]; } return achCatalogue; }
+async function loadAchievementCatalogue(){ if(achCatalogue) return achCatalogue; try{ const { data }=await store._sb.from("achievements").select("*").eq("approved",true).order("sort"); achCatalogue=data||[];   // only owner-approved achievements exist as far as the app is concerned }catch(e){ achCatalogue=[]; } return achCatalogue; }
 async function checkAchievements(){ try{ const { data }=await store._sb.rpc("check_achievements"); if(data>0) refreshNotifDot(); }catch(e){} }
 function achGridHtml(cat,earnedMap,compact){
   return `<div style="display:grid;grid-template-columns:repeat(${compact?6:4},1fr);gap:${compact?6:10}px">`+cat.map(a=>{ const e=earnedMap[a.code]; return `<div class="ach ${e?"on":""}" data-ach="${a.code}" title="${escapeHtml(a.title)} - ${escapeHtml(a.blurb)}${e?` · ${escapeHtml(fmtDay(String(e).slice(0,10)))}`:""}" style="text-align:center;cursor:help"><div style="font-size:${compact?20:28}px;line-height:1.1;${e?"":"filter:grayscale(1);opacity:.35"}">${a.icon}</div>${compact?"":`<div style="font-size:10.5px;margin-top:4px;color:${e?"var(--ink)":"var(--faint)"};font-weight:${e?"700":"400"};line-height:1.2">${escapeHtml(a.title)}</div>`}</div>`; }).join("")+`</div>`;
