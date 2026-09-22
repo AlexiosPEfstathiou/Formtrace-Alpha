@@ -3179,7 +3179,9 @@ const TAB_SECTION={ // screen -> which tab should light up
 const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","settings","admin","engagement","notifications","intouch"]);
 function renderAppTabs(current){
   const bar=$("#app-tabbar"); if(!bar)return;
-  if(!ME || !TAB_TOPLEVEL.has(current)){ bar.style.display="none"; showHeader(false); return; }
+  /* the engagement screen is top-level only in the trainee's merged calendar; opened as a coach drill-down (no .tab-level) it keeps its own back arrow and action row, so the header hides with the bar */
+  const drillDown = current==="engagement" && !$("#s-engagement").classList.contains("tab-level");
+  if(!ME || !TAB_TOPLEVEL.has(current) || drillDown){ bar.style.display="none"; showHeader(false); return; }
   const base = ME.role==="coach" ? "coach" : "trainee";
   const section = TAB_SECTION[current] || (base==="coach"?"home":"home");
   const glisten = (base!=="coach") ? window._ftGlistenGoal : false;

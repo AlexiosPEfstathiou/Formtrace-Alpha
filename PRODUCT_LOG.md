@@ -662,6 +662,16 @@ Tester's words in quotes. Not yet fixed unless marked.**
   (CN-5/6) parsed cleanly and threw only at run time. Add a check that
   invokes the main render functions against a stub DOM and stub store so a
   ReferenceError inside a renderer fails the check. Not started.
+- **CN-20 · Coach opens a trainee's calendar → the bottom bar disappears**
+  (owner, 2026-09-22) - and, since CR-1, so had the back arrow: the coach
+  was stuck with no way out. The drill-down hides the tab bar on purpose
+  (it has its own bottom action row), but the header treated the screen as
+  top-level and CR-1 hides back arrows wherever the header shows. FIXED
+  same day: the tab-bar renderer now treats the engagement screen as a
+  drill-down (no `.tab-level`) → header hidden → back arrow visible; the
+  trainee's merged calendar keeps header and bar as before. Lesson:
+  "hide back arrows where the header shows" needs the header to show only
+  where a tab is truly the way back.
 - **CN-19 · Voice-over sheet shows the video preview with no play / record
   controls - "not allowing progress"** (owner screenshot, 2026-09-22).
   Cause: `#vo-vid-box` had `max-height:280px` but no height, and the
