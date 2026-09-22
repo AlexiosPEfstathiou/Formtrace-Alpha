@@ -184,7 +184,15 @@ An achievement deserves its own moment. Design:
 - **Same overlay for friends' feed later:** tapping a friend's
   achievement in Social could replay the animation in their colour with
   "<Name> unlocked …" - not in v1.
-Half a day, CSS + a little JS; no server work. Not started.
+Half a day, CSS + a little JS; no server work.
+**Owner 2026-09-22, after the animated preview: "I like it. Keep these as
+placeholders."** The previewed sequence and timings are the spec to build
+to; the family colours (Start lime #C8FF3D · Discipline gold #F0D231 ·
+Effort orange · Body blue · Journey purple · Social pink #FF7AB6) are
+placeholders until branding (BJ) fixes the palette - keep them as CSS
+variables per family so the swap is one block. Decision still open:
+instant play for achievements earned by the user's own action, chip-only
+for the sign-in catch-up batch (my recommendation). Not started.
 
 ---
 
