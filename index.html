@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -8304,11 +8304,26 @@ $("#pc-shoot").addEventListener("click",()=>{
      capped at 1080px on the longer side; removed entirely rather than
      just raised, since any fixed cap re-introduces the same tradeoff this
      was meant to move away from. */
-  const cw=v.videoWidth, ch=v.videoHeight;
+  const vw=v.videoWidth, vh=v.videoHeight;
+  /* CS: crop to the guide box. The preview is object-fit cover, so the visible area is a
+     sub-rectangle of the stream; map the guide's padding box (3% / 8% of the view, the same
+     every week) into stream pixels, add a 2% margin, and save only that - full native
+     resolution inside the crop. */
+  const box=v.getBoundingClientRect(); const dw=box.width||vw, dh=box.height||vh;
+  const cover=(getComputedStyle(v).objectFit||"cover")!=="contain";
+  const s=cover?Math.max(dw/vw,dh/vh):Math.min(dw/vw,dh/vh);
+  const ox=(dw-vw*s)/2, oy=(dh-vh*s)/2;
+  const g=$("#pc-guide"); const gs=getComputedStyle(g);
+  const padX=parseFloat(gs.paddingLeft)||dw*0.08, padY=parseFloat(gs.paddingTop)||dh*0.03;
+  const mX=dw*0.02, mY=dh*0.02;
+  let sx=Math.max(0,(padX-mX-ox)/s), sy=Math.max(0,(padY-mY-oy)/s);
+  let sw=Math.min(vw-sx,(dw-2*padX+2*mX)/s), sh=Math.min(vh-sy,(dh-2*padY+2*mY)/s);
+  if(!(sw>50&&sh>50)){ sx=0;sy=0;sw=vw;sh=vh; }
+  const cw=Math.round(sw), ch=Math.round(sh);
   const c=$("#pc-canvas");c.width=cw;c.height=ch;
   const ctx=c.getContext("2d");
-  if(pcFacing==="user"){ ctx.save();ctx.translate(cw,0);ctx.scale(-1,1);ctx.drawImage(v,0,0,cw,ch);ctx.restore(); }
-  else ctx.drawImage(v,0,0,cw,ch);
+  if(pcFacing==="user"){ ctx.save();ctx.translate(cw,0);ctx.scale(-1,1);ctx.drawImage(v,sx,sy,sw,sh,0,0,cw,ch);ctx.restore(); }
+  else ctx.drawImage(v,sx,sy,sw,sh,0,0,cw,ch);
   c.toBlob(b=>{ pcBlob=b;
     const url=URL.createObjectURL(b);
     const img=$("#pc-still");img.src=url;img.style.display="block";$("#pc-video").style.display="none";
