@@ -3499,7 +3499,8 @@ async function refreshStreakBadge(){
     // coaches). We recompute the danger/broken styling locally since that's a
     // UI nuance, but the number itself comes from the server.
     if(WEEK_MODEL){
-      const r=weekRisk(lists.flat());
+      const activeIds=new Set(engs.filter(e=>e.status==="active").map(e=>e.id));
+      const r=weekRisk(lists.flat().filter(a=>activeIds.has(a.engagement_id)));   /* CN-7/CN-9: red means THIS week is at risk on an active goal, never "streak is 0" */
       const serverCount=await serverStreak();
       const W=serverCount??(ME.week_streak_count||0);
       /* Item BB rule applied to the badge too: under 3 weeks the streak is shown
@@ -3966,6 +3967,7 @@ async function renderHomeWeekRecap(el, engs){
   if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
   const thisMon=weekStartISO(new Date()), lastMon=addDaysISO(thisMon,-7);
   try{ if(localStorage.getItem("ft-recap-"+thisMon)==="1") return; }catch(e){}
+  try{ const { data }=await store._sb.from("dismissals").select("key").eq("user_id",ME.id).eq("key","recap-"+thisMon).maybeSingle(); if(data) return; }catch(e){}   /* CN-11: server-side dismiss survives a cleared localStorage */
   let pbs=[], streak=ME.week_streak_count||0, backFromBreak=false;
   try{
     const { data }=await store._sb.from("personal_bests").select("exercise_name,reps,weight_kg,achieved_at").eq("trainee_id",ME.id).gte("achieved_at",lastMon+"T00:00:00").lt("achieved_at",thisMon+"T00:00:00").order("achieved_at",{ascending:false});
@@ -3980,7 +3982,7 @@ async function renderHomeWeekRecap(el, engs){
   const stLine = gcr ? `<div class="ms-row"><span class="ms-ic">${gcr.amber?"⚠️":"🛡"}</span><div><b style="${gcr.amber?"color:var(--amber)":""}">${escapeHtml(gcr.text)}</b><div class="ms-sub">${escapeHtml(gcr.sub)}</div></div></div>` : streak ? `<div class="ms-row"><span class="ms-ic">🔥</span><div><b>${backFromBreak?`Back from your break - streak intact at ${streak} week${streak===1?"":"s"}`:`${streak}-week streak`}</b><div class="ms-sub">${backFromBreak?"Pick up where you left off.":"This week keeps it going."}</div></div></div>` : "";
   el.innerHTML=`<div class="card" style="padding:12px 14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div class="eyebrow">Your week in review</div><button class="btn sm ghost" id="recap-x" style="width:auto;height:28px;padding:0 10px">Got it</button></div>${pbLine}${stLine}</div>`;
   el.style.display="";
-  $("#recap-x").addEventListener("click",()=>{ try{ localStorage.setItem("ft-recap-"+thisMon,"1"); }catch(e){} el.style.display="none"; });
+  $("#recap-x").addEventListener("click",()=>{ try{ localStorage.setItem("ft-recap-"+thisMon,"1"); }catch(e){} try{ store._sb.from("dismissals").upsert({user_id:ME.id,key:"recap-"+thisMon},{onConflict:"user_id,key"}).then(()=>{}); }catch(e){} el.style.display="none"; });
 }
 /* ---- Item CC: goal-completion questionnaire ----------------------------------
    Shown once per completed goal, per role, on the homepage, AFTER the
@@ -7116,11 +7118,11 @@ async function renderEngagement(skipFetch){
     streakInfo = iAmCoach ? {count:0,unit:"week",weeks:0,danger:false,broken:false}
                : (W<3 ? {count:0,unit:"day",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft}   // day count filled in below from the span
                       : {count:W,unit:"week",weeks:W,danger:r.danger,broken:false,left:r.left,daysLeft:r.daysLeft});
-    if(!iAmCoach && W<3){ weekStreakSpan(assigned).then(s=>{ streakInfo.count=s.doneDays; updateStreakBadge(streakInfo); }).catch(()=>{}); }
+    if(!iAmCoach && W<3){ weekStreakSpan(assigned).then(s=>{ streakInfo.count=s.doneDays; }).catch(()=>{}); }   /* CN-7: badge is owned by refreshStreakBadge */
   }else{
     streakInfo = iAmCoach ? {count:0,danger:false,broken:false} : computeStreak();
   }
-  if(!iAmCoach){ updateStreakBadge(streakInfo); serverStreak().then(v=>{ if(v!=null){ if(WEEK_MODEL){ streakInfo.weeks=v; if(streakInfo.unit==="week") streakInfo.count=v; } else streakInfo.count=v; updateStreakBadge(streakInfo); } }); }
+  if(!iAmCoach){ refreshStreakBadge(); serverStreak().then(v=>{ if(v!=null){ if(WEEK_MODEL){ streakInfo.weeks=v; if(streakInfo.unit==="week") streakInfo.count=v; } else streakInfo.count=v; } }); }   /* CN-7: one source for the badge - the same numbers on every tab */
   }
   body.innerHTML="";
 

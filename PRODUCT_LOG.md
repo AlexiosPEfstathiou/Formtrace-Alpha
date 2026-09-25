@@ -731,6 +731,14 @@ Tester's words in quotes. Not yet fixed unless marked.**
   risk" class was not recomputed. Recompute the risk class whenever the
   streak number changes; also the red flash should mean "this week is at
   risk", never "your streak is 0" - re-check the rule.
+  **BUILT 2026-09-25.** Root cause: two writers. `refreshStreakBadge`
+  (homepage) and the Training tab's own `streakInfo` both wrote the badge
+  from different row sets - the Training set could include a cancelled
+  goal's sessions (CN-9) and stayed on the badge across tabs. Now the
+  Training tab calls `refreshStreakBadge()` and never writes the badge
+  itself; the single source computes risk from ACTIVE goals only. The
+  rule is unchanged and correct: red = sessions still left this week with
+  the week closing today or tomorrow; a zero streak shows the grey badge.
 - **CN-8 · Reviewed workout is not clickable by the trainee in the
   calendar to see the notes; on the homepage it looks reviewed but opens
   a summary without any coach feedback.** PARTLY FIXED 2026-09-19: the
@@ -828,6 +836,10 @@ Tester's words in quotes. Not yet fixed unless marked.**
   dismiss). Reproduce with the tester's phone; if localStorage is the
   issue, store the dismiss server-side (a `dismissals` row) like the
   feedback card does.
+  **BUILT 2026-09-25** (`migrations_dismissals.sql`): a `dismissals`
+  table (user × key, own rows); Got it writes localStorage AND a
+  `recap-<monday>` row, and the card checks both, so a cleared or
+  unavailable localStorage no longer resurrects it.
 
 - **CN-12 · Recurring theme: buttons and lines that do not fit.** Root
   cause is `.btn{width:100%}` as the default, so any button dropped into a
