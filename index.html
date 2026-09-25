@@ -626,6 +626,23 @@
   .lv-pick.on{background:var(--lime)!important;color:#0B0E11!important;border-color:var(--lime)!important;}   /* Item CG level */
   #app-tabbar button{position:relative;}  .tab-dot{position:absolute;top:4px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center;}   /* CN-4 */
   @keyframes clap{0%,100%{transform:scale(1) rotate(-6deg);}50%{transform:scale(1.25) rotate(6deg);}}  #clap-overlay{display:none;}  #clap-overlay.on{display:flex;}  #clap-overlay.on #clap-hands{animation:clap .28s ease-in-out 7;}  #clap-overlay.on #clap-avatar{animation:top1-pulse 1.4s ease-in-out infinite;}   /* Item CM */
+  /* Item DA: achievement unlock. Family colours are PLACEHOLDERS until branding (BJ) - one variable per family. */
+  :root{--fam-start:#C8FF3D;--fam-discipline:#F0D231;--fam-effort:#FF8A3D;--fam-body:#5AB0FF;--fam-journey:#B48CFF;--fam-social:#FF7AB6;}
+  #ach-overlay{display:none;position:fixed;inset:0;z-index:260;background:rgba(11,14,17,.94);align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px;cursor:pointer;}
+  #ach-overlay.on{display:flex;}
+  .ach-badge{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:64px;animation:ach-drop .6s cubic-bezier(.2,1.4,.4,1) both;}
+  .ach-disc{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 70%);border:2px solid var(--fam);box-shadow:0 0 34px var(--fam);}
+  .ach-ring{position:absolute;inset:-14px;border-radius:50%;border:3px solid var(--fam);opacity:0;animation:ach-sweep .9s .45s ease-out both;}
+  .ach-lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);opacity:0;animation:ach-up .4s .9s ease-out both;}
+  .ach-nm{font-size:28px;font-weight:900;line-height:1.1;color:var(--fam);opacity:0;animation:ach-up .5s 1.1s ease-out both;}
+  .ach-ex{font-size:14px;color:var(--muted);max-width:300px;line-height:1.4;opacity:0;animation:ach-up .5s 1.4s ease-out both;}
+  .ach-p{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--fam);left:50%;top:50%;opacity:0;animation:ach-burst .7s .55s ease-out both;}
+  .ach-skip{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;font-size:11px;color:var(--faint);}
+  @keyframes ach-drop{0%{transform:translateY(-140px) scale(.6);opacity:0}70%{transform:translateY(0) scale(1.12,.88);opacity:1}100%{transform:none}}
+  @keyframes ach-sweep{0%{opacity:0;transform:scale(.7)}30%{opacity:1}100%{opacity:0;transform:scale(1.9)}}
+  @keyframes ach-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes ach-burst{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4)}}
+  @media(prefers-reduced-motion:reduce){ .ach-badge,.ach-ring,.ach-lbl,.ach-nm,.ach-ex{animation:none!important;opacity:1!important;transform:none!important;} .ach-p{display:none;} }
   .cbadge.founding{background:linear-gradient(135deg,#FFD98A,#F5C542);color:#3a2c00;border:1px solid #F5C542;}   /* Item BQ founding coach */
 
   /* Item BX: the rare "Top 1%" badge - the only animated one. A golden aura that
@@ -1504,6 +1521,7 @@
     <div class="top"><div class="back" id="it-back">←</div><div style="flex:1"><h1>In Touch</h1><div class="sub">Friends you've met in person</div></div></div>
     <div class="body" id="it-body"></div>
   </section>
+  <div id="ach-overlay"><div class="ach-skip">tap to skip</div><div id="ach-stage"></div></div>
   <div id="clap-overlay" style="position:fixed;inset:0;z-index:250;background:rgba(11,14,17,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px">
     <div id="clap-avatar" class="avatar" style="width:96px;height:96px;font-size:34px"></div>
     <div id="clap-hands" style="font-size:64px;line-height:1">👏</div>
@@ -4107,13 +4125,36 @@ async function renderHomeAchievements(el){
     el.querySelectorAll("[data-unlock]").forEach(b=>b.addEventListener("click",async()=>{ const a=by[b.getAttribute("data-unlock")]; playUnlock(a); try{ await store._sb.from("user_achievements").update({seen_at:new Date().toISOString()}).eq("user_id",ME.id).eq("code",b.getAttribute("data-unlock")); }catch(e){} b.remove(); if(!el.querySelector(".rv-chip")) el.style.display="none"; refreshNotifDot(); }));
   }catch(e){}
 }
-function playUnlock(a){
-  const ov=$("#clap-overlay"); if(!ov||!a) return;
-  const av=$("#clap-avatar"); if(av){ av.outerHTML=`<div id="clap-avatar" style="width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:64px">${a.icon}</div>`; }
-  $("#clap-hands").textContent="🏅"; $("#clap-name").textContent="Achievement Unlocked: "+a.title; $("#clap-text").textContent=a.title+" - "+a.blurb;
-  ov.classList.add("on"); try{ navigator.vibrate&&navigator.vibrate([40,30,80]); }catch(e){}
-  const close=()=>{ ov.classList.remove("on"); ov.removeEventListener("click",close); }; ov.addEventListener("click",close); setTimeout(close,3000);
+/* Item DA: the unlock. Queued when several land at once; tap skips; reduced-motion is a static card. */
+const FAMILY_VAR={Start:"--fam-start",Discipline:"--fam-discipline",Effort:"--fam-effort",Body:"--fam-body",Journey:"--fam-journey",Social:"--fam-social"};
+let achQueue=[], achPlaying=false;
+function playUnlock(a){ if(!a) return; achQueue.push(a); if(!achPlaying) _achNext(); }
+function _achNext(){
+  const a=achQueue.shift(); const ov=$("#ach-overlay"); if(!a||!ov){ achPlaying=false; return; }
+  achPlaying=true;
+  const fam=`var(${FAMILY_VAR[a.family]||"--fam-start"})`;
+  const parts=Array.from({length:12},(_,i)=>{ const ang=i/12*Math.PI*2, r=70+Math.random()*30; return `<span class="ach-p" style="--dx:${Math.cos(ang)*r}px;--dy:${Math.sin(ang)*r}px;animation-delay:${(.55+Math.random()*.15).toFixed(2)}s"></span>`; }).join("");
+  $("#ach-stage").innerHTML=`<div style="--fam:${fam};position:relative;display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div class="ach-badge"><div class="ach-disc"></div><div class="ach-ring"></div><span style="position:relative">${a.icon||"🏅"}</span>${parts}</div>
+    <div class="ach-lbl">Achievement Unlocked</div><div class="ach-nm">${escapeHtml(a.title||"")}</div><div class="ach-ex">${escapeHtml(a.blurb||"")}</div></div>`;
+  ov.classList.add("on");
+  try{ setTimeout(()=>{ navigator.vibrate&&navigator.vibrate([30,40,90]); },550); }catch(e){}
+  let done=false; const finish=()=>{ if(done) return; done=true; ov.classList.remove("on"); ov.removeEventListener("click",finish); setTimeout(_achNext,150); };
+  ov.addEventListener("click",finish); setTimeout(finish,3200);
 }
+/* after the user's own earning action: check, and play whatever is new (earned in the last minute, unseen) */
+async function checkAchievementsAndPlay(){
+  try{
+    const { data:n }=await store._sb.rpc("check_achievements"); if(!(n>0)) return;
+    const cat=await loadAchievementCatalogue(); const by={}; for(const a of cat) by[a.code]=a;
+    const since=new Date(Date.now()-60000).toISOString();
+    const { data }=await store._sb.from("user_achievements").select("code").eq("user_id",ME.id).is("seen_at",null).gte("earned_at",since);
+    for(const r of (data||[])){ if(by[r.code]) playUnlock(by[r.code]); }
+    if((data||[]).length){ await store._sb.from("user_achievements").update({seen_at:new Date().toISOString()}).eq("user_id",ME.id).in("code",data.map(r=>r.code)); }
+    refreshNotifDot();
+  }catch(e){}
+}
+
 /* ---- Item CM: In Touch ------------------------------------------------------------
    Connect by KNOCKING phones: each phone's motion sensor sees the jolt; both report
    it; the server pairs jolts within 600 ms / ~60 m among users in connect mode; each
@@ -4220,11 +4261,11 @@ function renderInTouchPerson(uid,connId,p,wins){
   $("#itp-disc").addEventListener("click",async()=>{ const ok=await openConfirm({title:`Disconnect from ${p.display_name||"this person"}?`,body:"You will stop seeing each other's wins. Past congratulations stay.",confirmLabel:"Disconnect",cancelLabel:"Keep",danger:true}); if(!ok) return; try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:connId,p_accept:false}); if(error) throw error; toast("Disconnected",1500); renderInTouch(); }catch(e){ toast(e.message||"Couldn't disconnect",3000); } });
 }
 function wireConnButtons(root,after){
-  root.querySelectorAll("[data-conn-yes]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:b.getAttribute("data-conn-yes"),p_accept:true}); if(error) throw error; toast("Connected 🤝",2000); after&&after(); }catch(e){ toast(e.message||"Couldn't confirm",3000); } }));
+  root.querySelectorAll("[data-conn-yes]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:b.getAttribute("data-conn-yes"),p_accept:true}); if(error) throw error; toast("Connected 🤝",2000); after&&after(); checkAchievementsAndPlay(); }catch(e){ toast(e.message||"Couldn't confirm",3000); } }));
   root.querySelectorAll("[data-conn-no]").forEach(b=>b.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("confirm_connection",{p_id:b.getAttribute("data-conn-no"),p_accept:false}); if(error) throw error; after&&after(); }catch(e){ toast(e.message||"Couldn't update",3000); } }));
 }
 function wireCongrats(root){
-  root.querySelectorAll("[data-congrat]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { error }=await store._sb.rpc("congratulate",{p_to:b.getAttribute("data-congrat"),p_kind:b.getAttribute("data-kind"),p_ref:b.getAttribute("data-ref"),p_text:b.getAttribute("data-text")}); if(error) throw error; checkAchievements(); b.replaceWith(Object.assign(document.createElement("span"),{textContent:"👏 sent",style:"font-size:12px;color:var(--lime);font-weight:700"})); }catch(e){ toast(e.message||"Couldn't send",3000); b.disabled=false; } }));
+  root.querySelectorAll("[data-congrat]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { error }=await store._sb.rpc("congratulate",{p_to:b.getAttribute("data-congrat"),p_kind:b.getAttribute("data-kind"),p_ref:b.getAttribute("data-ref"),p_text:b.getAttribute("data-text")}); if(error) throw error; checkAchievementsAndPlay(); b.replaceWith(Object.assign(document.createElement("span"),{textContent:"👏 sent",style:"font-size:12px;color:var(--lime);font-weight:700"})); }catch(e){ toast(e.message||"Couldn't send",3000); b.disabled=false; } }));
 }
 /* The knock. Listens to devicemotion for up to 15 s, reports the first jolt above
    the threshold, then polls the server briefly for the other phone's report. */
@@ -4825,7 +4866,7 @@ async function saveMeasurements(dateISO){
     if(existing) await store.measurements.update(existing.id,patch);
     else await store.measurements.add({trainee_id:ME.id,measured_on:dateISO,...patch});
     closeSheet();
-    toast("Measurements saved ✓");
+    toast("Measurements saved ✓"); checkAchievementsAndPlay();
     if($("#s-home")?.classList.contains("active")) renderHomeMeasure($("#home-measure"));
     else if($("#s-engagement")?.classList.contains("active")) renderEngagement();
   }catch(err){
@@ -6127,7 +6168,7 @@ $("#lst-post").addEventListener("click",async()=>{
   try{
     const path=await store.video.upload(pendingListingVideo.blob,"webm");
     await store.listings.add({trainee_id:ME.id,title,focus:listingFocus,details:$("#lst-details").value.trim(),pitch_video_path:path,status:"open"});
-    toast("Goal posted ✓"); listingsTab="goals"; go("listings");
+    toast("Goal posted ✓"); listingsTab="goals"; go("listings"); checkAchievementsAndPlay();
   }catch(err){console.error(err);toast(err.message||"Couldn't post",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
@@ -8288,7 +8329,7 @@ $("#pc-use").addEventListener("click",async()=>{
   try{
     await saveCheckinBlob(pcBlob,"jpg",iso);
     pcStopCam();$("#photocap").classList.remove("on"); document.body.classList.remove("rec-open");checkinDate=null;
-    toast("Check-in saved ✓");
+    toast("Check-in saved ✓"); checkAchievementsAndPlay();
     if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
     else renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
@@ -8309,7 +8350,7 @@ $("#checkin-input").addEventListener("change",async e=>{
   try{
     const ext=(file.type||"").includes("png")?"png":(file.type||"").includes("webp")?"webp":"jpg";
     await saveCheckinBlob(file,ext,iso);
-    toast("Check-in saved ✓");
+    toast("Check-in saved ✓"); checkAchievementsAndPlay();
     if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
     else renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
@@ -8369,7 +8410,7 @@ async function saveMacroLog(){
     if(mlGoal){ const bits=[]; if(mlGoal.kcal&&kcal!=null) bits.push(`Calories ${Math.round(kcal/mlGoal.kcal*100)}%`); if(mlGoal.protein_g&&p!=null) bits.push(`Protein ${Math.round(p/mlGoal.protein_g*100)}%`); if(bits.length) closeMsg=" · "+bits.join(" · ")+" of your goal"; }
     macroLogDate=null;
     closeSheet();$("#sheet-add").textContent="Add selected";$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
-    toast("Logged ✓"+closeMsg, closeMsg?5500:2500);
+    toast("Logged ✓"+closeMsg, closeMsg?5500:2500); checkAchievementsAndPlay();
     /* Refresh whatever screen we're actually on. This used to call
        renderEngagement() unconditionally, which from the homepage rendered
        the calendar with currentEng still null and threw on coach_id. */

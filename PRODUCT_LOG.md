@@ -224,7 +224,21 @@ Effort orange · Body blue · Journey purple · Social pink #FF7AB6) are
 placeholders until branding (BJ) fixes the palette - keep them as CSS
 variables per family so the swap is one block. Decision still open:
 instant play for achievements earned by the user's own action, chip-only
-for the sign-in catch-up batch (my recommendation). Not started.
+for the sign-in catch-up batch (my recommendation).
+**BUILT 2026-09-25** to the approved preview: `#ach-overlay` with the drop-
+and-squash badge, ring sweep, "Achievement Unlocked" → Name (family
+colour, 28 px) → explanation, 12 CSS particles, haptic on the landing
+(~3.2 s, tap to skip); reduced-motion renders the static card. Family
+colours are one CSS variable each (`--fam-start` … `--fam-social`),
+placeholders until branding. Unlocks queue and play one after another.
+**Instant vs chip:** achievements earned by the trainee's own action play
+at once - after posting a goal, saving a check-in photo, saving
+measurements, logging macros/weight, confirming a knock, sending a
+congratulation (`checkAchievementsAndPlay`: check, then play what was
+earned in the last minute and mark it seen); the sign-in catch-up stays
+chip-only on Notifications, where tapping a chip plays the same sequence.
+Server-side unlocks (week close, review, goal completion) arrive as chips
+too - and as a push on CE.
 
 ---
 
