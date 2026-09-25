@@ -510,7 +510,8 @@ the guide's padding box is mapped into stream pixels (+2% margin) and only
 that region is saved, at full native resolution inside the crop. The box
 is the same fraction of the view every week, so the timelapse strip and
 playback stay aligned frame to frame. Mirrored preview still saves
-un-mirrored (pre-existing). Not done: orientation lock (needs the
+un-mirrored (pre-existing). **Owner, after preview: keep only head and feet
+in the guide** - the arm marks are removed; the centre line stays. Not done: orientation lock (needs the
 installed app; CX).
 
 ---
