@@ -53,7 +53,7 @@ BE) are not tasks and are left out.
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
 | 43 | **CU** Camera permission denied - BUILT 2026-09-21 | - | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
 | 42 | **CT** Connect - BUILT 2026-09-21 | - | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
-| 41 | **CS** Check-in photo: max resolution + body-filling frame | Medium | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
+| 41 | **CS** Check-in photo - BUILT 2026-09-25 | - | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
 | 40 | **CR** Third batch - BUILT 2026-09-19 | - | No back arrows; Payment details collapsed; new trainee → Post a goal; Goal tab single view; swipe between tabs; legend collapsed; training header once. |
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
 | 38 | **CP** Navigation v2 - BUILT 2026-09-19 | settings screen later | Five tabs per role (+Review for admins); header with profile / settings / streak; Notifications screen with count; Social tab. |
@@ -497,7 +497,21 @@ Requested 2026-09-19. Two changes to the Saturday check-in capture:
    and playback) lines up frame to frame - that is the point of the guide.
 Also worth doing at the same time: mirror the preview but save
 un-mirrored, and lock orientation (portrait) so the strip stays uniform.
-Estimate: half a day. Not started.
+Estimate: half a day.
+
+**BUILT 2026-09-25.** (1) was already true - the check-in camera requested
+`ideal 4096` and captured at the stream's native size since the max-
+quality pass. (2) built with one principle kept from the original guide:
+the cues stay head / hanging arms / feet only - no torso or leg outline
+that would imply a body size the trainee has to match. The cues now span
+~94% of the frame height (padding 3% / 8%, was 10% / 12%), and the saved
+photo is **cropped to the guide box** - the preview is object-fit cover, so
+the guide's padding box is mapped into stream pixels (+2% margin) and only
+that region is saved, at full native resolution inside the crop. The box
+is the same fraction of the view every week, so the timelapse strip and
+playback stay aligned frame to frame. Mirrored preview still saves
+un-mirrored (pre-existing). Not done: orientation lock (needs the
+installed app; CX).
 
 ---
 
