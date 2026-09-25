@@ -162,6 +162,38 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DB. Workout builder v2: drag and drop, muscle-group columns, a workout bucket
+
+Requested 2026-09-25. Building a workout today is a list with "+ Add
+from library" and steppers - fine for three exercises, slow for twelve,
+and it hides what the library contains. Redesign for the coach:
+- **Muscle-group columns.** The library laid out as columns by muscle
+  group (Chest · Back · Shoulders · Arms · Legs · Core · Cardio/Intervals ·
+  Other), each a scrollable stack of exercise cards (name, thumbnail from
+  the reference video, "ref ✓/✗", last-used). A search box filters across
+  columns. Needs a `muscle_group` on exercises - a chip picker when
+  creating/editing an exercise, plus a one-time backfill prompt for the
+  existing library ("tag your 14 untagged exercises").
+- **The workout bucket.** A sticky column (or a bottom tray on phones)
+  holding the workout being built: **drag** an exercise card from any
+  column into the bucket; **reorder** inside the bucket by drag; drag out
+  to remove; tap a bucket card for sets / reps / target kg / level scaling
+  (CG) in place. Duplicate warnings; a running total (exercises, sets, ~
+  minutes).
+- **Phone reality:** columns become horizontally swipeable tabs, the bucket
+  a bottom tray that expands; drag uses Pointer Events with a long-press
+  to start on touch (a plain tap still opens the card), and "＋" on each
+  card as the no-drag alternative - drag must never be the only way.
+- **Templates and reuse:** drag a whole previous workout into the bucket
+  to start from it; save as template stays.
+- **Exercise creation gets the same treatment:** muscle group chip,
+  equipment chip, a two-step "record reference now / later".
+Nothing changes in the data the trainee sees (snapshot items are the same);
+this is a coach-side editor. Estimate: two to three days, no library
+(native drag via Pointer Events). Not started.
+
+---
+
 ## DA. Achievement unlock animation
 
 Requested 2026-09-22 (catalogue v2 live: 27 total, 26 approved). The
