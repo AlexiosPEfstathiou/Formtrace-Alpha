@@ -190,7 +190,25 @@ and it hides what the library contains. Redesign for the coach:
   equipment chip, a two-step "record reference now / later".
 Nothing changes in the data the trainee sees (snapshot items are the same);
 this is a coach-side editor. Estimate: two to three days, no library
-(native drag via Pointer Events). Not started.
+(native drag via Pointer Events).
+
+**BUILT 2026-09-25 - first pass (the builder screen).** The library now
+lives INSIDE the builder, above the workout: muscle-group **tabs** (only
+groups the library actually has, with counts, plus Untagged), a
+**search** box, and a horizontal row of **cards** (thumbnail, name, ref
+✓ / no ref, a lime **+**); the panel collapses. The workout list is the
+**bucket**: **drag a card in** (mouse: at once; touch: hold 280 ms - a tap
+still taps) and it inserts where the pointer is, with a lime insertion
+line; **drag ☰** on a row to reorder; drag a row out of the list to
+remove; the ghost follows the finger, edges auto-scroll, small haptics.
+Duplicates are allowed with a warning. The eyebrow is a **running total**
+("4 exercises · 12 sets · ~30 min"). "+ Add from library" and wildcard
+slots remain; nothing changed in the saved shape or for trainees.
+`muscle_group` already existed on exercises with a chip picker. Not yet:
+templates (drag a previous workout in), the exercise-creation two-step,
+a phone tray layout (the panel is a compact row, which works on a phone
+but is not the tray). The renderer check caught a null `builder` guard
+on the way in.
 
 ---
 
