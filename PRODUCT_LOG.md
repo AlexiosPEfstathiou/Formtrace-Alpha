@@ -239,6 +239,14 @@ earned in the last minute and mark it seen); the sign-in catch-up stays
 chip-only on Notifications, where tapping a chip plays the same sequence.
 Server-side unlocks (week close, review, goal completion) arrive as chips
 too - and as a push on CE.
+**Backfill (owner question 2026-09-25: "would existing trainees get
+notified in mass?" - yes, three ways; approved the quiet version).**
+`migrations_achievements_backfill.sql`, run once before CE goes live:
+awards everything history already justifies for every trainee, marks it
+`backfilled`, deletes the outbox rows it generated, and excludes
+backfilled unlocks from friends' feeds and from Congratulate all. The
+Notifications chips stay (tap → the animation); the Profile grid shows
+them like any other. New unlocks from then on behave normally.
 
 ---
 
