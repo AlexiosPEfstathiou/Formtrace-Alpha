@@ -11,7 +11,11 @@ do $$ declare r record; begin
 end $$;
 
 update public.user_achievements set backfilled = true where earned_at > now() - interval '10 minutes';
-delete from public.push_outbox where kind = 'achievement' and sent_at is null and created_at > now() - interval '10 minutes';
+do $$ begin
+  if to_regclass('public.push_outbox') is not null then   -- CE may not be installed yet
+    delete from public.push_outbox where kind = 'achievement' and sent_at is null and created_at > now() - interval '10 minutes';
+  end if;
+end $$;
 
 create or replace function public.in_touch_feed()
 returns jsonb language sql stable security definer set search_path = public as $$
