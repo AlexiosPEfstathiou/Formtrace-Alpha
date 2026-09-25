@@ -58,7 +58,7 @@ BE) are not tasks and are left out.
 | 39 | **CQ** Second test-day batch (CQ-1…CQ-12) - BUILT | - | Goal sections order; deletable check-in photos; call-today expiry; header vs capture overlay; header avatar; Profile → identity + Settings screen; Social redesign (weekly uncongratulated counts, congratulate all). |
 | 38 | **CP** Navigation v2 - BUILT 2026-09-19 | settings screen later | Five tabs per role (+Review for admins); header with profile / settings / streak; Notifications screen with count; Social tab. |
 | 37 | **CO** Trainee homepage v2 - BUILT 2026-09-19 | - | Welcome → workouts remaining (View) → diet plan + 4-metric log → reviewed workouts (View) → weight trend. |
-| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-18; CN-10 built 2026-09-22) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
+| 36 | **CN** Test day 2026-09-19 findings (CN-1…CN-21; CN-10 and CN-15 built) | Mixed | Videos not playing (first), reviewed-workout view for trainee, stale sessions after goal end, call Accept/Decline both ways, time zones, currency in accept dialogue, admin cert alert, streak flash, PB card dismiss; CN-10 trainee ends goal early (Goal achieved / Cancel goal + reasons) is a feature. |
 
 Suggested next three, if going in order: BG, then BN part 1 once the
 referral definition is decided, then AT step 5 once the alpha is quiet.
@@ -880,7 +880,16 @@ Tester's words in quotes. Not yet fixed unless marked.**
   Find a coach, not a blank. This also serves retention (CD/CI): a
   trainee between goals keeps a living Training tab instead of a dead one.
   Audit each Training-tab card for "does this need an engagement?" and
-  unhide the ones that don't. Not started.
+  unhide the ones that don't.
+  **BUILT 2026-09-25.** A trainee with no engagement gets `renderSoloTraining`
+  instead of the empty state: a "No coach yet" card with one gentle line
+  and **Post a goal**; a **Your days** calendar (last 5 weeks; 🍽 for
+  macros/weight logged, 📷 for check-in photos, today highlighted, count
+  of logged days); then the existing own-data cards unchanged - macros
+  and weight log, weight trend, weekly check-in, quarterly measurements.
+  The audit found all four need no engagement. Assigned workouts, reviews
+  and calls appear when a coach does. Coaches with no trainees keep the
+  old empty state.
 - **CN-17 · Smoke test must execute the renderers.** The `trims` scope bug
   (CN-5/6) parsed cleanly and threw only at run time. Add a check that
   invokes the main render functions against a stub DOM and stub store so a

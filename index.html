@@ -4091,6 +4091,31 @@ async function afterFeedbackHandoff(eng,role,kind){
   if(!ok) return;
   openOffer(null,{trainee_id:eng.trainee_id,name,title:eng.goal_title?`${eng.goal_title} - next block`:""});
 }
+/* ---- CN-15: Training tab without a coach ---------------------------------------------
+   Everything that is the trainee's OWN data works without an engagement: macros and weight
+   logging, the weight trend, the weekly check-in, quarterly measurements, and a calendar of
+   their own logged days. What needs a coach (assigned workouts, reviews, calls, the committed
+   week) is one gentle line pointing to Post a goal - never a blank. */
+async function renderSoloTraining(wrap){
+  const hero=document.createElement("div"); hero.className="card"; hero.style.margin="0 0 12px";
+  hero.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">No coach yet</div><div style="font-size:14px;line-height:1.5">Your training is yours from day one - log what you eat and weigh, take your Saturday check-in, and your calendar fills as you go. When you want a plan, reviews and calls, post a goal and coaches will pitch for it.</div><button class="btn primary sm" style="width:auto;margin-top:12px" data-go="listing-new">Post a goal</button>`;
+  wrap.appendChild(hero);
+  const mk=id=>{ const el=document.createElement("div"); el.id=id; el.className="home-reviews"; el.style.display="none"; wrap.appendChild(el); return el; };
+  const cal=document.createElement("div"); cal.className="card"; cal.style.margin="0 0 12px"; wrap.appendChild(cal);
+  const elMacro=mk("solo-macro"), elWeight=mk("solo-weight"), elCheckin=mk("solo-checkin"), elMeasure=mk("solo-measure");
+  await Promise.all([renderSoloCalendar(cal), renderHomeMacro(elMacro), renderHomeWeight(elWeight), renderHomeCheckin(elCheckin), renderHomeMeasure(elMeasure)]);
+}
+async function renderSoloCalendar(card){
+  try{
+    const logs=await store.logs.list({trainee_id:ME.id}); const cis=await store.checkins.list({trainee_id:ME.id});
+    const logged=new Set(logs.filter(l=>l.kcal!=null||l.protein_g!=null||l.weight_kg!=null).map(l=>l.log_date));
+    const photos=new Set(cis.filter(x=>x.photo_path).map(x=>x.checkin_date));
+    const mon=weekStartISO(new Date()); const start=addDaysISO(mon,-28); const today=todayISO();
+    let cells=""; for(let i=0;i<35;i++){ const iso=addDaysISO(start,i); const d=new Date(iso+"T00:00:00"); const fut=iso>today; const marks=(logged.has(iso)?"🍽":"")+(photos.has(iso)?"📷":""); cells+=`<div style="text-align:center;padding:6px 0;border-radius:10px;background:${iso===today?"var(--panel2)":"transparent"};opacity:${fut?.35:1}"><div style="font-size:11px;color:${iso===today?"var(--lime)":"var(--faint)"}">${d.getDate()}</div><div style="font-size:12px;height:16px;line-height:16px">${marks}</div></div>`; }
+    const n=[...logged].filter(x=>x>=start&&x<=today).length;
+    card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="eyebrow">Your days · last 5 weeks</div><div style="font-size:12px;color:var(--muted)">${n} day${n===1?"":"s"} logged</div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);font-size:10px;color:var(--faint);text-align:center;margin-bottom:2px">${["M","T","W","T","F","S","S"].map(x=>`<div>${x}</div>`).join("")}</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells}</div><div style="font-size:11px;color:var(--faint);margin-top:8px">🍽 macros or weight logged · 📷 check-in photo. Assigned workouts appear here once you have a coach.</div>`;
+  }catch(e){ card.remove(); }
+}
 /* ---- Item CY: Achievements - friends-only, never public --------------------------------
    Catalogue in `achievements`; earned rows in `user_achievements`; awarding is server-side
    (`check_achievements`), called on sign-in and after the user's own earning actions, and
@@ -6440,6 +6465,8 @@ async function renderTraineeHome(){
   $("#s-trainee-home").querySelector("h1").textContent=iAmCoach?"My engagements":"Your training";
   $("#tr-sub").textContent=engs.length?`${engs.length} engagement${engs.length>1?"s":""}`:(iAmCoach?"No active trainees yet":"Nothing yet");
   wrap.innerHTML="";
+  /* CN-15: a trainee without a coach still has a living Training tab - their own data works from day one */
+  if(!engs.length && !iAmCoach){ $("#tr-empty").classList.add("hidden"); await renderSoloTraining(wrap); return; }
   $("#tr-empty").classList.toggle("hidden",engs.length>0);
   if(!engs.length)return;
   // Trainee: ALL goals live on one shared schedule — never make them pick.
