@@ -49,7 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 50 | **DB** Workout builder v2 - first pass BUILT 2026-09-25 | templates, phone tray left |
+| 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (library in builder, drag, templates, sticky) | exercise-creation two-step left |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
 | 47 | **CY** Achievements - BUILT 2026-09-22, catalogue v2 live (27, 26 approved), backfilled | level_up parked |
@@ -214,6 +214,15 @@ templates (drag a previous workout in), the exercise-creation two-step,
 a phone tray layout (the panel is a compact row, which works on a phone
 but is not the tray). The renderer check caught a null `builder` guard
 on the way in.
+**Second pass 2026-09-25 - templates and reach.** A **Workouts** tab in the
+builder library lists the coach's other saved workouts as cards (first
+four exercise names, count, +). **+** or **drag** a workout card into the
+bucket and all of its exercises are copied in at that position (deep copy
+- sets, reps, intervals, wildcards; the source workout is untouched); an
+empty name becomes "<source> (copy)". The library panel is now **sticky**
+at the top of the builder, so on a long workout the cards stay in reach
+while the list scrolls under them - the practical half of the "phone
+tray". Left: the exercise-creation two-step (record reference now/later).
 
 ---
 
