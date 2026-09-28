@@ -29,7 +29,7 @@ BE) are not tasks and are left out.
 | 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
 | 16 | **BR** Founding coaches: zero commission, capped | Follows BI | Promise now, honour when BI exists; per-coach override in the rate table. |
 | 17 | **BS** Referral bonuses at each tier | Follows BI | Tiers exist (BN); the rewards are per-user overrides in BI's commission table. |
-| 18 | **BT** Background blur while recording - BUILT 2026-09-14 | phone test pending | Off by default; watch fps and warmth on the alpha phones. |
+| 18 | **BT** Background blur while recording - SCRAPPED 2026-09-21, see CW | - |
 | 19 | **BU** Alpha end-to-end test day | pack ready | docs/TEST_DAY.md: plan, pre-flight, both tick lists, seed goals. Run it; one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 | 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
@@ -49,7 +49,12 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 45 | **CW** Camera portrait mode (BT) scrapped - start over | Medium | Remove the BT code; define the quality bar; measure smoothed-mask live blur, else blur-in-review or pose-based crop. |
+| 50 | **DB** Workout builder v2 - first pass BUILT 2026-09-25 | templates, phone tray left |
+| 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
+| 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
+| 47 | **CY** Achievements - BUILT 2026-09-22, catalogue v2 live (27, 26 approved), backfilled | level_up parked |
+| 46 | **CX** iPhone installation - BLOCKED (no iPhone to test on) | - |
+| 45 | **CW** Camera portrait mode (BT) scrapped - old code REMOVED 2026-09-21 | rebuild: define the bar first |
 | 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
 | 43 | **CU** Camera permission denied - BUILT 2026-09-21 | - | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
 | 42 | **CT** Connect - BUILT 2026-09-21 | - | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
