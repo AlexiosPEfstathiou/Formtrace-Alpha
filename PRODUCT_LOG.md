@@ -10,6 +10,8 @@ Difficulty is about the work and risk to ship, not importance. Items
 needing a decision first are marked (decision). Testing activities (BD,
 BE) are not tasks and are left out.
 
+**Priorities (owner, 2026-09-25):** decisions first (interview in progress); **externals second** - BI Stripe account, BJ branding, CX iPhone; low priority: DE.
+
 | # | Item | Difficulty | Why |
 |---|------|-----------|-----|
 | 1 | **BG** Check-in photo days glisten - DONE 2026-09-14 | - | Camera badge on photo days; Saturday/Sunday glisten while the week's check-in is unmet. |
@@ -49,8 +51,10 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
+| 53 | **DE** Exercise equipment tag - LOW PRIORITY | Small | Second chip row + builder filter; exercises.equipment. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
-| 51 | **DC** Forgot password / which email - BUILT 2026-09-25 | 1 dashboard step (redirect URL); SMTP before launch |
+| 51 | **DC** Forgot password / which email - BUILT 2026-09-25, working | SMTP postponed (≤30 users / 3 months) |
 | 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (three passes) | equipment tag not built |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
@@ -169,6 +173,31 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DF. Test-day checklist refresh
+
+Owner, 2026-09-25. `docs/TEST_DAY.md` predates about thirty features built
+since 19 September. Refresh it into one walk-through for two phones (coach +
+trainee): Navigation v2 and the header · solo Training tab · goal posting
+and offers, counter-offers, ending a goal early (both paths) · workout
+builder v2 (library, drag, templates, Save & add another) · levels ·
+voice-over + telestration · check-in guide and crop · measurements,
+macros, weight · In Touch knock + code, Connect handles, congratulations ·
+achievements (instant play vs chips) · streak badge across tabs ·
+forgot password · push once CE is live. Each step: action, expected
+result, what to screenshot if it fails. Not started.
+
+---
+
+## DE. Exercise equipment tag - LOW PRIORITY
+
+Owner, 2026-09-25. An equipment tag on exercises (barbell · dumbbell ·
+kettlebell · machine · cable · band · bodyweight · other) as a second
+chip row in the exercise editor and a filter in the builder library.
+Needs `exercises.equipment` (text + CHECK, like muscle_group). Low
+priority - build when a coach asks for it. Not started.
+
+---
+
 ## DD. Builder library: search by muscle group, workout filter, PC scrolling, toggle chips
 
 Owner, 2026-09-25, from using DB:
@@ -233,7 +262,9 @@ profile shows "Signed in as <email> - this is your login".
 **Dashboard, before it works:** Supabase → Authentication → URL
 Configuration → Site URL and Redirect URLs =
 https://alexiospefstathiou.github.io/Formtrace-Alpha/ . Recommended before
-real users: custom SMTP (BJ domain).
+real users: custom SMTP (BJ domain). **SMTP POSTPONED (owner, 2026-09-25):
+at most ~30 users over the next three months - the built-in sender's
+limits are acceptable at that scale. Revisit before opening wider.**
 
 ---
 
