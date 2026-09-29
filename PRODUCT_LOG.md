@@ -34,9 +34,9 @@ BE) are not tasks and are left out.
 | 18 | **BT** Background blur while recording - SCRAPPED 2026-09-21, see CW | - |
 | 19 | **BU** Alpha end-to-end test day | pack ready | docs/TEST_DAY.md: plan, pre-flight, both tick lists, seed goals. Run it; one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
-| 21 | **BW** Reward ladders: referrals + discipline streaks | Medium (decision) | Rewards table + grant function + claim card; amounts and merch list first; vouchers on BI. |
+| 21 | **BW** Reward ladders - DECIDED 2026-09-25 (amounts open) | matrix + 3-month badge buildable; vouchers need BI |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
-| 23 | **BY** Rewards for Top 1% holders | Easy (decision) | Placeholder candidates listed; fulfilment via BW; grant per holding period. |
+| 23 | **BY** Top 1% rewards - DECIDED 2026-09-25: featured + fancy pitch border | buildable |
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
@@ -1820,6 +1820,11 @@ since local midnight / since Monday, minus the ones this coach has hidden
 
 ## BY. Rewards for Top 1% badge holders
 
+**DECIDED (owner, 2026-09-25): featured placement + a fancy border.** While
+a coach holds Top 1%: listed first in Find a coach, and their pitches
+(offers) carry a distinctive animated border wherever a trainee sees them.
+No money involved - buildable now.
+
 Placeholder opened 2026-09-14 (from BX, by decision). What a coach gets
 for holding the 👑 Top 1% badge, beyond the badge itself. Candidates to
 brainstorm, none promised in-app: [commission benefit - e.g. Partner rate
@@ -1886,6 +1891,19 @@ Rewards for holders remain placeholders (own item later).
 ---
 
 ## BW. Reward ladders: referrals (both roles) and discipline streaks
+
+**DECIDED (owner, 2026-09-25):**
+- **Trainee referral ladder:** Recruiter (3) - a discount voucher on the
+  next goal · Ambassador (10) - a voucher + merch · Partner (25) - a
+  voucher, merch and a **permanent service-fee discount**. Shown as a
+  visually pleasant **rewards matrix next to the referral link** (tiers ×
+  rewards, the user's current tier highlighted, progress to the next).
+- **Streak ladder (on top of the achievements):** a voucher for **every
+  completed month** of full weeks · a **collectible badge at 3 months** ·
+  **merch at 6 months** · 12 months TBD.
+- Voucher amounts, the Partner fee discount and the 12-month reward are
+  still to set. Vouchers and fee discounts need BI (Stripe); the matrix
+  and the collectible badge can be built now.
 
 Requested 2026-09-14. Two ladders to design, one framework to build.
 
