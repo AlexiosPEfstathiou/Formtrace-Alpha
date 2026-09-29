@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 55 | **DG** Referral by QR code (QR = referral link + voucher, 2 in 1) | Half day | Branded QR card on Profile / matrix / voucher share; Web Share image; link text removed. |
 | 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
 | 53 | **DE** Exercise equipment tag - LOW PRIORITY | Small | Second chip row + builder filter; exercises.equipment. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
@@ -170,6 +171,30 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DG. Referral by QR code (the link does not look cool)
+
+Owner, 2026-09-25: "The referral function should work with a shareable QR
+only in general. The link doesn't look cool." Replace the referral link
+UI (BN) with a **QR code** everywhere it is offered - Profile's Referral
+card, the BW rewards matrix beside it, the streak voucher share (BW).
+- The QR encodes the same referral URL (`?ref=<code>`, BN), so attribution
+  is unchanged; for a voucher share it adds the voucher token
+  (`?ref=<code>&v=<voucher>`) - scanning signs the friend up as a referral
+  and attaches the voucher in one step.
+- Presentation: a large branded QR card (lime modules on the dark card,
+  the FormTrace mark in the centre, the holder's name and tier under it) -
+  meant to be shown phone-to-phone in person, fitting In Touch.
+- **Share** button sends the same card as an image via the Web Share API
+  (WhatsApp, Instagram story…), with the URL in the text for anyone who
+  cannot scan. The raw link is no longer shown as text; a small "Copy
+  link" stays for accessibility.
+- QR generation: a small client-side encoder (a pinned script from
+  cdnjs/jsDelivr, loaded only when the card opens - the app already loads
+  MediaPipe that way) or a hand-rolled one; no server work.
+Buildable now (the voucher half waits on BI). Estimate: half a day.
 
 ---
 
@@ -1921,11 +1946,13 @@ Rewards for holders remain placeholders (own item later).
   Effect: for someone mid-commitment the voucher is in practice a gift
   that brings a friend in, which also answers the economics note above -
   it only costs money when it produces a new goal.
-  Proposed defaults, to confirm when BI is built: sharing goes to In
-  Touch friends (a knock-verified person, which limits self-gifting via
-  a second account); one voucher per goal, not stackable with a referral
-  voucher; a shared voucher keeps its original expiry; unused vouchers
-  simply lapse.
+  **Confirmed (owner, 2026-09-25):** sharing is open to anyone - no In
+  Touch restriction; multi-accounting is tolerated for now · **one voucher
+  per goal** · **static expiry** (sharing does not restart the 2 weeks) ·
+  **no accumulation** - vouchers cannot be banked or combined; unused ones
+  lapse. **Sharing is by QR code, and the QR is also the holder's referral
+  link - two in one** (see DG): the friend who scans it lands on sign-up
+  with the voucher attached AND is counted as the holder's referral.
 
 Requested 2026-09-14. Two ladders to design, one framework to build.
 
