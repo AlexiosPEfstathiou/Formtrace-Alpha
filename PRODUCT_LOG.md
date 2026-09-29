@@ -49,6 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 51 | **DC** Forgot password / forgot which email | Half day + 1 dashboard step | Reset link → set-new-password screen; no account enumeration; email shown on Profile; custom SMTP before launch. |
 | 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (library in builder, drag, templates, sticky) | exercise-creation two-step left |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
@@ -164,6 +165,38 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DC. Forgot my password / forgot my username
+
+Requested 2026-09-25. Today the sign-in screen has no recovery at all: no
+"Forgot password?" link, and nothing for someone who does not remember
+which address they signed up with. Sign-in is **email + password**
+(Supabase Auth); there is no separate username - the email IS the login.
+So the two cases are:
+1. **Forgot password.** A "Forgot password?" link under the password
+   field → enter email → `sb.auth.resetPasswordForEmail(email,
+   {redirectTo: <app URL>#reset})` → the user taps the link in the email →
+   the app opens on a **Set a new password** screen (detect the
+   `PASSWORD_RECOVERY` auth event) → `sb.auth.updateUser({password})` →
+   signed in. Always answer "If that address has an account, a link is on
+   its way" - never confirm whether an email exists (account enumeration).
+   Needs: the Site URL and a redirect URL set in Supabase → Auth → URL
+   Configuration (GitHub Pages address), and the reset email template
+   reviewed (copy + sender name).
+2. **Forgot which email (the "username").** Cannot be looked up without
+   leaking who has an account, so it is guidance, not a search: "Try the
+   addresses you use; the reset form above tells no one anything, so
+   trying each is safe. Signed up with a coach's invite? It was the
+   address the invite went to." Plus a **Contact support** mailto as the
+   last resort. Also show the address on the Profile screen (read-only)
+   so a signed-in user can always find it later.
+- Rate limits are Supabase's (reset emails per hour per address); the
+  default SMTP sender is heavily limited - set a custom SMTP (the domain
+  from BJ) before real users, or resets will silently throttle.
+Half a day; one dashboard step (URL configuration), one recommended (SMTP).
+Not started.
 
 ---
 
