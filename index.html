@@ -1221,6 +1221,7 @@
       <div class="field" id="auth-name-field" style="display:none"><label>Display name</label><input id="au-name" placeholder="e.g. Sam Rivera" autocomplete="name"></div>
       <div class="field"><label>Email</label><input id="au-email" type="email" placeholder="you@example.com" autocomplete="email"></div>
       <div class="field"><label>Password</label><input id="au-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <div id="au-forgot" style="text-align:right;margin:-4px 0 14px"><span id="au-forgot-btn" style="font-size:12.5px;color:var(--lime);cursor:pointer;font-weight:700">Forgot password?</span></div>
       <button class="btn primary" id="au-submit">Sign in</button>
       <div class="auth-switch" id="auth-switch">New here? <b id="au-toggle">Create an account</b></div>
     </div>
@@ -1537,6 +1538,7 @@
     <div class="top"><div class="back" id="it-back">←</div><div style="flex:1"><h1>In Touch</h1><div class="sub">Friends you've met in person</div></div></div>
     <div class="body" id="it-body"></div>
   </section>
+  <div id="pw-overlay" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(11,14,17,.94);align-items:center;justify-content:center;padding:20px"><div id="pw-card" class="card" style="width:100%;max-width:380px;padding:18px"></div></div>
   <div id="ach-overlay"><div class="ach-skip">tap to skip</div><div id="ach-stage"></div></div>
   <div id="clap-overlay" style="position:fixed;inset:0;z-index:250;background:rgba(11,14,17,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px">
     <div id="clap-avatar" class="avatar" style="width:96px;height:96px;font-size:34px"></div>
@@ -3240,6 +3242,7 @@ function renderAppTabs(current){
   bar.style.display="flex";
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
+  if(pwRecovery){ pwRecovery=false; setTimeout(openSetNewPassword,100); }   // Item DC: arrived from a reset link
   if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); }   // Item CY: catch-up once per session
   try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
 }
@@ -3342,7 +3345,7 @@ function resetNav(root){
    6. Auth gate
    ========================================================================= */
 let authMode="signin";
-function setAuthMode(mode){
+function setAuthMode(mode){ { const fg=$("#au-forgot"); if(fg) fg.style.display=(mode==="signup")?"none":""; }   /* DC */
   authMode=mode;
   const signup=mode==="signup";
   $("#auth-h").textContent=signup?"Create your account":"Welcome back";
@@ -3372,7 +3375,44 @@ $("#au-submit").addEventListener("click",async()=>{
   }catch(err){ console.error(err); toast(err.message||"Couldn't sign in",4000); }
   finally{ btn.disabled=false; btn.textContent=orig; }
 });
-$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); hideStreakBadge(); showAuth(); });
+/* ---- Item DC: forgot password / forgot which email ----------------------------------
+   The email IS the login - there is no username. Replies never reveal whether an address
+   has an account (no enumeration). The reset link returns to this page; Supabase parses it
+   and fires PASSWORD_RECOVERY, and the app asks for a new password. */
+const SUPPORT_EMAIL="";   // set to the support address once the domain exists (BJ); empty hides the link
+let pwRecovery=/type=recovery/.test(location.hash||"");
+function pwShow(html){ $("#pw-card").innerHTML=html; $("#pw-overlay").style.display="flex"; }
+function pwHide(){ $("#pw-overlay").style.display="none"; $("#pw-card").innerHTML=""; }
+function openForgotPassword(){
+  pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:6px">Reset your password</div>
+    <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">Enter the email you signed up with. If it has an account, we'll send a link to set a new password.</div>
+    <div class="field" style="margin:0 0 10px"><label>Email</label><input id="pw-email" type="email" autocomplete="email" placeholder="you@example.com" value="${escapeHtml(($("#au-email")||{}).value||"")}"></div>
+    <button class="btn primary" id="pw-send">Send reset link</button>
+    <div id="pw-msg" style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:10px"></div>
+    <details style="margin-top:12px;font-size:12.5px;color:var(--muted);line-height:1.5"><summary style="cursor:pointer;color:var(--ink);font-weight:700">Forgot which email you used?</summary>
+      <div style="margin-top:6px">Your email is your login - there's no separate username. Try each address you use: this form never says whether an address has an account, so trying is safe and private. If a coach invited you, it's the address the invite was sent to.${SUPPORT_EMAIL?` Still stuck? <a href="mailto:${SUPPORT_EMAIL}?subject=FormTrace%20account%20help" style="color:var(--lime)">Contact support</a>.`:""}</div></details>
+    <button class="btn ghost sm" id="pw-close" style="width:auto;margin-top:12px">Back to sign in</button>`);
+  $("#pw-close").onclick=pwHide;
+  $("#pw-send").onclick=async()=>{ const em=$("#pw-email").value.trim(); if(!/^\S+@\S+\.\S+$/.test(em)){ toast("Enter a valid email",2500); return; } const b=$("#pw-send"); b.disabled=true;
+    try{ const { error }=await store._sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname}); if(error&&!/rate|limit|seconds/i.test(error.message||"")) console.error("reset password",error);
+      if(error&&/rate|limit|seconds/i.test(error.message||"")) $("#pw-msg").textContent="Too many requests - please wait a minute and try again.";
+      else $("#pw-msg").innerHTML=`<b style="color:var(--ink)">Check your inbox.</b> If <b>${escapeHtml(em)}</b> has an account, a reset link is on its way. It can take a minute; check spam too.`;
+    }catch(e){ $("#pw-msg").textContent="Couldn't send right now - try again shortly."; }
+    b.disabled=false; };
+}
+function openSetNewPassword(){
+  pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:6px">Set a new password</div>
+    <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">At least 8 characters.</div>
+    <div class="field" style="margin:0 0 10px"><label>New password</label><input id="pw-new" type="password" autocomplete="new-password"></div>
+    <div class="field" style="margin:0 0 12px"><label>Repeat it</label><input id="pw-new2" type="password" autocomplete="new-password"></div>
+    <button class="btn primary" id="pw-save">Save password</button><div id="pw-msg" style="font-size:12.5px;color:var(--red);margin-top:8px"></div>`);
+  $("#pw-save").onclick=async()=>{ const a=$("#pw-new").value, b2=$("#pw-new2").value; if(a.length<8){ $("#pw-msg").textContent="Use at least 8 characters."; return; } if(a!==b2){ $("#pw-msg").textContent="The two passwords don't match."; return; }
+    const b=$("#pw-save"); b.disabled=true;
+    try{ const { error }=await store._sb.auth.updateUser({password:a}); if(error) throw error; pwHide(); toast("Password updated ✓",2500); try{ history.replaceState(null,"",location.pathname); }catch(e){} if(!ME) await bootSignedIn(); }
+    catch(e){ console.error("set new password",e); $("#pw-msg").textContent=e.message||"Couldn't save the password"; b.disabled=false; } };
+}
+try{ store._sb.auth.onAuthStateChange(ev=>{ if(ev==="PASSWORD_RECOVERY"){ pwRecovery=false; setTimeout(openSetNewPassword,50); } }); }catch(e){}
+$("#au-forgot-btn").addEventListener("click",openForgotPassword);$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); hideStreakBadge(); showAuth(); });
 
 function showAuth(){
   $("#app-loading").style.display="none";
@@ -5584,6 +5624,7 @@ function renderIvEditor(){
       </div>`;
   }
   body.innerHTML=html;
+  store.auth.currentUser().then(u=>{ const el=$("#sp-email-line"); if(el&&u&&u.email) el.innerHTML=`Signed in as <b style="color:var(--muted)">${escapeHtml(u.email)}</b> - this is your login`; }).catch(()=>{});   // Item DC
   /* Item CE: push wiring */
   try{ const sw=$("#push-switch"); if(sw){ (async()=>{ const on=await pushIsSubscribed(); sw.checked=on; $("#push-kinds").style.display=on?"":"none"; })();
     sw.addEventListener("change",async()=>{ sw.disabled=true; try{ if(sw.checked){ await pushSubscribe(); $("#push-kinds").style.display=""; toast("Push on - a test buzz is on its way",2500); } else { await pushUnsubscribe(); $("#push-kinds").style.display="none"; toast("Push off",1500); } }catch(e){ console.error("push toggle",e); sw.checked=!sw.checked; toast(e.message||"Couldn't change push",4000); } sw.disabled=false; });
@@ -11204,7 +11245,7 @@ async function renderProfile(){
           <button data-ns="initial" class="${nameStyle==="initial"?"on":""}">Initial</button>
           <button data-ns="first" class="${nameStyle==="first"?"on":""}">First only</button>
         </div>
-        <div class="sp-preview">Others will see <b id="sp-preview-name">—</b></div>
+        <div class="sp-preview">Others will see <b id="sp-preview-name">—</b></div><div id="sp-email-line" style="font-size:12px;color:var(--faint);margin-top:6px"></div>
         <div style="font-size:13px;font-weight:700;margin:18px 0 8px">Profile photo</div>
         <div class="sp-avatar-row">
           <div class="sp-avatar" id="sp-avatar" data-avatar="${escapeHtml(ME.avatar_path||"")}"><span>${escapeHtml(ME.avatar_initials||initials(ME.display_name))}</span></div>
@@ -11351,6 +11392,7 @@ async function renderProfile(){
     }
   }catch(e){console.error("completed goals",e);}
   body.innerHTML=html;
+  store.auth.currentUser().then(u=>{ const el=$("#sp-email-line"); if(el&&u&&u.email) el.innerHTML=`Signed in as <b style="color:var(--muted)">${escapeHtml(u.email)}</b> - this is your login`; }).catch(()=>{});   // Item DC
   /* Item CE: push wiring */
   try{ const sw=$("#push-switch"); if(sw){ (async()=>{ const on=await pushIsSubscribed(); sw.checked=on; $("#push-kinds").style.display=on?"":"none"; })();
     sw.addEventListener("change",async()=>{ sw.disabled=true; try{ if(sw.checked){ await pushSubscribe(); $("#push-kinds").style.display=""; toast("Push on - a test buzz is on its way",2500); } else { await pushUnsubscribe(); $("#push-kinds").style.display="none"; toast("Push off",1500); } }catch(e){ console.error("push toggle",e); sw.checked=!sw.checked; toast(e.message||"Couldn't change push",4000); } sw.disabled=false; });

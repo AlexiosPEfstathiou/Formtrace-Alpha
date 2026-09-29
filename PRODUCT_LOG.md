@@ -50,7 +50,7 @@ BE) are not tasks and are left out.
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
-| 51 | **DC** Forgot password / forgot which email | Half day + 1 dashboard step | Reset link → set-new-password screen; no account enumeration; email shown on Profile; custom SMTP before launch. |
+| 51 | **DC** Forgot password / which email - BUILT 2026-09-25 | 1 dashboard step (redirect URL); SMTP before launch |
 | 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (library in builder, drag, templates, sticky) | exercise-creation two-step left |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
@@ -217,7 +217,23 @@ So the two cases are:
   default SMTP sender is heavily limited - set a custom SMTP (the domain
   from BJ) before real users, or resets will silently throttle.
 Half a day; one dashboard step (URL configuration), one recommended (SMTP).
-Not started.
+
+**BUILT 2026-09-25.** Sign-in shows **Forgot password?** (hidden in sign-up
+mode) → a card: email (prefilled from the sign-in field) → **Send reset
+link** (`resetPasswordForEmail`, redirect = this page) → always "If
+<email> has an account, a reset link is on its way", a separate message
+only for rate limiting. An expandable **Forgot which email you used?**
+explains that the email is the login, that trying addresses is safe, and
+where invite emails went; a Contact-support link appears once
+`SUPPORT_EMAIL` is set (empty today - no domain yet). Returning via the
+link: the `PASSWORD_RECOVERY` event (or the `type=recovery` hash, caught
+at boot if the event fired first) opens **Set a new password** (8+ chars,
+typed twice) → `updateUser` → signed in, hash cleared. Profile → Social
+profile shows "Signed in as <email> - this is your login".
+**Dashboard, before it works:** Supabase → Authentication → URL
+Configuration → Site URL and Redirect URLs =
+https://alexiospefstathiou.github.io/Formtrace-Alpha/ . Recommended before
+real users: custom SMTP (BJ domain).
 
 ---
 
