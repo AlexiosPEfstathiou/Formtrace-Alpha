@@ -1106,7 +1106,8 @@
   /* streak celebration overlay */
   #streak-badge{cursor:pointer;}
   /* Item DB: builder library + drag */
-  #wo-lib{position:sticky;top:0;z-index:5;box-shadow:0 8px 18px rgba(0,0,0,.35);}   /* Item DB: the library stays in reach while the workout scrolls under it */
+  #wo-lib{position:sticky;top:0;z-index:5;box-shadow:0 8px 18px rgba(0,0,0,.35);}
+  @media (pointer:fine){ #wo-lib-tabs,#wo-lib-cards{scrollbar-width:thin!important;scrollbar-color:var(--line2) transparent;} #wo-lib-tabs::-webkit-scrollbar,#wo-lib-cards::-webkit-scrollbar{height:6px;} #wo-lib-tabs::-webkit-scrollbar-thumb,#wo-lib-cards::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px;} }   /* DD: PC users see and can grab the scrollbar */   /* Item DB: the library stays in reach while the workout scrolls under it */
   .wl-tab{flex:0 0 auto;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700;background:var(--panel2);color:var(--muted);border:1px solid var(--line2);cursor:pointer;white-space:nowrap;}  .wl-tab.on{background:var(--lime);color:#0B0E11;border-color:var(--lime);}  .wl-tab .n{opacity:.7;font-weight:600;margin-left:4px;}
   .wl-card{flex:0 0 118px;background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;user-select:none;-webkit-user-select:none;touch-action:pan-x;cursor:grab;}  .wl-card .ex-thumb{width:100%;height:64px;border-radius:8px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;font-size:22px;}  .wl-card .ex-thumb img,.wl-card .ex-thumb video{width:100%;height:100%;object-fit:cover;}  .wl-card .nm{font-size:12px;font-weight:700;line-height:1.2;max-height:2.4em;overflow:hidden;}  .wl-card .mt{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--faint);}  .wl-card .add{width:26px;height:26px;border-radius:13px;border:0;background:var(--lime);color:#0B0E11;font-weight:900;font-size:16px;line-height:26px;text-align:center;cursor:pointer;}  .wl-card.in{border-color:var(--lime);}
   .wo-item .grab{cursor:grab;color:var(--faint);font-size:16px;padding:0 6px;touch-action:none;user-select:none;}  .wo-item.drag-over-top{box-shadow:0 -3px 0 0 var(--lime);}  .wo-item.drag-over-bottom{box-shadow:0 3px 0 0 var(--lime);}  #wo-items.drop-target{outline:2px dashed var(--lime);outline-offset:4px;border-radius:12px;min-height:40px;}
@@ -5293,12 +5294,12 @@ async function openBuilder(id){
   builderLevelScale=Object.assign({reps_step:2,weight_step:2.5,max:5},(w&&w.level_scale)||{}); paintLevelScale();   // Item CG
   $("#wo-delete").style.display=w?"flex":"none";
   woTemplates=[]; store.workouts.list({coach_id:ME.id}).then(ws=>{ woTemplates=(ws||[]).filter(x=>x.id!==builder.id&&(x.items||[]).length); renderBuilderLibrary(); }).catch(()=>{});   // Item DB: templates
-  woLibTab="all"; woLibQ=""; const qi=$("#wo-lib-q"); if(qi){ qi.value=""; qi.oninput=()=>{ woLibQ=qi.value; renderBuilderLibrary(); }; } const tg=$("#wo-lib-toggle"); if(tg){ tg.onclick=()=>{ const b=$("#wo-lib-body"); const hid=b.style.display==="none"; b.style.display=hid?"":"none"; tg.textContent=hid?"▾":"▸"; }; }   // Item DB
+  woLibTab="all"; woLibQ=""; woLibMode="ex"; const qi=$("#wo-lib-q"); if(qi){ qi.value=""; qi.oninput=()=>{ woLibQ=qi.value; renderBuilderLibrary(); }; } const tg=$("#wo-lib-toggle"); if(tg){ tg.onclick=()=>{ const b=$("#wo-lib-body"); const hid=b.style.display==="none"; b.style.display=hid?"":"none"; tg.textContent=hid?"▾":"▸"; }; }   // Item DB
   renderBuilderItems();
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-wo-build").classList.add("active");
 }
 /* ---- Item DB: the library inside the builder --------------------------------------- */
-let woLibTab="all", woLibQ="", woTemplates=[];
+let woLibTab="all", woLibQ="", woTemplates=[], woLibMode="ex";
 /* Item DB: a previous workout as a starting point - its items are copied in (deep copy; the source is untouched). */
 function addTemplateToBuilder(wid,insertAt){ const w=woTemplates.find(x=>x.id===wid); if(!w) return; const items=(w.items||[]).map(i=>JSON.parse(JSON.stringify(i))); const at=insertAt==null?builder.items.length:insertAt; builder.items.splice(at,0,...items); if(!$("#in-wo-name").value.trim()) $("#in-wo-name").value=w.name+" (copy)"; renderBuilderItems(); toast(`Added ${items.length} from "${w.name}"`,2000); }
 function addExerciseToBuilder(id){
@@ -5310,26 +5311,43 @@ function addExerciseToBuilder(id){
 }
 function renderBuilderLibrary(){
   const tabs=$("#wo-lib-tabs"), cards=$("#wo-lib-cards"); if(!tabs||!cards||!libCache||!builder) return;
-  const groups=[["all","All"],...(woTemplates.length?[["_wo","Workouts"]]:[]),...MUSCLE_GROUPS.filter(([k])=>libCache.some(e=>e.muscle_group===k)),...(libCache.some(e=>!e.muscle_group)?[["_none","Untagged"]]:[])];
-  tabs.innerHTML=groups.map(([k,l])=>{ const n=k==="all"?libCache.length:k==="_wo"?woTemplates.length:k==="_none"?libCache.filter(e=>!e.muscle_group).length:libCache.filter(e=>e.muscle_group===k).length; return `<button type="button" class="wl-tab ${woLibTab===k?"on":""}" data-tab="${k}">${l}<span class="n">${n}</span></button>`; }).join("");
-  tabs.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{ woLibTab=b.getAttribute("data-tab"); renderBuilderLibrary(); }));
+  /* DD: Exercises | Workouts switch; muscle-group chips apply to both; a second click on a chip returns to All */
+  if(woLibMode==="wo"&&!woTemplates.length) woLibMode="ex";
+  const exGroups=it=>{ if(it.wildcard_mg) return [it.wildcard_mg]; const e=libCache.find(x=>x.id===it.exercise_id); return e&&e.muscle_group?[e.muscle_group]:[]; };
+  const woGroups=w=>new Set((w.items||[]).flatMap(exGroups));
+  const inGroup=(k)=>woLibMode==="wo"?woTemplates.filter(w=>k==="_none"?![...woGroups(w)].length:woGroups(w).has(k)).length:libCache.filter(e=>k==="_none"?!e.muscle_group:e.muscle_group===k).length;
+  const groups=MUSCLE_GROUPS.filter(([k])=>inGroup(k)>0).concat(inGroup("_none")>0?[["_none","Untagged"]]:[]);
+  if(woLibTab!=="all"&&!groups.some(([k])=>k===woLibTab)) woLibTab="all";
+  const total=woLibMode==="wo"?woTemplates.length:libCache.length;
+  tabs.innerHTML=(woTemplates.length?`<span style="display:inline-flex;flex:0 0 auto;border:1px solid var(--line2);border-radius:999px;overflow:hidden;margin-right:4px"><button type="button" class="wl-tab ${woLibMode==="ex"?"on":""}" data-mode="ex" style="border:0;border-radius:0">Exercises</button><button type="button" class="wl-tab ${woLibMode==="wo"?"on":""}" data-mode="wo" style="border:0;border-radius:0">Workouts</button></span>`:"")
+    +`<button type="button" class="wl-tab ${woLibTab==="all"?"on":""}" data-tab="all">All<span class="n">${total}</span></button>`
+    +groups.map(([k,l])=>`<button type="button" class="wl-tab ${woLibTab===k?"on":""}" data-tab="${k}">${l}<span class="n">${inGroup(k)}</span></button>`).join("");
+  tabs.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{ woLibMode=b.getAttribute("data-mode"); renderBuilderLibrary(); }));
+  tabs.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{ const k=b.getAttribute("data-tab"); woLibTab=(woLibTab===k)?"all":k; renderBuilderLibrary(); }));
   const q=woLibQ.trim().toLowerCase();
-  if(woLibTab==="_wo"){
-    const ws=woTemplates.filter(w=>!q||(w.name||"").toLowerCase().includes(q));
-    const exN=id=>{ const e=libCache.find(x=>x.id===id); return e?e.name:null; };
-    cards.innerHTML=ws.length?ws.map(w=>{ const its=w.items||[]; const names=its.map(i=>i.wildcard_mg?("Wildcard "+(mgLabel(i.wildcard_mg)||"")):exN(i.exercise_id)).filter(Boolean); return `<div class="wl-card" data-wo="${w.id}" style="flex-basis:150px"><div class="ex-thumb" style="font-size:12px;color:var(--muted);padding:6px;align-items:flex-start;justify-content:flex-start;text-align:left;line-height:1.35;background:var(--panel)">${names.slice(0,4).map(escapeHtml).join("<br>")}${names.length>4?`<br>+${names.length-4} more`:""}</div><div class="nm">${escapeHtml(w.name)}</div><div class="mt"><span>${its.length} exercise${its.length===1?"":"s"}</span><button type="button" class="add" data-addwo="${w.id}" title="Add all">+</button></div></div>`; }).join(""):`<div style="font-size:12px;color:var(--faint);padding:10px 4px">${q?"No workout matches.":"No other saved workouts yet."}</div>`;
+  const exMatches=e=>!q||(e.name||"").toLowerCase().includes(q)||(mgLabel(e.muscle_group)||"").toLowerCase().includes(q);
+  if(woLibMode==="wo"){
+    const exN=id=>{ const x=libCache.find(y=>y.id===id); return x?x.name:null; };
+    const ws=woTemplates.filter(w=>{
+      const g=woGroups(w);
+      if(woLibTab!=="all"&&!(woLibTab==="_none"?!g.size:g.has(woLibTab))) return false;
+      if(!q) return true;
+      if((w.name||"").toLowerCase().includes(q)) return true;
+      return (w.items||[]).some(it=>{ const nm=(exN(it.exercise_id)||"").toLowerCase(); return nm.includes(q)||exGroups(it).some(k=>(mgLabel(k)||"").toLowerCase().includes(q)); });
+    });
+    cards.innerHTML=ws.length?ws.map(w=>{ const its=w.items||[]; const names=its.map(i=>i.wildcard_mg?("Wildcard "+(mgLabel(i.wildcard_mg)||"")):exN(i.exercise_id)).filter(Boolean); return `<div class="wl-card" data-wo="${w.id}" style="flex-basis:150px"><div class="ex-thumb" style="font-size:12px;color:var(--muted);padding:6px;align-items:flex-start;justify-content:flex-start;text-align:left;line-height:1.35;background:var(--panel)">${names.slice(0,4).map(escapeHtml).join("<br>")}${names.length>4?`<br>+${names.length-4} more`:""}</div><div class="nm">${escapeHtml(w.name)}</div><div class="mt"><span>${its.length} exercise${its.length===1?"":"s"}</span><button type="button" class="add" data-addwo="${w.id}" title="Add all">+</button></div></div>`; }).join(""):`<div style="font-size:12px;color:var(--faint);padding:10px 4px">${q?"No workout matches.":"No workout in this group."}</div>`;
     cards.querySelectorAll("[data-addwo]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); addTemplateToBuilder(b.getAttribute("data-addwo")); }));
     cards.querySelectorAll("[data-wo]").forEach(card=>wireDragSource(card,{kind:"wo",id:card.getAttribute("data-wo")}));
-    return;
+  } else {
+    let list=libCache.filter(e=>woLibTab==="all"||(woLibTab==="_none"?!e.muscle_group:e.muscle_group===woLibTab)).filter(exMatches);
+    const inSet=new Set(builder.items.map(i=>i.exercise_id));
+    cards.innerHTML=list.length?list.map(ex=>`<div class="wl-card ${inSet.has(ex.id)?"in":""}" data-ex="${ex.id}"><div class="ex-thumb">${ex.kind==="interval"?"⏱":exThumb(ex)}</div><div class="nm">${escapeHtml(ex.name)}</div><div class="mt"><span>${hasRef(ex)||ex.kind==="interval"?"ref ✓":"no ref"}</span><button type="button" class="add" data-add="${ex.id}" title="Add">+</button></div></div>`).join(""):`<div style="font-size:12px;color:var(--faint);padding:10px 4px">${q?"No exercise matches.":"Nothing in this group yet."}</div>`;
+    cards.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); addExerciseToBuilder(b.getAttribute("data-add")); }));
+    cards.querySelectorAll(".wl-card").forEach(card=>wireDragSource(card,{kind:"lib",id:card.getAttribute("data-ex")}));
   }
-  let list=libCache.filter(e=>woLibTab==="all"||(woLibTab==="_none"?!e.muscle_group:e.muscle_group===woLibTab));
-  if(q) list=list.filter(e=>(e.name||"").toLowerCase().includes(q));
-  const inSet=new Set(builder.items.map(i=>i.exercise_id));
-  cards.innerHTML=list.length?list.map(ex=>`<div class="wl-card ${inSet.has(ex.id)?"in":""}" data-ex="${ex.id}"><div class="ex-thumb">${ex.kind==="interval"?"⏱":exThumb(ex)}</div><div class="nm">${escapeHtml(ex.name)}</div><div class="mt"><span>${hasRef(ex)||ex.kind==="interval"?"ref ✓":"no ref"}</span><button type="button" class="add" data-add="${ex.id}" title="Add">+</button></div></div>`).join(""):`<div style="font-size:12px;color:var(--faint);padding:10px 4px">${q?"No exercise matches.":"Nothing in this group yet."}</div>`;
-  cards.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); addExerciseToBuilder(b.getAttribute("data-add")); }));
-  cards.querySelectorAll(".wl-card").forEach(card=>wireDragSource(card,{kind:"lib",id:card.getAttribute("data-ex")}));
-}
-/* Drag engine (Pointer Events, no library). Mouse: drag at once. Touch: hold 280 ms, a tap stays a tap.
+  /* DD: PC - a vertical mouse wheel scrolls these rows sideways (touch already swipes) */
+  for(const row of [tabs,cards]){ if(row.__wheel) continue; row.__wheel=true; row.addEventListener("wheel",ev=>{ if(Math.abs(ev.deltaY)>Math.abs(ev.deltaX)&&row.scrollWidth>row.clientWidth){ row.scrollLeft+=ev.deltaY; ev.preventDefault(); } },{passive:false}); }
+}/* Drag engine (Pointer Events, no library). Mouse: drag at once. Touch: hold 280 ms, a tap stays a tap.
    Drop on the workout list inserts at the pointer's position; dragging a workout row reorders it. */
 let woDrag=null;
 function wireDragSource(el,payload){

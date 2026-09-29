@@ -49,6 +49,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
 | 51 | **DC** Forgot password / forgot which email | Half day + 1 dashboard step | Reset link → set-new-password screen; no account enumeration; email shown on Profile; custom SMTP before launch. |
 | 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (library in builder, drag, templates, sticky) | exercise-creation two-step left |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
@@ -165,6 +166,26 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DD. Builder library: search by muscle group, workout filter, PC scrolling, toggle chips
+
+Owner, 2026-09-25, from using DB:
+1. Search should match muscle groups - "Shoulders" lists every shoulder
+   exercise even without "shoulders" in the name.
+2. Workouts (templates) need a muscle-group filter too.
+3. The sideways rows swipe on a phone but do not scroll on a PC.
+4. Clicking a selected muscle group again should deselect it (back to All).
+**BUILT same day.** The library header is an **Exercises | Workouts**
+switch followed by **All** and the muscle-group chips - the chips now
+apply to both modes, counting what each mode holds. A second click on the
+selected chip returns to All. **Search** matches exercise name OR its
+muscle-group label; in Workouts it matches the workout's name, any of its
+exercise names, or any of their groups (wildcard slots count as their
+group). **PC:** a vertical mouse wheel scrolls the chip and card rows
+sideways, and a thin scrollbar shows where the pointer is a mouse
+(`pointer: fine`); touch behaviour unchanged.
 
 ---
 
