@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
 | 51 | **DC** Forgot password / which email - BUILT 2026-09-25 | 1 dashboard step (redirect URL); SMTP before launch |
-| 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (library in builder, drag, templates, sticky) | exercise-creation two-step left |
+| 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (three passes) | equipment tag not built |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
 | 47 | **CY** Achievements - BUILT 2026-09-22, catalogue v2 live (27, 26 approved), backfilled | level_up parked |
@@ -292,7 +292,17 @@ bucket and all of its exercises are copied in at that position (deep copy
 empty name becomes "<source> (copy)". The library panel is now **sticky**
 at the top of the builder, so on a long workout the cards stay in reach
 while the list scrolls under them - the practical half of the "phone
-tray". Left: the exercise-creation two-step (record reference now/later).
+tray".
+**Third pass 2026-09-25 - exercise creation.** Finding: "record the
+reference later" already worked (save with a name only; the builder
+shows "no ref"), so this pass makes the fast path obvious rather than
+adding a step. The editor's muscle group is **chips** (tap to set, tap
+again to clear) instead of a dropdown; **Save & add another** saves and
+reopens a blank editor with the name focused, for entering a batch
+(hidden when editing). The Library tab gains a **No reference N** chip
+(amber) beside Unlabelled - the tidy-up list the spec asked for - and its
+chips toggle back to All on a second click, like the builder's.
+Not built: an equipment tag (needs a column; ask before adding).
 
 ---
 

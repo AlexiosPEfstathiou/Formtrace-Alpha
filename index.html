@@ -1274,7 +1274,7 @@
       </div>
       <div class="field">
         <label for="in-mg">Muscle group</label>
-        <select id="in-mg"></select>
+        <select id="in-mg" style="display:none"></select><div id="in-mg-chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:6px">Lets you filter your library when building a workout, and lets trainees fill a "Wildcard" slot from this group.</div>
       </div>
       <div class="field" id="ex-ref-field">
@@ -1293,6 +1293,7 @@
     </div>
     <div class="fab-row">
       <button class="btn ghost sm" style="flex:0 0 auto;width:52px;color:var(--red)" id="ex-delete" title="Delete">🗑</button>
+      <button class="btn ghost" id="ex-save-next" style="flex:0 0 auto;width:auto;padding:0 14px" title="Save and start the next one">Save &amp; add another</button>
       <button class="btn primary" id="ex-save">Save to library</button>
     </div>
   </section>
@@ -5149,18 +5150,21 @@ function renderLibraryInto(el,list){
      fourteen chips where twelve return nothing is just noise. */
   const present=MUSCLE_GROUPS.filter(([k])=>list.some(x=>x.muscle_group===k));
   const unlabelled=list.filter(x=>!x.muscle_group).length;
-  if(present.length>1||unlabelled){
+  const noref=list.filter(x=>x.kind!=="interval"&&!hasRef(x)).length;   // DB: exercises still to record
+  if(present.length>1||unlabelled||noref){
     const bar=document.createElement("div");bar.className="mg-bar";
     bar.innerHTML=`<button class="mg-chip${libFilterMG===""?" on":""}" data-mg="">All ${list.length}</button>`
       +present.map(([k,l])=>`<button class="mg-chip${libFilterMG===k?" on":""}" data-mg="${k}">${escapeHtml(l)}</button>`).join("")
-      +(unlabelled?`<button class="mg-chip${libFilterMG==="__none"?" on":""}" data-mg="__none">Unlabelled ${unlabelled}</button>`:"");
+      +(unlabelled?`<button class="mg-chip${libFilterMG==="__none"?" on":""}" data-mg="__none">Unlabelled ${unlabelled}</button>`:"")
+      +(noref?`<button class="mg-chip${libFilterMG==="__noref"?" on":""}" data-mg="__noref" style="border-color:var(--amber);color:var(--amber)">No reference ${noref}</button>`:"");
     el.appendChild(bar);
     bar.querySelectorAll("[data-mg]").forEach(b=>b.addEventListener("click",()=>{
-      libFilterMG=b.getAttribute("data-mg");
+      { const v=b.getAttribute("data-mg"); libFilterMG=(v!==""&&libFilterMG===v)?"":v; }   // second click = back to All
       renderLibraryInto(el,list);
     }));
   }
   const shown = libFilterMG===""? list
+    : libFilterMG==="__noref" ? list.filter(x=>x.kind!=="interval"&&!hasRef(x))
     : libFilterMG==="__none" ? list.filter(x=>!x.muscle_group)
     : list.filter(x=>x.muscle_group===libFilterMG);
   el.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Movements</div><div class="eyebrow">${shown.length}</div></div>`);
@@ -5216,6 +5220,9 @@ async function openExEditor(id){
     mg.innerHTML=`<option value="">— choose a muscle group —</option>`
       +MUSCLE_GROUPS.map(([k,l])=>`<option value="${k}">${escapeHtml(l)}</option>`).join("");
     mg.value=(ex&&ex.muscle_group)||"";
+    /* DB: tap a chip to set the group, tap it again to clear */
+    const drawMg=()=>{ const box=$("#in-mg-chips"); if(!box) return; box.innerHTML=MUSCLE_GROUPS.map(([k,l])=>`<button type="button" class="mg-chip${mg.value===k?" on":""}" data-mgc="${k}">${escapeHtml(l)}</button>`).join(""); box.querySelectorAll("[data-mgc]").forEach(b=>b.addEventListener("click",()=>{ const k=b.getAttribute("data-mgc"); mg.value=(mg.value===k)?"":k; drawMg(); })); };
+    drawMg();
   }
   /* Item: timed interval exercises. The kind pill toggles which fields make
      sense — a walk/run exercise has no form to reference (no pose overlay
@@ -5235,6 +5242,7 @@ async function openExEditor(id){
   $("#in-kind-interval").onclick=()=>{ editingExKind="interval"; applyKindUI(); };
   applyKindUI();
   $("#ex-delete").style.display=ex?"flex":"none";
+  { const sn=$("#ex-save-next"); if(sn) sn.style.display=ex?"none":""; }
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-ex-edit").classList.add("active");   // latency: show the (already-populated) form immediately; only the ref-video card fills in after
   await updateRefCard(ex);
 }
@@ -5295,10 +5303,12 @@ $("#ex-save").addEventListener("click",async()=>{
     }else{
       await store.exercises.add({coach_id:ME.id,name,muscle_group:($("#in-mg")?.value||null)||null,ref_video_path:ref_video_path||null,landmarks:landmarks||null,kind:editingExKind});
     }
-    toast("Saved to library"); go("coach");
+    if(window.__exSaveNext){ window.__exSaveNext=false; toast(`Saved "${name}" - next one`,1800); await openExEditor(null); setTimeout(()=>{ const n=$("#in-name"); if(n) n.focus(); },60); }
+    else { toast("Saved to library"); go("coach"); }
   }catch(err){console.error(err);toast(err.message||"Couldn't save",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
+$("#ex-save-next").addEventListener("click",()=>{ window.__exSaveNext=true; $("#ex-save").click(); });   // DB: batch entry
 $("#ex-delete").addEventListener("click",async()=>{ if(!editingExId)return; await store.exercises.remove(editingExId); toast("Exercise removed"); go("coach"); });
 $("#btn-record-ref").addEventListener("click",()=>{
   openRecorder({title:"Reference",subtitle:"record correct form",review:true,audio:true,useLabel:"✓ Use this trace",onComplete:cap=>{
