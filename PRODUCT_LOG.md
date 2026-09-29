@@ -58,10 +58,10 @@ BE) are not tasks and are left out.
 | 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (three passes) | equipment tag not built |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
-| 47 | **CY** Achievements - BUILT 2026-09-22, catalogue v2 live (27, 26 approved), backfilled | level_up parked |
+| 47 | **CY** Achievements - BUILT, catalogue v2 live, backfilled; level_up approved 2026-09-25 | run 1-line SQL |
 | 46 | **CX** iPhone installation - BLOCKED (no iPhone to test on) | - |
-| 45 | **CW** Camera portrait mode (BT) scrapped - old code REMOVED 2026-09-21 | rebuild: define the bar first |
-| 44 | **CV** Goal video required - alternatives for social anxiety | Decision after CC | Optional-with-cost, lower bar (no face, 15 s, voice over photo), defer until first offer. |
+| 45 | **CW** Portrait mode / background blur - DROPPED 2026-09-25 | closed |
+| 44 | **CV** Goal video - DECIDED 2026-09-25: optional + "more offers" nudge | buildable |
 | 43 | **CU** Camera permission denied - BUILT 2026-09-21 | - | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
 | 42 | **CT** Connect - BUILT 2026-09-21 | - | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
 | 41 | **CS** Check-in photo - BUILT 2026-09-25 | - | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
@@ -164,7 +164,7 @@ strongest muscle (first measurements) · Hello Coach (first accepted video
 call) · Not quite done yet (second goal posted and an offer accepted) · I
 get it now (2 goals) · We are what we eat (7 macro days) · Weight cut /
 Bulk up (−5% / +5% from the first weight logged after a goal started).
-**Parked:** level_up - awaits the owner's answer on workout levels (CG).
+**level_up APPROVED (owner, 2026-09-25)** - earned when the coach assigns a workout at a higher level than before; run `update public.achievements set approved = true where code = 'level_up';`.
 Total 27, 26 approved. The `approved` flag is the only switch; nothing
 unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
@@ -453,6 +453,8 @@ found. Not started.
 
 ## CW. Camera "portrait mode" (background blur, item BT) - scrapped; start over
 
+**DECIDED (owner, 2026-09-25): DROPPED.** No background blur or portrait mode; the old code is already removed. Closed.
+
 Owner, 2026-09-21: "Camera portrait mode simply doesn't work well. Scrap
 it and start over." The BT build (MediaPipe selfie segmentation on every
 second frame, blurred camera composited under the person mask, "Blur bg"
@@ -490,6 +492,8 @@ flags; zero references remain.
 ---
 
 ## CV. Goal video is required - explore alternatives for the socially anxious
+
+**DECIDED (owner, 2026-09-25): make the goal video OPTIONAL, and show that goals with a video get more offers** (measure the real ratio and badge video goals for coaches). Buildable now.
 
 Requested 2026-09-20. Posting a goal requires a video pitch. For a first-
 time user with social anxiety that may be the moment they leave. Explore
