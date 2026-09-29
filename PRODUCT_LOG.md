@@ -1913,6 +1913,19 @@ Rewards for holders remain placeholders (own item later).
   three-month goal the take is ≈ €9 a month, so the credit returns more
   than half of it. Consider a cap (e.g. credit usable up to 50% of the
   next goal's service fee) when BI is built.
+- **Streak voucher rules (owner, 2026-09-25):** each €5 voucher is
+  **redeemable for 2 weeks** from the day it is earned, **only on a brand-new
+  goal** - never on the goal the trainee is currently committed to - and
+  it is **shareable**: the holder can give it to a friend, who uses it on
+  their own new goal within the same 2-week window.
+  Effect: for someone mid-commitment the voucher is in practice a gift
+  that brings a friend in, which also answers the economics note above -
+  it only costs money when it produces a new goal.
+  Proposed defaults, to confirm when BI is built: sharing goes to In
+  Touch friends (a knock-verified person, which limits self-gifting via
+  a second account); one voucher per goal, not stackable with a referral
+  voucher; a shared voucher keeps its original expiry; unused vouchers
+  simply lapse.
 
 Requested 2026-09-14. Two ladders to design, one framework to build.
 
