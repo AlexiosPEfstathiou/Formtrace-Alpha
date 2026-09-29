@@ -1901,9 +1901,18 @@ Rewards for holders remain placeholders (own item later).
 - **Streak ladder (on top of the achievements):** a voucher for **every
   completed month** of full weeks · a **collectible badge at 3 months** ·
   **merch at 6 months** · 12 months TBD.
-- Voucher amounts, the Partner fee discount and the 12-month reward are
-  still to set. Vouchers and fee discounts need BI (Stripe); the matrix
-  and the collectible badge can be built now.
+- **Amounts (owner, 2026-09-25):** referral vouchers **€20 / €50 / €100
+  off the next goal priced over €100** (Recruiter / Ambassador / Partner);
+  Partner's permanent trainee service fee **3.9%** (from 5.9%); streak
+  **€5 credit per completed month**, spent on the next goal. 12-month
+  reward still TBD. Vouchers, credit and the fee discount need BI
+  (Stripe); the matrix and the collectible badge can be built now.
+- Economics check (for BI): the platform's take is 5.9% + 11.9% ≈ 17.8%
+  of a goal. Referral vouchers are well covered by the goals the referrals
+  brought in. The €5 monthly credit is the one to watch - on a €150,
+  three-month goal the take is ≈ €9 a month, so the credit returns more
+  than half of it. Consider a cap (e.g. credit usable up to 50% of the
+  next goal's service fee) when BI is built.
 
 Requested 2026-09-14. Two ladders to design, one framework to build.
 
