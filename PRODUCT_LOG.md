@@ -36,7 +36,7 @@ BE) are not tasks and are left out.
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
 | 21 | **BW** Reward ladders - DECIDED 2026-09-25 (amounts open) | matrix + 3-month badge buildable; vouchers need BI |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
-| 23 | **BY** Top 1% rewards - DECIDED 2026-09-25: featured + fancy pitch border | buildable |
+| 23 | **BY** Top 1% rewards - BUILT 2026-09-25 (pitches first + gold frame) | - |
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
@@ -1859,6 +1859,14 @@ since local midnight / since Monday, minus the ones this coach has hidden
 a coach holds Top 1%: listed first in Find a coach, and their pitches
 (offers) carry a distinctive animated border wherever a trainee sees them.
 No money involved - buildable now.
+**BUILT 2026-09-25.** Finding: there is no "Find a coach" screen - trainees
+meet coaches only through the offers on their goals - so **featured
+placement = a Top 1% coach's pitch is listed first** among a goal's open
+offers (stable sort; otherwise unchanged). Their pitch rows, collapsed and
+expanded, sit in a **slowly moving gold frame** in the Top 1% badge's
+colours with a small "Top 1% coach" label; reduced-motion keeps it still.
+Reads `coach_streak_score.top1`, already loaded for offer badges - no SQL.
+If a coach directory is ever built, list Top 1% coaches first there too.
 
 Placeholder opened 2026-09-14 (from BX, by decision). What a coach gets
 for holding the 👑 Top 1% badge, beyond the badge itself. Candidates to

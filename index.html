@@ -655,6 +655,12 @@
   @keyframes top1-pulse{0%,100%{box-shadow:0 0 6px 1px rgba(255,200,60,.45);}50%{box-shadow:0 0 16px 4px rgba(255,180,20,.75);}}
   @keyframes top1-flare{0%{transform:scaleY(.85) scaleX(.96) translateY(1px);opacity:.75;}100%{transform:scaleY(1.25) scaleX(1.04) translateY(-3px);opacity:1;}}
   @media (prefers-reduced-motion: reduce){ .cbadge.top1, .cbadge.top1::before, .cbadge.top1::after{animation:none;} }
+  /* Item BY: a Top 1% coach's pitch - a slowly moving gold frame, the badge's colours, and a small label */
+  .top1-pitch{position:relative;border-radius:18px;padding:2px;margin-bottom:10px;background:linear-gradient(120deg,#FFD23F,#FFB300,#FFF3B0,#FFB300,#FFD23F);background-size:300% 100%;animation:top1-frame 6s linear infinite;}
+  .top1-pitch>*{border-radius:16px;margin-bottom:0!important;}
+  .top1-pitch::after{content:"Top 1% coach";position:absolute;top:-9px;right:14px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#3a2600;background:#FFD23F;border-radius:999px;padding:2px 8px;box-shadow:0 0 12px rgba(255,210,63,.55);}
+  @keyframes top1-frame{from{background-position:0% 50%;}to{background-position:300% 50%;}}
+  @media (prefers-reduced-motion: reduce){ .top1-pitch{animation:none;} }
   .cp-exp{font-size:14px;font-weight:700;color:var(--lime-dim);margin-top:4px;}
   .cp-bio{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px;}
   .cp-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
@@ -5994,6 +6000,7 @@ async function renderOffersTab(body){
   for(const e of engs){ if(e.offer_id) engByOffer[e.offer_id]=e; }
 
   const pending=offers.filter(o=>o.status==="pending"||o.status==="countered");   // Item CJ: a countered offer is still open
+  { const t1=o=>((coaches[o.coach_id]||{})._facts||{}).top1?1:0; pending.sort((a,b)=>t1(b)-t1(a)); }   // BY: Top 1% pitches first (stable - otherwise unchanged order)
   const rejected=offers.filter(o=>o.status==="rejected"||o.status==="expired");
   const accepted=offers.filter(o=>o.status==="accepted");
   traineeEngByOffer=engByOffer;   // CN-10: the expanded accepted row needs the engagement
@@ -6008,6 +6015,7 @@ async function renderOffersTab(body){
     const coachName=c.display_name||"Coach";
     const shortName=(()=>{const p=coachName.trim().split(/\s+/);return p.length>1?`${p[0]} ${p[1][0]}.`:p[0];})();
     const wrap=document.createElement("div");
+    if((c._facts||{}).top1) wrap.classList.add("top1-pitch");   // BY: the fancy border, collapsed and expanded
     if(expanded) expandOfferRow(wrap,o,c,shortName,coachName,true,true);
     else renderOfferRow(wrap,o,c,shortName,o.status==="pending",coachName,false);
     return wrap;
