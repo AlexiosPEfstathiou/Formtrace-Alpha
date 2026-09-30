@@ -1435,7 +1435,7 @@
       </div>
       <div class="field"><label>Details</label><textarea id="lst-details" placeholder="Where you're starting from, what you've tried, any constraints."></textarea></div>
       <div class="field">
-        <label>Goal video — required</label>
+        <label>Goal video · optional</label><div style="font-size:12px;color:var(--muted);line-height:1.45;margin:-2px 0 8px">Coaches pitch more precisely when they can see where you're starting - even 15 seconds helps. No face needed: film the movement you want to improve.</div>
         <div class="video-slot" id="lst-video-slot">
           <div class="vic">●</div><div class="vt">Record your goal</div>
           <div class="vs">Show coaches where you are and what you want. No attachments.</div>
@@ -6350,6 +6350,7 @@ function openListingNew(){
   $$("#lst-focus-pills .pill").forEach(p=>p.classList.remove("on"));
   if(listingPrefill&&listingPrefill.focus){ const pill=$$("#lst-focus-pills .pill").find(p=>p.textContent.trim()===listingPrefill.focus); if(pill){ pill.classList.add("on"); listingFocus=listingPrefill.focus; } }
   listingPrefill=null;
+  window.__lstNoVideoOk=false;
   const slot=$("#lst-video-slot"); slot.classList.remove("filled");
   slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your goal</div><div class="vs">Show coaches where you are and what you want. No attachments.</div>`;
 }
@@ -6364,11 +6365,12 @@ $("#lst-video-slot").addEventListener("click",()=>{
 $("#lst-post").addEventListener("click",async()=>{
   const title=$("#lst-title").value.trim();
   if(!title){toast("Give your goal a title");return;}
-  if(!pendingListingVideo){toast("Record your goal video first");return;}
+  if(!pendingListingVideo && !window.__lstNoVideoOk){ window.__lstNoVideoOk=true; toast("Posting without a video - coaches will see your text only. Tap Post again to confirm, or add a short video.",5000); return; }   /* CV: optional, one gentle nudge */
   const btn=$("#lst-post");btn.disabled=true;const o=btn.textContent;btn.textContent="Uploading…";
   try{
-    const path=await store.video.upload(pendingListingVideo.blob,"webm");
+    const path=pendingListingVideo?await store.video.upload(pendingListingVideo.blob,"webm"):null;
     await store.listings.add({trainee_id:ME.id,title,focus:listingFocus,details:$("#lst-details").value.trim(),pitch_video_path:path,status:"open"});
+    window.__lstNoVideoOk=false;
     toast("Goal posted ✓"); listingsTab="goals"; go("listings"); checkAchievementsAndPlay();
   }catch(err){console.error(err);toast(err.message||"Couldn't post",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
@@ -6437,7 +6439,7 @@ async function renderMarket(){
         <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(who)}</div><div style="font-size:11.5px;color:var(--faint)">${p.city?escapeHtml(p.city)+" · ":""}posted ${ago(l.created_at)}</div></div>
         <span class="badge trainee">${escapeHtml(l.focus||"General")}</span></div>
       <h3 style="font-size:17px;font-weight:800;margin-bottom:10px">${escapeHtml(l.title)}</h3>
-      <div class="video-card" data-video="${l.pitch_video_path}"></div>
+      ${l.pitch_video_path?`<div class="video-card" data-video="${l.pitch_video_path}"></div>`:`<div style="font-size:12px;color:var(--faint);border:1px dashed var(--line2);border-radius:12px;padding:10px 12px">No video - text only</div>`}
       ${l.details?`<p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:12px">${escapeHtml(l.details)}</p>`:""}
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line2)">
         <div style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--faint)">

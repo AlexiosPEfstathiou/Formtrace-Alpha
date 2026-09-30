@@ -62,7 +62,7 @@ BE) are not tasks and are left out.
 | 47 | **CY** Achievements - BUILT, catalogue v2 live, backfilled; level_up approved 2026-09-25 | run 1-line SQL |
 | 46 | **CX** iPhone installation - BLOCKED (no iPhone to test on) | - |
 | 45 | **CW** Portrait mode / background blur - DROPPED 2026-09-25 | closed |
-| 44 | **CV** Goal video - DECIDED 2026-09-25: optional + "more offers" nudge | buildable |
+| 44 | **CV** Goal video optional - BUILT 2026-09-25 | add the real offers ratio once data exists |
 | 43 | **CU** Camera permission denied - BUILT 2026-09-21 | - | Detect denied, show how to re-enable for that browser, Try again; never cache denied. |
 | 42 | **CT** Connect - BUILT 2026-09-21 | - | Handles on the profile; per-friend, per-network; receiver card with Open; revocable; empty handle = grey, disabled. |
 | 41 | **CS** Check-in photo - BUILT 2026-09-25 | - | Max camera constraints, native-size still, body guide ~92% height, consistent crop for the timelapse. |
@@ -518,7 +518,17 @@ flags; zero references remain.
 
 ## CV. Goal video is required - explore alternatives for the socially anxious
 
-**DECIDED (owner, 2026-09-25): make the goal video OPTIONAL, and show that goals with a video get more offers** (measure the real ratio and badge video goals for coaches). Buildable now.
+**DECIDED (owner, 2026-09-25): make the goal video OPTIONAL, and show that goals with a video get more offers** (measure the real ratio and badge video goals for coaches).
+**BUILT 2026-09-25.** The form reads "Goal video · optional" with one line of
+encouragement - coaches pitch more precisely when they can see where you're
+starting; 15 seconds is enough; no face needed, film the movement. Posting
+without a video asks once ("coaches will see your text only - tap Post again
+to confirm"), then posts with no video. Coaches' Open goals cards show the
+video or a dashed "No video - text only" marker. No SQL
+(`listings.pitch_video_path` was already nullable). **Deliberately not
+claimed yet:** "goals with a video get N× more offers" - there is no data;
+add the real ratio once enough goals exist (count offers per listing,
+split by video / no video).
 
 Requested 2026-09-20. Posting a goal requires a video pitch. For a first-
 time user with social anxiety that may be the moment they leave. Explore
