@@ -34,7 +34,7 @@ BE) are not tasks and are left out.
 | 18 | **BT** Background blur while recording - SCRAPPED 2026-09-21, see CW | - |
 | 19 | **BU** Alpha end-to-end test day | pack ready | docs/TEST_DAY.md: plan, pre-flight, both tick lists, seed goals. Run it; one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
-| 21 | **BW** Reward ladders - DECIDED 2026-09-25 (amounts open) | matrix + 3-month badge buildable; vouchers need BI |
+| 21 | **BW** Reward ladders - DECIDED; rewards matrix BUILT 2026-09-25 (with DG) | 3-month badge next; vouchers need BI |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
 | 23 | **BY** Top 1% rewards - BUILT 2026-09-25 (pitches first + gold frame) | - |
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 55 | **DG** Referral by QR code (QR = referral link + voucher, 2 in 1) | Half day | Branded QR card on Profile / matrix / voucher share; Web Share image; link text removed. |
+| 55 | **DG** Referral by QR - BUILT 2026-09-25 (referral half + BW matrix) | voucher QR after BI |
 | 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
 | 53 | **DE** Exercise equipment tag - LOW PRIORITY | Small | Second chip row + builder filter; exercises.equipment. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
@@ -195,6 +195,20 @@ card, the BW rewards matrix beside it, the streak voucher share (BW).
   cdnjs/jsDelivr, loaded only when the card opens - the app already loads
   MediaPipe that way) or a hand-rolled one; no server work.
 Buildable now (the voucher half waits on BI). Estimate: half a day.
+**BUILT 2026-09-25 (referral half).** Profile's "Invite a friend" card is
+now a QR: dark modules on white (scans on every phone - the owner's
+preview showed inverted lime-on-dark is unreliable on older scanners),
+inside a lime frame with the FT mark in the centre (error correction H),
+the user's name, and "Scan to join FormTrace with me". **Share** draws a
+720×960 invite image (wordmark, QR, name, line) and sends it through the
+Web Share API with the link in the text; falls back to sharing the link,
+then to copying it. **Copy link** remains; the link text is no longer
+shown. Encoder: qrcodejs 1.0.0 from cdnjs, loaded only when the card
+opens; offline it says so and points to Copy link. The **rewards matrix**
+(BW) sits under the QR - trainees: Recruiter €20 off a goal over €100 ·
+Ambassador €50 off + merch · Partner €100 off + merch + 3.9% fee for good;
+coaches: their commission tiers - with tiers already earned ticked and the
+next target highlighted from `referral_stats`. Voucher QR (`&v=`) waits on BI.
 
 ---
 

@@ -656,6 +656,12 @@
   @keyframes top1-flare{0%{transform:scaleY(.85) scaleX(.96) translateY(1px);opacity:.75;}100%{transform:scaleY(1.25) scaleX(1.04) translateY(-3px);opacity:1;}}
   @media (prefers-reduced-motion: reduce){ .cbadge.top1, .cbadge.top1::before, .cbadge.top1::after{animation:none;} }
   /* Item BY: a Top 1% coach's pitch - a slowly moving gold frame, the badge's colours, and a small label */
+  /* Item DG: referral QR - dark modules on white inside the card (scans on every phone), FormTrace mark in the centre */
+  .ref-qr-wrap{position:relative;width:204px;height:204px;margin:4px auto 10px;padding:14px;background:#fff;border-radius:16px;border:2px solid var(--lime);box-sizing:border-box;}
+  .ref-qr{width:172px;height:172px;} .ref-qr canvas,.ref-qr img{width:172px!important;height:172px!important;display:block;}
+  .ref-qr-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:10px;background:#0B0E11;color:#C8FF3D;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;}
+  .ref-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;} .ref-tier{border:1px solid var(--line2);border-radius:11px;padding:8px 6px;text-align:center;font-size:11px;color:var(--muted);line-height:1.35;display:flex;flex-direction:column;gap:2px;} .ref-tier b{color:var(--ink);font-size:12px;} .ref-tier .rn{color:var(--faint);}
+  .ref-tier.next{border-color:var(--lime);background:var(--panel2);} .ref-tier.done{border-color:var(--lime);} .ref-tier.done b::after{content:" ✓";color:var(--lime);}
   .top1-pitch{position:relative;border-radius:18px;padding:2px;margin-bottom:10px;background:linear-gradient(120deg,#FFD23F,#FFB300,#FFF3B0,#FFB300,#FFD23F);background-size:300% 100%;animation:top1-frame 6s linear infinite;}
   .top1-pitch>*{border-radius:16px;margin-bottom:0!important;}
   .top1-pitch::after{content:"Top 1% coach";position:absolute;top:-9px;right:14px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#3a2600;background:#FFD23F;border-radius:999px;padding:2px 8px;box-shadow:0 0 12px rgba(255,210,63,.55);}
@@ -11196,14 +11202,35 @@ async function wireCertCard(){
     });
   });
 }
+/* ---- Item DG: referral by QR. The QR carries the same ?ref= link (BN); a voucher share will add &v=<token> (BW, after BI). */
+let qrLibP=null;
+function loadQrLib(){ if(window.QRCode) return Promise.resolve(); if(qrLibP) return qrLibP; qrLibP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.onload=()=>res(); s.onerror=()=>{ qrLibP=null; rej(new Error("QR library failed to load")); }; document.head.appendChild(s); }); return qrLibP; }
+async function renderQrInto(el,text){ await loadQrLib(); el.innerHTML=""; new QRCode(el,{text,width:344,height:344,colorDark:"#0B0E11",colorLight:"#FFFFFF",correctLevel:QRCode.CorrectLevel.H}); }
+async function referralShareImage(link,name){
+  const qrEl=document.createElement("div"); await renderQrInto(qrEl,link); const src=qrEl.querySelector("canvas"); if(!src) return null;
+  const W=720,H=960, cv=document.createElement("canvas"); cv.width=W; cv.height=H; const g=cv.getContext("2d");
+  g.fillStyle="#0B0E11"; g.fillRect(0,0,W,H);
+  g.fillStyle="#C8FF3D"; g.font="900 34px system-ui,sans-serif"; g.textAlign="center"; g.fillText("FORMTRACE · COACH",W/2,110);
+  const box=440, x=(W-box)/2, y=170; g.fillStyle="#C8FF3D"; g.beginPath(); g.roundRect(x-8,y-8,box+16,box+16,34); g.fill(); g.fillStyle="#FFFFFF"; g.beginPath(); g.roundRect(x,y,box,box,28); g.fill();
+  g.imageSmoothingEnabled=false; g.drawImage(src,x+40,y+40,box-80,box-80);
+  g.fillStyle="#0B0E11"; g.beginPath(); g.roundRect(W/2-44,y+box/2-44,88,88,18); g.fill(); g.fillStyle="#C8FF3D"; g.font="900 30px system-ui,sans-serif"; g.fillText("FT",W/2,y+box/2+11);
+  g.fillStyle="#EEF3F6"; g.font="800 40px system-ui,sans-serif"; g.fillText(name||"",W/2,y+box+90);
+  g.fillStyle="#8593A0"; g.font="400 28px system-ui,sans-serif"; g.fillText("Scan to train with me on FormTrace",W/2,y+box+140);
+  return await new Promise(r=>cv.toBlob(b=>r(b?new File([b],"formtrace-invite.png",{type:"image/png"}):null),"image/png"));
+}
+function markReferralTiers(q){ const tiers=[...document.querySelectorAll("#ref-matrix .ref-tier")]; let nextSet=false; for(const t of tiers){ const n=+t.getAttribute("data-tier"); t.classList.toggle("done",q>=n); if(q<n&&!nextSet){ t.classList.add("next"); nextSet=true; } else t.classList.remove("next"); } }
 async function wireReferralCard(){
   const card=$("#ref-card"); if(!card||!ME) return;
   const link=$("#ref-link").value;
+  { const q=$("#ref-qr"); if(q) renderQrInto(q,link).catch(e=>{ console.error("referral QR",e); q.innerHTML=`<div style="font-size:11px;color:#0B0E11;padding:60px 8px;text-align:center">QR unavailable offline - use Copy link</div>`; }); }   // Item DG
   $("#ref-copy")?.addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(link); toast("Link copied ✓",1500); }catch(e){ $("#ref-link").select(); toast("Long-press the link to copy",2500); } });
-  $("#ref-share")?.addEventListener("click",()=>{ navigator.share({title:"Train with me on FormTrace",text:"Join me on FormTrace Coach:",url:link}).catch(()=>{}); });
+  $("#ref-share")?.addEventListener("click",async()=>{   // Item DG: share the QR card as an image; the link rides in the text for anyone who cannot scan
+    try{ const f=await referralShareImage(link,ME.display_name||""); if(f&&navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:"Train with me on FormTrace",text:"Scan the code, or open: "+link}); return; } }catch(e){ if(e&&e.name==="AbortError") return; console.error("share QR",e); }
+    if(navigator.share){ navigator.share({title:"Train with me on FormTrace",text:"Join me on FormTrace Coach:",url:link}).catch(()=>{}); } else { try{ await navigator.clipboard.writeText(link); toast("Link copied ✓",1500); }catch(e){} } });
   try{
     const { data, error } = await store._sb.rpc("referral_stats",{p_user:ME.id}); if(error) throw error;
     const s=data||{}; const el=$("#ref-stats"); if(!el) return;
+    markReferralTiers(s.qualified||0);   // Item DG/BW: highlight what is earned and the next target
     el.innerHTML=`<b style="color:var(--ink)">${s.signups||0}</b> joined through your link · <b style="color:var(--ink)">${s.qualified||0}</b> trainee${(s.qualified||0)===1?"":"s"} completed a goal${s.coaches_referred?` · <b style="color:var(--ink)">${s.coaches_referred}</b> became coach${s.coaches_referred===1?"":"es"}`:""}`
       +(s.title?` · ${referralTierBadge(s)}`:"")
       +(s.next_at?`<div style="margin-top:4px;color:var(--faint)">${s.next_at-(s.qualified||0)} more qualified referral${(s.next_at-(s.qualified||0))===1?"":"s"} to ${s.next_at===3?"Recruiter":s.next_at===10?"Ambassador":"Partner"}</div>`:"");
@@ -11335,10 +11362,15 @@ async function renderProfile(){
   // Item AY: the "Availability for calls" section is gone - proposing no longer depends on declared hours.
   /* Item BN: the coach's referral link. Counts are filled in async below. */
   { // Item BN: coaches AND trainees can refer
-    html+=`<div class="section-h"><div class="eyebrow">Your referral link</div></div>
+    html+=`<div class="section-h"><div class="eyebrow">Invite a friend</div></div>
     <div class="card" style="margin:0 0 12px" id="ref-card">
       <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Trainees who join through this link count toward your referral tier once they <b>complete a coaching goal</b> - accepting and then cancelling doesn't count. ${roleOf()==="coach"?"Tiers lower your commission: Ambassador 8.9%, Partner 5.9%.":"Tiers unlock vouchers and merch once payments launch."} Coaches you bring are recorded too, but tiers count trainees only.</div>
-      <div style="display:flex;gap:8px;align-items:center"><input id="ref-link" readonly class="ro" style="flex:1;font-size:12px" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}"><button class="btn sm" id="ref-copy" style="width:auto">Copy</button>${navigator.share?`<button class="btn sm ghost" id="ref-share" style="width:auto">Share</button>`:""}</div>
+      <input id="ref-link" type="hidden" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}">
+        <div class="ref-qr-wrap"><div id="ref-qr" class="ref-qr"></div><div class="ref-qr-logo">FT</div></div>
+        <div style="text-align:center;font-weight:800;font-size:15px">${escapeHtml(ME.display_name||"")}</div>
+        <div style="text-align:center;font-size:11.5px;color:var(--faint);margin-bottom:10px">Scan to join FormTrace with me</div>
+        <div class="ref-matrix" id="ref-matrix">${(roleOf()==="coach"?[[3,"Recruiter","Badge"],[10,"Ambassador","Commission 8.9%"],[25,"Partner","Commission 5.9%"]]:[[3,"Recruiter","€20 off a goal over €100"],[10,"Ambassador","€50 off + merch"],[25,"Partner","€100 off + merch + fee 3.9% for good"]]).map(([n,t,r])=>`<div class="ref-tier" data-tier="${n}"><b>${t}</b><span class="rn">${n} friends</span><span>${r}</span></div>`).join("")}</div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm primary" id="ref-share" style="flex:1;width:auto">Share</button><button class="btn sm ghost" id="ref-copy" style="width:auto">Copy link</button></div>
       <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
 
     </div>`;
