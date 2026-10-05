@@ -3256,7 +3256,7 @@ function renderAppTabs(current){
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
   if(pwRecovery){ pwRecovery=false; setTimeout(openSetNewPassword,100); }   // Item DC: arrived from a reset link
-  if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); }   // Item CY: catch-up once per session
+  if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); checkStreakBadgeLevelUp(); }   // Item CY catch-up; Item BW level-up animation
   try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
 }
 /* CR-5: swipe left / right between tabs. Only when the tab bar is showing, no overlay or
@@ -4187,6 +4187,31 @@ async function renderSoloCalendar(card){
     card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="eyebrow">Your days · last 5 weeks</div><div style="font-size:12px;color:var(--muted)">${n} day${n===1?"":"s"} logged</div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);font-size:10px;color:var(--faint);text-align:center;margin-bottom:2px">${["M","T","W","T","F","S","S"].map(x=>`<div>${x}</div>`).join("")}</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells}</div><div style="font-size:11px;color:var(--faint);margin-top:8px">🍽 macros or weight logged · 📷 check-in photo. Assigned workouts appear here once you have a coach.</div>`;
   }catch(e){ card.remove(); }
 }
+/* ---- Item BW: the Consistency badge - one badge, a level per 13 complete weeks, highest kept, friends-only ---- */
+const SB_TIERS=[null,["🥉","Bronze","#CD7F32"],["🥈","Silver","#C0C7CF"],["🥇","Gold","#F0D231"],["🏆","Platinum","#9FE7F5"],["💎","Diamond","#7FD3FF"]];
+function sbTier(l){ if(!(l>0)) return null; if(l<=5) return SB_TIERS[l]; return ["💎",`Diamond ×${l-4}`,"#7FD3FF"]; }
+async function renderStreakBadgeRow(holder,uid,isFriend){
+  if(!holder) return;
+  let row=null; try{ const { data }=await store._sb.from("streak_badges").select("level,best_weeks,reached_at").eq("user_id",uid).maybeSingle(); row=data; }catch(e){}
+  const lvl=(row&&row.level)||0; const t=sbTier(lvl);
+  if(isFriend&&!t) return;
+  const cur=isFriend?null:(ME.week_streak_count||0); const nextAt=(lvl+1)*13; const nt=sbTier(lvl+1);
+  const ic=t?t[0]:"🥉", col=t?t[2]:"var(--line2)";
+  const title=t?`${t[1]} consistency`:"Consistency badge";
+  const sub=isFriend?`${lvl*3} months of complete weeks`
+    : t?`${lvl*3} months of complete weeks · next: ${nt[1]} at ${nextAt} weeks${cur!=null?` (you're at ${cur})`:""}`
+       :`Bronze at 13 complete weeks in a row${cur!=null?` - you're at ${cur}`:""}`;
+  const card=document.createElement("div"); card.className="card"; card.style.cssText=isFriend?"margin-top:12px":"margin:0 0 12px";
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:50%;border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-size:22px;${t?`box-shadow:0 0 14px ${col}55`:"filter:grayscale(1);opacity:.45"}">${ic}</div><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14px">${escapeHtml(title)}</div><div style="font-size:11.5px;color:var(--muted);line-height:1.4">${escapeHtml(sub)}</div></div></div>`;
+  holder.appendChild(card);
+}
+async function checkStreakBadgeLevelUp(){
+  try{ const { data }=await store._sb.from("streak_badges").select("level,seen_level").eq("user_id",ME.id).maybeSingle();
+    if(!data||!(data.level>data.seen_level)) return; const t=sbTier(data.level); if(!t) return;
+    playUnlock({icon:t[0],title:`${t[1]} consistency`,blurb:`${data.level*3} months of complete weeks`,family:"Discipline"});
+    await store._sb.rpc("mark_streak_badge_seen");
+  }catch(e){}
+}
 /* ---- Item CY: Achievements - friends-only, never public --------------------------------
    Catalogue in `achievements`; earned rows in `user_achievements`; awarding is server-side
    (`check_achievements`), called on sign-in and after the user's own earning actions, and
@@ -4203,6 +4228,7 @@ async function renderProfileAchievements(target){
   const cat=await loadAchievementCatalogue(); if(!cat.length) return;
   let earned={}; try{ const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",ME.id); for(const r of (data||[])) earned[r.code]=r.earned_at; }catch(e){}
   const n=Object.keys(earned).length;
+  { const sbh=document.createElement("div"); target.appendChild(sbh); renderStreakBadgeRow(sbh,ME.id,false); }   // Item BW: Consistency badge
   const card=document.createElement("div"); card.className="card"; card.style.margin="0 0 12px"; card.id="pf-achievements";
   /* DH: collapsed by default - a single row; tap to open the grid */
   card.innerHTML=`<button type="button" id="pf-ach-toggle" aria-expanded="false" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer"><span style="font-size:20px">🏅</span><span style="flex:1"><span class="eyebrow" style="display:block">Achievements</span><span style="font-size:12px;color:var(--muted)">${n} of ${cat.length} earned · visible to friends only</span></span><span id="pf-ach-chev" style="color:var(--faint);font-size:16px;transition:transform .2s">▸</span></button><div id="pf-ach-grid" style="display:none;margin-top:12px">${achGridHtml(cat,earned,false)}</div>`;
@@ -4347,6 +4373,7 @@ function renderInTouchPerson(uid,connId,p,wins){
   const list=document.createElement("div"); list.className="card";
   list.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Wins · newest first</div>`+(wins.length?wins.map(ev=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line2)"><span style="font-size:18px">${ev.kind==="pb"?"🏆":ev.kind==="achievement"?"🏅":"🎯"}</span><div style="flex:1;min-width:0"><div style="font-size:13.5px">${escapeHtml(ev.text)}</div><div style="font-size:11px;color:var(--faint)">${escapeHtml(fmtDay(String(ev.at).slice(0,10)))}${String(ev.at).slice(0,10)>=thisMon?" · this week":""}</div></div>${ev.congratulated?`<span style="font-size:12px;color:var(--lime);font-weight:700">👏 sent</span>`:`<button class="btn sm" data-congrat="${uid}" data-kind="${ev.kind}" data-ref="${escapeHtml(ev.ref)}" data-text="${escapeHtml(ev.text)}" style="width:auto">Congratulate</button>`}</div>`).join(""):`<div style="font-size:12.5px;color:var(--faint)">No PBs or completed goals since you connected.</div>`);
   body.appendChild(list); wireCongrats(list); hydrateAvatars(body);
+  { const sbh=document.createElement("div"); body.appendChild(sbh); renderStreakBadgeRow(sbh,uid,true); }   // Item BW: their Consistency badge
   /* Item CY: this friend's achievements, compact (friends-only by policy) */
   (async()=>{ try{ const cat=await loadAchievementCatalogue(); const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",uid); const earned={}; for(const r of (data||[])) earned[r.code]=r.earned_at; if(!Object.keys(earned).length) return; const ac=document.createElement("div"); ac.className="card"; ac.style.marginTop="12px"; ac.innerHTML=`<div class="eyebrow" style="margin-bottom:8px">Achievements · ${Object.keys(earned).length}</div>`+achGridHtml(cat,earned,true); body.appendChild(ac); }catch(e){} })();
   /* Item CT: handles this friend shared with me */

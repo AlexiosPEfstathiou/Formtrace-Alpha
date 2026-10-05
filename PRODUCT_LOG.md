@@ -34,7 +34,7 @@ BE) are not tasks and are left out.
 | 18 | **BT** Background blur while recording - SCRAPPED 2026-09-21, see CW | - |
 | 19 | **BU** Alpha end-to-end test day | pack ready | docs/TEST_DAY.md: plan, pre-flight, both tick lists, seed goals. Run it; one item per finding. |
 | 20 | **BV** Referral tier requirements - DONE 2026-09-14 | - | Tiers count referred trainees only; coaches referred tracked separately (approved); rewards differ by referrer role. |
-| 21 | **BW** Reward ladders - DECIDED; rewards matrix BUILT 2026-09-25 (with DG) | 3-month badge next; vouchers need BI |
+| 21 | **BW** Reward ladders - DECIDED; matrix + Consistency badge BUILT 2026-09-25 | vouchers, merch, fee discount need BI; 12-month reward TBD |
 | 22 | **BX** Coach Top 1% badge - BUILT 2026-09-14 | rewards TBD | Min one holder; golden aura animation; Profile standing card. |
 | 23 | **BY** Top 1% rewards - BUILT 2026-09-25 (pitches first + gold frame) | - |
 | 24 | **BZ** Coach homepage "X new goals posted today" - DONE 2026-09-16 | - | Tappable line; weekly fallback; generic line at zero. |
@@ -1982,6 +1982,18 @@ Rewards for holders remain placeholders (own item later).
   three-month goal the take is ≈ €9 a month, so the credit returns more
   than half of it. Consider a cap (e.g. credit usable up to 50% of the
   next goal's service fee) when BI is built.
+- **Consistency badge (the "3-month collectible") - BUILT 2026-09-25**
+  (`migrations_streak_badge.sql`). Owner chose *one badge that levels up
+  every 3 months*: level = floor(complete-week streak / 13) - 🥉 Bronze 3
+  months · 🥈 Silver 6 · 🥇 Gold 9 · 🏆 Platinum 12 · 💎 Diamond 15, then
+  Diamond ×2… The **highest level is kept** - a broken streak never takes
+  a level away (that is what makes it collectible). A trigger on
+  `profiles.week_streak_count` raises the level and writes a push; the
+  client plays the unlock animation on the next sign-in
+  (`seen_level`). Friends-only (RLS like achievements). Profile shows the
+  badge row with progress to the next level ("next: Gold at 39 weeks -
+  you're at 30"), greyed before Bronze; a friend's Social page shows it
+  once earned. Backfill marks current levels as seen.
 - **Streak voucher rules (owner, 2026-09-25):** each €5 voucher is
   **redeemable for 2 weeks** from the day it is earned, **only on a brand-new
   goal** - never on the goal the trainee is currently committed to - and
