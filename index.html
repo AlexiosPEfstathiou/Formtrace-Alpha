@@ -4204,7 +4204,9 @@ async function renderProfileAchievements(target){
   let earned={}; try{ const { data }=await store._sb.from("user_achievements").select("code,earned_at").eq("user_id",ME.id); for(const r of (data||[])) earned[r.code]=r.earned_at; }catch(e){}
   const n=Object.keys(earned).length;
   const card=document.createElement("div"); card.className="card"; card.style.margin="0 0 12px"; card.id="pf-achievements";
-  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="eyebrow">Achievements</div><div style="font-size:12px;color:var(--muted)">${n} of ${cat.length} · visible to friends only</div></div>`+achGridHtml(cat,earned,false);
+  /* DH: collapsed by default - a single row; tap to open the grid */
+  card.innerHTML=`<button type="button" id="pf-ach-toggle" aria-expanded="false" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer"><span style="font-size:20px">🏅</span><span style="flex:1"><span class="eyebrow" style="display:block">Achievements</span><span style="font-size:12px;color:var(--muted)">${n} of ${cat.length} earned · visible to friends only</span></span><span id="pf-ach-chev" style="color:var(--faint);font-size:16px;transition:transform .2s">▸</span></button><div id="pf-ach-grid" style="display:none;margin-top:12px">${achGridHtml(cat,earned,false)}</div>`;
+  card.querySelector("#pf-ach-toggle").addEventListener("click",()=>{ const gr=card.querySelector("#pf-ach-grid"), open=gr.style.display==="none"; gr.style.display=open?"":"none"; card.querySelector("#pf-ach-chev").style.transform=open?"rotate(90deg)":""; card.querySelector("#pf-ach-toggle").setAttribute("aria-expanded",open?"true":"false"); });
   target.appendChild(card);
   card.querySelectorAll("[data-ach]").forEach(el=>el.addEventListener("click",()=>{ const a=cat.find(x=>x.code===el.getAttribute("data-ach")); if(!a) return; toast(`${a.icon} ${a.title} - ${a.blurb}${earned[a.code]?` · earned ${fmtDay(String(earned[a.code]).slice(0,10))}`:""}`,3500); }));
 }

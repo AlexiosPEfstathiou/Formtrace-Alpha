@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 56 | **DH** Achievements on Profile collapsed by default - BUILT 2026-09-25 | - |
 | 55 | **DG** Referral by QR - BUILT 2026-09-25 (referral half + BW matrix) | voucher QR after BI |
 | 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
 | 53 | **DE** Exercise equipment tag - LOW PRIORITY | Small | Second chip row + builder filter; exercises.equipment. |
@@ -171,6 +172,17 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DH. Achievements on Profile collapsed by default
+
+Owner, 2026-09-25: "Make achievements a button in the profile that expands
+when you click it. I don't want them occupying space by default."
+**BUILT same day.** The Achievements card is one row - 🏅, "Achievements",
+"N of M earned · visible to friends only", a chevron - and tapping it opens
+the grid (and closes it again). Always starts collapsed. The friend's
+compact row in Social is unchanged.
 
 ---
 
