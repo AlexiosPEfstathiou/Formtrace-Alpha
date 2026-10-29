@@ -1,106 +1,92 @@
-# FormTrace Coach — Alpha test day pack
+# FormTrace — Test day (v2, pilot readiness)
 
-*Items BU (test day) and BP (seed goals). Print, or open on a second screen.*
+Two phones: **C** = a coach account, **T** = a trainee account (Android, app installed
+from Chrome). Optional third phone **F** = a second trainee, for Social.
+Work top to bottom; each step depends on the ones before it.
+For every failure: take a **screenshot** first, then open **Review → Client errors**
+(admin) - the message there now includes the database's own error text.
 
----
-
-## 1. The plan
-
-**Who plays whom.** Two testers, two phones. One is the **coach** for the whole day, the other the **trainee**. Do not swap mid-way — half the bugs live in the hand-off between roles, and swapping hides them. The project owner runs a third device as **admin** (approvals, badges, certifications).
-
-**Before the day (owner, ~20 min).**
-- Run every pending SQL from the product log (badges, top1, platform_rates, referral trainees-only, cert seen, call meeting url, video trim, offer start date, committed length, recurring calls, propose any time).
-- Confirm both phones open the live URL and can grant camera + microphone.
-- Post the **five seed goals** from section 4 from the trainee phone (or a second trainee account) so the coach's first Open goals tab is not empty. Time how long each takes — that is a finding too.
-- Decide the two accounts' names; the trainee should sign up through the coach's **referral link** as the very first step so BN gets exercised.
-
-**Rules of the day.**
-- Follow the lists top to bottom. The order is the real order of a goal's life.
-- Tick each line as **✓ worked**, **~ worked but odd**, or **✗ failed**, and write one line in Notes in your own words. Do not diagnose — describe what you saw and expected.
-- Read the "not yet testable" list out loud at the start so nobody reports payments or automatic Meet links as bugs.
-- Every ✗ and every ~ becomes one product-log item, with the tester's words.
-
-**Not yet testable — say it out loud:** payments and any money moving (BI), automatic Google Meet creation (the link is pasted), push reminders, iOS install, the Android app (AD), NFC (AE), and background blur on a phone you have not tried it on before (BT — try it, but treat frame-rate as the thing to observe, not a pass/fail).
-
-**Timing.** Trainee list ≈ 2 h with a real set in it; coach list ≈ 1.5 h; they interleave (the coach cannot review before the trainee submits). Plan a half day.
+**Before you start (once):** all migrations run (see the list at the end); push is on
+for both phones (**Settings → Notifications → Push notifications**); during the pilot
+the platform fee is 0 (`platform_rates`, see DK).
 
 ---
 
-## 2. Trainee checklist
+## 1. First run and navigation
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 1.1 | T | Sign up fresh | Lands on Home. Header: avatar left, gear + streak right. Tabs: Home · Training · Goal · Notifications · Social |
+| 1.2 | C | Sign in | Tabs: Home · Library · Open goals · Trainees · Social (+ Review if admin) |
+| 1.3 | T | Swipe left/right on the content | Moves between tabs |
+| 1.4 | T | Open **Training** with no coach | "No coach yet" card + Post a goal; **Your days** calendar; macros, weight, check-in, measurements cards |
+| 1.5 | T | Sign out → **Forgot password?** | Reset card; "If … has an account, a link is on its way"; the email link opens **Set a new password** |
+| 1.6 | T | Profile | "Signed in as … - this is your login"; Achievements is one collapsed row; Consistency badge row (grey) |
 
-| # | Step | Where | ✓ / ~ / ✗ | Notes |
-|---|------|-------|-----------|-------|
-| 1 | Sign up **through the coach's referral link**; see "You joined through …'s link"; age + consent gate; profile photo; theme, colourblind mode | Sign-in, Profile | | |
-| 2 | Post a goal: title, focus, details, **1 session per week** (it is a test - the coach will offer a **1-week** goal), **video pitch** (required) | Open goals → Post | | |
-| 3 | Receive an offer (**1 week, 1 session, €100 before fees**): pitch video plays; coach's **badges + rating** shown on the card; Length "1 week", Sessions "1 session (1 / week)", **Dates** on one line, **Price "€105.90 (€105.90 / session · includes the 5.9% service fee)"** | Offers tab | | |
-| 4 | Accept it: confirmation states weeks and the maximum; other offers auto-declined; goal closes | Offers tab | | |
-| 5 | Training tab (merged calendar): This week card — X of N, days to close; **Start a session** → week pool → pick a workout | Training | | |
-| 6 | Record a set: 3-2-1 timer or open-palm trigger; skeleton overlay visible; **trim start/end** on the review; Use this trace | Recorder | | |
-| 7 | Set result: reps counted; correct with +/−; weight; **form match line** when the exercise has a reference; last-time comparison | Set complete | | |
-| 8 | Try **Blur bg** on one set: does the recording blur behind you? Does the phone get warm / stutter? Note the phone model | Recorder | | |
-| 9 | Wildcard slot (pick from the coach's library); skip a workout with a reason; exit mid-workout and come back (draft restored?) | Workout | | |
-| 10 | Macros: log a day; see the coach's weekly goal and live %; dashboard bars and goal line | Training → day tap; Dashboard | | |
-| 11 | Check-in photo (Saturday/Sunday window — if not that day, note that the prompt is correctly absent); calendar day glistens; lightbox on the photo; measurements | Home, Training, Profile | | |
-| 12 | Personal bests and dashboard: streak squares, week streak badge, milestone celebration + share image ("weeks", not "days") | Dashboard | | |
-| 13 | Video call: **Propose a call** (one-time AND recurring); accept / decline / suggest another; **Join call** from card, calendar day, homepage; Withdraw a proposal | Training → Video call card | | |
-| 14 | Receive a review: tags per set; written feedback; **voice-over** plays with the clip; rate the coach | Review | | |
-| 15 | Day notes with a video attachment; read the coach's day note | Training → day | | |
-| 16 | Vacation: set a range; streak neutral; at-risk copy stays quiet | Profile / Training | | |
-| 17 | Goal completion: outcome recorded; calendar and streak afterwards; goal in history; the referrer's Profile shows "1 trainee completed a goal" | Training, Profile | | |
-| 18 | Profile: referral card — Copy and Share work; counts; the card says tiers unlock **vouchers and merch** | Profile | | |
-| 19 | Install as an app: **Profile → Install** (Chrome shows no banner - the app suppresses it on purpose). Must be a **normal Chrome window, not Incognito**, and opened in the Chrome app itself, not from a link inside WhatsApp/Teams. Offline banner behaviour | Profile → Install | | |
+## 2. Coach setup
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 2.1 | C | Library → new exercise; tap a muscle-group chip; **Save & add another** | Saves, blank editor reopens with the name focused |
+| 2.2 | C | Library chips | "Unlabelled N", amber "No reference N"; second tap on a chip returns to All |
+| 2.3 | C | New workout | Library panel inside the builder (sticky): Exercises/Workouts switch, group chips, search |
+| 2.4 | C | Search "shoulders" | Every Shoulders exercise, whatever its name |
+| 2.5 | C | Drag a card into the workout (hold on touch); drag ☰ to reorder; drag a row out | Lime insertion line; order changes; row removed. Header "N exercises · N sets · ~N min" |
+| 2.6 | C | **+** on a card; on PC scroll the rows with the mouse wheel | Card added; rows scroll sideways |
+| 2.7 | C | Workouts tab → **+** a saved workout | All its exercises copied in; name "<source> (copy)" |
+| 2.8 | C | Profile → **Invite a friend** | QR (dark on white, lime frame, FT mark) scans with another phone; matrix shows commission tiers; Share sends an image |
 
----
+## 3. Goal, offers, acceptance
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 3.1 | T | Post a goal **without** a video | First tap: "Posting without a video… tap Post again"; second tap posts. Achievement "The first step is the hardest" plays |
+| 3.2 | C | Open goals → the new goal | "No video - text only" marker; pitch it with the agreed pilot price |
+| 3.3 | T | Push arrives (status-bar icon = **FT**, not a white box) → Goal tab | The offer; a Top 1% coach's pitch is first and gold-framed |
+| 3.4 | T | **Propose a change** | C gets the amber box + push; C answers; T gets the result |
+| 3.5 | T | Accept | Goal Accepted; C gets a push |
 
-## 3. Coach checklist
+## 4. Payment (pilot - direct to the coach)
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 4.1 | T | Accepted goal → Payment card | Map: Accepted ✓ · Deposit (dashed, struck, "pilot") · Paid · Training · Complete. No coach details yet → **I've paid** disabled, **Ask for details**, **Cancel goal** |
+| 4.2 | T | **Ask for details** | C gets "is ready to pay you" push |
+| 4.3 | C | Trainee screen → Payment → "Add how trainees pay you" → Save | Details saved |
+| 4.4 | T | Refresh | Details shown; **I've paid** enabled → tap it | 
+| 4.5 | C | Notifications 💶 Payments → **Received ✓** | Both maps: Paid ✓, Training "wk 1/N"; T gets a push |
 
-| # | Step | Where | ✓ / ~ / ✗ | Notes |
-|---|------|-------|-----------|-------|
-| 1 | Apply to coach → admin approves → **Verified** badge appears with a date on hover | Profile, Admin | | |
-| 2 | Admin **Assign badges**: set Professional with an employer ("Works at …" on hover); Founding; see them on the public profile and on offer cards | Admin, public profile | | |
-| 3 | Attach a **certification** (title, issuer, date, photo/PDF) → admin approves → Certified badge + summary on public profile → **homepage notice** to the coach | Profile, Admin, Home | | |
-| 4 | Open goals: **who** posted (avatar, name, city, "posted N days ago"), days left, Hide / Unhide, hidden-goals toggle | Open goals | | |
-| 5 | Send an offer for the test goal - **1 week, 1 session/week, €100**: "**The trainee pays €105.90 … You receive €88.10 after FormTrace's 11.9% commission**" (or your privileged rate + the saving); video pitch required | Open goals → Send an offer | | |
-| 6 | Trainees list: "2/3 this week" per trainee; open one | Trainees | | |
-| 7 | Exercise library: create, **record a reference** (trim it), reps detected; edit; delete; the "no reference recorded" hint on review for one without | Library, Review | | |
-| 8 | Builder: build a workout (sets/reps, intervals, wildcard slots); save as template | Builder | | |
-| 9 | Assign into a week: session slots per cap; + Assign; remove an unstarted one; carried-forward labels; weekly **macro goal** in the week header | Trainee calendar | | |
-| 10 | Calendar as coach: week rows, done days gold, call days blue, **check-in badges**; tap a day → coaching-call choice | Trainee calendar | | |
-| 11 | Review a submitted workout: each set video (rotation fix if sideways); **form match + pose-coverage warning**; tags per set; note per exercise; **voice-over** (mic check, meter, low-level warning); submit; review deadline | Review | | |
-| 12 | Payment ledger: earned per reviewed workout, per-trainee totals — display only, no money moves | Payments | | |
-| 13 | Video call: propose (day tap or card), accept the trainee's, **add the Meet link**, Join; recurring shows "next …" | Trainee calendar → Video call card | | |
-| 14 | Weekly macro goal; carry-forward; the trainee's % visible to you | Trainee calendar | | |
-| 15 | Complete the goal with the trainee; outcome recorded; history | Trainee calendar | | |
-| 16 | Profile: referral link card (coach copy says tiers **lower your commission**); "Your trainees' streaks" card — combined weeks, rank of N, **Top 1%** badge or "held by the top K" | Profile | | |
-| 17 | Public profile as a trainee would see it: badges in order (Top 1% first), certification summary, ratings, pitch history | Public profile | | |
-| 18 | Admin: applications, error log, inactivity, **Coach badges** list with "N to review" flags | Admin | | |
+## 5. Training week
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 5.1 | C | Trainee screen (tab bar visible, no back arrow) → assign a workout at Level 2 | T sees resolved reps/kg, not "level 2" |
+| 5.2 | C | Set this week's diet plan | T's Home shows it |
+| 5.3 | T | Log macros + weight; Saturday check-in photo (guide: head + feet only) | Saved photo is cropped to the body; "Keeping tabs" / "Initiate transformation" play once |
+| 5.4 | T | Do the session (record sets) | Submitted |
+| 5.5 | C | Review: tags, voice-over with **drawing** (red/green, erase, pause) | Voice-over sheet: Start recording visible below the video |
+| 5.6 | T | Open the review | Push "Your coach reviewed a workout"; drawings replay in sync |
+| 5.7 | T | Streak badge across all tabs | Same colour everywhere (no red flash on Training) |
+| 5.8 | T/C | Next morning ~08:00 | Morning summary push (trainee: session/rest, kcal/protein, log reminders; coach: reviews waiting) |
 
----
+## 6. Social
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 6.1 | T + F | Social → Add friends → knock phones (or code) | Both confirm faces; "Knock Knock" plays |
+| 6.2 | T | Friend's page | Wins; Consistency badge / achievements if earned; **Connect** → handles (grey if not set in Profile) |
+| 6.3 | F | Congratulate / Congratulate all | T: clap overlay + push |
 
-## 4. Seed goals (BP)
-
-Five realistic trainee goals to post before the day. Each has a **20-second pitch script** — a goal cannot be posted without a video. Read the script to the camera in one take; imperfect is fine and more believable than polished.
-
-| # | Title | Focus | Sessions / week | Details (paste) |
-|---|-------|-------|-----------------|-----------------|
-| 1 | Fix my squat depth and stop my knees caving | Strength | 3 | Been lifting on and off for two years. I can squat 80 kg but my knees track inward below parallel and my lower back rounds. Want a coach who will actually watch my sets and tell me what to change, not send a PDF. |
-| 2 | First 10K without stopping | Running | 3 | I can run 5K in about 32 minutes but fall apart after that. Eight weeks until a local 10K. Need a run plan I can follow from my phone with interval sessions, and someone to keep me honest. |
-| 3 | Lose 6 kg by Christmas, keep my strength | Fat loss | 4 | 34, desk job, 92 kg. I want to drop to 86 without losing what I've built in the gym. Need help with macros as much as training — I under-eat protein and then binge at the weekend. |
-| 4 | Get back into training after a shoulder injury | Rehab / return | 2 | Rotator cuff strain six months ago, physio signed me off, but I'm scared of the bench. Want a careful return-to-lifting plan with form checks on pressing movements. Two sessions a week to start. |
-| 5 | Build a proper pull-up from zero | Bodyweight | 3 | I can do zero pull-ups and I want to do five clean ones by the end of the goal. Have a door bar and a set of bands. Would love a coach who can watch my form and progress me week by week. |
-
-**Pitch scripts (≈20 s each, first person, phone at chest height):**
-
-1. *"Hi — I've been squatting for a couple of years and I'm stuck at eighty kilos because my knees cave and my back rounds when I go deep. I've watched every video there is. What I need is someone to look at my actual sets and tell me what to fix. Three sessions a week, six to eight weeks."*
-2. *"Hey. I can run five K but around thirty-two minutes I just fall apart. There's a ten K in eight weeks and I want to finish it without walking. I need a plan I can run off my phone with the interval cues, and a coach who'll notice if I skip a Tuesday."*
-3. *"Hi, I'm thirty-four, desk job, ninety-two kilos. I want to be eighty-six by Christmas without losing the strength I've built. My problem is food more than the gym — I under-eat protein all week and then blow it at the weekend. Four sessions a week, and help with my macros."*
-4. *"Hello. I strained my rotator cuff six months ago. The physio's signed me off, but honestly I'm scared of the bench press. I want a careful plan to get back to lifting, with someone checking my form on anything pressing. Two sessions a week to begin with."*
-5. *"Hi — I've never done a pull-up. Not one. I've got a door bar and some bands, and I'd like to do five clean ones by the end of this. I need a coach who'll watch my form and move me on week by week rather than leaving me to guess."*
-
-**Log for each seed goal:** time to post (seconds), whether the video recorded first time, and — over the following days — time to first offer. Those three numbers are the honest measure of BM's "48-hour first response" promise.
+## 7. Ending
+| # | Who | Do | Expect |
+|---|---|---|---|
+| 7.1 | T | Goal → **Goal achieved** (or **Cancel goal**) with a reason | C homepage card with reason + push; rate the coach; survey card on Notifications |
+| 7.2 | T/C | Payment map after a cancel for "coach not responding" after paying | Refund due → **Refund sent** (C) → **Refund received ✓** (T). Cancel before paying → no refund |
 
 ---
 
-## 5. After the day
+## Migrations to have run (newest last)
+All earlier ones (see PRODUCT_LOG), then: `migrations_connect_handles.sql` ·
+`migrations_end_goal_early.sql` · `migrations_achievements.sql` ·
+`migrations_achievements_v2.sql` · `migrations_achievements_backfill.sql` ·
+`migrations_dismissals.sql` · `migrations_push.sql` · `migrations_daily_digest.sql` ·
+`migrations_streak_badge.sql` · `migrations_payment_tracker.sql` ·
+`migrations_payment_way_out.sql` · and `update public.achievements set approved = true where code = 'level_up';`
 
-Send the two tables back as they are (photos of the printout are fine). Each ✗ and ~ row becomes one product-log item titled in the tester's own words, tagged with the phone model. Nothing gets "fixed on the day" — write it down, keep going, so the day stays a test and not a repair session.
+## What to send back after the day
+Screenshots of anything that failed, with the step number. Anything that felt slow or
+confusing, even if it worked - that is the pilot's real output.

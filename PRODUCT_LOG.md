@@ -57,7 +57,7 @@ BE) are not tasks and are left out.
 | 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25, LIVE with CE | - |
 | 56 | **DH** Achievements on Profile collapsed by default - BUILT 2026-09-25 | - |
 | 55 | **DG** Referral by QR - BUILT 2026-09-25 (referral half + BW matrix) | voucher QR after BI |
-| 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
+| 54 | **DF** Test-day checklist v2 - BUILT 2026-10-29 | run it before inviting coaches |
 | 53 | **DE** Exercise equipment tag - LOW PRIORITY | Small | Second chip row + builder filter; exercises.equipment. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
 | 51 | **DC** Forgot password / which email - BUILT 2026-09-25, working | SMTP postponed (≤30 users / 3 months) |
@@ -392,7 +392,15 @@ voice-over + telestration · check-in guide and crop · measurements,
 macros, weight · In Touch knock + code, Connect handles, congratulations ·
 achievements (instant play vs chips) · streak badge across tabs ·
 forgot password · push once CE is live. Each step: action, expected
-result, what to screenshot if it fails. Not started.
+result, what to screenshot if it fails.
+**BUILT 2026-10-29** - `docs/TEST_DAY.md` v2, ordered as the pilot journey for
+a coach phone and a trainee phone (optional third for Social): first run and
+navigation · coach setup (library, builder v2, QR invite) · goal, offers,
+acceptance (optional video, Top 1% frame, counter-offer, FT status-bar icon)
+· **payment (pilot)** · training week (levels, diet plan, check-in crop,
+voice-over drawing, streak consistency, morning summary) · Social · ending
+(achieved / cancel, refund paths). Plus the migrations to have run and what
+to send back.
 
 ---
 
