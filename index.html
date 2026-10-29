@@ -3975,9 +3975,11 @@ async function renderHomeMacro(el){
   $("#hm-save").addEventListener("click",()=>saveHomeMacro(iso));
   $("#hm-dismiss").addEventListener("click",()=>{ try{ localStorage.setItem("ft-macro-dismiss",todayISO()); }catch(e){} el.style.display="none"; el.innerHTML=""; refreshNotifDot(); });
 }
+/* Item DT: body weight must be plausible (the database refuses outside 20-400 kg too) - a typo of 1600 kg earned "Bulk up". */
+function weightOk(w){ if(w==null) return true; if(!isFinite(w)||w<20||w>400){ toast(`${w} kg doesn't look right - check the number (kilograms, 20-400).`,4000); return false; } return true; }
 async function saveHomeMacro(iso){
   const numOrNull=id=>{const s=($("#"+id)?.value||"").trim();return s===""?null:Number(s);};
-  const p=numOrNull("hm-p"),c=numOrNull("hm-c"),f=numOrNull("hm-f2"),w=numOrNull("hm-w");
+  const p=numOrNull("hm-p"),c=numOrNull("hm-c"),f=numOrNull("hm-f2"),w=numOrNull("hm-w"); if(!weightOk(w)) return;
   if(p==null&&c==null&&f==null&&w==null){ toast("Enter at least one value"); return; }
   const kcal=(p==null&&c==null&&f==null)?null:Math.round((p||0)*4+(c||0)*4+(f||0)*9);
   const patch={weight_kg:w,kcal,protein_g:p,carbs_g:c,fat_g:f};
@@ -8796,6 +8798,7 @@ async function saveMacroLog(){
   const num=id=>{const v=($("#"+id)?.value||"").trim();return v===""?null:Number(v);};
   const p=num("ml-p"),c=num("ml-c"),f=num("ml-f");
   const kcal=(p==null&&c==null&&f==null)?null:Math.round((p||0)*4+(c||0)*4+(f||0)*9);
+  if(!weightOk(num("ml-weight"))) return;   /* Item DT */
   const patch={weight_kg:num("ml-weight"),kcal,protein_g:p,carbs_g:c,fat_g:f};
   const btn=$("#sheet-add");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
   try{

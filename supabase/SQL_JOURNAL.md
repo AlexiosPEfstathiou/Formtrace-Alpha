@@ -67,3 +67,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DN/DI | daily-digest diagnostic (job_active, last_run, last_status, users_with_tz, users_subscribed, digests_logged) | run ✓ | job active, last run 19:15 UTC succeeded; 1 user with tz, 1 subscribed, 0 digests (none due yet). |
 | 2026-10-29 | DQ | `migrations_achievements_trigger_fix.sql` | run ✓ | 'goal updates fixed' - the self-test passed. |
 | 2026-10-29 | DS | `migrations_journey_fix.sql` | run ✓ | weeks_check = 13. |
+| 2026-10-29 | DT | `migrations_body_achievements_recheck.sql` | given | Final select lists each holder of Bulk up / Weight cut; removed = 1 for the 1600 kg case. |

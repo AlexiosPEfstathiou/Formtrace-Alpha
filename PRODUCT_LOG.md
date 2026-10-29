@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 68 | **DT** BUG: 1600 kg typo kept "Bulk up" - weight 20-400 kg enforced; body achievements re-checked on weight changes - BUILT 2026-10-29 | run the migration |
 | 67 | **DS** BUG: journey recap extract(unknown, integer) - FIXED 2026-10-29 (migration run, weeks_check 13) | owner re-opens the journey |
 | 66 | **DR** BUG: journey recap "store.journeySummary is not a function" - FIXED 2026-10-29; new store-call check in the gate | - |
 | 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIXED and verified 2026-10-29 | owner re-tries Mark achieved |
@@ -186,6 +187,22 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DT. BUG: a typo (1600 kg) earned "Bulk up", and correcting it kept the achievement
+
+Owner, 2026-10-29. Two flaws: no plausibility check on body weight, and achievements were
+permanent once earned - right for "First session", wrong for achievements that depend on
+data that can be corrected. **FIX** (`migrations_body_achievements_recheck.sql` + app):
+- **Weights outside 20-400 kg refused** - in the app (homepage card and log sheet, a clear
+  message) and in the database (`logs_weight_plausible`, NOT VALID so history is untouched).
+- **Body achievements re-checked on every weight change** (`recheck_body_achievements`,
+  trigger on logs insert / weight update / delete, error-guarded): "Bulk up" / "Weight cut"
+  removed when the corrected data no longer supports them, awarded again if it does.
+  Removal also takes them out of friends' feeds (the feed reads `user_achievements`).
+- **One-time re-check** for everyone holding one today - fixes the 1600 kg case.
+Not covered: a push already sent cannot be recalled; other achievements stay permanent
+(counts only grow - a deleted log cannot un-earn "30 days logged"), which is intended.
+
+---
 ## DS. BUG: "Your journey" - function pg_catalog.extract(unknown, integer) does not exist
 
 Owner screenshot, 2026-10-29, on the next completed goal after the DR fix: the recap now
