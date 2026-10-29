@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds proposed, owner to confirm. |
 | 63 | **DO** Push on by default (silent if allowed, one explained prompt, sticky opt-out) - BUILT 2026-10-29 | - |
 | 62 | **DN** Review the push-send setup (owner doubts) | Small | Code vs repo, Verify JWT, secret names, webhook, outbox health, logs. |
 | 61 | **DM** Embed Stripe - part 2 (Checkout deposit) BUILT in sandbox 2026-10-29 | see STRIPE_INTEGRATION_TODO.md; onboarding, release, refunds next |
@@ -182,6 +183,39 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DP. When and why to rethink the loss-liability plan
+
+Owner, 2026-10-29, right after accepting platform liability for refunds and chargebacks
+(BI prerequisite 1): plan WHEN and WHY the decision must be revisited, and what scale
+would demand it.
+**Why the decision is right now:** a handful of coaches the owner knows personally,
+≤ 30 users, weekly releases (little money out at once), funds held until delivered.
+**What changes the risk:** volume (more money exposed), distance (coaches and trainees
+nobody knows), and time (chargebacks can arrive months after a week was released).
+**The fraud to design against - collusion:** a "trainee" pays with a stolen card, a
+"coach" marks weeks delivered, the money is released, the real cardholder disputes it
+later and FormTrace pays. Weekly release limits it; a hold before release stops most of it.
+**Review triggers (proposed numbers - owner to confirm; any ONE triggers a review):**
+| Trigger | Threshold | Why |
+|---|---|---|
+| Payment volume | > €10,000 a month, or > €5,000 for 3 months running | Losses scale with volume |
+| Coaches | > 25, or the first coach the owner does not know personally | Personal trust no longer covers the risk |
+| Open sign-up | Before coach sign-up opens to the public | The pilot's closed-group assumption ends |
+| Dispute rate | > 0.5 % of payments in any month | Well below the card networks' ~1 % monitoring level - act before Stripe or the networks do |
+| Losses | Any single loss > €500, or losses > 2 % of platform revenue in a quarter | The risk is becoming a cost |
+| Geography | A new country or currency | Cross-border fraud patterns, transfer rules, VAT |
+| Calendar | Every quarter, regardless | Nothing should go unreviewed for long |
+**Options to weigh at a review:** keep platform liability, adding (a) a **hold period**
+(release a week's share 7-14 days after it is delivered), (b) a **reserve** (keep a % of
+the last 60 days' releases), (c) **stronger coach checks** before payouts, (d)
+**insurance**; or change model - (e) Stripe-managed risk where it applies to the funds
+flow, (f) **direct charges** (Stripe/coach liable, but no escrow - only if the escrow
+promise is dropped).
+**Now, before go-live:** a dashboard number for each trigger (admin card: monthly
+volume, dispute rate, losses, coach count) so the review is prompted by data, not
+memory; transfer-reversal clause in the coach terms. Not started.
+
+---
 ## DO. Push notifications on by default, opt-out in Settings
 
 Owner, 2026-10-29, after the DN health check showed **only one user with push on**:
