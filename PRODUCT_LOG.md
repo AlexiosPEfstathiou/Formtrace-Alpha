@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 66 | **DR** BUG: journey recap "store.journeySummary is not a function" - FIXED 2026-10-29; new store-call check in the gate | - |
 | 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIXED and verified 2026-10-29 | owner re-tries Mark achieved |
 | 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds proposed, owner to confirm. |
 | 63 | **DO** Push on by default (silent if allowed, one explained prompt, sticky opt-out) - BUILT 2026-10-29 | - |
@@ -184,6 +185,23 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DR. BUG: "Your journey" failed after completing a goal - store.journeySummary is not a function
+
+Owner screenshot, 2026-10-29, straight after the DQ fix let a goal complete: the recap
+screen showed "Couldn't load your journey. store.journeySummary is not a function".
+**Cause:** `journeySummary` is defined in the store's `auth` section
+(`store.auth.journeySummary`); the journey screen called `store.journeySummary`. It could
+only fail at the very end of a completed goal - which DQ had made impossible for five
+weeks, so nobody reached it. **Why the gate missed it:** the render check's stand-in
+store answers any name, so a misnamed store call can never fail there.
+**FIX:** the call is `store.auth.journeySummary`. **New gate check
+`tools/store-check.mjs`:** loads the real `store.supabase.js` with a stand-in Supabase
+client and verifies every `store.<name>()` / `store.<ns>.<method>()` the app calls
+exists. Proof: run before the fix it found exactly this one of 68 distinct calls, and
+nothing else. `tools/gate.ps1` now has four parts (smoke · top-level · renderers ·
+store calls).
+
+---
 ## DQ. BUG: ending or completing a goal failed - "record new has no field engagement_id"
 
 Owner screenshot, 2026-10-29: "Goal achieved" → toast `record "new" has no field

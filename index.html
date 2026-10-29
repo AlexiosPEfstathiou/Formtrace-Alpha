@@ -11040,7 +11040,7 @@ async function openJourney(eng,onExit){
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-journey").classList.add("active");
 
   let sum=null;
-  try{ sum=await store.journeySummary(eng.id); }
+  try{ sum=await store.auth.journeySummary(eng.id); }
   catch(err){
     console.error("journeySummary",err);
     body.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">!</div><p>Couldn't load your journey.</p><p class="s">${escapeHtml(err.message||"Run migrations_journey.sql")}</p></div>`;

@@ -35,11 +35,12 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
    anchor missed** — the gate cannot see a skipped edit. **Assert the expected number
    of anchors** (an empty result must fail, not pass), and never name a PowerShell helper
    after a built-in alias (`R`, `h`, `r`, `ls`, `cd`…) - it silently runs the alias.
-3. **The gate must pass before every push** — all three checks:
+3. **The gate must pass before every push** — all four checks:
    ```
    node tools/check.mjs                                        # parse + ids smoke test → must print PASSED
    node tools/toplevel-check.mjs index.html /tmp/ft_mod.mjs    # module evaluates at top level → TOP-LEVEL OK
    node tools/render-check.mjs index.html /tmp/ft_render.mjs   # runs every render* for trainee and coach → RENDER CHECK OK
+   node tools/store-check.mjs index.html store.supabase.js     # every store.x() the app calls exists → STORE CHECK OK
    ```
    (`tools/gate.ps1` runs all three on the original Windows machine; its paths are
    hard-coded there.) Push only when **anchors all landed AND the gate passed**.
@@ -64,7 +65,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **DQ**; next **DR**),
+- New product items take the next two-letter code (last used: **DR**; next **DS**),
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").
