@@ -40,16 +40,28 @@ step is drawn **skipped** ("paid directly to the coach") until `STRIPE_LIVE=true
 The real implementation is Stripe Connect (BI). Pilot refund rule is provisional, in
 one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 
-## Stripe status (refreshed 2026-10-29, Lilly account)
-- Account and sandbox ready (owner). Checkout Studio configured - settings in
-  PRODUCT_LOG **DM**. Integration plan: PRODUCT_LOG **BI plan** (personal account).
-- Prerequisite 1 (loss liability): the owner could not find Platform profile -
-  likely Connect platform onboarding not yet completed (dashboard.stripe.com/connect →
-  Get started: Marketplace, individuals, Express dashboard, platform collects, platform
-  liable). Prerequisites 2 (VAT) and 3 (coach countries) open.
-- Needed before Checkout can require ToS consent: a Terms of Service page + URL in
-  Stripe. FormTrace has none yet.
-- **Build hold:** stands until the owner lifts it (sandbox-only code is the proposal).
+## Stripe status (refreshed 2026-10-29 evening, Lilly account)
+- Account and sandbox ready. Checkout Studio configured (PRODUCT_LOG **DM**). Plan:
+  PRODUCT_LOG **BI plan**. **Hold lifted for sandbox-only work** (owner); ToS consent
+  off until a Terms page exists.
+- **DM part 2 BUILT (sandbox):** `checkout-create` + `stripe-webhook` Edge Functions,
+  `migrations_stripe_checkout.sql` (journal: given), test-only "Pay by card" button
+  (`?stripetest=1`). **Owner setup in progress:** deploy both functions (webhook with
+  Verify JWT OFF), Stripe webhook endpoint, secrets `STRIPE_SECRET_KEY` and
+  `STRIPE_WEBHOOK_SECRET` - steps in **`STRIPE_INTEGRATION_TODO.md`** (single source
+  of truth). Then the first test payment.
+- BI prerequisites still open: loss liability (Connect platform onboarding not done -
+  Platform profile not found), VAT advice, coach countries.
+- Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
+  offer copy "per week reviewed, never a lump sum" before live.
+
+## Push status (2026-10-29)
+- Delivery healthy (DN): 4/4 sent, 0 errors. Only **one** user had push on → **DO**
+  built: push on by default (silent if allowed, one explained prompt, sticky opt-out).
+- Morning summary (DI): job active and succeeding every 15 min; none sent yet because
+  timezones are recorded only since today - first send expected next morning ~08:00.
+  Pending check: the user with a timezone is the one with push on (query given).
+- DN code comparison waits for the owner to paste the deployed push-send code.
 ## Open decisions (owner)
 - Pilot price, period and early-ending rule — to agree with the coaches.
 - Streak rewards: 12-month reward TBD; cap on the €5 monthly credit (BW economics note).
