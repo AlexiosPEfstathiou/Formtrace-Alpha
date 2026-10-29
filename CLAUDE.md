@@ -64,7 +64,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **DN**; next **DO**),
+- New product items take the next two-letter code (last used: **DO**; next **DP**),
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").

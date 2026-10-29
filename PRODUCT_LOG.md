@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 63 | **DO** Push on by default (silent if allowed, one explained prompt, sticky opt-out) - BUILT 2026-10-29 | - |
 | 62 | **DN** Review the push-send setup (owner doubts) | Small | Code vs repo, Verify JWT, secret names, webhook, outbox health, logs. |
 | 61 | **DM** Embed Stripe - part 2 (Checkout deposit) BUILT in sandbox 2026-10-29 | see STRIPE_INTEGRATION_TODO.md; onboarding, release, refunds next |
 | 60 | **DL** Payment tracker - pilot version BUILT 2026-10-29 (deposit skipped) | escrow version with BI; refund rule provisional |
@@ -181,6 +182,26 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DO. Push notifications on by default, opt-out in Settings
+
+Owner, 2026-10-29, after the DN health check showed **only one user with push on**:
+"Let's make push notifications on by default and then users can opt out."
+Browsers require the person to allow notifications, so "on by default" is as close as
+the platform permits. **BUILT same day:**
+- **Already allowed** (`Notification.permission = granted`) → subscribed silently on
+  sign-in, no test buzz.
+- **Not asked yet** → 1.5 s after sign-in, one explained card ("Turn on notifications?",
+  coach / trainee wording, "you can turn any of it off in Settings") → **Turn on**
+  triggers the phone's prompt; **Not now** re-asks after 7 days.
+- **Opted out in Settings** → `push_prefs.all = false` on the account; never
+  re-subscribed automatically (push-send already honours `all: false`). Turning push
+  back on clears it. The per-type switches keep the opt-out flag.
+- **Blocked in the phone** → left alone; Settings explains how to re-enable.
+All notification types stay on by default. Both Settings / Profile wiring copies
+updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
+duplicates (two wiring copies) and reverted before anything was written.
+
+---
 ## DN. Review the push-send Edge Function setup (owner has doubts)
 
 Owner, 2026-10-29: "Review if I created the push-send correctly - I have doubts."
