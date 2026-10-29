@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 61 | **DM** Embed Stripe into the app (BI build: onboarding, Checkout, weekly release, refunds) | Several days | Account ready 2026-10-29; gated on the BI plan's three prerequisites. |
 | 60 | **DL** Payment tracker - pilot version BUILT 2026-10-29 (deposit skipped) | escrow version with BI; refund rule provisional |
 | 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
 | 58 | **DJ** Notification bar icon - placeholder BUILT 2026-10-29 | final mark with BJ |
@@ -179,6 +180,34 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DM. Embed Stripe into the app (the BI build)
+
+Owner, 2026-10-29: "My Stripe account is ready." This item is the build that puts the
+**BI plan** (below) into the app - escrow by **separate charges and transfers**, coaches
+on **Connect Express**, the trainee paying through **Stripe-hosted Checkout**.
+**Scope:**
+1. **Coach onboarding** - "Get paid with Stripe" on the coach profile: create the
+   connected account (Edge Function), Stripe's **embedded onboarding** in the app, the
+   notification banner for missing details; coach status shown (not started / pending /
+   ready). A coach must be ready before a trainee can pay them.
+2. **Trainee payment** - accepting an offer opens **Checkout** for the goal total
+   (+ trainee fee once the launch rates are restored); the webhook marks the deposit
+   received. The tracker's Deposit step becomes real (`STRIPE_LIVE = true`).
+3. **Weekly release** - a scheduled job transfers each delivered week's share to the
+   coach (less commission; 0% for Founding coaches); the tracker shows each release.
+4. **Refunds** - ending a goal early refunds the unreleased weeks per the agreed rule;
+   disputes and Radar handled on the platform.
+5. **Ledger and records** - every charge, transfer and refund stored and shown on both
+   sides; the payment ledger design (`payment_ledger_v2`) reused where it fits.
+6. **Switch-over** - restore the launch rates (pilot_settings.sql), retire the pilot's
+   "I've paid / Received" flow for new goals, keep it readable for pilot goals.
+**Secrets:** Stripe secret key and webhook signing secret in Edge Function secrets only.
+**Build in the sandbox first**; live keys only after the end-to-end test.
+**Gate before starting:** the BI plan's three prerequisites - loss liability accepted,
+VAT advice, coach countries confirmed. Status to confirm with the owner. Estimate:
+several days. Not started.
+
+---
 ## Handover (2026-10-29)
 
 `CLAUDE.md` (repo root - working rules, read automatically by Claude Code) and
