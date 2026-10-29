@@ -64,4 +64,4 @@ if their table is missing - run the earlier rows first in that case.
 | after the pilot | BI | restore launch rates (`update platform_rates … from launch_*`, in pilot_settings.sql) | pending | Only when Stripe is live. |
 | 2026-10-29 | DM | `migrations_stripe_checkout.sql` | given | Expected final select: 6. |
 | 2026-10-29 | DN | push_outbox health query (kind, total, sent, errors) | run ✓ | offer 2/2, review 2/2, 0 errors; **no daily rows**. |
-| 2026-10-29 | DN/DI | daily-digest diagnostic (job_active, last_run, last_status, users_with_tz, users_subscribed, digests_logged) | given | Read-only. |
+| 2026-10-29 | DN/DI | daily-digest diagnostic (job_active, last_run, last_status, users_with_tz, users_subscribed, digests_logged) | run ✓ | job active, last run 19:15 UTC succeeded; 1 user with tz, 1 subscribed, 0 digests (none due yet). |
