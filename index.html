@@ -662,6 +662,13 @@
   .ref-qr-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:10px;background:#0B0E11;color:#C8FF3D;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;}
   .ref-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;} .ref-tier{border:1px solid var(--line2);border-radius:11px;padding:8px 6px;text-align:center;font-size:11px;color:var(--muted);line-height:1.35;display:flex;flex-direction:column;gap:2px;} .ref-tier b{color:var(--ink);font-size:12px;} .ref-tier .rn{color:var(--faint);}
   .ref-tier.next{border-color:var(--lime);background:var(--panel2);} .ref-tier.done{border-color:var(--lime);} .ref-tier.done b::after{content:" ✓";color:var(--lime);}
+  /* Item DL: payment tracker - an order-tracking steps map */
+  .pt-steps{display:flex;align-items:flex-start;margin:10px 0 4px;}  .pt-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:0;}
+  .pt-step::before{content:"";position:absolute;top:9px;left:-50%;right:50%;height:3px;background:var(--line2);z-index:0;}  .pt-step:first-child::before{display:none;}  .pt-step.done::before,.pt-step.now::before{background:var(--lime);}  .pt-step.skip::before{background:repeating-linear-gradient(90deg,var(--line2) 0 4px,transparent 4px 8px);}
+  .pt-dot{position:relative;z-index:1;width:20px;height:20px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#0B0E11;}
+  .pt-step.done .pt-dot{background:var(--lime);border-color:var(--lime);}  .pt-step.now .pt-dot{border-color:var(--lime);box-shadow:0 0 0 4px rgba(200,255,61,.18);}  .pt-step.skip .pt-dot{border-style:dashed;color:var(--faint);}  .pt-step.warn .pt-dot{background:var(--amber);border-color:var(--amber);}
+  .pt-lbl{margin-top:6px;font-size:10.5px;font-weight:700;text-align:center;color:var(--muted);line-height:1.2;}  .pt-step.done .pt-lbl,.pt-step.now .pt-lbl{color:var(--ink);}  .pt-step.skip .pt-lbl{color:var(--faint);text-decoration:line-through;}  .pt-date{font-size:9.5px;color:var(--faint);text-align:center;margin-top:2px;}
+  .pt-now{margin-top:10px;border-top:1px solid var(--line2);padding-top:10px;font-size:12.5px;line-height:1.5;color:var(--muted);}
   .top1-pitch{position:relative;border-radius:18px;padding:2px;margin-bottom:10px;background:linear-gradient(120deg,#FFD23F,#FFB300,#FFF3B0,#FFB300,#FFD23F);background-size:300% 100%;animation:top1-frame 6s linear infinite;}
   .top1-pitch>*{border-radius:16px;margin-bottom:0!important;}
   .top1-pitch::after{content:"Top 1% coach";position:absolute;top:-9px;right:14px;font-size:10px;font-weight:800;letter-spacing:.04em;color:#3a2600;background:#FFD23F;border-radius:999px;padding:2px 8px;box-shadow:0 0 12px rgba(255,210,63,.55);}
@@ -1518,6 +1525,7 @@
       <div id="home-milestone" class="home-milestone" style="display:none"></div>
       <div id="home-adminq" class="home-reviews" style="display:none"></div>
       <div id="home-goalended" class="home-reviews" style="display:none"></div>
+      <div id="home-payments" class="home-reviews" style="display:none"></div>
       <div id="home-intouch" class="home-reviews" style="display:none"></div>
       <div id="home-handles" class="home-reviews" style="display:none"></div>
       <div id="home-achievements" class="home-reviews" style="display:none"></div>
@@ -3656,6 +3664,7 @@ async function renderHome(){
       renderHomeStreakRisk($("#home-streakrisk"), engs),
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
+      renderHomePayments($("#home-payments")),   // Item DL
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
       renderHomeAchievements($("#home-achievements")),   // Item CY
@@ -3691,6 +3700,7 @@ async function renderHome(){
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
+      renderHomePayments($("#home-payments")),   // Item DL
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
       renderHomeAchievements($("#home-achievements")),   // Item CY
@@ -4187,6 +4197,97 @@ async function renderSoloCalendar(card){
     const n=[...logged].filter(x=>x>=start&&x<=today).length;
     card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="eyebrow">Your days · last 5 weeks</div><div style="font-size:12px;color:var(--muted)">${n} day${n===1?"":"s"} logged</div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);font-size:10px;color:var(--faint);text-align:center;margin-bottom:2px">${["M","T","W","T","F","S","S"].map(x=>`<div>${x}</div>`).join("")}</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells}</div><div style="font-size:11px;color:var(--faint);margin-top:8px">🍽 macros or weight logged · 📷 check-in photo. Assigned workouts appear here once you have a coach.</div>`;
   }catch(e){ card.remove(); }
+}
+/* ---- Item DL: payment tracker (pilot) ---------------------------------------------
+   The real model is escrow: FormTrace holds the deposit and releases it to the coach as
+   the service is delivered, or refunds the trainee. In the pilot there is no escrow -
+   the trainee pays the coach directly - so the deposit step is drawn SKIPPED until
+   Stripe (BI) is live. Both sides see the same map. */
+const STRIPE_LIVE=false;
+const PILOT_REFUND_REASONS=["coach_unresponsive","quality"];   // provisional pilot rule: the coach refunds unused full weeks only when the coach failed to deliver
+async function paymentState(eng,offer){
+  let e=eng; try{ const { data }=await store._sb.from("engagements").select("*").eq("id",eng.id).maybeSingle(); if(data) e=data; }catch(x){}
+  let o=offer||null; if(!o&&e&&e.offer_id){ try{ const { data }=await store._sb.from("offers").select("*").eq("id",e.offer_id).maybeSingle(); o=data; }catch(x){} }
+  if(!e||!e.id) return null;
+  const cur=(((o&&o.price_text)||"").match(/^[^\d\s]+/)||["€"])[0];
+  const weekly=o&&o.rate_per_workout_cents!=null?o.rate_per_workout_cents/100:null, weeks=(o&&o.length_weeks)||null;
+  const total=(weekly!=null&&weeks)?weekly*weeks:null;
+  const money=v=>v==null?"":cur+(Math.round(v*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
+  const start=e.started_at?new Date(e.started_at):null; const end=e.completed_at?new Date(e.completed_at):new Date();
+  const elapsedWeeks=start?Math.max(0,Math.ceil((end-start)/(7*86400000))):0;
+  const weekNow=weeks?Math.min(weeks,Math.max(1,Math.floor((Date.now()-(start?start.getTime():Date.now()))/(7*86400000))+1)):null;
+  const ended=e.status==="ended";
+  const refundDue=(ended&&PILOT_REFUND_REASONS.includes(e.end_reason)&&weekly!=null&&weeks)?Math.max(0,weeks-elapsedWeeks)*weekly:0;
+  let payout=null; try{ const { data }=await store._sb.from("coach_payout_details").select("details").eq("coach_id",e.coach_id).maybeSingle(); payout=data&&data.details; }catch(x){}
+  return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout};
+}
+async function renderPaymentTracker(holder,eng,role,offer){
+  if(!holder||!eng||!eng.id) return;
+  const s=await paymentState(eng,offer); if(!s) return; const {e}=s; const isCoach=role==="coach";
+  const day=t=>t?fmtDay(String(t).slice(0,10)):"";
+  const steps=[
+    {k:"acc",l:"Accepted",st:"done",d:day(e.started_at||e.created_at)},
+    {k:"dep",l:"Deposit",st:STRIPE_LIVE?"done":"skip",d:STRIPE_LIVE?"":"pilot"},
+    {k:"paid",l:"Paid",st:e.received_at?"done":(e.paid_at?"now":"now"),d:e.received_at?day(e.received_at):(e.paid_at?"awaiting":"")},
+    {k:"trn",l:"Training",st:e.status==="active"?(e.received_at?"now":""):"done",d:e.status==="active"&&s.weekNow?`wk ${s.weekNow}/${s.weeks}`:""},
+    {k:"end",l:s.ended?"Ended":"Complete",st:e.status==="completed"?"done":(s.ended?(s.refundDue>0&&!e.refund_received_at?"warn":"done"):""),d:e.completed_at?day(e.completed_at):""}
+  ];
+  if(e.received_at&&e.status==="active") steps[2].st="done";
+  let now="", actions="";
+  const who=isCoach?"your trainee":"your coach";
+  if(!e.paid_at&&!e.received_at){
+    now=isCoach?`Waiting for ${who} to pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to you.`
+               :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to your coach${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. ${s.payout?`<div style="margin-top:6px;padding:8px 10px;border:1px solid var(--line2);border-radius:10px;color:var(--ink);white-space:pre-wrap">${escapeHtml(s.payout)}</div>`:`<div style="margin-top:6px;color:var(--amber)">Your coach hasn't added payment details yet - ask them on your next call.</div>`}`;
+    if(!isCoach) actions=`<button class="btn sm primary" data-pt="paid" style="width:auto">I've paid</button>`;
+    else actions=`<button class="btn sm ghost" data-pt="recv" style="width:auto">Mark as received</button>`;
+  } else if(e.paid_at&&!e.received_at){
+    now=isCoach?`Your trainee says they paid <b style="color:var(--ink)">${s.money(s.total)}</b> on ${day(e.paid_at)}. Confirm once it has arrived.`
+               :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
+    if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
+  } else if(e.status==="active"){
+    now=`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+  } else if(e.status==="completed"){
+    now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
+  } else if(s.ended){
+    if(s.refundDue>0){
+      if(!e.refund_sent_at){ now=`Ended early. Under the pilot terms a refund of <b style="color:var(--ink)">${s.money(s.refundDue)}</b> is due for the unused weeks${isCoach?" - send it directly to your trainee.":" - your coach sends it directly to you."}`; if(isCoach) actions=`<button class="btn sm primary" data-pt="rsent" style="width:auto">Refund sent</button>`; }
+      else if(!e.refund_received_at){ now=`Refund of ${s.money(s.refundDue)} sent ${day(e.refund_sent_at)}.${isCoach?" Waiting for your trainee to confirm.":" Confirm once it has arrived."}`; if(!isCoach) actions=`<button class="btn sm primary" data-pt="rrecv" style="width:auto">Refund received ✓</button>`; }
+      else now=`Ended early. Refund of ${s.money(s.refundDue)} received ${day(e.refund_received_at)}. Settled.`;
+    } else now=`Ended early. No refund is due under the pilot terms.`;
+  }
+  const editor=isCoach?`<details style="margin-top:10px;font-size:12px"><summary style="cursor:pointer;color:var(--lime);font-weight:700">${s.payout?"Edit how trainees pay you":"Add how trainees pay you"}</summary><textarea id="pt-payout" rows="3" maxlength="300" placeholder="e.g. Revolut @yourtag, or IBAN and name" style="margin-top:6px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:10px;color:var(--ink);padding:8px 10px;font-size:12.5px">${escapeHtml(s.payout||"")}</textarea><button class="btn sm ghost" id="pt-payout-save" style="width:auto;margin-top:6px">Save</button><div style="font-size:11px;color:var(--faint);margin-top:4px">Shown only to trainees who accepted your offer.</div></details>`:"";
+  const card=document.createElement("div"); card.className="card"; card.style.marginTop="12px";
+  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="eyebrow">Payment</div><div style="font-size:12px;color:var(--muted)">${s.money(s.total)}</div></div>
+    <div class="pt-steps">${steps.map(x=>`<div class="pt-step ${x.st}"><div class="pt-dot">${x.st==="done"?"✓":x.st==="skip"?"–":x.st==="warn"?"!":""}</div><div class="pt-lbl">${x.l}</div><div class="pt-date">${escapeHtml(x.d||"")}</div></div>`).join("")}</div>
+    ${STRIPE_LIVE?"":`<div style="font-size:11px;color:var(--faint);text-align:center">Deposit skipped during the pilot - paid directly to the coach</div>`}
+    <div class="pt-now">${now}${actions?`<div style="display:flex;gap:8px;margin-top:8px">${actions}</div>`:""}</div>${editor}`;
+  holder.innerHTML=""; holder.appendChild(card);
+  const rpc=async(fn,msg)=>{ try{ const { error }=await store._sb.rpc(fn,{p_eng:e.id}); if(error) throw error; toast(msg,1800); renderPaymentTracker(holder,e,role,s.o); refreshNotifDot(); }catch(x){ console.error("payment "+fn+" (run migrations_payment_tracker.sql)",x); toast(x.message||"Couldn't update",3500); } };
+  card.querySelectorAll("[data-pt]").forEach(b=>b.addEventListener("click",()=>{ b.disabled=true; const a=b.getAttribute("data-pt");
+    if(a==="paid") rpc("mark_paid","Marked as paid - your coach will confirm"); else if(a==="recv") rpc("confirm_received","Payment confirmed ✓");
+    else if(a==="rsent") rpc("mark_refund_sent","Refund marked as sent"); else if(a==="rrecv") rpc("confirm_refund_received","Refund confirmed ✓"); }));
+  const sv=card.querySelector("#pt-payout-save"); if(sv) sv.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("set_my_payout_details",{p_details:card.querySelector("#pt-payout").value}); if(error) throw error; toast("Payment details saved",1500); renderPaymentTracker(holder,e,role,s.o); }catch(x){ toast(x.message||"Couldn't save",3000); } });
+}
+/* Notifications: what each side still has to do about money */
+async function renderHomePayments(el){
+  if(!el||!ME) return; el.style.display="none"; el.innerHTML="";
+  try{
+    const coach=roleOf()==="coach"; const col=coach?"coach_id":"trainee_id";
+    const { data }=await store._sb.from("engagements").select("*").eq(col,ME.id).in("status",["active","ended"]).limit(30);
+    const todo=[];
+    for(const e of (data||[])){
+      if(e.status==="active"){ if(!coach&&!e.paid_at&&!e.received_at) todo.push([e,"pay"]); if(coach&&e.paid_at&&!e.received_at) todo.push([e,"confirm"]); }
+      else if(e.status==="ended"&&PILOT_REFUND_REASONS.includes(e.end_reason)){ if(coach&&!e.refund_sent_at) todo.push([e,"refund"]); if(!coach&&e.refund_sent_at&&!e.refund_received_at) todo.push([e,"refundin"]); }
+    }
+    if(!todo.length) return;
+    const ids=[...new Set(todo.map(([e])=>coach?e.trainee_id:e.coach_id))]; let names={}; try{ const { data:p }=await store._sb.from("profiles").select("id,display_name").in("id",ids); for(const x of (p||[])) names[x.id]=x.display_name; }catch(x){}
+    const txt={pay:(n,g)=>`Pay ${n} for "${g}"`,confirm:(n,g)=>`${n} says they paid - confirm`,refund:(n,g)=>`Refund due to ${n}`,refundin:(n,g)=>`Confirm ${n}'s refund arrived`};
+    el.innerHTML=`<div class="rv-title">💶 Payments</div><div id="hp-list"></div>`; el.style.display="";
+    const list=el.querySelector("#hp-list");
+    for(const [e,k] of todo){ const n=names[coach?e.trainee_id:e.coach_id]||(coach?"Your trainee":"Your coach"); const box=document.createElement("div"); box.style.marginBottom="8px"; list.appendChild(box);
+      const t=document.createElement("div"); t.style.cssText="font-size:13px;font-weight:700;margin:2px 0 -4px"; t.textContent=txt[k](n,e.goal_title||"your goal"); box.appendChild(t);
+      const h=document.createElement("div"); box.appendChild(h); renderPaymentTracker(h,e,coach?"coach":"trainee"); }
+  }catch(x){}
 }
 /* ---- Item BW: the Consistency badge - one badge, a level per 13 complete weeks, highest kept, friends-only ---- */
 const SB_TIERS=[null,["🥉","Bronze","#CD7F32"],["🥈","Silver","#C0C7CF"],["🥇","Gold","#F0D231"],["🏆","Platinum","#9FE7F5"],["💎","Diamond","#7FD3FF"]];
@@ -6347,7 +6448,9 @@ function expandOfferRow(wrap,o,c,shortName,coachName,goalActive,preExpanded){
     });
     row.querySelector("[data-rej]").addEventListener("click",async()=>{ await store.offers.update(o.id,{status:"rejected"}); toast("Offer declined"); renderListings(); });
   }
-  /* CN-10: the trainee can end an active goal here - achieved early, or cancelled - with a reason. */
+  /* Item DL: the payment tracker on the accepted goal */
+if(o.status==="accepted" && traineeEngByOffer && traineeEngByOffer[o.id]){ const ph=document.createElement("div"); exp.appendChild(ph); renderPaymentTracker(ph,traineeEngByOffer[o.id],"trainee",o); }
+/* CN-10: the trainee can end an active goal here - achieved early, or cancelled - with a reason. */
   if(goalActive && o.status==="accepted" && traineeEngByOffer && traineeEngByOffer[o.id] && traineeEngByOffer[o.id].status==="active"){ const eng=traineeEngByOffer[o.id]; const act=document.createElement("div"); act.style.cssText="display:flex;gap:8px;margin-top:14px"; act.innerHTML=`<button class="btn sm" style="flex:1;width:auto;min-width:0;margin:0;color:var(--lime);border-color:var(--lime)" data-end="achieved">🎯 Goal achieved</button><button class="btn sm ghost" style="flex:1;width:auto;min-width:0;margin:0;color:var(--red)" data-end="cancelled">Cancel goal</button>`; exp.appendChild(act); act.querySelectorAll("[data-end]").forEach(b=>b.addEventListener("click",()=>endGoalEarly(eng,b.getAttribute("data-end")))); }
   exp.querySelector(".oe-close").addEventListener("click",()=>renderOfferRow(wrap,o,c,shortName,o.status==="pending",coachName,goalActive));
   wrap.innerHTML="";wrap.appendChild(exp);
@@ -7370,6 +7473,7 @@ async function renderEngagement(skipFetch){
   }
 
   if(WEEK_MODEL) body.appendChild(thisWeekCardEl(iAmCoach));   // Item AT: this-week card (see thisWeekCardEl)
+  if(iAmCoach && !traineeMerged){ const ph=document.createElement("div"); body.appendChild(ph); renderPaymentTracker(ph,currentEng,"coach"); }   // Item DL
   // calendar
   if(engCalYear==null){const t=new Date();engCalYear=t.getFullYear();engCalMonth=t.getMonth();}
   const head=document.createElement("div");head.className="cal-head";

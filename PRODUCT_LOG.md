@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 60 | **DL** Payment tracker - order-tracking steps map (escrow model; honest pilot labels) | 1-1.5 days pilot; escrow with BI | Deposit → weekly releases → complete; early end → refund. |
+| 60 | **DL** Payment tracker - pilot version BUILT 2026-10-29 (deposit skipped) | escrow version with BI; refund rule provisional |
 | 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
 | 58 | **DJ** Notification bar icon (white box) - monochrome badge-96.png | Small | Placeholder FT silhouette now; final with BJ. |
 | 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25, LIVE with CE | - |
@@ -212,7 +212,33 @@ the pilot, step 2 "Deposit held by FormTrace" is drawn greyed with a
 skipped mark and the note "Skipped during the pilot - paid directly to the
 coach", and the payment itself appears as the confirmed direct payment
 (I've paid → Received). So trainees and coaches see the full model from day
-one, and nothing on screen claims money is held when it is not. Estimate: 1-1.5 days for the pilot version; the
+one, and nothing on screen claims money is held when it is not.
+**BUILT 2026-10-29 - pilot version** (`migrations_payment_tracker.sql`).
+- **Map:** Accepted · Deposit (dashed, struck through, "pilot" -
+  "Deposit skipped during the pilot - paid directly to the coach") · Paid
+  (awaiting → ✓ with date) · Training (week k of n) · Complete, or Ended
+  (amber "!" while a refund is outstanding). `STRIPE_LIVE=false` is the
+  one switch that turns the deposit step on.
+- **Below the map, the current step and its action:** trainee - the total
+  (weekly × weeks) and the coach's payment details, **I've paid**; coach -
+  "your trainee says they paid € on <date>", **Received ✓** (or **Mark as
+  received** if paid before the trainee tapped); after an early end -
+  **Refund sent** (coach) → **Refund received ✓** (trainee).
+- **Where:** the trainee's expanded accepted offer on the Goal tab; the
+  coach's trainee screen under the this-week card; **Notifications** shows
+  a 💶 Payments card with the live map for each open money task (pay,
+  confirm, refund due, refund arrived) - that card is the reminder. Each
+  confirmation pushes the other side.
+- **Coach payment details** (`coach_payout_details`, max 300 chars,
+  edited from the tracker): readable only by the coach and trainees with
+  an engagement with them - never on the public profile.
+- All state changes go through security-definer functions (`mark_paid`,
+  `confirm_received`, `mark_refund_sent`, `confirm_refund_received`),
+  each checking it is the right party.
+- **Provisional pilot rule, in one constant** (`PILOT_REFUND_REASONS`):
+  a refund of the unused full weeks is due only when the goal ended for
+  "coach not responding" or "coaching quality"; otherwise "no refund is
+  due under the pilot terms". Change it when the pilot terms are agreed. Estimate: 1-1.5 days for the pilot version; the
 escrow version is part of BI. Not started.
 
 ---
