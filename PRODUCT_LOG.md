@@ -54,7 +54,7 @@ BE) are not tasks and are left out.
 | 78 | **ED** Secret 100%-off promo code for live testing (webhook must accept no_payment_required) | Small | Coupon + limited promotion code in Stripe; comp deposits skip money parts. |
 | 77 | **EC** Coach onboarding - operate and test (build: DU) | Owner setup | Deploy connect-onboard, Connect branding, sandbox test; coaches all in Ireland. |
 | 76 | **EB** Payment switch payments_via_stripe - operate (build: DU) | - | Flip to 1 only after DW. |
-| 75 | **EA** Pilot fees at parity with Stripe costs | Small build + decision | Pass-through processing line; rates in platform_rates; who pays Connect costs. |
+| 75 | **EA** Pilot fees at parity with Stripe costs | Small build | DECIDED: trainee pays all Stripe costs; processing line rounded up to the whole euro. |
 | 74 | **DZ** Refunds of unreleased weeks | Medium | Partial refund on the deposit; transfer reversal for disputed released weeks. |
 | 73 | **DY** Weekly releases to coaches | Medium | Scheduled transfers with source_transaction; waits for onboarding; optional hold. |
 | 72 | **DX** Terms of Service page - TOMORROW | Draft + lawyer | URL in Stripe; re-enable ToS consent. |
