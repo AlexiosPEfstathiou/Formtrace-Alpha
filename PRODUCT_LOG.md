@@ -4,6 +4,48 @@ Opened 2026-08-07. Body is chronological (newest first) - a development
 record, kept that way because it is what every bug hunt has been traced
 through. The index below is the sorted view.
 
+## PENDING - IN ORDER (as of 2026-10-29 night)
+
+The order to do things in, by dependency. **(O)** = owner, **(C)** = Claude. Items not in
+the list below are done, superseded, or parked (bottom).
+
+**A. Next session - foundations**
+1. **DV** Outside-activity check (O) - first: it gates money and the domain's ownership.
+2. **BJ** Choose the name (O) - the domain depends on it.
+3. **EE** Buy the domain (O).
+4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
+   installs for the pilot (new origin = reinstall, re-allow push).
+5. **DX** Terms of Service page (C draft → lawyer) - published on the domain; URL in Stripe.
+6. **Pending SQL** (O): `migrations_stripe_checkout.sql`, `migrations_stripe_connect.sql`,
+   `migrations_body_achievements_recheck.sql` (SQL journal: given).
+7. **Stripe sandbox setup** (O): STRIPE_INTEGRATION_TODO.md steps 1-9 - three Edge
+   Functions, webhook endpoint, secrets, **EC** Connect branding.
+
+**B. Build the rest of escrow (C)**
+8. **EA** Processing line (trainee pays Stripe costs, rounded up to the whole euro).
+9. **ED** Zero-amount promo code support (webhook accepts `no_payment_required`).
+10. **DY** Weekly releases.  11. **DZ** Refunds.
+12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
+
+**C. Prove it, then go live**
+13. **EG** Test payment, sandbox: coach onboarding, deposit, a release, a refund.
+14. **DW** Live keys and go-live (O + C).
+15. **EG** Test payment, live, with the ED code.
+16. **EB** Flip `payments_via_stripe` to 1.
+
+**D. The pilot**
+17. **DK** Agree the pilot price with the coaches; pilot terms (refund rule, transfer
+    reversal clause) (O + C).
+18. **BU / DF** Walk the test day (O) - before the invitations.
+19. Coach invitations; coaches sign up; **Founding grant** SQL with their emails (O).
+20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
+22. **CB** Launch timeline - revisit with pilot learnings.
+
+**Any time (small):** **DN** compare the deployed push-send code (owner pastes it) ·
+**BH** marketplace polish feedback · **CN** remaining test-day findings.
+**After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
+tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
+traffic grows). **Blocked:** **CX** iPhone (no device) · **AA** / **AH** (need a repro).
 ## OPEN ITEMS, EASIEST TO HARDEST (as of 2026-09-14)
 
 Difficulty is about the work and risk to ship, not importance. Items
@@ -51,6 +93,9 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 81 | **EG** Test payment between the owner's coach and trainee profiles (sandbox, then live with ED) | Owner + Claude | The end-to-end proof of escrow. |
+| 80 | **EF** Point the domain at GitHub Pages, Supabase and Stripe | Small | New origin: installs and push must be redone - before pilot invites. |
+| 79 | **EE** Buy the domain | Owner | After BJ (the name); personal account. |
 | 78 | **ED** Secret 100%-off promo code for live testing (webhook must accept no_payment_required) | Small | Coupon + limited promotion code in Stripe; comp deposits skip money parts. |
 | 77 | **EC** Coach onboarding - operate and test (build: DU) | Owner setup | Deploy connect-onboard, Connect branding, sandbox test; coaches all in Ireland. |
 | 76 | **EB** Payment switch payments_via_stripe - operate (build: DU) | - | Flip to 1 only after DW. |
@@ -197,6 +242,44 @@ week-close trigger makes that window tiny).
 
 ---
 
+## EG. Run a test payment between the owner's coach and trainee profiles
+
+Owner, 2026-10-29. The end-to-end proof that escrow works, run twice:
+1. **Sandbox** (after STRIPE_INTEGRATION_TODO steps 1-9 and the EA/ED/DY/DZ builds): coach
+   profile → Get paid with Stripe → test onboarding → Payouts ready ✓; trainee profile →
+   accept a pitch → Pay by card with `4242 4242 4242 4242` → Deposit ✓ → coach push; close
+   a week → release appears on both sides; end the goal early → refund of unreleased weeks.
+2. **Live** (after DW): the same journey with the **ED** 100%-off code - nothing charged,
+   every step real.
+Record each result in the SQL journal / log; anything that fails becomes its own item.
+
+---
+
+## EF. Point the domain at GitHub Pages, Supabase and Stripe
+
+Owner, 2026-10-29. After EE. **GitHub:** repo Settings → Pages → Custom domain (adds a
+`CNAME` file) + DNS records at the registrar + **Enforce HTTPS**. **Supabase:** Auth → URL
+Configuration → Site URL and redirect URLs (password reset, sign-in) to the new domain;
+Edge Function secret **`APP_URL`** = the new address (Checkout and Connect return there).
+**Stripe:** Settings → Public details (website, support URL; ToS URL from DX), Connect
+branding, webhook endpoints unchanged (they point at Supabase). **App:** manifest
+`start_url` / scope, any hard-coded github.io links, the referral QR base URL.
+**Consequence to plan for:** a new domain is a new origin - installed apps, local settings,
+**push subscriptions and notification permission do not carry over**. Everyone reinstalls
+and allows notifications again (DO prompts them), so do this **before** the pilot invites
+go out, and keep github.io redirecting to the domain.
+
+---
+
+## EE. Buy the domain
+
+Owner, 2026-10-29. Depends on **BJ** (the name - still waiting on the shortlist): the
+domain should match the final name, so decide the name first, then check the .com / .ie
+and social handles together. Register in the owner's **personal** name and account (see
+DV), with auto-renew and registrar lock on. `.ie` needs a connection to Ireland (easy for
+an Irish resident).
+
+---
 ## ED. Secret 100%-off promo code - test in live mode without moving money
 
 Owner, 2026-10-29: a secret code that makes the whole payment zero, to test on production
