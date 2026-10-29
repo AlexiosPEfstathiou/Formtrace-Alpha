@@ -72,10 +72,10 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 
 ## SQL status
 **What has actually been run is in `supabase/SQL_JOURNAL.md`** (with a query that
-checks the database). As of 2026-10-29 every migration is confirmed applied. Open:
-the platform fee already reads 0 - confirm whether `pilot_settings.sql` ran (it saves
-the launch rates as `launch_*` rows for the restore); Founding still to be granted to
-the pilot coaches by email.
+checks the database). As of 2026-10-29 every migration is confirmed applied, and
+`pilot_settings.sql` has run: **pilot pricing (0% fees) is live**, launch rates saved
+for the restore. Open: grant Founding to the pilot coaches by email once they sign up
+(only Georgios Politakis holds it today).
 
 ## Migrations — run order
 All in `supabase/`, run in the SQL editor in this order (each is idempotent):

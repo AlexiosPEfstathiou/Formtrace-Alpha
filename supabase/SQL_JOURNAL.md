@@ -56,7 +56,9 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-09-25 | CE | test `insert into push_outbox …` | run ✓ | Notification arrived on Android; status-bar icon was a white box (fixed, DJ). |
 | 2026-10-29 | DL | `migrations_payment_tracker.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
 | 2026-10-29 | DL | `migrations_payment_way_out.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
-| 2026-10-29 | DK | `pilot_settings.sql` | unclear | Check query shows trainee_fee_pct = 0 already. Verify whether the script ran (launch_* rows saved) or fees were zeroed another way - query given below. Founding still to grant by the coaches' emails. |
+| 2026-10-29 | DK | `pilot_settings.sql` | run ✓ | Fees 0 (trainee_fee_pct, trainee_fee_min, coach_commission_pct); launch values saved: 5.9 / 1.00 / 11.9. Founding part matched nobody (example emails). **Pilot pricing is live.** |
 | 2026-10-29 | journal | the check query above | run ✓ | All 15 rows true, including pilot_settings (fees 0) - unexpected, see DK row. |
 | 2026-10-29 | DK | `select key, value from platform_rates where key in (... fee keys and launch_* keys)` + Founding list | run ✓ (partly) | The editor shows only the last statement: Founding = Georgios Politakis since 2026-09-19 (granted before pilot_settings existed). Rates result not seen. |
-| 2026-10-29 | DK | the platform_rates select on its own | given | Six rows with launch_* = script ran; three zeros = zeroed another way. |
+| 2026-10-29 | DK | the platform_rates select on its own | run ✓ | Six rows - the script ran. |
+| 2026-10-29 | DK | Founding grant by the pilot coaches' emails (`update profiles set founding_at …`) | pending | Run once the coaches have signed up. Current Founding: Georgios Politakis (since 2026-09-19). |
+| after the pilot | BI | restore launch rates (`update platform_rates … from launch_*`, in pilot_settings.sql) | pending | Only when Stripe is live. |
