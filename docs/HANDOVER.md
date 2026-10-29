@@ -52,8 +52,8 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   of truth). Then the first test payment.
 - BI prerequisite 1 (loss liability) **set** 2026-10-29: Connect platform setup = buyers
   purchase from FormTrace, sellers paid individually, hosted onboarding, Express
-  Dashboard, platform responsible for refunds/chargebacks (owner confirming the
-  Connect Platform Agreement). Still open: **VAT advice**, **coach countries**.
+  Dashboard, platform responsible for refunds/chargebacks (onboarding shown complete,
+  Connect Platform Agreement accepted). Still open: **VAT advice**, **coach countries**.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 

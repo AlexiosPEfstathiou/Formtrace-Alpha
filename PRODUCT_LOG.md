@@ -363,7 +363,7 @@ liability). Stripe had offered Stripe-held liability only if sellers collect pay
 directly (direct charges); declined because it removes the deposit/escrow model and
 makes each coach the merchant of record. Exposure is mainly chargebacks on weeks
 already released - mitigated by weekly releases, transfer reversals (put in the coach
-terms) and Radar. Owner to click Continue (Connect Platform Agreement) - confirm.
+terms) and Radar. **Confirmed 2026-10-29: Stripe shows the Connect onboarding complete** (Connect Platform Agreement accepted).
 
 ---
 
