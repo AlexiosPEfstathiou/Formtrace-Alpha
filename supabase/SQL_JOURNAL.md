@@ -5,6 +5,8 @@ this at the start of every session.** When SQL is given: add a row with status
 `given`. When the owner confirms: change to `run ✓` with the date and the result the
 final `select` showed. Never mark `run ✓` without the owner's confirmation.
 
+**Note:** the Supabase SQL editor shows only the LAST statement's result - give one `select` per check.
+
 Statuses: `given` (handed over, not yet confirmed) · `run ✓` (owner confirmed) ·
 `pending` (deliberately not run yet) · `unknown` (before this journal; check with the
 query below).
@@ -56,4 +58,5 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DL | `migrations_payment_way_out.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
 | 2026-10-29 | DK | `pilot_settings.sql` | unclear | Check query shows trainee_fee_pct = 0 already. Verify whether the script ran (launch_* rows saved) or fees were zeroed another way - query given below. Founding still to grant by the coaches' emails. |
 | 2026-10-29 | journal | the check query above | run ✓ | All 15 rows true, including pilot_settings (fees 0) - unexpected, see DK row. |
-| 2026-10-29 | DK | `select key, value from platform_rates where key in (... fee keys and launch_* keys)` + Founding list | given | Settles whether pilot_settings ran. |
+| 2026-10-29 | DK | `select key, value from platform_rates where key in (... fee keys and launch_* keys)` + Founding list | run ✓ (partly) | The editor shows only the last statement: Founding = Georgios Politakis since 2026-09-19 (granted before pilot_settings existed). Rates result not seen. |
+| 2026-10-29 | DK | the platform_rates select on its own | given | Six rows with launch_* = script ran; three zeros = zeroed another way. |
