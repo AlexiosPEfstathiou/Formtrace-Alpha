@@ -206,6 +206,19 @@ on **Connect Express**, the trainee paying through **Stripe-hosted Checkout**.
 **Gate before starting:** the BI plan's three prerequisites - loss liability accepted,
 VAT advice, coach countries confirmed. Status to confirm with the owner. Estimate:
 several days. Not started.
+**Checkout Studio configuration (owner, 2026-10-29)** - to use exactly: hosted page
+(`ui_mode` hosted_page; `hosted` on SDKs below 21), billing address `auto`, phone off,
+automatic tax **off** (until the VAT advice), promotion codes **on**, submit type
+`pay`, terms of service consent **required**, locale `en`, `integration_identifier`
+hosted_mobile_app_0001, `origin_context` mobile_app; `mode` payment (one-off charge
+per goal - `payment_method_collection` only applies to subscriptions, so omitted).
+Adaptations for FormTrace: a Supabase Edge Function (no Express server); `price_data`
+built per goal from the accepted offer, not catalogue Price IDs; charge tagged to the
+engagement (metadata + transfer_group) for the weekly transfers and refunds; a
+**Terms of Service URL must be set in Stripe** (Settings -> Public details) before
+consent can be required - FormTrace has none yet; Stripe promotion codes must not
+stack with FormTrace vouchers (BW). Hold status: the owner to decide whether sandbox
+code may start before the three prerequisites.
 
 ---
 ## Handover (2026-10-29)

@@ -40,6 +40,16 @@ step is drawn **skipped** ("paid directly to the coach") until `STRIPE_LIVE=true
 The real implementation is Stripe Connect (BI). Pilot refund rule is provisional, in
 one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 
+## Stripe status (refreshed 2026-10-29, Lilly account)
+- Account and sandbox ready (owner). Checkout Studio configured - settings in
+  PRODUCT_LOG **DM**. Integration plan: PRODUCT_LOG **BI plan** (personal account).
+- Prerequisite 1 (loss liability): the owner could not find Platform profile -
+  likely Connect platform onboarding not yet completed (dashboard.stripe.com/connect →
+  Get started: Marketplace, individuals, Express dashboard, platform collects, platform
+  liable). Prerequisites 2 (VAT) and 3 (coach countries) open.
+- Needed before Checkout can require ToS consent: a Terms of Service page + URL in
+  Stripe. FormTrace has none yet.
+- **Build hold:** stands until the owner lifts it (sandbox-only code is the proposal).
 ## Open decisions (owner)
 - Pilot price, period and early-ending rule — to agree with the coaches.
 - Streak rewards: 12-month reward TBD; cap on the €5 monthly credit (BW economics note).
