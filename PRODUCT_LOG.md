@@ -41,7 +41,7 @@ BE) are not tasks and are left out.
 | 25 | **CB** Launch timeline | plan | Alpha -> payments -> 3 daily-scanning coaches -> 30 trainees with a €30 first-goal voucher -> measure first goals and retention. |
 | 26 | **CC** Goal-completion questionnaire - BUILT 2026-09-16 | - | 15 trainee / 13 coach questions, free text on each; homepage card per completed goal; admin NPS + responses. |
 | 27 | **CD** Retention plan - DONE 2026-09-16 | push on CE, window on CI | Survey-linked next-goal offer; persistent trainee card; between-goals card with prefilled repost; admin scan activity. |
-| 28 | **CE** Push notifications - BUILT 2026-09-21 | 4 dashboard steps | Outbox + triggers compose; push-send Edge Function sends; Settings toggle + per-type switches; SW click routing. docs/PUSH_SETUP.md. |
+| 28 | **CE** Push notifications - LIVE 2026-09-25 | icon: DJ |
 | 29 | **CF** Monday PBs + streak - card DONE 2026-09-16 | push on CE | "Your week in review" card: PBs last week + streak line; dismiss per week. |
 | 30 | **CG** Workout levels - BUILT 2026-09-17 | - | Per-workout scale (+reps, +kg per level), optional target kg per exercise, level picked at assign and remembered per trainee, resolved numbers in the snapshot. |
 | 31 | **CH** Exit survey - DONE 2026-09-16 | - | Seven questions; gentle card on ended goals; admin NPS for exits. |
@@ -51,7 +51,8 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25 | needs CE live + pg_cron |
+| 58 | **DJ** Notification bar icon (white box) - monochrome badge-96.png | Small | Placeholder FT silhouette now; final with BJ. |
+| 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25, LIVE with CE | - |
 | 56 | **DH** Achievements on Profile collapsed by default - BUILT 2026-09-25 | - |
 | 55 | **DG** Referral by QR - BUILT 2026-09-25 (referral half + BW matrix) | voucher QR after BI |
 | 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
@@ -173,6 +174,23 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DJ. Notification bar icon (a white box shows today)
+
+Owner, 2026-09-25, first real push: the notification arrived, but the
+status-bar icon is a **white square**. Cause: Android draws the small
+status-bar icon from the notification's `badge` using only its alpha
+channel - every non-transparent pixel becomes white. `sw.js` passes the
+full-colour `icon-192.png` as the badge, which is opaque everywhere, so it
+renders as a solid square. Fix: a **monochrome badge** - a white silhouette
+of the mark on a fully transparent background, 96×96 PNG (`badge-96.png`),
+set as `badge` in `sw.js` (`showNotification`) and in the local test buzz;
+keep `icon` as the full-colour image (it shows inside the expanded
+notification). Silhouette must read at 24 dp: a bold "FT" or the mark's
+outline, no thin strokes, no text below 8 px. Final shape follows the brand
+(BJ); a placeholder "FT" silhouette can ship now. Small.
 
 ---
 
@@ -1609,7 +1627,7 @@ strings verbatim when CE exists.
 
 ---
 
-## CE. Mobile phone notifications (push) - BUILT 2026-09-21 (dashboard setup pending)
+## CE. Mobile phone notifications (push) - LIVE 2026-09-25
 
 Requested 2026-09-16, now that the app installs. Push is what makes the
 timed nudges real: call reminders (AY), the week-close and PB/streak
@@ -1655,6 +1673,13 @@ in-app card.
 Setup is four steps in the dashboard - SQL, VAPID key (public in
 push_config, private in function secrets), paste the function via the
 editor, create the webhook - none of which needs the CLI or npm.
+**LIVE 2026-09-25.** Owner ran the four steps; a server-sent test arrived on
+the Android phone. Done along the way: VAPID pair generated on the owner's
+machine with Node's built-in crypto (private key kept in a local file,
+never in chat or repo); every push trigger now catches its own errors so a
+push can never block the offer, review, call or clap it describes; the
+dashboard puts the webhook's auth header under the ▾ next to "Add header".
+Open: the status-bar icon (DJ).
 
 ---
 
