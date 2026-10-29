@@ -179,6 +179,17 @@ week-close trigger makes that window tiny).
 
 ---
 
+## Handover (2026-10-29)
+
+`CLAUDE.md` (repo root - working rules, read automatically by Claude Code) and
+`docs/HANDOVER.md` (state, pilot plan, payment model, open decisions, blockers,
+infrastructure, full migration order) written so the project can continue on the
+owner's personal Claude account and computer. Claude projects cannot be shared
+across organisations, and chat history cannot be moved; the repository is the
+project's home.
+
+---
+
 ## DL. Payment tracker - an order-tracking steps map, built for the escrow model
 
 Owner, 2026-10-29. **The FormTrace payment model is escrow:** the platform
