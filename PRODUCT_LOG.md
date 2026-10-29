@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 60 | **DL** Payment tracker - order-tracking steps map (escrow model; honest pilot labels) | 1-1.5 days pilot; escrow with BI | Deposit → weekly releases → complete; early end → refund. |
 | 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
 | 58 | **DJ** Notification bar icon (white box) - monochrome badge-96.png | Small | Placeholder FT silhouette now; final with BJ. |
 | 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25, LIVE with CE | - |
@@ -178,6 +179,37 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DL. Payment tracker - an order-tracking steps map, built for the escrow model
+
+Owner, 2026-10-29. **The FormTrace payment model is escrow:** the platform
+receives the trainee's payment as a **deposit**, and **releases it to the coach
+after the services are provided** - or **refunds the trainee** if they were
+not. Payment tracking shows a **steps map like Amazon's order tracking** -
+one line of steps, done steps filled, the current one highlighted, a date
+under each - on the goal, for both trainee and coach.
+**Steps (the real model, BI):**
+1. **Offer accepted** - terms, total, weeks.
+2. **Deposit received** - "€X held by FormTrace".
+3. **Training · week k of n** - each week shows sessions delivered and
+   reviewed; when a week is delivered its share is **released to the coach**
+   ("€Y released"); missed sessions follow the no-show rule already in the
+   ledger design (`rate_per_workout_cents`, `noshow_fraction_pct`).
+4. **Goal complete** - remaining balance released; "€X paid to <coach>".
+Branch **Ended early** (CN-10, with its reason): unused, undelivered weeks
+**refunded to the trainee**; the map shows the refund step instead of 4.
+Both views read the same ledger; amounts and dates on every step; a tap
+opens the detail (what was released when, and why).
+**Pilot (DK, before Stripe):** money goes directly to the coach, so the
+tracker cannot truthfully say "held by FormTrace". The pilot map uses the
+same layout with honest labels - Offer accepted → **Paid to coach**
+(trainee: I've paid) → **Receipt confirmed** (coach: Received) → Training
+week k of n → Goal complete; an early end shows **Refund due: €Z** for the
+coach to settle. When BI arrives, steps 2-4 switch to the escrow wording
+and become automatic. Estimate: 1-1.5 days for the pilot version; the
+escrow version is part of BI. Not started.
+
+---
+
 ## DK. Coach pilot - paid, direct to the coach, one agreed price
 
 Owner, 2026-10-29, after a five-week pause. Goal: a small group of coaches
@@ -195,9 +227,9 @@ period, earning real income, so the app gets real use and feedback.
 - Still to agree in the pilot terms: the price, the period (4-6 weeks), and
   the early-ending rule (proposal: the coach refunds unused full weeks if
   they fail to deliver; no refund for started weeks if the trainee stops).
-**To build (about a day):** coach payment details on the coach profile,
-shown on an accepted offer; trainee **I've paid** → coach **Received**, with
-a status on the goal; a reminder if unconfirmed after a few days. Optional
+**To build:** see **DL** - the payment tracker (pilot version), which
+includes the coach's payment details on an accepted offer, trainee **I've
+paid** → coach **Received**, and a reminder if unconfirmed after a few days. Optional
 once the price is agreed: prefill / lock the pitch price to the pilot price.
 **Parallel:** create the Stripe account during the pilot so BI is ready at
 the end. Owner to check outside-activity disclosure before money changes
