@@ -1,6 +1,7 @@
 # FormTrace Coach — Handover (as of 2026-10-29)
 
 Written so any Claude session (or person) can continue without the original chat.
+Refreshed every 5 owner prompts (see the session routine in `CLAUDE.md`).
 Working rules: `CLAUDE.md`. Full history and every decision: `PRODUCT_LOG.md`.
 
 ## Where things stand
@@ -68,6 +69,12 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   and delete the file. It also lives in the Edge Function secrets.
 - **Rates:** `platform_rates` (fees, commissions, streak grace) — editable without a
   deploy.
+
+## SQL status
+**What has actually been run is in `supabase/SQL_JOURNAL.md`** (with a query that
+checks the database). Outstanding as of 2026-10-29: end_goal_early, the level_up
+approval, dismissals, streak_badge, daily_digest, payment_tracker, payment_way_out are
+`given` but unconfirmed; `pilot_settings.sql` is `pending` until the pilot starts.
 
 ## Migrations — run order
 All in `supabase/`, run in the SQL editor in this order (each is idempotent):

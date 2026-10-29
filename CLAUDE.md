@@ -3,6 +3,21 @@
 Read this first, then `docs/HANDOVER.md` (where things stand) and `PRODUCT_LOG.md`
 (every item, decision and finding, newest items at the top of the index).
 
+## Session routine - two Claude accounts, one repository (owner rule, 2026-10-29)
+The owner works from **two Claude accounts** (Lilly and personal). Neither can see the
+other's chats or memory - **this repository is the shared memory.**
+1. **Start of every session:** `git pull`, then read **this file**,
+   **`docs/HANDOVER.md`** and **`supabase/SQL_JOURNAL.md`** before doing anything else.
+2. **Every 5 owner prompts** in a session: update `docs/HANDOVER.md` (state, plan,
+   decisions, blockers) and this file (any new rule or convention), commit
+   "Handover refresh", push. Also do it before the session ends.
+3. **Every SQL command handed to the owner** gets a row in `supabase/SQL_JOURNAL.md`
+   (status `given`); when the owner confirms, mark it `run ✓` with the result. Never
+   assume SQL was run - check the journal, or run its verification query.
+4. **Every decision** goes into `PRODUCT_LOG.md`, not only into a chat.
+5. **One machine active at a time:** pull before starting, push before stopping;
+   allocate the next item code only after pulling.
+
 ## What this is
 A coaching PWA: trainees post goals, coaches pitch, trainees record sets, coaches
 review with tags, voice-over and drawing. **Single file app** — `index.html` holds
