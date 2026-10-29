@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 62 | **DN** Review the push-send setup (owner doubts) | Small | Code vs repo, Verify JWT, secret names, webhook, outbox health, logs. |
 | 61 | **DM** Embed Stripe - part 2 (Checkout deposit) BUILT in sandbox 2026-10-29 | see STRIPE_INTEGRATION_TODO.md; onboarding, release, refunds next |
 | 60 | **DL** Payment tracker - pilot version BUILT 2026-10-29 (deposit skipped) | escrow version with BI; refund rule provisional |
 | 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
@@ -180,6 +181,26 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DN. Review the push-send Edge Function setup (owner has doubts)
+
+Owner, 2026-10-29: "Review if I created the push-send correctly - I have doubts."
+Push works end to end (a server test arrived on Android on 2026-09-25), so the review
+is about whether the deployed setup matches the repo and is robust, not whether it
+runs at all. **Checklist:**
+1. **Code:** Supabase → Edge Functions → push-send → Code - identical to
+   `supabase/functions/push-send/index.ts` (owner pastes it; it contains no secrets).
+2. **Details:** Verify JWT **ON**.
+3. **Secrets:** exactly `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+   (names are case-sensitive); the public one equals `push_config.vapid_public`.
+4. **Webhook** `push_outbox_send`: table `public.push_outbox`, event **Insert** only,
+   type Supabase Edge Functions → `push-send`, POST, Authorization header present.
+5. **Health:** `push_outbox` since launch - every row has `sent_at`; `error` only
+   "muted" / "no subscription"; no numeric HTTP errors; morning summaries (kind
+   `daily`) appearing at about 08:00 local.
+6. **Logs:** Edge Functions → push-send → Logs - no repeated errors.
+Not started.
+
+---
 ## DM. Embed Stripe into the app (the BI build)
 
 Owner, 2026-10-29: "My Stripe account is ready." This item is the build that puts the

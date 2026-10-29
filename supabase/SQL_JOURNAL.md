@@ -63,3 +63,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DK | Founding grant by the pilot coaches' emails (`update profiles set founding_at …`) | pending | Run once the coaches have signed up. Current Founding: Georgios Politakis (since 2026-09-19). |
 | after the pilot | BI | restore launch rates (`update platform_rates … from launch_*`, in pilot_settings.sql) | pending | Only when Stripe is live. |
 | 2026-10-29 | DM | `migrations_stripe_checkout.sql` | given | Expected final select: 6. |
+| 2026-10-29 | DN | push_outbox health query (kind, total, sent, errors since 2026-09-25) | given | Read-only. |
