@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIX built 2026-10-29 | run the migration |
+| 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIXED and verified 2026-10-29 | owner re-tries Mark achieved |
 | 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds proposed, owner to confirm. |
 | 63 | **DO** Push on by default (silent if allowed, one explained prompt, sticky opt-out) - BUILT 2026-10-29 | - |
 | 62 | **DN** Review the push-send setup (owner doubts) | Small | Code vs repo, Verify JWT, secret names, webhook, outbox health, logs. |
@@ -200,7 +200,7 @@ the client; database triggers only fail at run time on the server.
 for both tables; **all achievement and Consistency-badge triggers now catch their own
 errors** (a reward can never block the action); the migration proves the fix by running a
 rolled-back no-op status update on a real goal - it fails loudly if the bug remains.
-**Follow-up:** add a server-side smoke test to the test day: end a goal, raise a level,
+**Run 2026-10-29: "goal updates fixed"** - the self-test passed. **Follow-up:** add a server-side smoke test to the test day: end a goal, raise a level,
 close a week, confirm a friend - each must save.
 
 ---
