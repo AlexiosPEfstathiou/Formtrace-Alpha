@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
 | 58 | **DJ** Notification bar icon (white box) - monochrome badge-96.png | Small | Placeholder FT silhouette now; final with BJ. |
 | 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25, LIVE with CE | - |
 | 56 | **DH** Achievements on Profile collapsed by default - BUILT 2026-09-25 | - |
@@ -174,6 +175,33 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DK. Coach pilot - paid, direct to the coach, one agreed price
+
+Owner, 2026-10-29, after a five-week pause. Goal: a small group of coaches
+(group chat) who agree to pitch to every trainee goal for a fixed pilot
+period, earning real income, so the app gets real use and feedback.
+**Decisions:**
+- **Model B:** trainees pay a reduced pilot price; the platform takes **0%**
+  (set `platform_rates` trainee fee and coach commission to 0 for the pilot -
+  data only, reversible).
+- **Payment route: direct to the coach** (bank transfer / Revolut / PayPal)
+  until Stripe (BI) is ready. The owner never holds trainee money; each coach
+  handles their own income and tax.
+- **Price: one aligned pilot price agreed with the coaches together** - "the
+  pilot stage is about the app and improving it, not a bidding war".
+- Still to agree in the pilot terms: the price, the period (4-6 weeks), and
+  the early-ending rule (proposal: the coach refunds unused full weeks if
+  they fail to deliver; no refund for started weeks if the trainee stops).
+**To build (about a day):** coach payment details on the coach profile,
+shown on an accepted offer; trainee **I've paid** → coach **Received**, with
+a status on the goal; a reminder if unconfirmed after a few days. Optional
+once the price is agreed: prefill / lock the pitch price to the pilot price.
+**Parallel:** create the Stripe account during the pilot so BI is ready at
+the end. Owner to check outside-activity disclosure before money changes
+hands.
 
 ---
 
