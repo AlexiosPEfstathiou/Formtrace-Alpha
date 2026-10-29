@@ -14,7 +14,9 @@ ending a goal early with reasons and surveys, forgot password, **push notificati
 (live)** including a **morning summary at ~08:00 local time**, and the **pilot
 payment tracker**.
 
-**Not built: real payments (BI).** Blocked only on creating a Stripe account.
+**Not built: real payments (BI).** Stripe sandbox opened and integration plan made
+(2026-10-29, PRODUCT_LOG "BI plan"); **build on hold** until three owner prerequisites
+are done (loss liability, VAT advice, coach countries).
 
 ## The plan now — the coach pilot (PRODUCT_LOG DK, DL)
 - 3–5 coaches in a group chat agree to pitch to every trainee goal for 4–6 weeks.
@@ -47,7 +49,7 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 ## Blocked / waiting
 | Item | On |
 |---|---|
-| BI payments (and BL, BR, BS, vouchers, fee discounts) | Stripe account |
+| BI payments (and BL, BR, BS, vouchers, fee discounts) | on hold: loss liability accepted, VAT advice, coach countries |
 | CX iPhone install | no iPhone to test on |
 | BJ branding | name shortlist |
 | CZ scalable achievement tiers | a month of live data |

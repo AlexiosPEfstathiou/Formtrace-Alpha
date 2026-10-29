@@ -25,7 +25,7 @@ BE) are not tasks and are left out.
 | 9 | **AH** Pose overlay sometimes missing - MITIGATED 2026-09-14 | blocked on repro | Rebuild retries with backoff + manual retry; pose-coverage number on every set. |
 | 10 | **AE / F** -> superseded by **CM In Touch** (2026-09-18) | - | NFC phone-to-phone is impossible on the web; replaced by knock-to-connect. Challenges still out of scope. |
 | 11 | **AY part 2** Google Meet link on accepted calls - DONE 2026-09-14 | - | Create/paste/Join on the card, calendar and homepage; OAuth auto-mint later once there is a server. |
-| 12 | **BI** Commission plan + escrow payments | Hardest | Stripe Connect; rates DECIDED (5.9% trainee fee, 11.9% coach commission, 0/8.9/5.9 overrides). Unblock: open a Stripe account. |
+| 12 | **BI** Commission plan + escrow payments | Hardest | Stripe Connect; rates DECIDED (5.9% trainee fee, 11.9% coach commission, 0/8.9/5.9 overrides). Sandbox open + integration plan done 2026-10-29; build ON HOLD (owner) pending 3 prerequisites - see BI plan entry. |
 | 13 | **BL** First successful transaction | Follows BI | The milestone BI exists to reach; not separate work. |
 | 14 | **BP** Seed trainee goals | ready to post | Five goals + pitch scripts in docs/TEST_DAY.md; post from the trainee account, log the three numbers. |
 | 15 | **BQ** Founding coach badge - DONE 2026-09-14 | - | Admin-assigned from the Admin screen; badge on the public profile. |
@@ -187,6 +187,32 @@ infrastructure, full migration order) written so the project can continue on the
 owner's personal Claude account and computer. Claude projects cannot be shared
 across organisations, and chat history cannot be moved; the repository is the
 project's home.
+
+---
+
+## BI plan (2026-10-29) - Stripe integration plan; build ON HOLD
+
+**What:** Stripe sandbox account "Formtrace sandbox" opened and connected to Claude
+(Stripe plugin + MCP). Stripe's implementation planner produced the shape below; the
+full plan is in the claude.ai project doc `stripe-integration-plan.md`.
+
+- Connect **Marketplace**, FormTrace is merchant of record (no on_behalf_of).
+- **Separate charges and transfers** - fits the escrow model (destination charges
+  cannot hold funds): trainee pays FormTrace, weekly Transfer to the coach, refund of
+  unreleased weeks.
+- Fees: trainee fee added to the charge; coach commission kept by transferring less
+  (no application_fee_amount).
+- Platform owns pricing and loss liability; Radar for Platforms from day one.
+- Coaches: Accounts v2 recipient accounts (stripe_transfers), Express Dashboard,
+  embedded onboarding + notification banner.
+
+**ON HOLD (owner decision, 2026-10-29)** - no code until these three are done:
+1. Accept loss liability in the sandbox Dashboard (Connect -> Platform profile).
+2. VAT: confirm with an accountant whether FormTrace, as merchant of record, is the
+   supplier of the whole coaching service or only the fee - decides Stripe Tax setup.
+3. Confirm whether all coaches are in Ireland (plan assumes same country).
+
+**Not done:** no Edge Functions, no secrets, no SQL. `STRIPE_LIVE` stays false.
 
 ---
 
