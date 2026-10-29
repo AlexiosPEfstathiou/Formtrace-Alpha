@@ -272,6 +272,16 @@ period, earning real income, so the app gets real use and feedback.
 includes the coach's payment details on an accepted offer, trainee **I've
 paid** → coach **Received**, and a reminder if unconfirmed after a few days. Optional
 once the price is agreed: prefill / lock the pitch price to the pilot price.
+**Owner, 2026-10-29 - fees and incentive:** pilot fees set to **0%** (trainee
+fee, the €1 minimum, and default commission) - not as a reward but so the
+app shows what really happens, since nothing is collected before Stripe.
+The incentive is the **Founding badge**, which already means **0% platform
+commission forever** (BQ, `commission_founding = 0`) - real income in the
+pilot and no commission for life after launch. Consequence: FormTrace earns
+only the trainee service fee on Founding coaches' goals - keep the Founding
+group small and closed. `supabase/pilot_settings.sql` zeroes the rates (the
+launch values are saved as `launch_*` rows, with the restore statement in
+the file) and grants Founding by email - there is no admin button for it.
 **Parallel:** create the Stripe account during the pilot so BI is ready at
 the end. Owner to check outside-activity disclosure before money changes
 hands.
