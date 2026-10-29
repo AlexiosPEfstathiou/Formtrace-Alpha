@@ -198,7 +198,10 @@ runs at all. **Checklist:**
    "muted" / "no subscription"; no numeric HTTP errors; morning summaries (kind
    `daily`) appearing at about 08:00 local.
 6. **Logs:** Edge Functions → push-send → Logs - no repeated errors.
-Not started.
+**Health (2026-10-29):** offer 2/2 sent, review 2/2 sent, 0 real errors, latest today -
+delivery is fine. **Finding: no `daily` rows ever** - the morning summary has not sent.
+Diagnostic query given (cron job, last run/status, users with tz, subscriptions,
+digests logged). Code comparison (item 1) waits for the owner to paste the deployed code.
 
 ---
 ## DM. Embed Stripe into the app (the BI build)
