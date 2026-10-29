@@ -63,6 +63,43 @@ From Checkout Studio, used exactly:
 No new dependencies on any machine: the functions import `npm:stripe` and
 `npm:@supabase/supabase-js@2`, fetched by Supabase's cloud at deploy.
 
+## Coach payouts (Item DU) - setup
+
+6. **SQL:** run `supabase/migrations_stripe_connect.sql` (the switch `payments_via_stripe`,
+   off; the private `coach_stripe_accounts` table; `coach_payouts_ready`). Final select:
+   `0 | 1`.
+7. **Edge Function `connect-onboard`:** deploy
+   [supabase/functions/connect-onboard/index.ts](supabase/functions/connect-onboard/index.ts),
+   **Verify JWT ON**. Uses the same `STRIPE_SECRET_KEY` secret.
+8. **Connect branding (required before hosted onboarding works):** Stripe → Settings →
+   Connect → Branding: business name **FormTrace**, an icon, and a brand colour (#F0D231).
+9. **Test (sandbox):** a coach phone opened once with `?stripetest=1` → Profile → **Get paid
+   with Stripe → Set up payouts** → Stripe's test onboarding (use test data; Stripe shows
+   the test values to enter) → back in the app the card reads **Payouts ready ✓**.
+
+## The switch
+
+`platform_rates.payments_via_stripe` = **1** turns Stripe escrow on for everyone: the
+manual route (coach payment details, I've paid, Ask for details) disappears for goals not
+yet paid; trainees see **Pay by card**; the map shows Deposit as the payment step; coaches
+see the payouts card on Profile. Goals already paid directly keep their record.
+`update public.platform_rates set value = 1 where key = 'payments_via_stripe';`
+(0 turns it back.) In the sandbox, flipping it on means test cards only - flip it on for
+real only after go-live below.
+
+## Go-live checklist (before the pilot starts)
+
+- [ ] Sandbox: one test deposit and one coach onboarding, end to end
+- [ ] Weekly release and refunds built and tested (next DM parts)
+- [ ] BI prerequisites: VAT advice; coach countries (accounts are created in the coach's
+      profile country, default IE)
+- [ ] Outside-activity check
+- [ ] Stripe live activation complete; live secret key + live webhook endpoint and signing
+      secret replace the test ones in Supabase secrets
+- [ ] Connect branding set in live mode too
+- [ ] Offer wording fixed ("never a lump sum" is untrue under escrow)
+- [ ] Optional: Terms of Service page, then re-enable consent_collection
+- [ ] Flip `payments_via_stripe` to 1; restore launch rates only if pilot fees should end
 ## How it works
 
 1. Trainee, on a phone opened once with `?stripetest=1`, opens the accepted goal →

@@ -28,7 +28,7 @@ const builder=()=>new Proxy({}, { get(t,p){
   if(p===Symbol.toPrimitive) return ()=>"";
   return ()=>builder(); } });
 const storeStub=new Proxy({}, { get(t,p){
-  if(p==="_sb") return { from:()=>builder(), rpc:()=>builder(), auth:{getUser:()=>Promise.resolve({data:{user:{id:"u1"}}})}, storage:{from:()=>({createSignedUrl:()=>Promise.resolve({data:{signedUrl:"blob:x"}})})} };
+  if(p==="_sb") return { from:()=>builder(), rpc:()=>builder(), functions:{ invoke:()=>Promise.resolve({data:{},error:null}) }, auth:{getUser:()=>Promise.resolve({data:{user:{id:"u1"}}})}, storage:{from:()=>({createSignedUrl:()=>Promise.resolve({data:{signedUrl:"blob:x"}})})} };
   if(p==="auth") return new Proxy({ currentUser:()=>Promise.resolve({id:"u1"}), updateProfile:()=>Promise.resolve({}), myProfile:()=>Promise.resolve(null), onAuthStateChange:()=>({data:{subscription:{unsubscribe:noop}}}) },{ get:(o,k)=>k in o?o[k]:(()=>Promise.resolve(mk())) });
   // store.<name> may be a namespace (store.logs.list()) or a function (store.coaches(), store.videoMeta(paths)) - be both
   return new Proxy(function(){}, { get:(o,k)=>(k==="then"?undefined:(()=>Promise.resolve(mk()))), apply:()=>Promise.resolve(mk()) });

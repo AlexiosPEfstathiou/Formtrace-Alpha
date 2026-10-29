@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 69 | **DU** Payment switch + coach payouts (Connect Express, hosted) - BUILT in sandbox 2026-10-29; pilot moves to Stripe escrow (supersedes DK direct route) | release + refunds next; go-live checklist |
 | 68 | **DT** BUG: 1600 kg typo kept "Bulk up" - weight 20-400 kg enforced; body achievements re-checked on weight changes - BUILT 2026-10-29 | run the migration |
 | 67 | **DS** BUG: journey recap extract(unknown, integer) - FIXED 2026-10-29 (migration run, weeks_check 13) | owner re-opens the journey |
 | 66 | **DR** BUG: journey recap "store.journeySummary is not a function" - FIXED 2026-10-29; new store-call check in the gate | - |
@@ -187,6 +188,34 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DU. The payment switch and coach payouts - the pilot moves to Stripe escrow
+
+Owner, 2026-10-29: "The app still has the manual 'ask for details' route. Let's use Stripe
+now that we have it." **Decision: the pilot uses Stripe escrow; go live before the pilot
+starts.** This **supersedes DK's direct-to-coach route.** Consequences accepted: FormTrace
+pays Stripe's card fee on every deposit while pilot fees are 0%; the remaining go-live
+items come back into scope (see STRIPE_INTEGRATION_TODO.md checklist).
+**BUILT 2026-10-29 (sandbox):**
+- **Switch** `platform_rates.payments_via_stripe` (0 until go-live). On: the manual route
+  disappears for unpaid goals, **Pay by card** for every trainee, the map's Deposit step is
+  the payment (the manual Paid step drops out), coaches see the payouts card. Goals paid
+  directly keep their record.
+- **Coach payouts** - Edge Function `connect-onboard`: Express connected account with the
+  **transfers** capability only and the **recipient** service agreement (coaches receive
+  transfers, do not take card payments), created in the coach's profile country (default
+  IE); Stripe-hosted onboarding via Account Links; status refresh; Express Dashboard login
+  link. Accounts made with test keys are discarded automatically under live keys.
+- **Private table** `coach_stripe_accounts` (coach reads own; written by the server only);
+  others may ask only `coach_payouts_ready(coach)`.
+- Profile card **Get paid with Stripe**: Set up payouts → Finish setup (items due) →
+  Payouts ready ✓ / Open Stripe dashboard; return and expired-link handling.
+- Gate: the render check's stand-in Supabase client gained `functions.invoke`.
+**Deviation from the BI plan:** Accounts v1 Express with transfers (standard, simpler) in
+place of Accounts v2 recipient accounts. **Risk to verify in the sandbox:** whether Stripe
+accepts transfers-only + recipient agreement for the coach's country - the error, if any,
+shows on the card. **Next:** weekly release and refunds; then the go-live checklist.
+
+---
 ## DT. BUG: a typo (1600 kg) earned "Bulk up", and correcting it kept the achievement
 
 Owner, 2026-10-29. Two flaws: no plausibility check on body weight, and achievements were
@@ -510,6 +539,8 @@ escrow version is part of BI. Not started.
 ---
 
 ## DK. Coach pilot - paid, direct to the coach, one agreed price
+
+**SUPERSEDED 2026-10-29 (owner, DU): the pilot uses Stripe escrow, live before the pilot starts.** The direct-to-coach route below stays in the code behind the switch, for goals already paid that way.
 
 Owner, 2026-10-29, after a five-week pause. Goal: a small group of coaches
 (group chat) who agree to pitch to every trainee goal for a fixed pilot

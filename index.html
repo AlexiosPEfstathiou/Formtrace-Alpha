@@ -2979,7 +2979,7 @@ let MY_RATES=null;   // effective_rates(ME.id) for a coach: {coach_commission_pc
 async function loadPlatformRates(){
   try{
     const { data }=await store._sb.from("platform_rates").select("key,value");
-    for(const r of (data||[])){ const v=Number(r.value); if(r.key==="trainee_fee_pct"&&isFinite(v)) TRAINEE_FEE_PCT=v; if(r.key==="coach_commission_pct"&&isFinite(v)) COACH_COMMISSION_PCT=v; if(r.key==="trainee_fee_min"&&isFinite(v)) MIN_SERVICE_FEE=v; if(r.key==="streak_amber_weeks"&&isFinite(v)) STREAK_AMBER_WEEKS=v; }
+    for(const r of (data||[])){ const v=Number(r.value); if(r.key==="trainee_fee_pct"&&isFinite(v)) TRAINEE_FEE_PCT=v; if(r.key==="payments_via_stripe") STRIPE_LIVE=(v===1); if(r.key==="coach_commission_pct"&&isFinite(v)) COACH_COMMISSION_PCT=v; if(r.key==="trainee_fee_min"&&isFinite(v)) MIN_SERVICE_FEE=v; if(r.key==="streak_amber_weeks"&&isFinite(v)) STREAK_AMBER_WEEKS=v; }
     if(ME&&ME.role==="coach"){ const { data:er }=await store._sb.rpc("effective_rates",{p_coach:ME.id}); if(er) MY_RATES=er; }
   }catch(e){ /* migration not run yet - defaults stand */ }
 }
@@ -3265,6 +3265,7 @@ function renderAppTabs(current){
   showHeader(true); refreshNotifDot();   // Item CP
   if(pwRecovery){ pwRecovery=false; setTimeout(openSetNewPassword,100); }   // Item DC: arrived from a reset link
   try{ const q=new URLSearchParams(location.search); const ck=q.get("checkout"); if(ck){ history.replaceState(null,"",location.pathname+location.hash); if(ck==="success") toast("Payment received - confirming with Stripe… it appears on your goal in a moment.",5000); else if(ck==="cancel") toast("Checkout cancelled - nothing was charged.",3500); } }catch(e){}   /* Item DM: back from Stripe Checkout */
+  try{ const q=new URLSearchParams(location.search); const so=q.get("stripe"); if(so){ history.replaceState(null,"",location.pathname+location.hash); if(so==="return") toast("Back from Stripe - your payout status is on your Profile.",4000); else if(so==="refresh") toast("That Stripe link expired - tap Set up payouts again.",4000); } }catch(e){}   /* Item DU: back from Stripe onboarding */
   if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); checkStreakBadgeLevelUp(); }   // Item CY catch-up; Item BW level-up animation
   setTimeout(ensurePushDefault,1500);   /* Item DO: push on by default (silent if already allowed, else one explained prompt) */
   try{ const tz=Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz&&tz!==ME.tz){ store._sb.rpc("set_my_tz",{p_tz:tz}).then(()=>{ ME.tz=tz; }); } }catch(e){}   // Item DI: the morning summary goes out at 08:00 in this zone
@@ -4226,7 +4227,7 @@ async function renderSoloCalendar(card){
    the service is delivered, or refunds the trainee. In the pilot there is no escrow -
    the trainee pays the coach directly - so the deposit step is drawn SKIPPED until
    Stripe (BI) is live. Both sides see the same map. */
-const STRIPE_LIVE=false;
+let STRIPE_LIVE=false;   /* Item DU: set from platform_rates.payments_via_stripe (1 = Stripe escrow) at sign-in */
 /* Item DM: Stripe Checkout in TEST mode, visible only on a phone opened once with ?stripetest=1 (?stripetest=0 turns it off). Pilot users never see it. */
 try{ const q=new URLSearchParams(location.search); if(q.get("stripetest")==="1") localStorage.setItem("ft-stripe-test","1"); if(q.get("stripetest")==="0") localStorage.removeItem("ft-stripe-test"); }catch(e){}
 const STRIPE_TEST=(()=>{ try{ return localStorage.getItem("ft-stripe-test")==="1"; }catch(e){ return false; } })();
@@ -4248,27 +4249,51 @@ async function paymentState(eng,offer){
   let payout=null; try{ const { data }=await store._sb.from("coach_payout_details").select("details").eq("coach_id",e.coach_id).maybeSingle(); payout=data&&data.details; }catch(x){}
   return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout};
 }
+/* ---- Item DU: coach payouts via Stripe Connect (Express, hosted onboarding) ---- */
+async function renderStripeConnectCard(ph){
+  if(!ph) return;
+  const shell=(body)=>`<div class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:6px">Get paid with Stripe</div>${body}</div>`;
+  ph.innerHTML=shell(`<div style="font-size:12.5px;color:var(--muted)">Checking your payout setup…</div>`);
+  let st=null;
+  try{ const { data, error }=await store._sb.functions.invoke("connect-onboard",{body:{action:"status"}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } st=data||{}; }
+  catch(e){ console.error("connect status (deploy connect-onboard)",e); ph.innerHTML=shell(`<div style="font-size:12.5px;color:var(--faint)">Payouts aren't available yet.</div>`); return; }
+  const ready=st.connected&&st.details_submitted&&st.transfers_active;
+  const test=st.livemode===false?` <span style="color:var(--amber)">(Stripe test mode)</span>`:"";
+  let body, btn;
+  if(!st.connected){ body=`Trainees' deposits are held by FormTrace and released to you week by week. Set up payouts with Stripe to receive them${test}.`; btn=`<button class="btn sm primary" data-sc="onboard" style="width:auto">Set up payouts</button>`; }
+  else if(!ready){ body=`Your Stripe setup isn't finished${st.requirements_due?` - ${st.requirements_due} item${st.requirements_due===1?"":"s"} to complete`:""}${test}. Releases wait until it is.`; btn=`<button class="btn sm primary" data-sc="onboard" style="width:auto">Finish setup</button>`; }
+  else { body=`<b style="color:var(--lime)">Payouts ready ✓</b> - each delivered week is released to your bank through Stripe${test}.`; btn=`<button class="btn sm ghost" data-sc="dashboard" style="width:auto">Open Stripe dashboard</button>`; }
+  ph.innerHTML=shell(`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${body}</div><div style="margin-top:10px">${btn}</div>`);
+  ph.querySelectorAll("[data-sc]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { data, error }=await store._sb.functions.invoke("connect-onboard",{body:{action:b.getAttribute("data-sc")}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(!data||!data.url) throw new Error("No link returned"); location.href=data.url; }catch(x){ console.error("connect action",x); toast(x.message||"Couldn't open Stripe",4500); b.disabled=false; } }));
+}
 async function renderPaymentTracker(holder,eng,role,offer){
   if(!holder||!eng||!eng.id) return;
   const s=await paymentState(eng,offer); if(!s) return; const {e}=s; const isCoach=role==="coach";
   const day=t=>t?fmtDay(String(t).slice(0,10)):"";
   const steps=[
     {k:"acc",l:"Accepted",st:"done",d:day(e.started_at||e.created_at)},
-    {k:"dep",l:"Deposit",st:e.deposit_at?"done":(STRIPE_LIVE?"":"skip"),d:e.deposit_at?day(e.deposit_at):(STRIPE_LIVE?"":"pilot")},
+    {k:"dep",l:"Deposit",st:e.deposit_at?"done":(STRIPE_LIVE?"now":"skip"),d:e.deposit_at?day(e.deposit_at):(STRIPE_LIVE?"":"pilot")},
     {k:"paid",l:"Paid",st:(e.received_at||e.deposit_at)?"done":"now",d:e.deposit_at?day(e.deposit_at):(e.received_at?day(e.received_at):(e.paid_at?"awaiting":""))},
     {k:"trn",l:"Training",st:e.status==="active"?((e.received_at||e.deposit_at)?"now":""):"done",d:e.status==="active"&&s.weekNow?`wk ${s.weekNow}/${s.weeks}`:""},
     {k:"end",l:s.ended?"Ended":"Complete",st:e.status==="completed"?"done":(s.ended?(s.refundDue>0&&!e.refund_received_at?"warn":"done"):""),d:e.completed_at?day(e.completed_at):""}
   ];
-  if((e.received_at||e.deposit_at)&&e.status==="active") steps[2].st="done";
+  { const ps=steps.find(x=>x.k==="paid"); if(ps&&(e.received_at||e.deposit_at)&&e.status==="active") ps.st="done"; }
+  if(STRIPE_LIVE&&!e.paid_at&&!e.received_at){ const i=steps.findIndex(x=>x.k==="paid"); if(i>=0) steps.splice(i,1); }   /* DU: escrow - no separate manual payment step */
   let now="", actions="";
   const who=isCoach?"your trainee":"your coach";
   if(!e.paid_at&&!e.received_at&&!e.deposit_at){
+   if(STRIPE_LIVE){   /* Item DU: Stripe escrow replaces the manual route for new goals */
+    now=isCoach?`Waiting for your trainee's deposit of <b style="color:var(--ink)">${s.money(s.total)}</b>. FormTrace holds it and releases it to you week by week. Make sure payouts are set up: Profile → Get paid with Stripe.`
+               :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> by card${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. FormTrace holds it and releases it to your coach week by week as your sessions are delivered; unused weeks are refunded if the goal ends early.`;
+    actions=isCoach?"":`<button class="btn sm primary" data-pt="card" style="width:auto">Pay by card</button>`+(e.status==="active"?`<button class="btn sm ghost" data-pt="out" style="width:auto;color:var(--red)">Cancel goal</button>`:"");
+   } else {
     now=isCoach?`Waiting for ${who} to pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to you.`
                :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to your coach${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. ${s.payout?`<div style="margin-top:6px;padding:8px 10px;border:1px solid var(--line2);border-radius:10px;color:var(--ink);white-space:pre-wrap">${escapeHtml(s.payout)}</div>`:`<div style="margin-top:6px;color:var(--amber)">Your coach hasn't added payment details yet - ask them on your next call.</div>`}`;
     if(!isCoach){ actions=(STRIPE_TEST?`<button class="btn sm primary" data-pt="card" style="width:auto">Pay by card (Stripe test)</button>`:"")+`<button class="btn sm primary" data-pt="paid" style="width:auto${s.payout?"":";opacity:.45"}" ${s.payout?"":"disabled"}>I've paid</button>`
       +(s.payout?"":`<button class="btn sm ghost" data-pt="ask" style="width:auto">Ask for details</button>`)
       +(e.status==="active"?`<button class="btn sm ghost" data-pt="out" style="width:auto;color:var(--red)">Cancel goal</button>`:""); }   // DL: a way out before paying
     else actions=`<button class="btn sm ghost" data-pt="recv" style="width:auto">Mark as received</button>`;
+   }
   } else if(e.paid_at&&!e.received_at&&!e.deposit_at){
     now=isCoach?`Your trainee says they paid <b style="color:var(--ink)">${s.money(s.total)}</b> on ${day(e.paid_at)}. Confirm once it has arrived.`
                :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
@@ -4284,7 +4309,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
       else now=`Ended early. Refund of ${s.money(s.refundDue)} received ${day(e.refund_received_at)}. Settled.`;
     } else now=`Ended early. No refund is due under the pilot terms.`;
   }
-  const editor=isCoach?`<details style="margin-top:10px;font-size:12px"><summary style="cursor:pointer;color:var(--lime);font-weight:700">${s.payout?"Edit how trainees pay you":"Add how trainees pay you"}</summary><textarea id="pt-payout" rows="3" maxlength="300" placeholder="e.g. Revolut @yourtag, or IBAN and name" style="margin-top:6px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:10px;color:var(--ink);padding:8px 10px;font-size:12.5px">${escapeHtml(s.payout||"")}</textarea><button class="btn sm ghost" id="pt-payout-save" style="width:auto;margin-top:6px">Save</button><div style="font-size:11px;color:var(--faint);margin-top:4px">Shown only to trainees who accepted your offer.</div></details>`:"";
+  const editor=(isCoach&&!STRIPE_LIVE)?`<details style="margin-top:10px;font-size:12px"><summary style="cursor:pointer;color:var(--lime);font-weight:700">${s.payout?"Edit how trainees pay you":"Add how trainees pay you"}</summary><textarea id="pt-payout" rows="3" maxlength="300" placeholder="e.g. Revolut @yourtag, or IBAN and name" style="margin-top:6px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:10px;color:var(--ink);padding:8px 10px;font-size:12.5px">${escapeHtml(s.payout||"")}</textarea><button class="btn sm ghost" id="pt-payout-save" style="width:auto;margin-top:6px">Save</button><div style="font-size:11px;color:var(--faint);margin-top:4px">Shown only to trainees who accepted your offer.</div></details>`:"";
   const card=document.createElement("div"); card.className="card"; card.style.marginTop="12px";
   card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="eyebrow">Payment</div><div style="font-size:12px;color:var(--muted)">${s.money(s.total)}</div></div>
     <div class="pt-steps">${steps.map(x=>`<div class="pt-step ${x.st}"><div class="pt-dot">${x.st==="done"?"✓":x.st==="skip"?"–":x.st==="warn"?"!":""}</div><div class="pt-lbl">${x.l}</div><div class="pt-date">${escapeHtml(x.d||"")}</div></div>`).join("")}</div>
@@ -11420,6 +11445,8 @@ function moveSettingsSections(){
   for(const k of dropping) k.remove();
   /* the three handle fields belong on Profile (owner): pull them out of the moved Social-profile section */
   const h=$("#sp-handles"); if(h){ const first=from.querySelector(".card"); if(first&&first.nextSibling) from.insertBefore(h,first.nextSibling); else from.appendChild(h); h.style.display=""; }
+  /* Item DU: coach payouts card (shown once Stripe is on, or on a test phone) */
+  if(roleOf()==="coach" && (STRIPE_LIVE||STRIPE_TEST) && !from.querySelector("#pf-payouts")){ const ph=document.createElement("div"); ph.id="pf-payouts"; const anchor=$("#sp-handles")||from.querySelector(".card"); if(anchor&&anchor.nextSibling) from.insertBefore(ph,anchor.nextSibling); else from.appendChild(ph); renderStripeConnectCard(ph); }
   /* Item CY: achievements grid under the handles */
   if(!from.querySelector("#pf-achievements")){ const anchor=$("#sp-handles")||from.querySelector(".card"); const holder=document.createElement("div"); if(anchor&&anchor.nextSibling) from.insertBefore(holder,anchor.nextSibling); else from.appendChild(holder); renderProfileAchievements(holder); }
 }
