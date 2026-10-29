@@ -61,9 +61,13 @@ $$;
 -- ---- triggers that compose pushes ----
 create or replace function public.push_on_celebration() returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  begin
   insert into public.push_outbox (to_user, kind, title, body, url)
   values (new.to_user, 'clap', '👏 ' || public._name_of(new.from_user) || ' congratulated you',
           case when new.event_kind = 'week' then 'for ' || new.event_text else new.event_text end, '/#notifications');
+  exception when others then
+    raise warning 'push_on_celebration skipped: %', sqlerrm;   -- never block the write this push describes
+  end;
   return new;
 end; $$;
 drop trigger if exists push_on_celebration on public.celebrations;
@@ -72,9 +76,13 @@ create trigger push_on_celebration after insert on public.celebrations for each 
 
 create or replace function public.push_on_handle_share() returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  begin
   insert into public.push_outbox (to_user, kind, title, body, url)
   values (new.to_user, 'connect', '🔗 ' || public._name_of(new.from_user) || ' shared their ' || initcap(new.network),
           new.handle, '/#notifications');
+  exception when others then
+    raise warning 'push_on_handle_share skipped: %', sqlerrm;   -- never block the write this push describes
+  end;
   return new;
 end; $$;
 drop trigger if exists push_on_handle_share on public.handle_shares;
@@ -84,6 +92,7 @@ create trigger push_on_handle_share after insert or update of revoked_at on publ
 create or replace function public.push_on_connection() returns trigger language plpgsql security definer set search_path = public as $$
 declare requester uuid; other uuid;
 begin
+  begin
   if new.status = 'pending' and (tg_op = 'INSERT' or old.status is distinct from 'pending') then
     -- the side that has already confirmed is the requester; notify the other
     requester := case when new.a_ok and not new.b_ok then new.a when new.b_ok and not new.a_ok then new.b else null end;
@@ -96,6 +105,9 @@ begin
     insert into public.push_outbox (to_user, kind, title, body, url) values (new.a, 'knock', '🤝 You and ' || public._name_of(new.b) || ' are connected', 'You will see each other''s wins', '/#intouch');
     insert into public.push_outbox (to_user, kind, title, body, url) values (new.b, 'knock', '🤝 You and ' || public._name_of(new.a) || ' are connected', 'You will see each other''s wins', '/#intouch');
   end if;
+  exception when others then
+    raise warning 'push_on_connection skipped: %', sqlerrm;   -- never block the write this push describes
+  end;
   return new;
 end; $$;
 drop trigger if exists push_on_connection on public.connections;
@@ -103,6 +115,7 @@ create trigger push_on_connection after insert or update on public.connections f
 
 create or replace function public.push_on_offer() returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  begin
   if tg_op = 'INSERT' and new.status = 'pending' then
     insert into public.push_outbox (to_user, kind, title, body, url)
     values (new.trainee_id, 'offer', '✉ New offer from ' || public._name_of(new.coach_id), coalesce(new.title,'Your goal') || ' · ' || coalesce(new.price_text,''), '/#listings');
@@ -116,6 +129,9 @@ begin
     insert into public.push_outbox (to_user, kind, title, body, url)
     values (new.coach_id, 'offer', '🎉 ' || public._name_of(new.trainee_id) || ' accepted your offer', coalesce(new.title,'Goal'), '/#trainee-home');
   end if;
+  exception when others then
+    raise warning 'push_on_offer skipped: %', sqlerrm;   -- never block the write this push describes
+  end;
   return new;
 end; $$;
 drop trigger if exists push_on_offer on public.offers;
@@ -124,11 +140,15 @@ create trigger push_on_offer after insert or update on public.offers for each ro
 create or replace function public.push_on_review() returns trigger language plpgsql security definer set search_path = public as $$
 declare t uuid;
 begin
+  begin
   select s.trainee_id into t from public.submissions s where s.id = new.submission_id;
   if t is not null then
     insert into public.push_outbox (to_user, kind, title, body, url)
     values (t, 'review', '📝 Your coach reviewed a workout', 'Tags, notes and voice-over are ready', '/#trainee-home');
   end if;
+  exception when others then
+    raise warning 'push_on_review skipped: %', sqlerrm;   -- never block the write this push describes
+  end;
   return new;
 end; $$;
 drop trigger if exists push_on_review on public.reviews;
@@ -137,6 +157,7 @@ create trigger push_on_review after insert on public.reviews for each row execut
 create or replace function public.push_on_call() returns trigger language plpgsql security definer set search_path = public as $$
 declare e record; other uuid;
 begin
+  begin
   select coach_id, trainee_id into e from public.engagements where id = new.engagement_id;
   if e is null then return new; end if;
   other := case when new.proposed_by = e.coach_id then e.trainee_id else e.coach_id end;
@@ -147,6 +168,9 @@ begin
     insert into public.push_outbox (to_user, kind, title, body, url)
     values (new.proposed_by, 'call', '📞 Call accepted', to_char(new.proposed_date,'Dy DD Mon') || ' · ' || left(new.start_time::text,5), '/#trainee-home');
   end if;
+  exception when others then
+    raise warning 'push_on_call skipped: %', sqlerrm;   -- never block the write this push describes
+  end;
   return new;
 end; $$;
 drop trigger if exists push_on_call on public.call_proposals;
