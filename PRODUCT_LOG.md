@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25 | needs CE live + pg_cron |
 | 56 | **DH** Achievements on Profile collapsed by default - BUILT 2026-09-25 | - |
 | 55 | **DG** Referral by QR - BUILT 2026-09-25 (referral half + BW matrix) | voucher QR after BI |
 | 54 | **DF** Test-day checklist refresh | Half day | One two-phone walk-through of everything since 19 Sep. |
@@ -172,6 +173,38 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## DI. Morning summary push - about 08:00 in each user's own timezone
+
+Owner, 2026-09-25: a daily push to all users summarising their day -
+workout or rest day, the day's nutrition goal, a reminder to log
+yesterday's calories and this morning's weight - around 08:00 local time.
+**BUILT same day - inert until CE (push) is switched on**
+(`migrations_daily_digest.sql`).
+- **Timezone:** `profiles.tz`, the phone's IANA zone, recorded at every
+  sign-in through `set_my_tz` (validated against pg_timezone_names), so it
+  follows people who travel.
+- **Schedule:** pg_cron every 15 minutes runs `send_daily_digests()`:
+  everyone whose local hour is 8, who has a push subscription and has not
+  muted it, and has not had today's summary (`daily_digest_log`, one row
+  per user per local date - a missed run is caught by the next, nobody
+  gets two).
+- **Trainee copy** (`compose_daily_digest`): title "Today: <session>" /
+  "Today: 2 sessions" / "3 sessions left this week" (sessions without a
+  fixed day) / "Rest day today" / "Good morning" (no goal). Body: the
+  week's goal "2,200 kcal · 160 g protein" (carried forward if not reset)
+  + "Log yesterday's food and weigh in this morning." - each part only
+  when it applies. Opens the homepage.
+- **Coach copy** (assumption - all users): "3 reviews waiting" + "Call
+  today at 17:00." or "No reviews waiting - a clear start."
+- **Opt-out:** "Morning summary (about 08:00)" is the first per-type
+  switch under Settings → Notifications (`push_prefs.daily`).
+- Preview without sending: `select * from compose_daily_digest('<uuid>',
+  current_date);`
+Before it sends: CE's four dashboard steps; pg_cron enabled (the migration
+creates the extension; or Dashboard → Database → Extensions).
 
 ---
 
