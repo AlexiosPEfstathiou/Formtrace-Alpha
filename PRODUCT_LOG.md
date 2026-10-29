@@ -320,6 +320,16 @@ questionnaire - **Prebuilt checkout** (Stripe-hosted Checkout for the trainee's
 payment), Invoices off. Consistent with the plan above; the hold stands. Note for both
 accounts: the onboarding questionnaire only tailors the dashboard; Connect is enabled
 separately (Connect -> Get started).
+**Prerequisite 1 - Connect platform setup (owner, 2026-10-29, sandbox):** funds flow
+*buyers purchase from you, sellers paid out individually* (escrow, separate charges and
+transfers) · account creation **onboarding hosted by Stripe** (changed from the plan's
+embedded onboarding - less code, switchable later) · account management **Express
+Dashboard** · **"You are responsible for refunds and chargebacks"** (platform loss
+liability). Stripe had offered Stripe-held liability only if sellers collect payments
+directly (direct charges); declined because it removes the deposit/escrow model and
+makes each coach the merchant of record. Exposure is mainly chargebacks on weeks
+already released - mitigated by weekly releases, transfer reversals (put in the coach
+terms) and Radar. Owner to click Continue (Connect Platform Agreement) - confirm.
 
 ---
 

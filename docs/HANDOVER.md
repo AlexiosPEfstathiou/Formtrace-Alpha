@@ -50,8 +50,10 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   Verify JWT OFF), Stripe webhook endpoint, secrets `STRIPE_SECRET_KEY` and
   `STRIPE_WEBHOOK_SECRET` - steps in **`STRIPE_INTEGRATION_TODO.md`** (single source
   of truth). Then the first test payment.
-- BI prerequisites still open: loss liability (Connect platform onboarding not done -
-  Platform profile not found), VAT advice, coach countries.
+- BI prerequisite 1 (loss liability) **set** 2026-10-29: Connect platform setup = buyers
+  purchase from FormTrace, sellers paid individually, hosted onboarding, Express
+  Dashboard, platform responsible for refunds/chargebacks (owner confirming the
+  Connect Platform Agreement). Still open: **VAT advice**, **coach countries**.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
