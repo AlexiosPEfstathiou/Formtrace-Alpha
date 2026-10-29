@@ -12,15 +12,19 @@ the platform fee is 0 (`platform_rates`, see DK).
 
 ---
 
-## 1. First run and navigation
+## 1. First run - the trainee joins through the coach's QR
 | # | Who | Do | Expect |
 |---|---|---|---|
-| 1.1 | T | Sign up fresh | Lands on Home. Header: avatar left, gear + streak right. Tabs: Home · Training · Goal · Notifications · Social |
-| 1.2 | C | Sign in | Tabs: Home · Library · Open goals · Trainees · Social (+ Review if admin) |
-| 1.3 | T | Swipe left/right on the content | Moves between tabs |
-| 1.4 | T | Open **Training** with no coach | "No coach yet" card + Post a goal; **Your days** calendar; macros, weight, check-in, measurements cards |
-| 1.5 | T | Sign out → **Forgot password?** | Reset card; "If … has an account, a link is on its way"; the email link opens **Set a new password** |
-| 1.6 | T | Profile | "Signed in as … - this is your login"; Achievements is one collapsed row; Consistency badge row (grey) |
+| 1.1 | C | Sign in | Tabs: Home · Library · Open goals · Trainees · Social (+ Review if admin) |
+| 1.2 | C | Profile → **Invite a friend** | QR (dark on white, lime frame, FT mark); matrix shows commission tiers; "0 joined through your link" |
+| 1.3 | T | **Signed out, fresh account.** Scan C's QR with the phone camera → open the link | FormTrace opens on sign-up (in Chrome is fine - it shares storage with the installed app) |
+| 1.4 | T | Sign up | Toast "You joined through <coach>'s link 🎉". Lands on Home. Header: avatar left, gear + streak right. Tabs: Home · Training · Goal · Notifications · Social |
+| 1.5 | C | Refresh Profile → Invite a friend | "**1** joined through your link · **0** completed a goal"; Recruiter still the next target |
+| 1.6 | C | **Share** on the invite card | Phone share sheet with the invite image (QR + name); the link is in the text |
+| 1.7 | T | Swipe left/right on the content | Moves between tabs |
+| 1.8 | T | Open **Training** with no coach | "No coach yet" card + Post a goal; **Your days** calendar; macros, weight, check-in, measurements cards |
+| 1.9 | T | Sign out → **Forgot password?** | Reset card; "If … has an account, a link is on its way"; the email link opens **Set a new password** |
+| 1.10 | T | Profile | "Signed in as … - this is your login"; Achievements is one collapsed row; Consistency badge row (grey) |
 
 ## 2. Coach setup
 | # | Who | Do | Expect |
@@ -32,7 +36,6 @@ the platform fee is 0 (`platform_rates`, see DK).
 | 2.5 | C | Drag a card into the workout (hold on touch); drag ☰ to reorder; drag a row out | Lime insertion line; order changes; row removed. Header "N exercises · N sets · ~N min" |
 | 2.6 | C | **+** on a card; on PC scroll the rows with the mouse wheel | Card added; rows scroll sideways |
 | 2.7 | C | Workouts tab → **+** a saved workout | All its exercises copied in; name "<source> (copy)" |
-| 2.8 | C | Profile → **Invite a friend** | QR (dark on white, lime frame, FT mark) scans with another phone; matrix shows commission tiers; Share sends an image |
 
 ## 3. Goal, offers, acceptance
 | # | Who | Do | Expect |
@@ -75,6 +78,7 @@ the platform fee is 0 (`platform_rates`, see DK).
 | # | Who | Do | Expect |
 |---|---|---|---|
 | 7.1 | T | Goal → **Goal achieved** (or **Cancel goal**) with a reason | C homepage card with reason + push; rate the coach; survey card on Notifications |
+| 7.1b | C | After **Goal achieved**: Profile → Invite a friend | "1 joined · **1** completed a goal" - the referral now counts toward Recruiter (3). A cancelled goal does not count |
 | 7.2 | T/C | Payment map after a cancel for "coach not responding" after paying | Refund due → **Refund sent** (C) → **Refund received ✓** (T). Cancel before paying → no refund |
 
 ---
