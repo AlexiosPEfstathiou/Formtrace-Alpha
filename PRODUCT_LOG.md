@@ -51,6 +51,15 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 78 | **ED** Secret 100%-off promo code for live testing (webhook must accept no_payment_required) | Small | Coupon + limited promotion code in Stripe; comp deposits skip money parts. |
+| 77 | **EC** Coach onboarding - operate and test (build: DU) | Owner setup | Deploy connect-onboard, Connect branding, sandbox test; coaches all in Ireland. |
+| 76 | **EB** Payment switch payments_via_stripe - operate (build: DU) | - | Flip to 1 only after DW. |
+| 75 | **EA** Pilot fees at parity with Stripe costs | Small build + decision | Pass-through processing line; rates in platform_rates; who pays Connect costs. |
+| 74 | **DZ** Refunds of unreleased weeks | Medium | Partial refund on the deposit; transfer reversal for disputed released weeks. |
+| 73 | **DY** Weekly releases to coaches | Medium | Scheduled transfers with source_transaction; waits for onboarding; optional hold. |
+| 72 | **DX** Terms of Service page - TOMORROW | Draft + lawyer | URL in Stripe; re-enable ToS consent. |
+| 71 | **DW** Live keys and go-live - TOMORROW | Owner + small | Live secret + webhook, branding, live test with ED, flip EB. |
+| 70 | **DV** Outside-activity check - TOMORROW | Owner | Before the pilot takes money. |
 | 69 | **DU** Payment switch + coach payouts (Connect Express, hosted) - BUILT in sandbox 2026-10-29; pilot moves to Stripe escrow (supersedes DK direct route) | release + refunds next; go-live checklist |
 | 68 | **DT** BUG: 1600 kg typo kept "Bulk up" - weight 20-400 kg enforced; body achievements re-checked on weight changes - BUILT 2026-10-29 | run the migration |
 | 67 | **DS** BUG: journey recap extract(unknown, integer) - FIXED 2026-10-29 (migration run, weeks_check 13) | owner re-opens the journey |
@@ -188,6 +197,127 @@ week-close trigger makes that window tiny).
 
 ---
 
+## ED. Secret 100%-off promo code - test in live mode without moving money
+
+Owner, 2026-10-29: a secret code that makes the whole payment zero, to test on production
+with the owner's own coach and trainee accounts. **Supported by Stripe:** a 100%-off coupon
+plus a promotion code makes a Checkout Session free, and Checkout then collects no payment
+method (Stripe docs "No-cost orders"). Checkout already allows promotion codes
+(`allow_promotion_codes: true`). **To build:**
+1. **Webhook fix (required):** a free order completes with `payment_status =
+   no_payment_required`, not `paid` - accept both; record `deposit_amount = 0`; no
+   PaymentIntent. Without this the Deposit step never turns ✓ on a free order.
+2. Mark zero deposits as **comp** (e.g. `deposit_amount = 0`) so weekly release (DY) and
+   refunds (DZ) skip the money parts but still move the steps.
+3. **Owner, in Stripe (live and sandbox):** create the coupon (100% off, once) and a
+   promotion code on it with a hard-to-guess code, **max redemptions** (e.g. 10) and an
+   **expiry** - every Stripe code works in this Checkout, so codes must stay few and secret.
+4. Test-day step: pay a real goal with the code on production → Deposit ✓, nothing charged.
+
+---
+
+## EC. Coach onboarding (Stripe Connect) - operate and test
+
+The build is **DU** (BUILT 2026-10-29, sandbox): `connect-onboard` Edge Function, Express
+accounts with the transfers capability, Stripe-hosted onboarding, the Profile card "Get
+paid with Stripe" (Set up payouts → Finish setup → Payouts ready ✓ → Open Stripe
+dashboard), private `coach_stripe_accounts`. **To do:** deploy `connect-onboard` (Verify
+JWT ON); **Connect branding** (name FormTrace, icon, colour #F0D231) - required before
+hosted onboarding opens; test with a coach phone (`?stripetest=1`) and Stripe's test
+onboarding values. All coaches are in Ireland (owner, 2026-10-29), so accounts are created
+with country IE - the transfers-only + recipient-agreement combination still needs the
+sandbox test to confirm Stripe accepts it.
+
+---
+
+## EB. The payment switch `payments_via_stripe` - operate
+
+The build is **DU**. `platform_rates.payments_via_stripe`: **0** = the manual
+direct-to-coach route (today); **1** = Stripe escrow for every new goal (Pay by card,
+Deposit as the payment step, payouts card for coaches; goals paid directly keep their
+record). Flip with `update public.platform_rates set value = 1 where key =
+'payments_via_stripe';` - **only after the go-live checklist (DW)**: in the sandbox, 1
+means test cards only.
+
+---
+
+## EA. Pilot fees at parity with Stripe's costs - FormTrace loses nothing
+
+Owner, 2026-10-29: "bring the pilot at parity with Stripe fees so we don't lose any money
+during pilot." Pilot rates are 0% today, so FormTrace would pay every Stripe cost.
+**Stripe's costs for an Irish platform** (to confirm on Stripe's Irish pricing pages):
+cards - standard EEA 1.5% + €0.25, premium EEA 1.9% + €0.25, UK 2.5% + €0.25,
+international 3.25% + €0.25 (once per deposit); Connect Express - about €2 per monthly
+active coach account + 0.25% + a fixed fee per payout (each weekly release).
+**Proposal:** a pass-through **"payment processing" line** on the trainee's Checkout,
+computed in `checkout-create` so the platform nets the full price:
+`fee = (total × p + f) / (1 − p)` with p = 1.9 %, f = €0.25 (premium EEA - covers every
+Irish card), **plus** the expected Connect cost (weeks × payout fee + months × €2).
+Worked example, €100 over 4 weeks: card ≈ €2.19, payouts ≈ €0.65, account ≈ €2.00 →
+≈ €4.84 (≈ 4.8 %). Rates in `platform_rates` (`stripe_card_pct`, `stripe_card_fixed`,
+`stripe_payout_pct`, `stripe_payout_fixed`, `stripe_account_monthly`) so they change
+without a deploy. **Decision needed:** trainee pays it all (proposal), or Connect costs
+from the coach's side (note: Founding coaches pay 0% commission forever, so the coach
+side cannot carry it for them). Context: pilot money traffic is expected under €100, so
+the absolute amount is small - the point is the principle and the mechanism for launch.
+
+---
+
+## DZ. Refunds - unreleased weeks back to the trainee
+
+Part of DM. When a goal ends early (CN-10): refund the deposit share of every week not yet
+released, per the pilot refund rule (`PILOT_REFUND_REASONS`, to finalise in the pilot
+terms) - Stripe Refund on the deposit's PaymentIntent, partial amount. Released weeks are
+not refunded automatically; a disputed released week is recovered from the coach by
+**transfer reversal** (clause in the coach terms). Ledger rows for every refund; the
+tracker's Refund step shows amount and date; push to the trainee. Stripe keeps its fixed
+fee on a refund - part of EA's parity sum. Not started.
+
+---
+
+## DY. Weekly releases - each delivered week paid to the coach
+
+Part of DM. A scheduled job (pg_cron → Edge Function) transfers each **delivered** week's
+share of the deposit to the coach's connected account: Transfer with `source_transaction`
+= the deposit charge (so it succeeds even before the funds settle), `transfer_group =
+eng_<id>`, amount = weekly price less commission (0% for Founding coaches). "Delivered" =
+the week closed with its sessions reviewed (rule to confirm; the payment-ledger design
+already has `rate_per_workout_cents` and `noshow_fraction_pct`). Coach not onboarded yet
+→ the release waits and the coach is nudged. Optional hold of 7-14 days before release
+(DP). Ledger rows, the tracker's Training step shows each release, push to the coach.
+Not started.
+
+---
+
+## DX. Terms of Service page
+
+Owner, 2026-10-29 - work tomorrow. A public Terms page for FormTrace (trainee and coach
+terms, escrow and refunds, the pilot rules, transfer reversals, liability, privacy link),
+hosted with the app; its URL set in Stripe (Settings → Public details) and
+`consent_collection: { terms_of_service: "required" }` re-enabled in `checkout-create`.
+Draft by Claude, **review by a lawyer** before live. Not started.
+
+---
+
+## DW. Live keys and go-live
+
+Owner, 2026-10-29 - work tomorrow. Switch from the sandbox to live Stripe: live activation
+complete; **live** secret key replaces the test key in Supabase secrets (one secret per
+mode - never in chat or repo); a **live** webhook endpoint with its own signing secret;
+Connect branding in live mode; coach accounts re-created live (the function discards
+test-mode accounts automatically); one live test with the ED promo code; then flip
+`payments_via_stripe` (EB). Checklist in STRIPE_INTEGRATION_TODO.md. Not started.
+
+---
+
+## DV. Outside-activity check (owner)
+
+Owner, 2026-10-29 - work tomorrow. FormTrace is a personal commercial project; before the
+pilot takes money, check Lilly's guidance on outside activities (disclosure / approval)
+and confirm the project runs on personal accounts and equipment (see HANDOVER "Moving off
+the Lilly machine"). Owner action; Claude can help draft a disclosure. Not started.
+
+---
 ## DU. The payment switch and coach payouts - the pilot moves to Stripe escrow
 
 Owner, 2026-10-29: "The app still has the manual 'ask for details' route. Let's use Stripe
@@ -445,6 +575,7 @@ full plan is in the claude.ai project doc `stripe-integration-plan.md`.
 2. VAT: confirm with an accountant whether FormTrace, as merchant of record, is the
    supplier of the whole coaching service or only the fee - decides Stripe Tax setup.
 3. Confirm whether all coaches are in Ireland (plan assumes same country).
+**Owner, 2026-10-29:** prerequisite 2 (VAT) **POSTPONED** - pilot money traffic is expected under €100; revisit before wider launch (automatic tax stays off). Prerequisite 3 **DONE** - all coaches are in Ireland. Prerequisite 1 done (Connect setup). **All three settled.**
 
 **Not done:** no Edge Functions, no secrets, no SQL. `STRIPE_LIVE` stays false.
 

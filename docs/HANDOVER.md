@@ -57,6 +57,17 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
+## Tomorrow (owner, 2026-10-30) and the road to go-live
+**The pilot now uses Stripe escrow** (DU supersedes DK's direct route); go live before the
+pilot starts. BI prerequisites all settled (liability done; VAT postponed - traffic under
+€100; all coaches in Ireland).
+- Tomorrow: **DV** outside-activity check · **DW** live keys and go-live · **DX** Terms page.
+- Builds next: **DY** weekly releases · **DZ** refunds · **EA** fee parity with Stripe
+  (decision: who pays Connect costs) · **ED** zero-amount promo code (webhook must accept
+  `no_payment_required`).
+- Owner setup outstanding: STRIPE_INTEGRATION_TODO.md steps 1-9 (migrations, three Edge
+  Functions, webhook endpoint, secrets, Connect branding), then a sandbox test of a deposit
+  and a coach onboarding. Switch operation: **EB**. Coach onboarding test: **EC**.
 ## Recent fixes (2026-10-29) - re-test these
 - **DQ:** an achievement trigger had blocked every goal status / level change since
   2026-09-22 (ending, completing, cancelling a goal; raising a level). Fixed and verified;
