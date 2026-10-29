@@ -53,7 +53,7 @@ BE) are not tasks and are left out.
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 60 | **DL** Payment tracker - pilot version BUILT 2026-10-29 (deposit skipped) | escrow version with BI; refund rule provisional |
 | 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
-| 58 | **DJ** Notification bar icon (white box) - monochrome badge-96.png | Small | Placeholder FT silhouette now; final with BJ. |
+| 58 | **DJ** Notification bar icon - placeholder BUILT 2026-10-29 | final mark with BJ |
 | 57 | **DI** Morning summary push (~08:00 local) - BUILT 2026-09-25, LIVE with CE | - |
 | 56 | **DH** Achievements on Profile collapsed by default - BUILT 2026-09-25 | - |
 | 55 | **DG** Referral by QR - BUILT 2026-09-25 (referral half + BW matrix) | voucher QR after BI |
@@ -292,6 +292,11 @@ keep `icon` as the full-colour image (it shows inside the expanded
 notification). Silhouette must read at 24 dp: a bold "FT" or the mark's
 outline, no thin strokes, no text below 8 px. Final shape follows the brand
 (BJ); a placeholder "FT" silhouette can ship now. Small.
+**Placeholder BUILT 2026-10-29:** `badge-96.png` - white "FT" (Arial Black)
+on a fully transparent 96×96 canvas, drawn with Windows' System.Drawing (no
+packages; verified transparent corners). `sw.js` and the local test buzz use
+it as `badge`; the full-colour `icon-192.png` stays as `icon`. Replace the
+file when BJ fixes the mark - same name, nothing else changes.
 
 ---
 

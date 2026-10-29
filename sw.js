@@ -26,7 +26,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(self.registration.showNotification(title, {
     body: data.body || "",
     icon: "icon-192.png",
-    badge: "icon-192.png",
+    badge: "badge-96.png",   // DJ: monochrome - Android draws the status-bar icon from alpha only
     tag: data.tag || undefined,
     renotify: !!data.tag,
     data: { url: data.url || "/" }

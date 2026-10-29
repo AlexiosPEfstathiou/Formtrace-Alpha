@@ -3294,7 +3294,7 @@ async function pushSubscribe(){
   const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(cfg.value)});
   const j=sub.toJSON();
   const { error:e2 }=await store._sb.from("push_subscriptions").upsert({endpoint:j.endpoint,user_id:ME.id,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,200)},{onConflict:"endpoint"}); if(e2) throw e2;
-  try{ reg.showNotification("FormTrace",{body:"Push is on. You'll hear about offers, reviews, calls and friends here.",icon:"icon-192.png",tag:"test"}); }catch(e){}
+  try{ reg.showNotification("FormTrace",{body:"Push is on. You'll hear about offers, reviews, calls and friends here.",icon:"icon-192.png",badge:"badge-96.png",tag:"test"}); }catch(e){}
 }
 async function pushUnsubscribe(){
   const reg=await navigator.serviceWorker.getRegistration(); const sub=reg?await reg.pushManager.getSubscription():null;
