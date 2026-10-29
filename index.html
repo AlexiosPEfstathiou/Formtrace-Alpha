@@ -3264,6 +3264,7 @@ function renderAppTabs(current){
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
   if(pwRecovery){ pwRecovery=false; setTimeout(openSetNewPassword,100); }   // Item DC: arrived from a reset link
+  try{ const q=new URLSearchParams(location.search); const ck=q.get("checkout"); if(ck){ history.replaceState(null,"",location.pathname+location.hash); if(ck==="success") toast("Payment received - confirming with Stripe… it appears on your goal in a moment.",5000); else if(ck==="cancel") toast("Checkout cancelled - nothing was charged.",3500); } }catch(e){}   /* Item DM: back from Stripe Checkout */
   if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); checkStreakBadgeLevelUp(); }   // Item CY catch-up; Item BW level-up animation
   try{ const tz=Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz&&tz!==ME.tz){ store._sb.rpc("set_my_tz",{p_tz:tz}).then(()=>{ ME.tz=tz; }); } }catch(e){}   // Item DI: the morning summary goes out at 08:00 in this zone
   try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
@@ -4204,6 +4205,9 @@ async function renderSoloCalendar(card){
    the trainee pays the coach directly - so the deposit step is drawn SKIPPED until
    Stripe (BI) is live. Both sides see the same map. */
 const STRIPE_LIVE=false;
+/* Item DM: Stripe Checkout in TEST mode, visible only on a phone opened once with ?stripetest=1 (?stripetest=0 turns it off). Pilot users never see it. */
+try{ const q=new URLSearchParams(location.search); if(q.get("stripetest")==="1") localStorage.setItem("ft-stripe-test","1"); if(q.get("stripetest")==="0") localStorage.removeItem("ft-stripe-test"); }catch(e){}
+const STRIPE_TEST=(()=>{ try{ return localStorage.getItem("ft-stripe-test")==="1"; }catch(e){ return false; } })();
 const PILOT_REFUND_REASONS=["coach_unresponsive","quality"];   // provisional pilot rule: the coach refunds unused full weeks only when the coach failed to deliver
 async function paymentState(eng,offer){
   let e=eng; try{ const { data }=await store._sb.from("engagements").select("*").eq("id",eng.id).maybeSingle(); if(data) e=data; }catch(x){}
@@ -4228,27 +4232,27 @@ async function renderPaymentTracker(holder,eng,role,offer){
   const day=t=>t?fmtDay(String(t).slice(0,10)):"";
   const steps=[
     {k:"acc",l:"Accepted",st:"done",d:day(e.started_at||e.created_at)},
-    {k:"dep",l:"Deposit",st:STRIPE_LIVE?"done":"skip",d:STRIPE_LIVE?"":"pilot"},
-    {k:"paid",l:"Paid",st:e.received_at?"done":(e.paid_at?"now":"now"),d:e.received_at?day(e.received_at):(e.paid_at?"awaiting":"")},
-    {k:"trn",l:"Training",st:e.status==="active"?(e.received_at?"now":""):"done",d:e.status==="active"&&s.weekNow?`wk ${s.weekNow}/${s.weeks}`:""},
+    {k:"dep",l:"Deposit",st:e.deposit_at?"done":(STRIPE_LIVE?"":"skip"),d:e.deposit_at?day(e.deposit_at):(STRIPE_LIVE?"":"pilot")},
+    {k:"paid",l:"Paid",st:(e.received_at||e.deposit_at)?"done":"now",d:e.deposit_at?day(e.deposit_at):(e.received_at?day(e.received_at):(e.paid_at?"awaiting":""))},
+    {k:"trn",l:"Training",st:e.status==="active"?((e.received_at||e.deposit_at)?"now":""):"done",d:e.status==="active"&&s.weekNow?`wk ${s.weekNow}/${s.weeks}`:""},
     {k:"end",l:s.ended?"Ended":"Complete",st:e.status==="completed"?"done":(s.ended?(s.refundDue>0&&!e.refund_received_at?"warn":"done"):""),d:e.completed_at?day(e.completed_at):""}
   ];
-  if(e.received_at&&e.status==="active") steps[2].st="done";
+  if((e.received_at||e.deposit_at)&&e.status==="active") steps[2].st="done";
   let now="", actions="";
   const who=isCoach?"your trainee":"your coach";
-  if(!e.paid_at&&!e.received_at){
+  if(!e.paid_at&&!e.received_at&&!e.deposit_at){
     now=isCoach?`Waiting for ${who} to pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to you.`
                :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to your coach${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. ${s.payout?`<div style="margin-top:6px;padding:8px 10px;border:1px solid var(--line2);border-radius:10px;color:var(--ink);white-space:pre-wrap">${escapeHtml(s.payout)}</div>`:`<div style="margin-top:6px;color:var(--amber)">Your coach hasn't added payment details yet - ask them on your next call.</div>`}`;
-    if(!isCoach){ actions=`<button class="btn sm primary" data-pt="paid" style="width:auto${s.payout?"":";opacity:.45"}" ${s.payout?"":"disabled"}>I've paid</button>`
+    if(!isCoach){ actions=(STRIPE_TEST?`<button class="btn sm primary" data-pt="card" style="width:auto">Pay by card (Stripe test)</button>`:"")+`<button class="btn sm primary" data-pt="paid" style="width:auto${s.payout?"":";opacity:.45"}" ${s.payout?"":"disabled"}>I've paid</button>`
       +(s.payout?"":`<button class="btn sm ghost" data-pt="ask" style="width:auto">Ask for details</button>`)
       +(e.status==="active"?`<button class="btn sm ghost" data-pt="out" style="width:auto;color:var(--red)">Cancel goal</button>`:""); }   // DL: a way out before paying
     else actions=`<button class="btn sm ghost" data-pt="recv" style="width:auto">Mark as received</button>`;
-  } else if(e.paid_at&&!e.received_at){
+  } else if(e.paid_at&&!e.received_at&&!e.deposit_at){
     now=isCoach?`Your trainee says they paid <b style="color:var(--ink)">${s.money(s.total)}</b> on ${day(e.paid_at)}. Confirm once it has arrived.`
                :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
     if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
   } else if(e.status==="active"){
-    now=`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b> received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){
@@ -4267,6 +4271,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
   holder.innerHTML=""; holder.appendChild(card);
   const rpc=async(fn,msg)=>{ try{ const { error }=await store._sb.rpc(fn,{p_eng:e.id}); if(error) throw error; toast(msg,1800); renderPaymentTracker(holder,e,role,s.o); refreshNotifDot(); }catch(x){ console.error("payment "+fn+" (run migrations_payment_tracker.sql)",x); toast(x.message||"Couldn't update",3500); } };
   card.querySelectorAll("[data-pt]").forEach(b=>b.addEventListener("click",()=>{ b.disabled=true; const a=b.getAttribute("data-pt");
+    if(a==="card"){ (async()=>{ try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:e.id}}); if(error){ let msg=error.message; try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(_){} throw new Error(msg); } if(!data||!data.url) throw new Error("No checkout link returned"); location.href=data.url; }catch(x){ console.error("stripe checkout",x); toast(x.message||"Couldn't open checkout",4500); b.disabled=false; } })(); return; }   /* Item DM */
     if(a==="out"){ b.disabled=false; endGoalEarly(e,"cancelled",s.payout?null:"no_payment_details"); return; }
     if(a==="ask"){ rpc("request_payout_details","Asked your coach for payment details"); return; }
     if(a==="paid") rpc("mark_paid","Marked as paid - your coach will confirm"); else if(a==="recv") rpc("confirm_received","Payment confirmed ✓");
@@ -4281,7 +4286,7 @@ async function renderHomePayments(el){
     const { data }=await store._sb.from("engagements").select("*").eq(col,ME.id).in("status",["active","ended"]).limit(30);
     const todo=[];
     for(const e of (data||[])){
-      if(e.status==="active"){ if(!coach&&!e.paid_at&&!e.received_at) todo.push([e,"pay"]); if(coach&&e.paid_at&&!e.received_at) todo.push([e,"confirm"]); }
+      if(e.status==="active"){ if(!coach&&!e.paid_at&&!e.received_at&&!e.deposit_at) todo.push([e,"pay"]); if(coach&&e.paid_at&&!e.received_at) todo.push([e,"confirm"]); }
       else if(e.status==="ended"&&(e.paid_at||e.received_at)&&PILOT_REFUND_REASONS.includes(e.end_reason)){ if(coach&&!e.refund_sent_at) todo.push([e,"refund"]); if(!coach&&e.refund_sent_at&&!e.refund_received_at) todo.push([e,"refundin"]); }
     }
     if(!todo.length) return;

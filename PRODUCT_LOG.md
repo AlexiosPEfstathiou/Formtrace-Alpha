@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 61 | **DM** Embed Stripe into the app (BI build: onboarding, Checkout, weekly release, refunds) | Several days | Account ready 2026-10-29; gated on the BI plan's three prerequisites. |
+| 61 | **DM** Embed Stripe - part 2 (Checkout deposit) BUILT in sandbox 2026-10-29 | see STRIPE_INTEGRATION_TODO.md; onboarding, release, refunds next |
 | 60 | **DL** Payment tracker - pilot version BUILT 2026-10-29 (deposit skipped) | escrow version with BI; refund rule provisional |
 | 59 | **DK** Coach pilot - paid direct to coach, 0% fee, one agreed price | ~1 day build + price agreement | Payment details, I've paid / Received, reminder; Stripe in parallel. |
 | 58 | **DJ** Notification bar icon - placeholder BUILT 2026-10-29 | final mark with BJ |
@@ -219,6 +219,20 @@ engagement (metadata + transfer_group) for the weekly transfers and refunds; a
 consent can be required - FormTrace has none yet; Stripe promotion codes must not
 stack with FormTrace vouchers (BW). Hold status: the owner to decide whether sandbox
 code may start before the three prerequisites.
+**Owner, 2026-10-29: hold LIFTED for sandbox-only work; ToS consent OFF for now.**
+**BUILT 2026-10-29 - part 2, trainee deposit by Checkout (sandbox).** Edge Functions
+`checkout-create` (trainee-only, active and unpaid goal, `price_data` from the offer,
+currency € / $ / ¥ with yen zero-decimal, trainee fee from platform_rates, Checkout
+Studio parameters exactly, `transfer_group eng_<id>` + metadata) and `stripe-webhook`
+(signature-verified, Verify JWT OFF; writes the deposit idempotently; 500 on a DB
+failure so Stripe retries; pushes the coach). `migrations_stripe_checkout.sql`: deposit
+fields on engagements + a trigger that refuses any writer but the service role. App:
+**Pay by card (Stripe test)** shown only on a phone opened with `?stripetest=1`; the
+tracker's Deposit step turns real when a deposit lands; return toast from Checkout.
+Remaining setup and next steps: **`STRIPE_INTEGRATION_TODO.md`** (single source of
+truth). Process note: a PowerShell helper named `R` silently did nothing (R is a
+built-in alias) and the anchor check reported success on an EMPTY result - anchor
+checks now assert the expected count.
 
 ---
 ## Handover (2026-10-29)

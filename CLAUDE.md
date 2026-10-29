@@ -32,7 +32,9 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
    is not there. Several "missing" features already existed.
 2. **Every edit is anchored and verified.** Replace by a unique, exact anchor; check
    the anchor occurred exactly once; report each anchor's result. **Never push if any
-   anchor missed** — the gate cannot see a skipped edit.
+   anchor missed** — the gate cannot see a skipped edit. **Assert the expected number
+   of anchors** (an empty result must fail, not pass), and never name a PowerShell helper
+   after a built-in alias (`R`, `h`, `r`, `ls`, `cd`…) - it silently runs the alias.
 3. **The gate must pass before every push** — all three checks:
    ```
    node tools/check.mjs                                        # parse + ids smoke test → must print PASSED
