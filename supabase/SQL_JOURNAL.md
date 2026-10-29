@@ -37,21 +37,23 @@ if their table is missing - run the earlier rows first in that case.
 ## Journal
 | Date | Item | SQL | Status | Result / note |
 |---|---|---|---|---|
-| ≤ 2026-09-19 | many | every `migrations_*.sql` from `schema` to `in_touch_week` (order in HANDOVER.md) | unknown | The live app uses these features daily, so they are almost certainly applied. |
+| ≤ 2026-09-19 | many | every `migrations_*.sql` from `schema` to `in_touch_week` (order in HANDOVER.md) | unknown (likely ✓) | The live app uses these features daily, so they are almost certainly applied. |
 | 2026-09-21 | CT | `migrations_connect_handles.sql` | run ✓ | Handles saving confirmed working after the grant + `set_my_handles` fixes. |
 | 2026-09-21 | CT | `grant update/select (whatsapp, instagram, snapchat, last_market_at) on profiles` | run ✓ | Did not fix the save on its own; the cause was the missing function. |
 | 2026-09-21 | CT | `create function set_my_handles(...)` | run ✓ | "It worked now." |
-| 2026-09-22 | CN-10 | `migrations_end_goal_early.sql` | given | Not confirmed in chat. |
+| 2026-09-22 | CN-10 | `migrations_end_goal_early.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
 | 2026-09-22 | CY | `migrations_achievements.sql` | run ✓ | Prerequisite of v2, which ran. |
 | 2026-09-22 | CY | `migrations_achievements_v2.sql` | run ✓ | catalogue v2: total 27, approved 26. |
-| 2026-09-25 | CY | `update achievements set approved = true where code = 'level_up'` | given | Not confirmed. |
+| 2026-09-25 | CY | `update achievements set approved = true where code = 'level_up'` | run ✓ | Confirmed by the check query 2026-10-29. |
 | 2026-09-25 | CY | `migrations_achievements_backfill.sql` (first version) | failed | `push_outbox` did not exist yet; whole script rolled back. |
 | 2026-09-25 | CY | `migrations_achievements_backfill.sql` (guarded) | run ✓ | backfilled 18, trainees 2. Run once only. |
-| 2026-09-25 | CN-11 | `migrations_dismissals.sql` | given | Not confirmed. |
-| 2026-09-25 | BW | `migrations_streak_badge.sql` | given | Not confirmed. |
-| 2026-09-25 | DI | `migrations_daily_digest.sql` | given | Not confirmed; needs pg_cron. |
+| 2026-09-25 | CN-11 | `migrations_dismissals.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
+| 2026-09-25 | BW | `migrations_streak_badge.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
+| 2026-09-25 | DI | `migrations_daily_digest.sql` | run ✓ | Confirmed by the check query 2026-10-29, pg_cron enabled. |
 | 2026-09-25 | CE | `migrations_push.sql` (trigger-guarded) + `update push_config` with the VAPID public key | run ✓ | `vapid_public | BCtRlTVgGpgn…`. |
 | 2026-09-25 | CE | test `insert into push_outbox …` | run ✓ | Notification arrived on Android; status-bar icon was a white box (fixed, DJ). |
-| 2026-10-29 | DL | `migrations_payment_tracker.sql` | given | Expected final select: 4, 1. |
-| 2026-10-29 | DL | `migrations_payment_way_out.sql` | given | Run after payment_tracker. |
-| 2026-10-29 | DK | `pilot_settings.sql` | pending | Run when the pilot starts, with the coaches' emails. Restore statement in the file. |
+| 2026-10-29 | DL | `migrations_payment_tracker.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
+| 2026-10-29 | DL | `migrations_payment_way_out.sql` | run ✓ | Confirmed by the check query 2026-10-29. |
+| 2026-10-29 | DK | `pilot_settings.sql` | unclear | Check query shows trainee_fee_pct = 0 already. Verify whether the script ran (launch_* rows saved) or fees were zeroed another way - query given below. Founding still to grant by the coaches' emails. |
+| 2026-10-29 | journal | the check query above | run ✓ | All 15 rows true, including pilot_settings (fees 0) - unexpected, see DK row. |
+| 2026-10-29 | DK | `select key, value from platform_rates where key in (... fee keys and launch_* keys)` + Founding list | given | Settles whether pilot_settings ran. |

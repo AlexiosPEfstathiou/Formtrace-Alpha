@@ -72,9 +72,10 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 
 ## SQL status
 **What has actually been run is in `supabase/SQL_JOURNAL.md`** (with a query that
-checks the database). Outstanding as of 2026-10-29: end_goal_early, the level_up
-approval, dismissals, streak_badge, daily_digest, payment_tracker, payment_way_out are
-`given` but unconfirmed; `pilot_settings.sql` is `pending` until the pilot starts.
+checks the database). As of 2026-10-29 every migration is confirmed applied. Open:
+the platform fee already reads 0 - confirm whether `pilot_settings.sql` ran (it saves
+the launch rates as `launch_*` rows for the restore); Founding still to be granted to
+the pilot coaches by email.
 
 ## Migrations — run order
 All in `supabase/`, run in the SQL editor in this order (each is idempotent):
