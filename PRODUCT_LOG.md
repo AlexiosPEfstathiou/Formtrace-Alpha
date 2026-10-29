@@ -51,7 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 67 | **DS** BUG: journey recap extract(unknown, integer) - FIX built 2026-10-29 | run the migration |
+| 67 | **DS** BUG: journey recap extract(unknown, integer) - FIXED 2026-10-29 (migration run, weeks_check 13) | owner re-opens the journey |
 | 66 | **DR** BUG: journey recap "store.journeySummary is not a function" - FIXED 2026-10-29; new store-call check in the gate | - |
 | 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIXED and verified 2026-10-29 | owner re-tries Mark achieved |
 | 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds proposed, owner to confirm. |
