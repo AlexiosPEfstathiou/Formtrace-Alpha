@@ -17,6 +17,9 @@ other's chats or memory - **this repository is the shared memory.**
 4. **Every decision** goes into `PRODUCT_LOG.md`, not only into a chat.
 5. **One machine active at a time:** pull before starting, push before stopping;
    allocate the next item code only after pulling.
+6. **If a push is rejected, the other account has pushed.** Fetch, read its commits
+   (`git log HEAD..origin/main`, `git show`), treat its decisions as current, and
+   re-apply only what is new on top - never force-push.
 
 ## What this is
 A coaching PWA: trainees post goals, coaches pitch, trainees record sets, coaches
@@ -52,7 +55,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
    optional tables (`to_regclass('public.push_outbox') is not null`).
 9. **Give the owner the SQL in the reply** — always, in full — and say what the final
    `select` should show.
-10. **Never put secrets in the repo or the chat.** The Supabase anon key in
+10. **Never put secrets in the repo or the chat** (including Stripe `sk_…` keys and webhook signing secrets). The Supabase anon key in
     `config.js` is public by design; the service role key and the VAPID private key
     are not (Edge Function secrets only).
 11. **Log honestly.** Every change gets a PRODUCT_LOG entry: what, why, what was not

@@ -214,6 +214,12 @@ full plan is in the claude.ai project doc `stripe-integration-plan.md`.
 
 **Not done:** no Edge Functions, no secrets, no SQL. `STRIPE_LIVE` stays false.
 
+**Later the same day (Lilly account):** owner answered Stripe's onboarding
+questionnaire - **Prebuilt checkout** (Stripe-hosted Checkout for the trainee's
+payment), Invoices off. Consistent with the plan above; the hold stands. Note for both
+accounts: the onboarding questionnaire only tailors the dashboard; Connect is enabled
+separately (Connect -> Get started).
+
 ---
 
 ## DL. Payment tracker - an order-tracking steps map, built for the escrow model
