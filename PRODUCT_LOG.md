@@ -51,6 +51,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 67 | **DS** BUG: journey recap extract(unknown, integer) - FIX built 2026-10-29 | run the migration |
 | 66 | **DR** BUG: journey recap "store.journeySummary is not a function" - FIXED 2026-10-29; new store-call check in the gate | - |
 | 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIXED and verified 2026-10-29 | owner re-tries Mark achieved |
 | 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds proposed, owner to confirm. |
@@ -185,6 +186,19 @@ week-close trigger makes that window tiny).
 
 ---
 
+## DS. BUG: "Your journey" - function pg_catalog.extract(unknown, integer) does not exist
+
+Owner screenshot, 2026-10-29, on the next completed goal after the DR fix: the recap now
+reaches the database and fails there. **Cause:** `journey_summary` computed weeks as
+`extract(epoch from (d_to - d_from))`; in Postgres `date - date` is already an integer
+number of days, so `extract` has no interval to work on. It has been wrong since the
+function was written (migrations_journey.sql) - hidden because no goal could be completed
+(DQ) and then the call itself was misnamed (DR). **FIX:** `migrations_journey_fix.sql` -
+the same function with `round((d_to - d_from) / 7.0)`. Swept every other `extract(...)`
+in the migrations: all take timestamps or intervals - fine. Third bug in the same
+completion path; the path has never run end to end before tonight.
+
+---
 ## DR. BUG: "Your journey" failed after completing a goal - store.journeySummary is not a function
 
 Owner screenshot, 2026-10-29, straight after the DQ fix let a goal complete: the recap
