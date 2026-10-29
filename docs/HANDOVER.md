@@ -57,6 +57,15 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
+## Recent fixes (2026-10-29) - re-test these
+- **DQ:** an achievement trigger had blocked every goal status / level change since
+  2026-09-22 (ending, completing, cancelling a goal; raising a level). Fixed and verified;
+  all side-effect triggers now catch their own errors. Re-do any level raise from the
+  last five weeks that did not stick.
+- **DR:** the journey recap after completing a goal called a misnamed store function.
+  Fixed; new gate check `tools/store-check.mjs` (gate is now four parts).
+- BI prerequisite 1 (loss liability) done: Connect onboarding complete. Liability review
+  triggers proposed in **DP** (owner to confirm the numbers).
 ## Push status (2026-10-29)
 - Delivery healthy (DN): 4/4 sent, 0 errors. Only **one** user had push on → **DO**
   built: push on by default (silent if allowed, one explained prompt, sticky opt-out).
