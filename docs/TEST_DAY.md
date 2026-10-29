@@ -74,6 +74,8 @@ the platform fee is 0 (`platform_rates`, see DK).
 | 6.2 | T | Friend's page | Wins; Consistency badge / achievements if earned; **Connect** → handles (grey if not set in Profile) |
 | 6.3 | F | Congratulate / Congratulate all | T: clap overlay + push |
 
+> **Server-side writes (DQ):** each of 7.1 (end a goal), 5.1 (assign at a higher level), the weekly close and 6.1 (confirm a friend) must actually SAVE - a database trigger can fail where the app looks fine.
+
 ## 7. Ending
 | # | Who | Do | Expect |
 |---|---|---|---|

@@ -51,7 +51,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 6. **`profiles` has column-level grants.** A new column the client writes needs
    `grant update (col)` — or, better, write through a `security definer` function, as
    every recent feature does.
-7. **Every push trigger catches its own errors** (`begin … exception when others`), so
+7. **Every trigger that is a side effect (push, achievements, badges, anything not the action itself) catches its own errors** - DQ: an achievement trigger without this blocked goal completion for five weeks. Read NEW fields of a trigger shared across tables via `to_jsonb(new)->>'field'`. Originally: **every push trigger catches its own errors** (`begin … exception when others`), so
    a notification can never block the write it describes. Keep it that way.
 8. **Migrations must be safe to run before their dependencies:** guard references to
    optional tables (`to_regclass('public.push_outbox') is not null`).
@@ -64,7 +64,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **DP**; next **DQ**),
+- New product items take the next two-letter code (last used: **DQ**; next **DR**),
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").
