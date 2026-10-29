@@ -205,7 +205,14 @@ same layout with honest labels - Offer accepted → **Paid to coach**
 (trainee: I've paid) → **Receipt confirmed** (coach: Received) → Training
 week k of n → Goal complete; an early end shows **Refund due: €Z** for the
 coach to settle. When BI arrives, steps 2-4 switch to the escrow wording
-and become automatic. Estimate: 1-1.5 days for the pilot version; the
+and become automatic.
+**Owner, 2026-10-29: no escrow during the pilot - the deposit step is shown
+as SKIPPED until Stripe is added.** The map always has the same steps; in
+the pilot, step 2 "Deposit held by FormTrace" is drawn greyed with a
+skipped mark and the note "Skipped during the pilot - paid directly to the
+coach", and the payment itself appears as the confirmed direct payment
+(I've paid → Received). So trainees and coaches see the full model from day
+one, and nothing on screen claims money is held when it is not. Estimate: 1-1.5 days for the pilot version; the
 escrow version is part of BI. Not started.
 
 ---
