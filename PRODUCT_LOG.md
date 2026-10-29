@@ -260,6 +260,7 @@ without a deploy. **Decision needed:** trainee pays it all (proposal), or Connec
 from the coach's side (note: Founding coaches pay 0% commission forever, so the coach
 side cannot carry it for them). Context: pilot money traffic is expected under €100, so
 the absolute amount is small - the point is the principle and the mechanism for launch.
+**Owner, 2026-10-29: the TRAINEE covers all Stripe costs** (the proposal). Open: rounding - the exact sum gives totals like €104.84; proposal: round the processing line **up to the whole euro** (€4.84 → €5.00, total €105.00; never down, so parity always holds; the small surplus absorbs the fixed fee Stripe keeps on refunds and costlier non-EEA cards).
 
 ---
 
