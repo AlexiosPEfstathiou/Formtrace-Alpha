@@ -238,7 +238,15 @@ one, and nothing on screen claims money is held when it is not.
 - **Provisional pilot rule, in one constant** (`PILOT_REFUND_REASONS`):
   a refund of the unused full weeks is due only when the goal ended for
   "coach not responding" or "coaching quality"; otherwise "no refund is
-  due under the pilot terms". Change it when the pilot terms are agreed. Estimate: 1-1.5 days for the pilot version; the
+  due under the pilot terms". Change it when the pilot terms are agreed.
+**Way out before paying (owner, 2026-10-29):** next to **I've paid** the
+trainee has **Cancel goal** (the end-goal sheet, new reason "Coach hasn't
+shared payment details", preselected when that is the case) and, while the
+coach has no details, **Ask for details** (`request_payout_details` pushes
+the coach). **I've paid** is disabled until there are details to pay to.
+**Bug fixed in the same change:** the refund calculation did not check that
+anything had been paid - cancelling before payment would have shown the
+coach a refund due. Refunds now require a recorded payment. Estimate: 1-1.5 days for the pilot version; the
 escrow version is part of BI. Not started.
 
 ---

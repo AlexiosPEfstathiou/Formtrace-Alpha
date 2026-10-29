@@ -4217,7 +4217,8 @@ async function paymentState(eng,offer){
   const elapsedWeeks=start?Math.max(0,Math.ceil((end-start)/(7*86400000))):0;
   const weekNow=weeks?Math.min(weeks,Math.max(1,Math.floor((Date.now()-(start?start.getTime():Date.now()))/(7*86400000))+1)):null;
   const ended=e.status==="ended";
-  const refundDue=(ended&&PILOT_REFUND_REASONS.includes(e.end_reason)&&weekly!=null&&weeks)?Math.max(0,weeks-elapsedWeeks)*weekly:0;
+  const paidAny=!!(e.paid_at||e.received_at);   // nothing paid → nothing to refund
+  const refundDue=(ended&&paidAny&&PILOT_REFUND_REASONS.includes(e.end_reason)&&weekly!=null&&weeks)?Math.max(0,weeks-elapsedWeeks)*weekly:0;
   let payout=null; try{ const { data }=await store._sb.from("coach_payout_details").select("details").eq("coach_id",e.coach_id).maybeSingle(); payout=data&&data.details; }catch(x){}
   return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout};
 }
@@ -4238,7 +4239,9 @@ async function renderPaymentTracker(holder,eng,role,offer){
   if(!e.paid_at&&!e.received_at){
     now=isCoach?`Waiting for ${who} to pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to you.`
                :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to your coach${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. ${s.payout?`<div style="margin-top:6px;padding:8px 10px;border:1px solid var(--line2);border-radius:10px;color:var(--ink);white-space:pre-wrap">${escapeHtml(s.payout)}</div>`:`<div style="margin-top:6px;color:var(--amber)">Your coach hasn't added payment details yet - ask them on your next call.</div>`}`;
-    if(!isCoach) actions=`<button class="btn sm primary" data-pt="paid" style="width:auto">I've paid</button>`;
+    if(!isCoach){ actions=`<button class="btn sm primary" data-pt="paid" style="width:auto${s.payout?"":";opacity:.45"}" ${s.payout?"":"disabled"}>I've paid</button>`
+      +(s.payout?"":`<button class="btn sm ghost" data-pt="ask" style="width:auto">Ask for details</button>`)
+      +(e.status==="active"?`<button class="btn sm ghost" data-pt="out" style="width:auto;color:var(--red)">Cancel goal</button>`:""); }   // DL: a way out before paying
     else actions=`<button class="btn sm ghost" data-pt="recv" style="width:auto">Mark as received</button>`;
   } else if(e.paid_at&&!e.received_at){
     now=isCoach?`Your trainee says they paid <b style="color:var(--ink)">${s.money(s.total)}</b> on ${day(e.paid_at)}. Confirm once it has arrived.`
@@ -4264,6 +4267,8 @@ async function renderPaymentTracker(holder,eng,role,offer){
   holder.innerHTML=""; holder.appendChild(card);
   const rpc=async(fn,msg)=>{ try{ const { error }=await store._sb.rpc(fn,{p_eng:e.id}); if(error) throw error; toast(msg,1800); renderPaymentTracker(holder,e,role,s.o); refreshNotifDot(); }catch(x){ console.error("payment "+fn+" (run migrations_payment_tracker.sql)",x); toast(x.message||"Couldn't update",3500); } };
   card.querySelectorAll("[data-pt]").forEach(b=>b.addEventListener("click",()=>{ b.disabled=true; const a=b.getAttribute("data-pt");
+    if(a==="out"){ b.disabled=false; endGoalEarly(e,"cancelled",s.payout?null:"no_payment_details"); return; }
+    if(a==="ask"){ rpc("request_payout_details","Asked your coach for payment details"); return; }
     if(a==="paid") rpc("mark_paid","Marked as paid - your coach will confirm"); else if(a==="recv") rpc("confirm_received","Payment confirmed ✓");
     else if(a==="rsent") rpc("mark_refund_sent","Refund marked as sent"); else if(a==="rrecv") rpc("confirm_refund_received","Refund confirmed ✓"); }));
   const sv=card.querySelector("#pt-payout-save"); if(sv) sv.addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("set_my_payout_details",{p_details:card.querySelector("#pt-payout").value}); if(error) throw error; toast("Payment details saved",1500); renderPaymentTracker(holder,e,role,s.o); }catch(x){ toast(x.message||"Couldn't save",3000); } });
@@ -4277,7 +4282,7 @@ async function renderHomePayments(el){
     const todo=[];
     for(const e of (data||[])){
       if(e.status==="active"){ if(!coach&&!e.paid_at&&!e.received_at) todo.push([e,"pay"]); if(coach&&e.paid_at&&!e.received_at) todo.push([e,"confirm"]); }
-      else if(e.status==="ended"&&PILOT_REFUND_REASONS.includes(e.end_reason)){ if(coach&&!e.refund_sent_at) todo.push([e,"refund"]); if(!coach&&e.refund_sent_at&&!e.refund_received_at) todo.push([e,"refundin"]); }
+      else if(e.status==="ended"&&(e.paid_at||e.received_at)&&PILOT_REFUND_REASONS.includes(e.end_reason)){ if(coach&&!e.refund_sent_at) todo.push([e,"refund"]); if(!coach&&e.refund_sent_at&&!e.refund_received_at) todo.push([e,"refundin"]); }
     }
     if(!todo.length) return;
     const ids=[...new Set(todo.map(([e])=>coach?e.trainee_id:e.coach_id))]; let names={}; try{ const { data:p }=await store._sb.from("profiles").select("id,display_name").in("id",ids); for(const x of (p||[])) names[x.id]=x.display_name; }catch(x){}
@@ -7026,9 +7031,9 @@ let traineeEngByOffer=null;
    BI decision - the reason is recorded for it. */
 const END_REASONS={
   achieved:[["early","I reached the goal early"],["enough","I got what I needed"],["other","Other"]],
-  cancelled:[["coach_unresponsive","Coach not responding"],["quality","Coaching quality"],["time","No time right now"],["money","Cost"],["injury","Injury or life event"],["expect","Not what I expected"],["other","Other"]]
+  cancelled:[["coach_unresponsive","Coach not responding"],["no_payment_details","Coach hasn't shared payment details"],["quality","Coaching quality"],["time","No time right now"],["money","Cost"],["injury","Injury or life event"],["expect","Not what I expected"],["other","Other"]]
 };
-async function endGoalEarly(e,kind){
+async function endGoalEarly(e,kind,pre){
   const isA=kind==="achieved"; const body=$("#sheet-body"); body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent=isA?"Goal achieved 🎯":"Cancel this goal"; $("#sheet-add").style.display="none";
   const w=document.createElement("div"); let reason=null;
@@ -7038,6 +7043,7 @@ async function endGoalEarly(e,kind){
     <button class="btn ${isA?"primary":""}" id="eg-go" style="margin-top:12px;${isA?"":"color:var(--red)"}" disabled>${isA?"Mark achieved":"End goal"}</button>`;
   body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
   w.querySelectorAll("[data-r]").forEach(b=>b.addEventListener("click",()=>{ w.querySelectorAll("[data-r]").forEach(x=>x.classList.remove("on")); b.classList.add("on"); reason=b.getAttribute("data-r"); $("#eg-go").disabled=false; }));
+  if(pre){ const pb=w.querySelector(`[data-r="${pre}"]`); if(pb) pb.click(); }   // DL: arrive with the reason already chosen
   $("#eg-go").addEventListener("click",async()=>{ const btn=$("#eg-go"); btn.disabled=true; try{
       const { data, error }=await store._sb.rpc("end_goal_early",{p_eng:e.id,p_kind:kind,p_reason:reason,p_note:$("#eg-note").value.trim()||null}); if(error) throw error;
       closeSheet(); toast(isA?"Goal marked achieved 🎯":"Goal ended",2500);
