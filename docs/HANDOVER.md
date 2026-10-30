@@ -63,8 +63,10 @@ standard agreement), deposit with the EA line, weekly release (Transfer), refund
 trainee_stopped rule), free code. Hold back to 14. **Tooling: the owner connected the official
 Supabase MCP connector on the PERSONAL Claude account** - from there Claude can run SQL and
 deploy Edge Functions directly (still journal every statement; the Lilly account cannot use it).
-**Open in Stripe (owner):** sandbox + live: Adaptive Pricing OFF, payment methods = cards + wallets;
-live code `ALHATEST` (100 %) - cap redemptions + expiry or archive. **Next (C):** EO (map
+**Stripe settings DONE (owner, 2026-10-30 18:19, personal account):** Adaptive Pricing off and
+payment methods = cards + Apple Pay + Google Pay (Link optional) in sandbox **and** live; live code
+`ALHATEST` deleted. `checkout-create` sets no payment methods in code - the Dashboard governs
+(optional hardening offered: `payment_method_types: ['card']`). **Next (C):** EO (map
 variant per goal), EM, EN, EQ, ER small items; **DP**; then **DW** live keys -> live EG with the
 ED code -> **EB**. EF still waits for formtrace.ie to resolve; DX terms need the lawyer.
 **Earlier on 2026-10-30:**
