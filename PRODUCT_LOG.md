@@ -257,6 +257,12 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## EP. Push tap opened a GitHub 404 - FIXED 2026-10-30
+
+EG step 3 finding. Tapping the "EUR 25 released" push opened `https://alexiospefstathiou.github.io/#coach` -> GitHub 404. Cause: every push url is written as `/#tab` and `sw.js` resolved it against the origin root; the app lives under `/Formtrace-Alpha/`. Affected every push since CE (any tap from the notification tray), masked when the app was already open. **Fix:** `sw.js` resolves the url against `self.registration.scope` (the app folder) - correct on github.io and on formtrace.ie. Takes effect when the phone next loads the app (new worker). Not changed: the `/#tab` convention in SQL and functions.
+
+---
+
 ## EO. Tracker map: pick the escrow variant per goal, not from the global switch
 
 EG step 2 finding, 2026-10-30. A Stripe-paid goal while `payments_via_stripe = 0` shows the pilot map: Deposit and Paid both ticked, caption "Deposit skipped during the pilot - paid directly to the coach", although the text below correctly says the deposit is held by FormTrace. Fix: the map variant should follow the goal (`e.deposit_at` present -> escrow map: Deposit = the payment step, no manual Paid step) with the switch only deciding what *new* goals offer. Small, index.html. Also log: Checkout settings changed by the owner 2026-10-30 - Adaptive Pricing off (EUR only; GBP had been offered to a UK browser), payment methods narrowed to cards + wallets. Not started.
@@ -331,6 +337,7 @@ Keep it separate from personal money from day one for the accounts and VAT advic
 ## EG. Run a test payment between the owner's coach and trainee profiles - SCRIPT WRITTEN 2026-10-30 (`docs/EG_TEST.md`)
 
 **EG finding 1 (step 1, 2026-10-30):** Stripe refused the account: "The recipient ToS agreement is not supported for platforms in IE creating accounts in IE" - the **recipient** service agreement is for cross-border payouts only. **Fixed:** `connect-onboard` sends `service_agreement: recipient` only when the coach's country differs from the platform's (`PLATFORM_COUNTRY`, default IE); same-country accounts use the standard agreement, still transfers-only. DU's open question is answered. Owner: redeploy `connect-onboard` (JWT ON) and tap Set up payouts again (the failed attempt created no account row).
+**EG step 3 PASSED 2026-10-30:** hold set to 0 (it had still been 14 - journal corrected), closure simulated for this week, `queue_weekly_releases()` = 1, row `2026-10-26 | 2500 | 0 | 2500 | sent | tr_...`, pushes received. Finding: push tap -> 404 (EP, fixed).
 **EG step 2 PASSED 2026-10-30:** Checkout EUR 50 + EUR 4.00 processing = EUR 54.00 as computed; `deposit_amount 5400`, `deposit_processing 400`, livemode false, PaymentIntent recorded; tracker text right, map variant wrong (EO).
 **EG step 1 PASSED 2026-10-30:** after the fix and the missing `migrations_stripe_connect.sql`, the test coach onboarded (one "Finish setup" round - Stripe re-shows the whole test flow for a new Account Link, expected); card now "Open Stripe dashboard" = Payouts ready. **DU question answered: IE Express, transfers-only, standard agreement works.** EC done except live-mode branding (DW).
 **2026-10-30:** the full sandbox walk is in **`docs/EG_TEST.md`**: EC prerequisites, coach onboarding (answers the DU open question), deposit with the EA line (expected EUR 4.00 on EUR 25 x 2 wk, total EUR 54), a simulated week close + `queue_weekly_releases()` for DY, an early end for DZ (incl. the flagged no-evidence case), the ED free code, and the restore of `release_hold_days` = 14. Waiting on the owner to walk it.

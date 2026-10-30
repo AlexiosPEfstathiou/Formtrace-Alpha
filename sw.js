@@ -34,7 +34,9 @@ self.addEventListener("push", (event) => {
 });
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data && event.notification.data.url ? event.notification.data.url : "/", self.location.origin).href;
+  /* EP: push urls are written as "/#tab"; resolve them against the worker's scope (the app folder), not the origin root - on github.io the root is a 404. */
+  const raw = (event.notification.data && event.notification.data.url) ? String(event.notification.data.url) : "/";
+  const target = new URL(raw.replace(/^\//, ""), self.registration.scope).href;
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
     for (const c of list) { if (c.url.startsWith(self.location.origin)) { c.focus(); c.navigate(target).catch(() => {}); return; } }
     return self.clients.openWindow(target);
