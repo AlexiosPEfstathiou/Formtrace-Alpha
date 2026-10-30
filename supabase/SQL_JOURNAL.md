@@ -71,4 +71,5 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DU | `migrations_stripe_connect.sql` | given | Expected: payments_via_stripe 0, accounts_table 1. |
 | 2026-10-30 | EA/ED | `migrations_stripe_fees.sql` | run ✔ | stripe_rates 5, has_processing 1 (owner confirmed). |
 | 2026-10-30 | DY | `migrations_weekly_release.sql` | run ✔ | table 1, job 1, hold 14 (owner). `release-send` deployed (JWT OFF) and the payment_releases webhook (Insert + Update) created. |
-| 2026-10-30 | DY test | `update public.platform_rates set value = 0 where key = 'release_hold_days'` (sandbox test only; restore to 14 after EG) | given | Expected: UPDATE 1. |
+| 2026-10-30 | DY test | `update public.platform_rates set value = 0 where key = 'release_hold_days'` (sandbox test only) | run ✔ | hold is 0 in the sandbox (owner, 2026-10-30). |
+| after EG | DY | `update public.platform_rates set value = 14 where key = 'release_hold_days'` | pending | Restore the 14-day hold before go-live (EB). |
