@@ -62,13 +62,13 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DK | the platform_rates select on its own | run ✓ | Six rows - the script ran. |
 | 2026-10-29 | DK | Founding grant by the pilot coaches' emails (`update profiles set founding_at …`) | pending | Run once the coaches have signed up. Current Founding: Georgios Politakis (since 2026-09-19). |
 | after the pilot | BI | restore launch rates (`update platform_rates … from launch_*`, in pilot_settings.sql) | pending | Only when Stripe is live. |
-| 2026-10-29 | DM | `migrations_stripe_checkout.sql` | given | Expected final select: 6. |
+| 2026-10-29 | DM | `migrations_stripe_checkout.sql` | run ✔ | Confirmed 2026-10-30 by check query (deposit_at exists). |
 | 2026-10-29 | DN | push_outbox health query (kind, total, sent, errors) | run ✓ | offer 2/2, review 2/2, 0 errors; **no daily rows**. |
 | 2026-10-29 | DN/DI | daily-digest diagnostic (job_active, last_run, last_status, users_with_tz, users_subscribed, digests_logged) | run ✓ | job active, last run 19:15 UTC succeeded; 1 user with tz, 1 subscribed, 0 digests (none due yet). |
 | 2026-10-29 | DQ | `migrations_achievements_trigger_fix.sql` | run ✓ | 'goal updates fixed' - the self-test passed. |
 | 2026-10-29 | DS | `migrations_journey_fix.sql` | run ✓ | weeks_check = 13. |
-| 2026-10-29 | DT | `migrations_body_achievements_recheck.sql` | given | Final select lists each holder of Bulk up / Weight cut; removed = 1 for the 1600 kg case. |
-| 2026-10-29 | DU | `migrations_stripe_connect.sql` | given | Expected: payments_via_stripe 0, accounts_table 1. |
+| 2026-10-29 | DT | `migrations_body_achievements_recheck.sql` | run ✔ | 2026-10-30: as expected (owner). |
+| 2026-10-29 | DU | `migrations_stripe_connect.sql` | run ✔ | 2026-10-30: payments_via_stripe 0, accounts_table 1 (found missing during EG step 1 - the first onboarding attempt could not be recorded). |
 | 2026-10-30 | EA/ED | `migrations_stripe_fees.sql` | run ✔ | stripe_rates 5, has_processing 1 (owner confirmed). |
 | 2026-10-30 | DY | `migrations_weekly_release.sql` | run ✔ | table 1, job 1, hold 14 (owner). `release-send` deployed (JWT OFF) and the payment_releases webhook (Insert + Update) created. |
 | 2026-10-30 | DY test | `update public.platform_rates set value = 0 where key = 'release_hold_days'` (sandbox test only) | run ✔ | hold is 0 in the sandbox (owner, 2026-10-30). |
