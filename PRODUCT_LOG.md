@@ -41,7 +41,7 @@ the list below are done, superseded, or parked (bottom).
 20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
 22. **CB** Launch timeline - revisit with pilot learnings.
 
-**Any time (small):** **DN** compare the deployed push-send code (owner pastes it) ·
+**Any time (small):** **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
@@ -254,6 +254,12 @@ Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / supp
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
 Registered in the owner's personal name alongside the domain (see DV / EE).
+
+---
+
+## EM. Bug: "Post your next goal" card stays after a new goal is posted
+
+Owner, 2026-10-30, found during EG step 1. Trainee Notifications: the card "AFTER '<goal>' - Take a breath - and when you're ready, the next one. [Post your next goal -> ] [See offers]" remained after the trainee had posted a new goal. Expected: the card disappears once an open goal exists (or once the new goal is posted). Check the card's condition in the notifications renderer (probably keyed on the ended goal, not on "has an open goal"). Queued by the owner; not started.
 
 ---
 
