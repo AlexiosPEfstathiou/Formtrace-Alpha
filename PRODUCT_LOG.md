@@ -41,7 +41,7 @@ the list below are done, superseded, or parked (bottom).
 20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
 22. **CB** Launch timeline - revisit with pilot learnings.
 
-**Any time (small):** **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
+**Any time (small):** **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
@@ -254,6 +254,12 @@ Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / supp
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
 Registered in the owner's personal name alongside the domain (see DV / EE).
+
+---
+
+## EN. After acceptance: push both parties to arrange their first call
+
+Owner, 2026-10-30. When a trainee accepts an offer (and, under escrow, once the deposit is paid), push the coach and the trainee: "You're on - arrange your first call" with a deep link to the engagement (the scheduling screen from G, if built; otherwise the chat/notes). One push each, once; a follow-up after 48 h if no call has been scheduled is optional. Hook: the acceptance / deposit trigger in SQL (push_outbox, catches its own errors). Not started.
 
 ---
 
