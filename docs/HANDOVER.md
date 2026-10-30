@@ -57,7 +57,18 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
-## Start here next session (refreshed 2026-10-30, Lilly account)
+## Start here next session (refreshed 2026-10-30 evening, Lilly account)
+**2026-10-30 evening - the escrow loop is complete in code and deployed in the sandbox:** EA
+(processing line), ED (free code, webhook), **DY** (weekly releases: `payment_releases`, cron 09:10
+UTC, `release-send` + webhook), **DZ** (refunds: `payment_refunds`, trigger on ended, `refund-send`
++ webhook; evidence rule = submitted session unreviewed past **5 business days**; released weeks
+are **final**; flagged rows for the owner). All migrations run (journal). `release_hold_days` is
+**0 in the sandbox** - restore to 14 before go-live. Terms updated. New items: EI bank account,
+EJ chargeback risk, EK coach-ends-goal (fee TBD), EL early review incentive (decision pending).
+**Next: owner does EC (deploy `connect-onboard`, Connect branding, onboard the test coach), then
+walks `docs/EG_TEST.md`.** Claude: fix the EG findings, then EK / EL once decided, DP, DW, EB.
+EF (domain) still waits for formtrace.ie to resolve.
+**Earlier today:**
 **2026-10-30:** **EE decided and bought - ormtrace.ie at Blacknight** (1 yr EUR 5.99,
 renewal ~EUR 28; registry Ireland-connection check pending - the name did not resolve in DNS
 as of midday). **EF postponed by the owner until registration completes**; the step list

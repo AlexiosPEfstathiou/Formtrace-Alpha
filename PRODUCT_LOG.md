@@ -28,7 +28,7 @@ the list below are done, superseded, or parked (bottom).
 12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
 
 **C. Prove it, then go live**
-13. **EG** Test payment, sandbox: coach onboarding, deposit, a release, a refund.
+13. **EG** Test payment, sandbox - script ready (`docs/EG_TEST.md`); owner walks it after EC.
 14. **DW** Live keys and go-live (O + C).
 15. **EG** Test payment, live, with the ED code.
 16. **EB** Flip `payments_via_stripe` to 1.
@@ -310,7 +310,11 @@ Keep it separate from personal money from day one for the accounts and VAT advic
 
 ---
 
-## EG. Run a test payment between the owner's coach and trainee profiles
+## EG. Run a test payment between the owner's coach and trainee profiles - SCRIPT WRITTEN 2026-10-30 (`docs/EG_TEST.md`)
+
+**2026-10-30:** the full sandbox walk is in **`docs/EG_TEST.md`**: EC prerequisites, coach onboarding (answers the DU open question), deposit with the EA line (expected EUR 4.00 on EUR 25 x 2 wk, total EUR 54), a simulated week close + `queue_weekly_releases()` for DY, an early end for DZ (incl. the flagged no-evidence case), the ED free code, and the restore of `release_hold_days` = 14. Waiting on the owner to walk it.
+
+Original note:
 
 Owner, 2026-10-29. The end-to-end proof that escrow works, run twice:
 1. **Sandbox** (after STRIPE_INTEGRATION_TODO steps 1-9 and the EA/ED/DY/DZ builds): coach

@@ -76,3 +76,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-30 | DZ | `migrations_refunds.sql` | run ✔ | Owner: refunds_table 1, trigger 1, cancelled_allowed 1; `refund-send` deployed (JWT OFF), webhook created. |
 | 2026-10-30 | DZ-2 | `migrations_refunds_evidence.sql` | run ✔ | flagged_col 1, window 72 (owner). Superseded by DZ-3 below. |
 | 2026-10-30 | DZ-3 | `migrations_refunds_business_days.sql` | run ✔ | ran fine (owner). |
+| EG, sandbox | DY test | simulated `week_closures` insert + `select public.queue_weekly_releases()` (docs/EG_TEST.md step 7) | given | Expected: 1. Test data only; delete after. |
