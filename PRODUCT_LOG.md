@@ -41,7 +41,7 @@ the list below are done, superseded, or parked (bottom).
 20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
 22. **CB** Launch timeline - revisit with pilot learnings.
 
-**Any time (small):** **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
+**Any time (small):** **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
@@ -254,6 +254,12 @@ Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / supp
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
 Registered in the owner's personal name alongside the domain (see DV / EE).
+
+---
+
+## EQ. Tab badges: unpitched goals (coach) and unviewed pitches (trainee)
+
+Owner, 2026-10-30. Coach: when open goals exist that this coach has not pitched (and not dismissed), the **Open goals** tab shows a red badge with the count. Trainee: the **Goal** tab shows a red badge with the count of pitches not yet viewed. Needs a "viewed" marker per pitch for the trainee (e.g. `offers.seen_at` set when the pitch card is rendered, via a security-definer function); the coach side can be computed from existing data (open goals minus own offers minus dismissals). Badge on the tab bar in `renderAppTabs`; refresh on the same cadence as notifications. Not started.
 
 ---
 
