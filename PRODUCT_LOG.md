@@ -324,6 +324,7 @@ Keep it separate from personal money from day one for the accounts and VAT advic
 
 ## EG. Run a test payment between the owner's coach and trainee profiles - SCRIPT WRITTEN 2026-10-30 (`docs/EG_TEST.md`)
 
+**EG finding 1 (step 1, 2026-10-30):** Stripe refused the account: "The recipient ToS agreement is not supported for platforms in IE creating accounts in IE" - the **recipient** service agreement is for cross-border payouts only. **Fixed:** `connect-onboard` sends `service_agreement: recipient` only when the coach's country differs from the platform's (`PLATFORM_COUNTRY`, default IE); same-country accounts use the standard agreement, still transfers-only. DU's open question is answered. Owner: redeploy `connect-onboard` (JWT ON) and tap Set up payouts again (the failed attempt created no account row).
 **2026-10-30:** the full sandbox walk is in **`docs/EG_TEST.md`**: EC prerequisites, coach onboarding (answers the DU open question), deposit with the EA line (expected EUR 4.00 on EUR 25 x 2 wk, total EUR 54), a simulated week close + `queue_weekly_releases()` for DY, an early end for DZ (incl. the flagged no-evidence case), the ED free code, and the restore of `release_hold_days` = 14. Waiting on the owner to walk it.
 
 Original note:

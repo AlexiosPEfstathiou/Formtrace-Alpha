@@ -58,13 +58,16 @@ Deno.serve(async (req) => {
     // onboard: create the account once, then always hand out a fresh onboarding link
     if (!row) {
       const country = String(prof.country_code || "IE").toUpperCase();
+    const PLATFORM_COUNTRY = (Deno.env.get("PLATFORM_COUNTRY") || "IE").toUpperCase();   // the Stripe account's country
       const acct = await stripe.accounts.create({
         type: "express",
         country,
         email: user.email ?? undefined,
         business_type: "individual",
         capabilities: { transfers: { requested: true } },
-        tos_acceptance: { service_agreement: "recipient" },   // coaches receive transfers; they do not take card payments
+        // EG finding 2026-10-30: Stripe allows the "recipient" agreement only for CROSS-BORDER payouts.
+        // Same country as the platform (IE) must use the standard agreement; transfers-only capability stays.
+        ...(country === PLATFORM_COUNTRY ? {} : { tos_acceptance: { service_agreement: "recipient" } }),
         metadata: { coach_id: user.id },
       } as any);
       await sb.from("coach_stripe_accounts").insert({ coach_id: user.id, account_id: acct.id, livemode: LIVE });
