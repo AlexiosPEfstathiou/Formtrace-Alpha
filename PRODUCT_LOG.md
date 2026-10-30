@@ -410,7 +410,7 @@ consent for health data, processors Supabase/Stripe/GitHub/Zoho/Blacknight, rete
 DPC). **28 red [bracketed] items** for the owner/lawyer: entity name and address, effective
 date, delivery window (72 h?), dispute window (7 d?), retention periods, VAT line, Supabase
 region, pilot price, trainee-stops refund rule, no-circumvention during pilot.
-**Not done:** no link from the app yet (consent screen + Profile - small index.html edit,
+**Linked 2026-10-30:** consent screen (agree line) and Profile footer open 	erms.html in a new tab; gate passed. **Still not done:** (consent screen + Profile - small index.html edit,
 needs the gate); Stripe consent_collection stays off until the page is live on formtrace.ie
 (EF) and reviewed; URL for Stripe Public details = https://formtrace.ie/terms.html.
 
