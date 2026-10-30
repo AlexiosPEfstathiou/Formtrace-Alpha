@@ -24,7 +24,7 @@ the list below are done, superseded, or parked (bottom).
 **B. Build the rest of escrow (C)**
 8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
 9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
-10. **DY** Weekly releases - BUILT 2026-10-30 (owner: migration, deploy `release-send`, webhook).  11. **DZ** Refunds.
+10. **DY** Weekly releases - BUILT 2026-10-30 (owner setup done).  11. **DZ** Refunds - BUILT 2026-10-30 (owner: migration, deploy `refund-send`, webhook).
 12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
 
 **C. Prove it, then go live**
@@ -43,6 +43,7 @@ the list below are done, superseded, or parked (bottom).
 
 **Any time (small):** **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
+**Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
 traffic grows). **Blocked:** **CX** iPhone (no device) · **AA** / **AH** (need a repro).
@@ -255,6 +256,29 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## EJ. Risk management for chargebacks
+
+Owner, 2026-10-30. FormTrace is merchant of record and responsible for refunds and chargebacks
+(DU / BI prerequisite 1). To decide and build: Stripe **Radar** rules (block high-risk scores,
+require 3DS above a threshold - 3DS shifts liability to the issuer); evidence pack per
+engagement (accepted offer, deposit receipt, week closures, reviews, pushes) exported for
+Stripe's dispute form; a dispute webhook (`charge.dispute.created`) that freezes releases on
+that engagement and alerts the owner; policy in terms s.8 ("ask us before your bank"); a reserve
+(DP liability numbers) sized to the exposure = released-but-disputable weeks. Not started.
+
+---
+
+## EI. Business bank account
+
+Owner, 2026-10-30. Open a dedicated account for FormTrace before live payments: Stripe payouts
+(platform balance: processing lines, commissions, refund float), the domain / Zoho / Supabase
+bills, and the reimbursement of pre-trading costs (DV / DX notes). As a sole trader an Irish
+business current account or a fintech business account (Revolut Business, Fire, N26 Business)
+works; once a company exists, open it in the company's name and move Stripe's payout account.
+Keep it separate from personal money from day one for the accounts and VAT advice. Not started.
+
+---
+
 ## EG. Run a test payment between the owner's coach and trainee profiles
 
 Owner, 2026-10-29. The end-to-end proof that escrow works, run twice:
@@ -392,7 +416,27 @@ the absolute amount is small - the point is the principle and the mechanism for 
 
 ---
 
-## DZ. Refunds - unreleased weeks back to the trainee
+## DZ. Refunds - unreleased weeks back to the trainee - BUILT 2026-10-30 (sandbox; owner setup pending)
+
+**BUILT 2026-10-30:** `migrations_refunds.sql` (journal: given) - table **`payment_refunds`** (RLS:
+parties read), `queue_refund(eng)`, trigger **`trg_refund_on_end`** on `engagements` (status ->
+ended, Stripe deposits only; catches its own errors), `payment_releases` gains status
+`cancelled` (queued releases are cancelled before the refund). **Rule implemented** (DK proposal,
+terms s.8 - confirm with the coaches): end reason `coach_unresponsive` / `quality` /
+`no_payment_details` = **coach_failed** -> every unreleased week incl. the week in progress;
+any other reason = **trainee_stopped** -> every unreleased week except the week in progress.
+Unreleased = (deposit - processing) - released (sent + skipped); the EA processing line is
+refunded pro rata. Comp deposits -> `skipped` row. Edge Function **`refund-send`** (Verify JWT OFF;
+Database Webhook on INSERT of `payment_refunds`): partial Stripe **Refund** on the deposit's
+PaymentIntent, idempotency key `refund_<id>`; stamps `refund_sent_at` / `refund_received_at` so
+the old tracker state resolves; pushes both parties. Tracker (Stripe goals): "Refund of EUR x
+returned to your card <date>", skipped / failed states; the manual flow stays for direct-pay
+goals. **Owner setup:** run the migration; deploy `refund-send` (JWT OFF); webhook on
+`payment_refunds` INSERT. **Not done:** disputes on released weeks (terms s.8: by hand +
+transfer reversal, no UI); the coach cannot end a goal in the app, so "coach ends" refunds are
+by hand; no sandbox test yet (EG).
+
+Original note:
 
 Part of DM. When a goal ends early (CN-10): refund the deposit share of every week not yet
 released, per the pilot refund rule (`PILOT_REFUND_REASONS`, to finalise in the pilot

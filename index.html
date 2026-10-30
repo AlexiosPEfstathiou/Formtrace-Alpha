@@ -4250,7 +4250,9 @@ async function paymentState(eng,offer){
   /* DY: weekly releases from the deposit (read-only; RLS lets both parties see them) */
   let releases=[]; if(e.deposit_at){ try{ const { data }=await store._sb.from("payment_releases").select("week_start,gross_cents,amount_cents,currency,status,sent_at").eq("engagement_id",e.id).order("week_start"); releases=data||[]; }catch(x){} }
   const releasedCents=releases.filter(r=>r.status==="sent"||r.status==="skipped").reduce((a,r)=>a+(r.gross_cents||0),0);
-  return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout,releases,releasedCents};
+  /* DZ: the real refund for a Stripe deposit (replaces the manual estimate above) */
+  let refund=null; if(e.deposit_at&&ended){ try{ const { data }=await store._sb.from("payment_refunds").select("amount_cents,currency,status,rule,sent_at").eq("engagement_id",e.id).maybeSingle(); refund=data||null; }catch(x){} }
+  return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout,releases,releasedCents,refund};
 }
 /* ---- Item DU: coach payouts via Stripe Connect (Express, hosted onboarding) ---- */
 async function renderStripeConnectCard(ph){
@@ -4306,7 +4308,14 @@ async function renderPaymentTracker(holder,eng,role,offer){
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){
-    if(s.refundDue>0){
+    if(e.deposit_at){ /* DZ: Stripe deposit - automatic refund of the unreleased weeks */
+      const rf=s.refund, amt=rf?s.money(rf.amount_cents/(rf.currency==="jpy"?1:100)):null;
+      if(!rf) now=`Ended early. Working out the refund of the unused weeks…`;
+      else if(rf.status==="sent") now=`Ended early. Refund of <b style="color:var(--ink)">${amt}</b> returned to ${isCoach?"your trainee's":"your"} card ${day(rf.sent_at)}${rf.rule==="trainee_stopped"?" (the week in progress stays with the coach)":""}. Weeks already released are unaffected.`;
+      else if(rf.status==="skipped") now=`Ended early. ${rf.rule==="comp"?"Nothing to refund (free code).":"No unused weeks left to refund."}`;
+      else if(rf.status==="failed") now=`Ended early. The refund of ${amt} could not be sent automatically - FormTrace is looking into it.`;
+      else now=`Ended early. Refund of ${amt} on its way to ${isCoach?"your trainee":"you"}.`;
+    } else if(s.refundDue>0){
       if(!e.refund_sent_at){ now=`Ended early. Under the pilot terms a refund of <b style="color:var(--ink)">${s.money(s.refundDue)}</b> is due for the unused weeks${isCoach?" - send it directly to your trainee.":" - your coach sends it directly to you."}`; if(isCoach) actions=`<button class="btn sm primary" data-pt="rsent" style="width:auto">Refund sent</button>`; }
       else if(!e.refund_received_at){ now=`Refund of ${s.money(s.refundDue)} sent ${day(e.refund_sent_at)}.${isCoach?" Waiting for your trainee to confirm.":" Confirm once it has arrived."}`; if(!isCoach) actions=`<button class="btn sm primary" data-pt="rrecv" style="width:auto">Refund received ✓</button>`; }
       else now=`Ended early. Refund of ${s.money(s.refundDue)} received ${day(e.refund_received_at)}. Settled.`;
