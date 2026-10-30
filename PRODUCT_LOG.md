@@ -41,7 +41,7 @@ the list below are done, superseded, or parked (bottom).
 20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
 22. **CB** Launch timeline - revisit with pilot learnings.
 
-**Any time (small):** **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
+**Any time (small):** **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
@@ -257,6 +257,12 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## EO. Tracker map: pick the escrow variant per goal, not from the global switch
+
+EG step 2 finding, 2026-10-30. A Stripe-paid goal while `payments_via_stripe = 0` shows the pilot map: Deposit and Paid both ticked, caption "Deposit skipped during the pilot - paid directly to the coach", although the text below correctly says the deposit is held by FormTrace. Fix: the map variant should follow the goal (`e.deposit_at` present -> escrow map: Deposit = the payment step, no manual Paid step) with the switch only deciding what *new* goals offer. Small, index.html. Also log: Checkout settings changed by the owner 2026-10-30 - Adaptive Pricing off (EUR only; GBP had been offered to a UK browser), payment methods narrowed to cards + wallets. Not started.
+
+---
+
 ## EN. After acceptance: push both parties to arrange their first call
 
 Owner, 2026-10-30. When a trainee accepts an offer (and, under escrow, once the deposit is paid), push the coach and the trainee: "You're on - arrange your first call" with a deep link to the engagement (the scheduling screen from G, if built; otherwise the chat/notes). One push each, once; a follow-up after 48 h if no call has been scheduled is optional. Hook: the acceptance / deposit trigger in SQL (push_outbox, catches its own errors). Not started.
@@ -325,6 +331,7 @@ Keep it separate from personal money from day one for the accounts and VAT advic
 ## EG. Run a test payment between the owner's coach and trainee profiles - SCRIPT WRITTEN 2026-10-30 (`docs/EG_TEST.md`)
 
 **EG finding 1 (step 1, 2026-10-30):** Stripe refused the account: "The recipient ToS agreement is not supported for platforms in IE creating accounts in IE" - the **recipient** service agreement is for cross-border payouts only. **Fixed:** `connect-onboard` sends `service_agreement: recipient` only when the coach's country differs from the platform's (`PLATFORM_COUNTRY`, default IE); same-country accounts use the standard agreement, still transfers-only. DU's open question is answered. Owner: redeploy `connect-onboard` (JWT ON) and tap Set up payouts again (the failed attempt created no account row).
+**EG step 2 PASSED 2026-10-30:** Checkout EUR 50 + EUR 4.00 processing = EUR 54.00 as computed; `deposit_amount 5400`, `deposit_processing 400`, livemode false, PaymentIntent recorded; tracker text right, map variant wrong (EO).
 **EG step 1 PASSED 2026-10-30:** after the fix and the missing `migrations_stripe_connect.sql`, the test coach onboarded (one "Finish setup" round - Stripe re-shows the whole test flow for a new Account Link, expected); card now "Open Stripe dashboard" = Payouts ready. **DU question answered: IE Express, transfers-only, standard agreement works.** EC done except live-mode branding (DW).
 **2026-10-30:** the full sandbox walk is in **`docs/EG_TEST.md`**: EC prerequisites, coach onboarding (answers the DU open question), deposit with the EA line (expected EUR 4.00 on EUR 25 x 2 wk, total EUR 54), a simulated week close + `queue_weekly_releases()` for DY, an early end for DZ (incl. the flagged no-evidence case), the ED free code, and the restore of `release_hold_days` = 14. Waiting on the owner to walk it.
 
