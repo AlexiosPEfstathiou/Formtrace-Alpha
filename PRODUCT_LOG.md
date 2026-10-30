@@ -43,6 +43,7 @@ the list below are done, superseded, or parked (bottom).
 
 **Any time (small):** **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
+**After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
@@ -256,6 +257,20 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## EK. Coach ends the goal - trainee chooses credit or refund-less-fee
+
+Owner, 2026-10-30. Today only the trainee can end a goal (`end_goal_early`). **To build:** a coach
+"End this goal" action with a reason; the trainee is then offered (push + tracker card) either
+**credit**: the full unreleased remainder (price + its processing share) kept by FormTrace as a
+balance applied automatically at the next Checkout (`checkout-create` deducts it; needs a
+`trainee_credits` ledger and a Checkout line or coupon), or **refund** of the remainder less a
+**fee covering costs** (proposal: the processing share of the refunded weeks, i.e. Stripe's
+non-returned fee, plus a fixed EUR amount to decide - terms s.8 placeholder). Default if the
+trainee does not choose within 14 days: credit. Weeks already released are unaffected; queued
+releases cancelled as in DZ. Build after EG. Not started.
+
+---
+
 ## EJ. Risk management for chargebacks
 
 Owner, 2026-10-30. FormTrace is merchant of record and responsible for refunds and chargebacks
@@ -431,8 +446,15 @@ Database Webhook on INSERT of `payment_refunds`): partial Stripe **Refund** on t
 PaymentIntent, idempotency key `refund_<id>`; stamps `refund_sent_at` / `refund_received_at` so
 the old tracker state resolves; pushes both parties. Tracker (Stripe goals): "Refund of EUR x
 returned to your card <date>", skipped / failed states; the manual flow stays for direct-pay
-goals. **Owner setup:** run the migration; deploy `refund-send` (JWT OFF); webhook on
-`payment_refunds` INSERT. **Not done:** disputes on released weeks (terms s.8: by hand +
+goals. **Owner setup DONE 2026-10-30** (migration run, `refund-send` deployed, webhook created).
+**Part 2, owner 2026-10-30 ("safeguard against trainees lying?"):** `migrations_refunds_evidence.sql`
+(journal: given) - a coach-failure reason is honoured only with **evidence**: a submitted session
+unreviewed for > `review_window_hours` (72) at the moment of ending. Without it the refund is
+computed as trainee_stopped (unused weeks still refunded; the week in progress stays with the
+coach) and the row is **flagged** (`flagged`, `flag_note`) for the owner, who can top up by hand.
+**Released weeks are final** (owner): the 14-day hold is the only window to raise a concern;
+no dispute path after release; transfer reversal kept only for chargebacks / fraud / error.
+Terms s.6 and s.8 updated to match; "coach ends" row now points to EK. **Not done:** disputes on released weeks (terms s.8: by hand +
 transfer reversal, no UI); the coach cannot end a goal in the app, so "coach ends" refunds are
 by hand; no sandbox test yet (EG).
 

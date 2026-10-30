@@ -73,4 +73,5 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-30 | DY | `migrations_weekly_release.sql` | run ✔ | table 1, job 1, hold 14 (owner). `release-send` deployed (JWT OFF) and the payment_releases webhook (Insert + Update) created. |
 | 2026-10-30 | DY test | `update public.platform_rates set value = 0 where key = 'release_hold_days'` (sandbox test only) | run ✔ | hold is 0 in the sandbox (owner, 2026-10-30). |
 | after EG | DY | `update public.platform_rates set value = 14 where key = 'release_hold_days'` | pending | Restore the 14-day hold before go-live (EB). |
-| 2026-10-30 | DZ | `migrations_refunds.sql` | given | Expected: refunds_table 1, trigger 1, cancelled_allowed 1. |
+| 2026-10-30 | DZ | `migrations_refunds.sql` | run ✔ | Owner: refunds_table 1, trigger 1, cancelled_allowed 1; `refund-send` deployed (JWT OFF), webhook created. |
+| 2026-10-30 | DZ-2 | `migrations_refunds_evidence.sql` | given | Expected: flagged_col 1, window 72. |
