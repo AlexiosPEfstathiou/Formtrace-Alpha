@@ -138,4 +138,4 @@ real only after go-live below.
 - https://support.stripe.com
 - https://docs.stripe.com/mcp
 
-**2026-10-30 (EA + ED):** after running `supabase/migrations_stripe_fees.sql`, **redeploy** `checkout-create` and `stripe-webhook` (both changed). Confirm the five `stripe_*` rates against Stripe's Irish pricing page. Create the 100%-off coupon + promotion code (ED) in sandbox and live.
+**2026-10-30 (EA + ED):** after running `supabase/migrations_stripe_fees.sql`, ~~redeploy `checkout-create` and `stripe-webhook`~~ **redeployed 2026-10-30 (owner; JWT settings unchanged, ON / OFF).** Confirm the five `stripe_*` rates against Stripe's Irish pricing page. Create the 100%-off coupon + promotion code (ED) in sandbox and live.

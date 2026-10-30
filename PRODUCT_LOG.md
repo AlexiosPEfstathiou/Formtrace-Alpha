@@ -22,8 +22,8 @@ the list below are done, superseded, or parked (bottom).
    Functions, webhook endpoint, secrets, **EC** Connect branding.
 
 **B. Build the rest of escrow (C)**
-8. **EA** Processing line - BUILT (sandbox; redeploy `checkout-create` + run `migrations_stripe_fees.sql`).
-9. **ED** Zero-amount promo code - webhook BUILT (redeploy `stripe-webhook`); owner creates the coupon + code.
+8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
+9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
 10. **DY** Weekly releases.  11. **DZ** Refunds.
 12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
 
