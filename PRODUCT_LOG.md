@@ -41,7 +41,7 @@ the list below are done, superseded, or parked (bottom).
 20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
 22. **CB** Launch timeline - revisit with pilot learnings.
 
-**Any time (small):** **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
+**Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
@@ -254,6 +254,12 @@ Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / supp
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
 Registered in the owner's personal name alongside the domain (see DV / EE).
+
+---
+
+## ER. Pay straight after accepting; Stripe setup straight after coach approval
+
+Owner, 2026-10-30. (1) **Trainee:** accepting an offer should open the payment options at once (Pay by card -> Checkout), not leave the trainee on another screen looking for how to pay; under escrow the natural flow is accept -> Checkout in one tap, with the Payment card as the fallback. (2) **Coach:** when a coach profile is approved, send them straight to the Stripe payouts setup (`connect-onboard`) - a push + the Profile card opened, or a one-time full-screen prompt - so no release ever waits on onboarding. Not started.
 
 ---
 
