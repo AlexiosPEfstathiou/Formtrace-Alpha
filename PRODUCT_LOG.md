@@ -1,4 +1,4 @@
-﻿# FormTrace — Product Log
+# FormTrace — Product Log
 
 Opened 2026-08-07. Body is chronological (newest first) - a development
 record, kept that way because it is what every bug hunt has been traced
@@ -12,7 +12,7 @@ the list below are done, superseded, or parked (bottom).
 **A. Next session - foundations**
 1. **DV** Outside-activity check (O) - first: it gates money and the domain's ownership.
 2. **BJ** Choose the name (O) - the domain depends on it.
-3. **EE** Buy the domain (O).
+3. **EE** Buy the domain (O).  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
 4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
 5. **DX** Terms of Service page (C draft → lawyer) - published on the domain; URL in Stripe.
@@ -239,6 +239,19 @@ unapproved is awarded, shown or fed.
 Not built: hidden achievements; a max-streak record (streak rules read the
 current streak, so a streak broken before the check would not award - the
 week-close trigger makes that window tiny).
+
+---
+
+## EH. Email hosting - Zoho Mail on the domain
+
+Owner, 2026-10-30. Host email separately from the registrar (GoDaddy's bundled mailbox
+is portable only within GoDaddy). **Zoho Mail**: free tier (up to 5 users, 5 GB each,
+web/mobile only) is enough for the pilot; Mail Lite (~EUR 1/user/month) adds IMAP/POP if
+a desktop client is wanted. Needs the domain first (**EE**). Setup: verify the domain in
+Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / support@ as
+the public addresses and keep the owner's own address private. Stripe, Supabase auth
+emails and the ToS contact address (**DX**) should use the domain address once live.
+Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
