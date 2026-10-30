@@ -43,7 +43,7 @@ the list below are done, superseded, or parked (bottom).
 
 **Any time (small):** **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
-**After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee).
+**After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
@@ -257,6 +257,22 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## EL. Early review incentive - rewarding reviews within 24 hours
+
+Owner, 2026-10-30. The obligation is 5 business days (DZ part 3); the wish is reviews within 24 h.
+Options to choose from, cheapest first: (1) **Fast reviewer mark** on the coach's Find-a-coach
+card and profile (e.g. "Reviews within a day", computed from the last 30 days' median
+submission-to-review time, needs a threshold like >= 80 %); (2) **ranking**: Find a coach sorts
+fast reviewers first; (3) **faster money**: releases for a week in which every review landed
+within 24 h skip part of the 14-day hold (e.g. 7 days) - money is the strongest lever and it
+costs FormTrace nothing; (4) a coach **achievement / streak** ("7 days of same-day reviews"),
+friends-only like all achievements; (5) **commission step**: -1 pt commission for a month of
+>= 90 % same-day reviews (moot during the 0 % pilot, matters at launch). Data needed in all
+cases: `reviews.created_at - submissions.created_at` per engagement (already there). Decision
+pending; proposal: (1) + (3) for the pilot. Not started.
+
+---
+
 ## EK. Coach ends the goal - trainee chooses credit or refund-less-fee
 
 Owner, 2026-10-30. Today only the trainee can end a goal (`end_goal_early`). **To build:** a coach
@@ -264,7 +280,7 @@ Owner, 2026-10-30. Today only the trainee can end a goal (`end_goal_early`). **T
 **credit**: the full unreleased remainder (price + its processing share) kept by FormTrace as a
 balance applied automatically at the next Checkout (`checkout-create` deducts it; needs a
 `trainee_credits` ledger and a Checkout line or coupon), or **refund** of the remainder less a
-**fee covering costs** (proposal: the processing share of the refunded weeks, i.e. Stripe's
+**fee covering costs** (owner 2026-10-30: amount undecided, to study; proposal: the processing share of the refunded weeks, i.e. Stripe's
 non-returned fee, plus a fixed EUR amount to decide - terms s.8 placeholder). Default if the
 trainee does not choose within 14 days: credit. Weeks already released are unaffected; queued
 releases cancelled as in DZ. Build after EG. Not started.
@@ -454,7 +470,11 @@ computed as trainee_stopped (unused weeks still refunded; the week in progress s
 coach) and the row is **flagged** (`flagged`, `flag_note`) for the owner, who can top up by hand.
 **Released weeks are final** (owner): the 14-day hold is the only window to raise a concern;
 no dispute path after release; transfer reversal kept only for chargebacks / fraud / error.
-Terms s.6 and s.8 updated to match; "coach ends" row now points to EK. **Not done:** disputes on released weeks (terms s.8: by hand +
+Terms s.6 and s.8 updated to match; "coach ends" row now points to EK.
+**Part 3, owner 2026-10-30: review window = 5 business days** (not 72 h) - `migrations_refunds_business_days.sql`
+(journal: given): `review_window_business_days` = 5, helper `add_business_days()` (Mon-Fri, holidays
+ignored), `queue_refund` evidence = a submitted session past its 5-business-day deadline
+unreviewed. Terms s.6 / s.8 say 5 business days. Part 2 (72 h) ran and is superseded. **Not done:** disputes on released weeks (terms s.8: by hand +
 transfer reversal, no UI); the coach cannot end a goal in the app, so "coach ends" refunds are
 by hand; no sandbox test yet (EG).
 
