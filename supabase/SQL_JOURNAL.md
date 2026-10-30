@@ -75,4 +75,4 @@ if their table is missing - run the earlier rows first in that case.
 | after EG | DY | `update public.platform_rates set value = 14 where key = 'release_hold_days'` | pending | Restore the 14-day hold before go-live (EB). |
 | 2026-10-30 | DZ | `migrations_refunds.sql` | run ✔ | Owner: refunds_table 1, trigger 1, cancelled_allowed 1; `refund-send` deployed (JWT OFF), webhook created. |
 | 2026-10-30 | DZ-2 | `migrations_refunds_evidence.sql` | run ✔ | flagged_col 1, window 72 (owner). Superseded by DZ-3 below. |
-| 2026-10-30 | DZ-3 | `migrations_refunds_business_days.sql` | given | Expected: days 5, fri_plus_5 = 2026-11-06 12:00+00. |
+| 2026-10-30 | DZ-3 | `migrations_refunds_business_days.sql` | run ✔ | ran fine (owner). |
