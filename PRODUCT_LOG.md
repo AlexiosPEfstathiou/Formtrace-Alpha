@@ -15,7 +15,7 @@ the list below are done, superseded, or parked (bottom).
 3. **EE** Buy the domain (O) - DECIDED: formtrace.ie at Blacknight; awaiting registry ID check.  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
 4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
-5. **DX** Terms of Service page (C draft → lawyer) - published on the domain; URL in Stripe.
+5. **DX** Terms of Service page - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
 6. **Pending SQL** (O): `migrations_stripe_checkout.sql`, `migrations_stripe_connect.sql`,
    `migrations_body_achievements_recheck.sql` (SQL journal: given).
 7. **Stripe sandbox setup** (O): STRIPE_INTEGRATION_TODO.md steps 1-9 - three Edge
@@ -396,7 +396,25 @@ Not started.
 
 ---
 
-## DX. Terms of Service page
+## DX. Terms of Service page - DRAFTED 2026-10-30 (	erms.html), lawyer review pending
+
+**DRAFT 2026-10-30 (Claude, Lilly account):** 	erms.html beside the app - static page, both themes,
+same tokens as the app. 15 sections (who we are, definitions, 18+ eligibility, platform /
+merchant-of-record role, trainee terms incl. 14-day withdrawal, coach terms incl. delivery
+window, Stripe onboarding, Founding 0%, **transfer reversal**, no circumvention, trainee-data
+duty; payments: deposit / weekly release / EA processing line / fees; early-end **refund table**
+matching PILOT_REFUND_REASONS (coach failed -> unused weeks refunded) with the trainee-stops
+case marked for the coaches to confirm; dispute window; pilot section; content licence; health;
+conduct; deletion; liability cap; Irish law) + a **Privacy Notice** (GDPR table incl. art. 9
+consent for health data, processors Supabase/Stripe/GitHub/Zoho/Blacknight, retention, rights,
+DPC). **28 red [bracketed] items** for the owner/lawyer: entity name and address, effective
+date, delivery window (72 h?), dispute window (7 d?), retention periods, VAT line, Supabase
+region, pilot price, trainee-stops refund rule, no-circumvention during pilot.
+**Not done:** no link from the app yet (consent screen + Profile - small index.html edit,
+needs the gate); Stripe consent_collection stays off until the page is live on formtrace.ie
+(EF) and reviewed; URL for Stripe Public details = https://formtrace.ie/terms.html.
+
+Original note:
 
 Owner, 2026-10-29 - work tomorrow. A public Terms page for FormTrace (trainee and coach
 terms, escrow and refunds, the pilot rules, transfer reversals, liability, privacy link),

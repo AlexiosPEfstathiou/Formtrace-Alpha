@@ -57,7 +57,18 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
-## Start here next session (written at the end of 2026-10-29)
+## Start here next session (refreshed 2026-10-30, Lilly account)
+**2026-10-30:** **EE decided and bought - ormtrace.ie at Blacknight** (1 yr EUR 5.99,
+renewal ~EUR 28; registry Ireland-connection check pending - the name did not resolve in DNS
+as of midday). **EF postponed by the owner until registration completes**; the step list
+(GitHub Pages custom domain, Blacknight A/AAAA/CNAME, Supabase Site URL + redirect URLs +
+APP_URL secret, Enforce HTTPS, Stripe public details) is in the chat and in EF; the app
+needs **no code change** (all paths relative; EF verified). **EH** logged: Zoho Mail on the
+domain. **DX drafted:** 	erms.html (ToS + Privacy Notice, 28 bracketed items for
+owner/lawyer); not yet linked from the app, Stripe consent still off. formtrace.com declined
+(premium ~EUR 6k), .app taken, GoDaddy dropped. Next: EF when DNS resolves; ED + EA; link
+terms.html from the consent screen and Profile.
+**Earlier (end of 2026-10-29):**
 **The pending work is IN ORDER at the top of `PRODUCT_LOG.md` ("PENDING - IN ORDER").**
 Begin with section A: **DV** outside-activity check → **BJ** name → **EE** buy the domain →
 **EF** point it at GitHub / Supabase / Stripe → **DX** Terms page → the three pending
