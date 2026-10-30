@@ -57,7 +57,17 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
-## Start here next session (refreshed 2026-10-30 evening, Lilly account)
+## Start here next session (refreshed 2026-10-30 night, Lilly account)
+**EG PASSED in the sandbox (2026-10-30 night):** coach onboarding (IE Express, transfers-only,
+standard agreement), deposit with the EA line, weekly release (Transfer), refund (partial Refund,
+trainee_stopped rule), free code. Hold back to 14. **Tooling: the owner connected the official
+Supabase MCP connector on the PERSONAL Claude account** - from there Claude can run SQL and
+deploy Edge Functions directly (still journal every statement; the Lilly account cannot use it).
+**Open in Stripe (owner):** sandbox + live: Adaptive Pricing OFF, payment methods = cards + wallets;
+live code `ALHATEST` (100 %) - cap redemptions + expiry or archive. **Next (C):** EO (map
+variant per goal), EM, EN, EQ, ER small items; **DP**; then **DW** live keys -> live EG with the
+ED code -> **EB**. EF still waits for formtrace.ie to resolve; DX terms need the lawyer.
+**Earlier on 2026-10-30:**
 **2026-10-30 evening - the escrow loop is complete in code and deployed in the sandbox:** EA
 (processing line), ED (free code, webhook), **DY** (weekly releases: `payment_releases`, cron 09:10
 UTC, `release-send` + webhook), **DZ** (refunds: `payment_refunds`, trigger on ended, `refund-send`

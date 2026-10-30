@@ -71,9 +71,10 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DU | `migrations_stripe_connect.sql` | run ✔ | 2026-10-30: payments_via_stripe 0, accounts_table 1 (found missing during EG step 1 - the first onboarding attempt could not be recorded). |
 | 2026-10-30 | EA/ED | `migrations_stripe_fees.sql` | run ✔ | stripe_rates 5, has_processing 1 (owner confirmed). |
 | 2026-10-30 | DY | `migrations_weekly_release.sql` | run ✔ | table 1, job 1, hold 14 (owner). `release-send` deployed (JWT OFF) and the payment_releases webhook (Insert + Update) created. |
-| 2026-10-30 | DY test | `update public.platform_rates set value = 0 where key = 'release_hold_days'` (sandbox test only) | given again | Journal error: recorded as run on 2026-10-30, but the EG step 3 diagnostic showed hold = 14. Given again during EG step 3. |
-| after EG | DY | `update public.platform_rates set value = 14 where key = 'release_hold_days'` | pending | Restore the 14-day hold before go-live (EB). |
+| 2026-10-30 | DY test | `update public.platform_rates set value = 0 where key = 'release_hold_days'` (sandbox test only) | run ✔ | Run during EG step 3 (after the diagnostic showed 14); restored to 14 at step 6. |
+| 2026-10-30 | DY | `update public.platform_rates set value = 14 where key = 'release_hold_days'` | run ✔ | Hold restored to 14 after EG (owner). |
+| 2026-10-30 | EG | delete simulated `week_closures` for Stripe test goals (closed today) | run ✔ | Owner. |
 | 2026-10-30 | DZ | `migrations_refunds.sql` | run ✔ | Owner: refunds_table 1, trigger 1, cancelled_allowed 1; `refund-send` deployed (JWT OFF), webhook created. |
 | 2026-10-30 | DZ-2 | `migrations_refunds_evidence.sql` | run ✔ | flagged_col 1, window 72 (owner). Superseded by DZ-3 below. |
 | 2026-10-30 | DZ-3 | `migrations_refunds_business_days.sql` | run ✔ | ran fine (owner). |
-| EG, sandbox | DY test | simulated `week_closures` insert + `select public.queue_weekly_releases()` (docs/EG_TEST.md step 7) | given | Expected: 1. Test data only; delete after. |
+| 2026-10-30 | DY test | simulated `week_closures` insert (this week) + `select public.queue_weekly_releases()` | run ✔ | 1 queued -> sent (tr_...). Rows deleted at step 6. |
