@@ -69,3 +69,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DS | `migrations_journey_fix.sql` | run ✓ | weeks_check = 13. |
 | 2026-10-29 | DT | `migrations_body_achievements_recheck.sql` | given | Final select lists each holder of Bulk up / Weight cut; removed = 1 for the 1600 kg case. |
 | 2026-10-29 | DU | `migrations_stripe_connect.sql` | given | Expected: payments_via_stripe 0, accounts_table 1. |
+| 2026-10-30 | EA/ED | `migrations_stripe_fees.sql` | given | Expected: stripe_rates 5, has_processing 1. |

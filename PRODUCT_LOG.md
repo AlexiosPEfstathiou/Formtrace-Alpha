@@ -22,8 +22,8 @@ the list below are done, superseded, or parked (bottom).
    Functions, webhook endpoint, secrets, **EC** Connect branding.
 
 **B. Build the rest of escrow (C)**
-8. **EA** Processing line (trainee pays Stripe costs, rounded up to the whole euro).
-9. **ED** Zero-amount promo code support (webhook accepts `no_payment_required`).
+8. **EA** Processing line - BUILT (sandbox; redeploy `checkout-create` + run `migrations_stripe_fees.sql`).
+9. **ED** Zero-amount promo code - webhook BUILT (redeploy `stripe-webhook`); owner creates the coupon + code.
 10. **DY** Weekly releases.  11. **DZ** Refunds.
 12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
 
@@ -303,7 +303,15 @@ DV), with auto-renew and registrar lock on. `.ie` needs a connection to Ireland 
 an Irish resident).
 
 ---
-## ED. Secret 100%-off promo code - test in live mode without moving money
+## ED. Secret 100%-off promo code - test in live mode without moving money - webhook part BUILT 2026-10-30
+
+**BUILT 2026-10-30 (steps 1-2):** `stripe-webhook` accepts `payment_status` `paid` **or**
+`no_payment_required`; `deposit_amount = amount_total ?? 0` (0 = comp), `deposit_processing = 0`,
+no PaymentIntent; coach push says '(free code)'; tracker shows 'Deposit of EUR 0 (free code)'.
+**Owner (steps 3-4):** create the 100% coupon + promotion code (max redemptions, expiry) in
+sandbox and live; test on EG. Needs the webhook **redeployed**.
+
+Original note:
 
 Owner, 2026-10-29: a secret code that makes the whole payment zero, to test on production
 with the owner's own coach and trainee accounts. **Supported by Stripe:** a 100%-off coupon
@@ -347,7 +355,21 @@ means test cards only.
 
 ---
 
-## EA. Pilot fees at parity with Stripe's costs - FormTrace loses nothing
+## EA. Pilot fees at parity with Stripe's costs - FormTrace loses nothing - BUILT 2026-10-30 (sandbox; redeploy needed)
+
+**BUILT 2026-10-30:** `checkout-create` adds a **Payment processing** line = ceil-to-euro of
+`G - base`, `G = (base + payouts + account + f) / (1 - p)`, base = price + service fee,
+payouts = weeks x (payout % of a week + fixed), account = ceil(weeks/4) x monthly fee. Exact
+parity on the gross (slightly above the log's approximation; EUR 100 / 4 wk -> EUR 5.00 as in
+the example). Rates: five `platform_rates` keys in **`migrations_stripe_fees.sql`** (journal:
+given); zero them to switch the line off. The split travels in session + PaymentIntent
+metadata (`processing_cents`, `base_cents`); the webhook stores **`engagements.deposit_processing`**
+so DY/DZ work on `deposit_amount - deposit_processing`. Tracker: 'Deposit of EUR 105 incl. EUR 5
+payment processing'. **Not done:** rates not yet confirmed on Stripe's Irish pricing page
+(owner); both functions need **redeploying**; no sandbox test yet (EG). Fixed fees assumed in
+euro for every pitch currency - fine while all coaches pitch in EUR.
+
+Original note:
 
 Owner, 2026-10-29: "bring the pilot at parity with Stripe fees so we don't lose any money
 during pilot." Pilot rates are 0% today, so FormTrace would pay every Stripe cost.

@@ -4299,7 +4299,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
                :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
     if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
   } else if(e.status==="active"){
-    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b> received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b>${e.deposit_at&&!e.deposit_amount?" (free code)":""}${e.deposit_processing>0?` incl. ${s.cur}${(e.deposit_processing/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} payment processing`:""} received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){

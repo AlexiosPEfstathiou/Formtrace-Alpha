@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     if (!currency) return json({ error: `Unsupported currency ${sym}` }, 400);
 
     // trainee fee from platform_rates (0 during the pilot): max(pct of the week, minimum) per week
-    const { data: rates } = await sb.from("platform_rates").select("key,value").in("key", ["trainee_fee_pct", "trainee_fee_min"]);
+    const { data: rates } = await sb.from("platform_rates").select("key,value").in("key", ["trainee_fee_pct", "trainee_fee_min", "stripe_card_pct", "stripe_card_fixed", "stripe_payout_pct", "stripe_payout_fixed", "stripe_account_monthly"]);
     const r = Object.fromEntries((rates || []).map((x: any) => [x.key, Number(x.value)]));
     const weeklyCents = Number(o.rate_per_workout_cents), weeks = Number(o.length_weeks);
     const feePerWeek = (r.trainee_fee_pct > 0 || r.trainee_fee_min > 0)
@@ -52,7 +52,21 @@ Deno.serve(async (req) => {
     }];
     if (feePerWeek > 0) line_items.push({ quantity: 1, price_data: { currency, unit_amount: unit(feePerWeek * weeks), product_data: { name: "FormTrace service fee" } } });
 
-    const meta = { engagement_id: e.id, trainee_id: e.trainee_id, coach_id: e.coach_id };
+    // EA (owner, 2026-10-29): the trainee covers Stripe's costs, so the platform nets the full price.
+    // Exact parity on the gross: Stripe keeps p*G + f on the card plus the Connect costs (one payout
+    // per released week, one account fee per started month). G = (base + connect + f) / (1 - p).
+    // The line is rounded UP to the whole euro (never down). All rates live in platform_rates;
+    // set stripe_card_pct and the others to 0 to switch the line off. Fixed fees are in euro.
+    const baseCents = weeklyCents * weeks + feePerWeek * weeks;
+    const p = (r.stripe_card_pct || 0) / 100, fCents = Math.round((r.stripe_card_fixed || 0) * 100);
+    const payoutCents = weeks * (Math.round(weeklyCents * (r.stripe_payout_pct || 0) / 100) + Math.round((r.stripe_payout_fixed || 0) * 100));
+    const accountCents = Math.ceil(weeks / 4) * Math.round((r.stripe_account_monthly || 0) * 100);
+    const grossCents = p < 1 ? (baseCents + payoutCents + accountCents + fCents) / (1 - p) : baseCents;
+    const rawLine = Math.max(0, grossCents - baseCents);
+    const processingCents = rawLine > 0 ? Math.ceil(rawLine / 100) * 100 : 0;        // up to the whole euro
+    if (processingCents > 0) line_items.push({ quantity: 1, price_data: { currency, unit_amount: unit(processingCents), product_data: { name: "Payment processing", description: "Card and payout costs charged by Stripe, passed on at cost and rounded up to the euro" } } });
+
+    const meta = { engagement_id: e.id, trainee_id: e.trainee_id, coach_id: e.coach_id, processing_cents: String(processingCents), base_cents: String(baseCents) };
     const session = await stripe.checkout.sessions.create({
       // Checkout Studio configuration (exact):
       ui_mode: "hosted_page",

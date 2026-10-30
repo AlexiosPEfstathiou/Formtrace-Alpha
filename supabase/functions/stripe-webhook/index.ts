@@ -23,13 +23,17 @@ Deno.serve(async (req) => {
   try {
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const s = event.data.object as Stripe.Checkout.Session;
-      if (s.payment_status === "paid") {
+      // ED: a 100%-off promotion code completes with payment_status = "no_payment_required" (no PaymentIntent).
+      if (s.payment_status === "paid" || s.payment_status === "no_payment_required") {
+        const free = s.payment_status === "no_payment_required" || !s.amount_total;
+        const processing = Number((s.metadata && s.metadata.processing_cents) || 0) || 0;   // EA: the pass-through line, kept apart from the price
         const id = (s.metadata && s.metadata.engagement_id) || s.client_reference_id;
         const pi = typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent?.id ?? null;
         const { data: e, error: updErr } = await sb.from("engagements")
           .update({
             deposit_at: new Date().toISOString(),
-            deposit_amount: s.amount_total,
+            deposit_amount: s.amount_total ?? 0,                 // 0 = comp (ED): DY/DZ move the steps, not money
+            deposit_processing: free ? 0 : processing,          // EA: excluded from releases and refunds
             deposit_currency: s.currency,
             deposit_livemode: s.livemode,
             stripe_checkout_session: s.id,
@@ -43,7 +47,7 @@ Deno.serve(async (req) => {
           const { data: p } = await sb.from("profiles").select("display_name").eq("id", e.trainee_id).maybeSingle();
           await sb.from("push_outbox").insert({
             to_user: e.coach_id, kind: "offer",
-            title: `💶 ${(p && p.display_name) || "Your trainee"} paid the deposit${s.livemode ? "" : " (test)"}`,
+            title: `💶 ${(p && p.display_name) || "Your trainee"} paid the deposit${free ? " (free code)" : ""}${s.livemode ? "" : " (test)"}`,
             body: `${e.goal_title || "Goal"} · held by FormTrace, released to you week by week`,
             url: "/#coach",
           });
