@@ -53,7 +53,7 @@ report it; the rates are in `platform_rates` (`stripe_*`).
    now (sandbox only; journaled):
    ```sql
    insert into public.week_closures (engagement_id, week_start, assigned_count, completed_count, neutral)
-   select id, (date_trunc('week', now() at time zone 'UTC')::date - 7), 1, 1, false
+   select id, date_trunc('week', now() at time zone 'UTC')::date, 1, 1, false   -- this week: a closure before the deposit week is ignored
      from public.engagements where deposit_at is not null order by deposit_at desc limit 1
    on conflict do nothing;
    select public.queue_weekly_releases();   -- expect 1
