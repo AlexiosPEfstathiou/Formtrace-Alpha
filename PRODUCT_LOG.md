@@ -45,6 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
+**Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement.
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
 traffic grows). **Blocked:** **CX** iPhone (no device) · **AA** / **AH** (need a repro).
@@ -254,6 +255,54 @@ Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / supp
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
 Registered in the owner's personal name alongside the domain (see DV / EE).
+
+---
+
+## EZ. Refine the coach's experience: building workouts, recording exercises, reviewing
+
+Owner, 2026-10-30. A pass over the three core coach flows - workout builder (library, exercise picker, sets/reps/notes), recording reference exercises (camera UX, retakes, audio), and the review flow (queue, player, tags/voice-over/drawing) - for speed and fewer taps. Gather the coaches' pain points first (CN-style test day with the pilot coaches), then fix in priority order. Not started.
+
+---
+
+## EY. Encouragement video - friends and coaches rally a trainee at risk of quitting
+
+Owner, 2026-10-30. When a trainee looks like a quit candidate (signals: no session in N days, streak broken, no log-in for a week - reuse BL's re-engagement detection), notify their top 3 social contacts (friends by interaction + their latest coaches): "Record an encouragement video for <Name>". Each can send a few seconds of video ("come on, don't quit - let's go for a run together"); the trainee receives them as a push + a card on Home. Needs: candidate detection, contact ranking, a short-video record/send flow, consent (the trainee can opt out of being "rallied"), and the privacy-notice wording. Not started.
+
+---
+
+## EX. @formtrace.ie emails, connect the domain to the app, SEO
+
+Owner, 2026-10-30. Umbrella for the domain work once formtrace.ie resolves: (1) mailboxes hello@ / support@ / privacy@ on Zoho (**EH**); (2) point the app at the domain (**EF**) and move Supabase auth / Stripe / terms URLs; (3) SEO basics for a PWA: a public landing page (index for logged-out visitors) with title, description, Open Graph tags, sitemap.xml, robots.txt, Search Console verification, and a few content pages (what FormTrace is, for coaches, for trainees). Not started.
+
+---
+
+## EW. Explore openart.ai for the app's look, videos and an animated persona
+
+Owner, 2026-10-30. Evaluate openart.ai (AI image/video generation) for: visual assets (icons, hero images, exercise illustrations, achievement art), short videos for onboarding / marketing, and an animated persona that talks the trainee through the day's checklist (**ES**). Check licence terms for commercial use, style consistency, cost per asset, and whether generated faces/bodies are acceptable for a fitness brand. Output: a short recommendation + sample assets. Not started.
+
+---
+
+## EV. Onboarding walkthroughs ("walk me") for new users
+
+Owner, 2026-10-30. First-run guided tours per role: a few coach-marks / spotlight steps showing where things are (Home, Training, Goal / Open goals, Notifications, Social, Review; recording a session; the payment tracker). Skippable, replayable from Profile ("Show me around again"), one tour per major screen on first visit. Not started.
+
+---
+
+## EU. Timed breaks between exercises
+
+Owner, 2026-10-30. In the workout player: a rest timer between exercises/sets (coach sets the rest per exercise in the builder, default e.g. 60-90 s), count-down with vibration/sound at the end, skip and +15 s controls, works with the screen locked where the platform allows. Not started.
+
+---
+
+## ET. Macro logging once: connect MacroFactor or a popular alternative
+
+Owner, 2026-10-30. Trainees should log macros in one place. Investigate: MacroFactor (no public API today - check; export/import via CSV or Apple Health / Health Connect as the bridge), Cronometer and MyFitnessPal APIs (partner programmes), and the platform route (Apple HealthKit nutrition + Google Health Connect) that any of these apps write to. Likely answer: read nutrition from HealthKit / Health Connect, which needs a native wrapper (not available to a plain PWA) - tie to the native-app decision. Not started.
+
+---
+
+## ES. Homepage daily checklist with a "day complete" celebration
+
+Owner, 2026-10-30. Home shows a daily list that gets crossed off as the day goes: log in, weigh yourself, log yesterday's macros, view today's calorie budget, perform today's workout / focus on resting (rest days), get 8 hours of sleep (self-reported or from a health platform). Items are generated from the trainee's plan and auto-tick where the app can see completion (weigh-in, log, session submitted). When every item is crossed, an animated "day complete" celebration plays; feed the streak / achievements (BJ, DB). Not started.
 
 ---
 
