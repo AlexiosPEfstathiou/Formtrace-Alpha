@@ -139,3 +139,5 @@ real only after go-live below.
 - https://docs.stripe.com/mcp
 
 **2026-10-30 (EA + ED):** after running `supabase/migrations_stripe_fees.sql`, ~~redeploy `checkout-create` and `stripe-webhook`~~ **redeployed 2026-10-30 (owner; JWT settings unchanged, ON / OFF).** Confirm the five `stripe_*` rates against Stripe's Irish pricing page. Create the 100%-off coupon + promotion code (ED) in sandbox and live.
+
+**2026-10-30 (DY):** 1) run `supabase/migrations_weekly_release.sql`; 2) deploy Edge Function `release-send` (paste `supabase/functions/release-send/index.ts`, **Verify JWT OFF**); 3) Database Webhook: Dashboard -> Database -> Webhooks -> Create: name `release-send`, table `public.payment_releases`, events **Insert + Update**, type Supabase Edge Function -> `release-send`, timeout 5000 ms, no extra headers (same as the push_outbox webhook); 4) test on EG after a week closes + 14 days - or set `release_hold_days` to 0 in the sandbox for the test and back to 14 after.

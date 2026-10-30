@@ -24,7 +24,7 @@ the list below are done, superseded, or parked (bottom).
 **B. Build the rest of escrow (C)**
 8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
 9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
-10. **DY** Weekly releases.  11. **DZ** Refunds.
+10. **DY** Weekly releases - BUILT 2026-10-30 (owner: migration, deploy `release-send`, webhook).  11. **DZ** Refunds.
 12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
 
 **C. Prove it, then go live**
@@ -404,7 +404,31 @@ fee on a refund - part of EA's parity sum. Not started.
 
 ---
 
-## DY. Weekly releases - each delivered week paid to the coach
+## DY. Weekly releases - each delivered week paid to the coach - BUILT 2026-10-30 (sandbox; owner setup pending)
+
+**Decisions (owner, 2026-10-30):** a week is **delivered** when it has closed and the coach has
+reviewed **every** session the trainee submitted in it (no `assigned_workouts` left in status
+`submitted` with a due date in that week); release after a **14-day hold** from the close
+(`platform_rates.release_hold_days`, changeable without a deploy). Claude's choices to confirm:
+neutral weeks (no sessions / paused) are **not released** - the money stays in the deposit for
+DZ; releases never exceed the price part of the deposit (`deposit_amount - deposit_processing`).
+**BUILT:** `migrations_weekly_release.sql` (journal: given) - table **`payment_releases`**
+(queued / sent / failed / skipped, RLS: parties read), `queue_weekly_releases()` (security
+definer; weekly rate less `coach_commission_pct`, 0 for Founding; comp deposits -> `skipped`
+rows so the steps move without money), pg_cron **formtrace-weekly-release** daily 09:10 UTC,
+which also re-fires queued rows waiting on onboarding once a day. Edge Function
+**`release-send`** (Verify JWT OFF; called by a Database Webhook on INSERT + UPDATE of
+`payment_releases`, the push_outbox pattern): re-reads the row, needs the coach's connected
+account `transfers_active` in the matching live/test mode, else leaves it queued and nudges the
+coach daily; creates the Stripe **Transfer** with `source_transaction` = the deposit's charge,
+`transfer_group eng_<id>`, idempotency key `release_<id>`; pushes coach and trainee; failures
+land as `failed` with the reason (retried by hand). Tracker: "k of n weeks released to your
+coach (EUR x)". **Owner setup:** run the migration; deploy `release-send` (JWT OFF); create the
+Database Webhook (table payment_releases, INSERT + UPDATE -> release-send); then EG.
+**Not done:** per-week list in the tracker (one summary line for now); admin view of failed
+releases (DP); no sandbox test yet.
+
+Original note:
 
 Part of DM. A scheduled job (pg_cron → Edge Function) transfers each **delivered** week's
 share of the deposit to the coach's connected account: Transfer with `source_transaction`

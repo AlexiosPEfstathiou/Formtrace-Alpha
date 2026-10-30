@@ -4247,7 +4247,10 @@ async function paymentState(eng,offer){
   const paidAny=!!(e.paid_at||e.received_at);   // nothing paid → nothing to refund
   const refundDue=(ended&&paidAny&&PILOT_REFUND_REASONS.includes(e.end_reason)&&weekly!=null&&weeks)?Math.max(0,weeks-elapsedWeeks)*weekly:0;
   let payout=null; try{ const { data }=await store._sb.from("coach_payout_details").select("details").eq("coach_id",e.coach_id).maybeSingle(); payout=data&&data.details; }catch(x){}
-  return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout};
+  /* DY: weekly releases from the deposit (read-only; RLS lets both parties see them) */
+  let releases=[]; if(e.deposit_at){ try{ const { data }=await store._sb.from("payment_releases").select("week_start,gross_cents,amount_cents,currency,status,sent_at").eq("engagement_id",e.id).order("week_start"); releases=data||[]; }catch(x){} }
+  const releasedCents=releases.filter(r=>r.status==="sent"||r.status==="skipped").reduce((a,r)=>a+(r.gross_cents||0),0);
+  return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout,releases,releasedCents};
 }
 /* ---- Item DU: coach payouts via Stripe Connect (Express, hosted onboarding) ---- */
 async function renderStripeConnectCard(ph){
@@ -4299,7 +4302,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
                :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
     if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
   } else if(e.status==="active"){
-    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b>${e.deposit_at&&!e.deposit_amount?" (free code)":""}${e.deposit_processing>0?` incl. ${s.cur}${(e.deposit_processing/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} payment processing`:""} received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b>${e.deposit_at&&!e.deposit_amount?" (free code)":""}${e.deposit_processing>0?` incl. ${s.cur}${(e.deposit_processing/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} payment processing`:""} received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.${(s.releases||[]).length?` ${s.releases.filter(r=>r.status==="sent"||r.status==="skipped").length} of ${s.weeks||"?"} weeks released to your coach${s.releasedCents?` (${s.money(s.releasedCents/(e.deposit_currency==="jpy"?1:100))})`:""}.`:""}`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){

@@ -70,3 +70,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-29 | DT | `migrations_body_achievements_recheck.sql` | given | Final select lists each holder of Bulk up / Weight cut; removed = 1 for the 1600 kg case. |
 | 2026-10-29 | DU | `migrations_stripe_connect.sql` | given | Expected: payments_via_stripe 0, accounts_table 1. |
 | 2026-10-30 | EA/ED | `migrations_stripe_fees.sql` | run ✔ | stripe_rates 5, has_processing 1 (owner confirmed). |
+| 2026-10-30 | DY | `migrations_weekly_release.sql` | given | Expected: table 1, job 1, hold 14. |
