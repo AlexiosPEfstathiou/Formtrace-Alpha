@@ -43,7 +43,7 @@ the list below are done, superseded, or parked (bottom).
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
-**After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
+**After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee DECIDED 2026-11-02: costs only) · **EL** early review incentive (DECIDED 2026-11-02: mark + 7-day release; build pending).
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement.
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
@@ -386,7 +386,9 @@ Owner, 2026-10-30, found during EG step 1. Trainee Notifications: the card "AFTE
 
 ---
 
-## EL. Early review incentive - rewarding reviews within 24 hours
+## EL. Early review incentive - rewarding reviews within 24 hours - DECIDED 2026-11-02
+
+**Owner decision 2026-11-02 (pilot): options (1) + (3)** - a **"Reviews within a day" mark** on the coach's card and profile (last 30 days, >= 80 % of reviews within 24 h of submission) **and faster money**: a week in which every review landed within 24 h is released after **7 days instead of 14**. Ranking, achievement and commission step not now. Build pending.
 
 Owner, 2026-10-30. The obligation is 5 business days (DZ part 3); the wish is reviews within 24 h.
 Options to choose from, cheapest first: (1) **Fast reviewer mark** on the coach's Find-a-coach
@@ -402,7 +404,9 @@ pending; proposal: (1) + (3) for the pilot. Not started.
 
 ---
 
-## EK. Coach ends the goal - trainee chooses credit or refund-less-fee
+## EK. Coach ends the goal - trainee chooses credit or refund-less-fee - FEE DECIDED 2026-11-02
+
+**Owner decision 2026-11-02: the refund fee is COSTS ONLY** - the processing share of the refunded weeks (Stripe's non-returned fee), **no fixed amount**: the coach ended the goal, so the trainee pays no more than the real cost. Credit stays the default after 14 days. Terms s.8 placeholder to fill accordingly. Build still pending (after EG).
 
 Owner, 2026-10-30. Today only the trainee can end a goal (`end_goal_early`). **To build:** a coach
 "End this goal" action with a reason; the trainee is then offered (push + tracker card) either
