@@ -3875,7 +3875,7 @@ async function renderCoachChecklist(el){
     ${items.map(i=>`<button data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
   el.style.display="";
   el.querySelectorAll("[data-cgo]").forEach(b=>b.addEventListener("click",async()=>{ const tg=b.getAttribute("data-ctgt");
-    if(tg){ b.disabled=true; try{ const { data, error }=await store._sb.rpc("coach_todo_targets"); if(error) throw error; const ids=(data&&data[tg])||[]; if(ids.length){ openEngagement(ids[0]); return; } toast("All done ✓",1600); renderCoachChecklist(el); return; }catch(x){ console.warn("checklist target (run migrations_coach_checklist_targets.sql)",x&&x.message); b.disabled=false; } }
+    if(tg){ b.disabled=true; try{ const { data, error }=await store._sb.rpc("coach_todo_targets"); if(error) throw error; const ids=(data&&data[tg])||[]; if(ids.length){ if(tg==="calls"){ window.__ftCallGuide={eng:ids[0],t:Date.now()}; window.__ftCallGuideScrolled=false; toast("Pick a day this week for the call",2600); } openEngagement(ids[0]); return; } toast("All done ✓",1600); renderCoachChecklist(el); return; }catch(x){ console.warn("checklist target (run migrations_coach_checklist_targets.sql)",x&&x.message); b.disabled=false; } }
     go(b.getAttribute("data-cgo")); }));   /* owner 2026-11-02: review / assign / calls / macros open the first trainee who still needs it */
   const hb=document.querySelector('#app-tabbar [data-go="home"]'); if(hb){ refreshTabBadges(); }
   if(all){ const ck=`ft-dcdone-coach-${ME.id}-${todayISO()}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){} playDayComplete(); } }
@@ -5236,7 +5236,7 @@ function renderCoachNews(el,events){
   el.style.display="";
   el.querySelectorAll("[data-nw]").forEach(row=>row.addEventListener("click",()=>{
     const v=shown[+row.getAttribute("data-nw")]; if(!v)return;
-    feedOpenDay(v.eng,v.iso);
+    openEngagement(v.eng);   /* owner 2026-11-02: the trainee's dashboard - no day sheet, no call prompt */
   }));
 }
 /* Jump straight to a trainee's specific training day from the feed. */
@@ -7848,6 +7848,7 @@ async function renderEngagement(skipFetch){
     if(iAmCoach){
       cell.className="cal-day cal-tap "+cls+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
       cell.innerHTML=`<div class="dn">${d}</div>${badge?`<div class="cal-badge">${badge}</div>`:(wl.length&&cls==="cal-workout"?'<div class="dot" style="background:var(--lime-ink)"></div>':(iAmCoach&&!wl.length?'<div class="cal-add-plus">+</div>':""))}${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
+      if(callGuideDay(iso)){ cell.classList.add("cal-glisten"); if(!window.__ftCallGuideScrolled){ window.__ftCallGuideScrolled=true; setTimeout(()=>{ try{ cell.scrollIntoView({behavior:"smooth",block:"center"}); }catch(e){} },350); } }   /* weekly-call walkthrough */
       cell.addEventListener("click",()=>openEngDay(iso));
     }else{
       // TRAINEE: split diagonally — top triangle = macros logged, bottom triangle = workout state
@@ -8647,6 +8648,11 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
    assign a workout (existing), or propose a coaching call for that exact
    date (new). Reuses the standard sheet chrome rather than a bespoke
    dialog, matching every other choice sheet in this app. */
+/* owner 2026-11-02: the weekly-call walkthrough - started ONLY by the coach checklist's calls item. On that trainee's
+   calendar the rest of this week glistens; tapping a day makes "Propose a coaching call" glisten; tapping it ends the guide. */
+function callGuideOn(){ const g=window.__ftCallGuide; return !!(g&&currentEng&&g.eng===currentEng.id&&Date.now()-g.t<20*60*1000); }
+function callGuideDay(iso){ if(!callGuideOn()) return false; const mon=weekStartISO(new Date()); return iso>=todayISO()&&iso<=addDaysISO(mon,6); }
+function ensureGuideCss(){ if(document.getElementById("ft-guide-css")) return; const st=document.createElement("style"); st.id="ft-guide-css"; st.textContent="@keyframes ftGuide{0%,100%{box-shadow:0 0 0 0 rgba(240,210,49,.55)}50%{box-shadow:0 0 0 8px rgba(240,210,49,0)}}.ft-guide{animation:ftGuide 1.4s ease-in-out infinite;border-color:var(--lime)!important}@media (prefers-reduced-motion: reduce){.ft-guide{animation:none;box-shadow:0 0 0 2px var(--lime)}}"; document.head.appendChild(st); }
 function openCoachDayChoice(iso){
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
@@ -8664,7 +8670,8 @@ function openCoachDayChoice(iso){
   body.appendChild(wrap);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
   $("#choice-workout")?.addEventListener("click",()=>{ closeSheet(); assignWorkoutFlow(iso); });
-  $("#choice-call").addEventListener("click",()=>{ closeSheet(); openProposeCallSheet(false,null,null,iso); });
+  if(callGuideOn()){ ensureGuideCss(); $("#choice-call").classList.add("ft-guide"); }   /* weekly-call walkthrough: the next step */
+  $("#choice-call").addEventListener("click",()=>{ window.__ftCallGuide=null; closeSheet(); openProposeCallSheet(false,null,null,iso); });
 }
 async function openEngDay(iso){
   const iAmCoach = !traineeMerged && currentEng.coach_id===ME.id;
