@@ -420,6 +420,8 @@ Record each result in the SQL journal / log; anything that fails becomes its own
 
 ## EF. Point the domain at GitHub Pages, Supabase and Stripe
 
+**Status 2026-11-02 - BLOCKED at Blacknight:** DNS Manager shows the zone (formtrace.ie, Domain #257640) but refuses edits: "You cannot edit this DNS zone because the order has not been activated". Owner checking the order status / unpaid invoice; else Blacknight support. Records to enter once it opens: A `@` → 185.199.108.153, .109.153, .110.153, .111.153; CNAME `www` → alexiospefstathiou.github.io; TXT from GitHub's domain verification (profile → Settings → Pages → Add a domain - can be done now). Keep any Zoho MX/SPF/DKIM records.
+
 Owner, 2026-10-29. After EE. **GitHub:** repo Settings → Pages → Custom domain (adds a
 `CNAME` file) + DNS records at the registrar + **Enforce HTTPS**. **Supabase:** Auth → URL
 Configuration → Site URL and redirect URLs (password reset, sign-in) to the new domain;
