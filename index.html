@@ -1254,6 +1254,7 @@
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <!-- Item CO: trainee homepage v2 - the structured section first -->
     <div id="home-today" class="home-today" style="display:none"></div>
+    <div id="home-checklist" style="display:none"></div>   <!-- Item ES: the daily checklist -->
     <div id="home-reviews" class="home-reviews" style="display:none"></div>
     <div id="home-weight" class="home-milestone" style="display:none"></div>
       <div id="home-coach" class="home-coach" style="display:none"></div>
@@ -3695,7 +3696,7 @@ async function renderHome(){
 
   let noActiveGoal=false;
   /* Item CP: the event-card containers live in the Notifications screen for trainees (who have that tab) and on Home for coaches (who do not). Move the nodes, not the code. */
-  try{ const cards=[...document.querySelectorAll("#notif-body > div[id^=home-], #s-home .hero > div[id^=home-]")].filter(d=>!/^home-(today|reviews|weight|coach|news)$/.test(d.id)); const target=(base==="trainee")?$("#notif-body"):$("#s-home .hero"); const emptyEl=$("#notif-empty"); for(const d of cards){ if(d.parentElement!==target){ if(target===$("#notif-body")&&emptyEl) target.insertBefore(d,emptyEl); else target.appendChild(d); } } if(base!=="trainee"&&emptyEl) emptyEl.style.display="none"; }catch(e){}
+  try{ const cards=[...document.querySelectorAll("#notif-body > div[id^=home-], #s-home .hero > div[id^=home-]")].filter(d=>!/^home-(today|checklist|reviews|weight|coach|news)$/.test(d.id)); const target=(base==="trainee")?$("#notif-body"):$("#s-home .hero"); const emptyEl=$("#notif-empty"); for(const d of cards){ if(d.parentElement!==target){ if(target===$("#notif-body")&&emptyEl) target.insertBefore(d,emptyEl); else target.appendChild(d); } } if(base!=="trainee"&&emptyEl) emptyEl.style.display="none"; }catch(e){}
   if(base==="trainee" && ME){
     let engs=[];
     try{ engs=await store.engagements.list({trainee_id:ME.id}); }catch(e){}
@@ -3714,6 +3715,7 @@ async function renderHome(){
        first phase instead of waiting on it needlessly. */
     await Promise.all([
       renderHomeWeekStatus(engs, todayEl),   // Item CO: replaces Today's program
+      renderHomeChecklist(engs, $("#home-checklist")),   // Item ES: daily checklist
       renderHomeMilestone($("#home-milestone"))
     ]);
     await Promise.all([
@@ -3811,6 +3813,50 @@ async function renderHomeNewGoals(p){
 async function goToCalendarWeek(monISO){
   go("trainee-home");
   for(let i=0;i<12;i++){ const el=document.querySelector(`.cal-week[data-week="${monISO}"]`); if(el){ el.scrollIntoView({behavior:"smooth",block:"start"}); return; } await new Promise(r=>setTimeout(r,250)); }
+}
+/* ---- Item ES: the daily checklist on Home. Auto-ticks what the app can see (weigh-in, yesterday's macros, today's
+   sessions); the rest is self-reported and kept on this phone for the day. All done -> "Day complete" once a day. ---- */
+function dcKey(){ return `ft-dc-${ME&&ME.id}-${todayISO()}`; }
+function dcGet(){ try{ return JSON.parse(localStorage.getItem(dcKey())||"{}")||{}; }catch(e){ return {}; } }
+function dcSet(k){ const s=dcGet(); s[k]=true; try{ localStorage.setItem(dcKey(),JSON.stringify(s)); }catch(e){} }
+async function renderHomeChecklist(engs, el){
+  if(!el||!ME||roleOf()!=="trainee") return;
+  const iso=todayISO(), yest=addDaysISO(iso,-1);
+  const active=(engs||[]).filter(e=>e.status==="active");
+  let logs=[]; try{ logs=(await store.logs.list({trainee_id:ME.id}))||[]; }catch(e){}
+  const tLog=logs.find(l=>l.log_date===iso), yLog=logs.find(l=>l.log_date===yest);
+  let todays=[]; if(active.length){ try{ todays=(await assignedLiteByEng(active)).flat().filter(a=>(a.due_date||isoOf(new Date(a.created_at||Date.now())))===iso); }catch(e){} }
+  let plan=null; if(active.length){ try{ const { data:mg }=await store._sb.from("macro_goals").select("kcal,protein_g").in("engagement_id",active.map(e=>e.id)).lte("week_start",weekStartISO(new Date())).order("week_start",{ascending:false}).order("updated_at",{ascending:false}).limit(1); plan=(mg||[])[0]||null; }catch(e){} }
+  const man=dcGet(); const items=[];
+  items.push({k:"login",t:"Open FormTrace",done:true});
+  items.push({k:"weigh",t:"Weigh yourself",sub:(tLog&&tLog.weight_kg!=null)?`${tLog.weight_kg} kg`:"",done:!!(tLog&&tLog.weight_kg!=null),act:"weigh"});
+  items.push({k:"macros",t:"Log yesterday's macros",sub:(yLog&&yLog.kcal!=null)?`${Number(yLog.kcal).toLocaleString()} kcal`:"",done:!!(yLog&&(yLog.kcal!=null||yLog.protein_g!=null)),act:"macros"});
+  if(plan&&(plan.kcal||plan.protein_g)) items.push({k:"budget",t:"See today's calorie budget",sub:[plan.kcal?`${Number(plan.kcal).toLocaleString()} kcal`:"",plan.protein_g?`${plan.protein_g} g protein`:""].filter(Boolean).join(" · "),done:!!man.budget,act:"tick"});
+  if(active.length){
+    if(todays.length){ const left=todays.filter(a=>a.status==="assigned").length; items.push({k:"workout",t:todays.length===1?"Do today's workout":`Do today's ${todays.length} workouts`,sub:left?`${left} to go`:"",done:left===0,act:"workout"}); }
+    else items.push({k:"rest",t:"Rest day - focus on recovery",done:!!man.rest,act:"tick"});
+  }
+  items.push({k:"sleep",t:"Sleep 8 hours",sub:man.sleep?"":"tap when you have",done:!!man.sleep,act:"tick"});
+  const n=items.filter(i=>i.done).length, all=n===items.length;
+  el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
+  el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
+    ${items.map(i=>`<button data-dc="${i.k}" data-act="${i.act||""}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:${i.act?"pointer":"default"};font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint)">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
+  el.style.display="";
+  el.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",()=>{ const k=b.getAttribute("data-dc"), a=b.getAttribute("data-act");
+    if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") go("trainee-home"); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
+  if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){} playDayComplete(); } }
+}
+function playDayComplete(){
+  try{
+    if(!document.getElementById("dc-css")){ const st=document.createElement("style"); st.id="dc-css"; st.textContent="@keyframes dcPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}@keyframes dcFall{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),110vh) rotate(var(--r));opacity:.9}}@keyframes dcFade{0%,82%{opacity:1}100%{opacity:0}}"; document.head.appendChild(st); }
+    const reduce=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const ov=document.createElement("div"); ov.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,14,17,.74);overflow:hidden;animation:dcFade 2.8s forwards";
+    ov.innerHTML=`<div style="width:96px;height:96px;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:900;${reduce?"":"animation:dcPop .55s cubic-bezier(.2,1.4,.4,1)"}">✓</div><div style="margin-top:14px;font-size:22px;font-weight:900;color:var(--ink)">Day complete</div><div style="font-size:13px;color:var(--muted);margin-top:4px">Everything on today's list - see you tomorrow.</div>`;
+    if(!reduce){ const cols=["var(--lime)","var(--attn)","var(--blue)","var(--violet)","#fff"]; for(let i=0;i<36;i++){ const p=document.createElement("span"); p.style.cssText=`position:absolute;top:-14px;left:${(Math.random()*100).toFixed(1)}vw;width:8px;height:12px;border-radius:2px;background:${cols[i%cols.length]};--dx:${(Math.random()*40-20).toFixed(0)}vw;--r:${(Math.random()*720-360).toFixed(0)}deg;animation:dcFall ${(1.4+Math.random()*1.1).toFixed(2)}s ${(Math.random()*.4).toFixed(2)}s ease-in forwards`; ov.appendChild(p); } }
+    ov.addEventListener("click",()=>ov.remove()); document.body.appendChild(ov);
+    try{ if(navigator.vibrate) navigator.vibrate([30,40,60]); }catch(e){}
+    setTimeout(()=>{ try{ ov.remove(); }catch(e){} },2900);
+  }catch(e){}
 }
 async function renderHomeWeekStatus(engs, el){
   if(!el) return; el.style.display="none"; el.innerHTML="";

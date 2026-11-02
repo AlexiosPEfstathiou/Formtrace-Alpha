@@ -58,15 +58,16 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   offer copy "per week reviewed, never a lump sum" before live.
 
 ## Latest (2026-11-02, Lilly account) - read with "Start here" below
-- **formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not
-  editable - **EF blocked** until Blacknight activates it (records to enter are in the EF
-  entry). GitHub TXT verification can be prepared meanwhile.
-- Logged: **FA** renewal reminder 30 Sep 2027 · **FB** management calendar (later).
-- Built today: **EM** (between-goals card hides once a new goal is posted) · **EO** (payment
-  map follows the goal) · **EN** (first-call push when a goal starts - migration given).
-- Working through the product log by readiness; next ready builds: **EQ**, **ER**, **DP**.
-- The item counter in CLAUDE.md had gone stale (both accounts write items) - always check
-  the log's highest code before allocating.
+- **formtrace.ie registered**; Blacknight order still *pending* - **EF blocked** (records to
+  enter are in the EF entry).
+- **Group 1 of the pending list is DONE and live** (all migrations run): EM between-goals
+  card · EO payment map per goal · EN first-call push · EQ tab badges · ER pay straight after
+  accept + payouts prompt for coaches · DP admin liability card (disputes/losses wait for EJ).
+- **Decided:** EK refund fee = costs only · EL = "Reviews within a day" mark + 7-day release.
+- **Built:** ES daily checklist on Home (app only).
+- Owner skipped group 2 (owner tasks) for now; working through the backlog next.
+- Logged: FA renewal reminder 30 Sep 2027 · FB management calendar (later).
+- Always check the log's highest item code before allocating (both accounts write items).
 ## Start here next session (refreshed 2026-10-30 night, Lilly account)
 **EG PASSED in the sandbox (2026-10-30 night):** coach onboarding (IE Express, transfers-only,
 standard agreement), deposit with the EA line, weekly release (Transfer), refund (partial Refund,

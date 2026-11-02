@@ -334,7 +334,9 @@ Owner, 2026-10-30. Trainees should log macros in one place. Investigate: MacroFa
 
 ---
 
-## ES. Homepage daily checklist with a "day complete" celebration
+## ES. Homepage daily checklist with a "day complete" celebration - BUILT 2026-11-02
+
+**Built 2026-11-02 (Lilly account), app only, no SQL:** a "Today" card on the trainee's Home under This week. Items: Open FormTrace (always ✓) · Weigh yourself (✓ when today's weight is logged; tap opens today's log) · Log yesterday's macros (✓ when yesterday has kcal or protein; tap opens yesterday's log) · See today's calorie budget (only when the coach set one; shows kcal / protein; tap to tick) · Do today's workout(s) (✓ when every session due today is submitted; tap → Training) or, on a rest day, "Rest day - focus on recovery" (tap) · Sleep 8 hours (self-reported tap). Counter "n of m"; all done → a once-a-day **Day complete** celebration (check pops, confetti, haptic; static under reduced motion). Self-reported ticks are kept on the phone for the day (not synced across devices). Not yet: feeding the streak / achievements, sleep from a health platform. Gate green.
 
 Owner, 2026-10-30. Home shows a daily list that gets crossed off as the day goes: log in, weigh yourself, log yesterday's macros, view today's calorie budget, perform today's workout / focus on resting (rest days), get 8 hours of sleep (self-reported or from a health platform). Items are generated from the trainee's plan and auto-tick where the app can see completion (weigh-in, log, session submitted). When every item is crossed, an animated "day complete" celebration plays; feed the streak / achievements (BJ, DB). Not started.
 
