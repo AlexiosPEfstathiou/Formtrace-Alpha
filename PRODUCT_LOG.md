@@ -498,7 +498,9 @@ Owner, 2026-10-30. First-run guided tours per role: a few coach-marks / spotligh
 
 ---
 
-## EU. Timed breaks between exercises
+## EU. Timed breaks between exercises - BUILT 2026-11-02 (default rest; per-exercise setting in the builder still to do)
+
+**Owner spec 2026-11-02, built the same day (app only):** a rest of **2:30 by default** after each set, starting when the set's video is submitted (after the take is accepted and analysed). Until it ends the trainee **cannot start the next set or exercise** (sets and interval exercises are both blocked); tapping the timer - or a set - says **"Take a break to rest before the next set"**. Visual: a **stopwatch** (crown and side button) with a **ring** around the time - full at the start, empty at the end, **depleting clockwise** from the top, colour **neon green → red** as it depletes, soft glow. No rest after the workout's last set. Kept per workout on the phone, so leaving the workout and returning keeps the countdown; it is shown only on the workout screen. At the end: a vibration and "Rest's over - on to your next set". Reads `rest_seconds` on the exercise if present - **still to do: a rest field per exercise in the workout builder** for coaches.
 
 Owner, 2026-10-30. In the workout player: a rest timer between exercises/sets (coach sets the rest per exercise in the builder, default e.g. 60-90 s), count-down with vibration/sound at the end, skip and +15 s controls, works with the screen locked where the platform allows. Not started.
 

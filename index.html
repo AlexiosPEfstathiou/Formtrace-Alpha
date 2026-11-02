@@ -9379,7 +9379,7 @@ function ordinalWord(n){
   const s=["th","st","nd","rd"], v=n%100;
   return n+(s[(v-20)%10]||s[v]||s[0]);
 }
-function renderAssignedWorkout(){
+function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a rest in progress shows again on return */
   const a=currentAssigned; if(!a)return;
   const snap=a.snapshot, items=snap.items||[];
   $("#tw-title").textContent=snap.name||"Workout";
@@ -9772,7 +9772,64 @@ $("#r-rot")?.addEventListener("click",async e=>{
     toast(err.message||"Couldn't save the rotation",4000);
   }finally{ btn.disabled=false; }
 });
+/* ---- Item EU (owner, 2026-11-02): a rest after every set - 2:30 by default (or the exercise's rest_seconds if a coach
+   set one). Starts when the set's video is submitted; until it ends the next set / exercise cannot start and tapping the
+   timer says so. A stopwatch with a ring: full at the start, empty at the end, depleting clockwise, neon green -> red.
+   No rest after the workout's last set. Kept per workout on the phone, so leaving and coming back keeps the countdown. ---- */
+const REST_DEFAULT_SECONDS=150;
+let restTick=null;
+function restKey(){ return `ft-rest-${currentAssigned&&currentAssigned.id}`; }
+function restGet(){ try{ const r=JSON.parse(localStorage.getItem(restKey())||"null"); if(r&&r.until>Date.now()) return r; }catch(e){} return null; }
+function restBlocks(){ return !!(currentAssigned&&restGet()); }
+function restNudge(){ toast("Take a break to rest before the next set",2400); try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){} }
+function setsRemaining(){
+  const items=(currentAssigned&&currentAssigned.snapshot&&currentAssigned.snapshot.items)||[];
+  for(let i=0;i<items.length;i++){ const it=items[i]||{}; const done=s=>!!(localResults&&localResults[i]&&localResults[i][s]);
+    const isIv=it.kind==="interval"||it.type==="interval"||!!it.interval_mode||Array.isArray(it.segments)||it.walk_seconds!=null;
+    if(isIv){ if(!done(0)) return true; continue; }
+    const n=Math.max(1,Number(it.sets)||1); for(let s=0;s<n;s++) if(!done(s)) return true; }
+  return false;
+}
+function startRest(itemIndex){
+  try{ if(!currentAssigned||!setsRemaining()) return;   /* nothing left: no rest after the last set */
+    const it=(currentAssigned.snapshot.items||[])[itemIndex]||{}; const secs=Math.max(10,Number(it.rest_seconds)||REST_DEFAULT_SECONDS);
+    localStorage.setItem(restKey(),JSON.stringify({until:Date.now()+secs*1000,total:secs})); ensureRestTimer(); }catch(e){ console.warn("rest",e); }
+}
+function ensureRestTimer(){
+  const r=restGet(); let el=document.getElementById("rest-timer");
+  if(!r){ if(el) el.remove(); if(restTick){ clearInterval(restTick); restTick=null; } return; }
+  if(!el){
+    const R=54, C=2*Math.PI*R;
+    el=document.createElement("div"); el.id="rest-timer"; el.setAttribute("role","timer"); el.setAttribute("aria-label","Rest timer");
+    el.style.cssText="position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;cursor:pointer;-webkit-tap-highlight-color:transparent";
+    el.innerHTML=`<svg width="128" height="146" viewBox="0 0 132 150" style="display:block;overflow:visible">
+        <rect x="56" y="1" width="20" height="9" rx="3" fill="var(--panel2)" stroke="var(--line2)" stroke-width="1.5"/>
+        <rect x="62" y="9" width="8" height="9" fill="var(--panel2)" stroke="var(--line2)" stroke-width="1.5"/>
+        <rect x="108" y="26" width="13" height="7" rx="2" fill="var(--panel2)" stroke="var(--line2)" stroke-width="1.5" transform="rotate(45 114 30)"/>
+        <circle cx="66" cy="84" r="64" fill="var(--panel)" stroke="var(--line2)" stroke-width="2"/>
+        <circle cx="66" cy="84" r="${R}" fill="none" stroke="var(--line)" stroke-width="9"/>
+        <circle id="rt-ring" cx="66" cy="84" r="${R}" fill="none" stroke-width="9" stroke-linecap="round" transform="rotate(-90 66 84)" style="stroke-dasharray:${C} ${C}"/>
+        <text id="rt-time" x="66" y="91" text-anchor="middle" font-size="27" font-weight="800" fill="var(--ink)" style="font-variant-numeric:tabular-nums">0:00</text>
+        <text x="66" y="111" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--muted)" letter-spacing="2">REST</text>
+      </svg>`;
+    el.addEventListener("click",restNudge);
+    document.body.appendChild(el);
+    el.__C=C;
+  }
+  const paint=()=>{
+    const r2=restGet(); const e2=document.getElementById("rest-timer"); if(!e2) return;
+    if(!r2){ e2.remove(); clearInterval(restTick); restTick=null; try{ if(navigator.vibrate) navigator.vibrate([180,90,180]); }catch(e){} toast("Rest's over - on to your next set",2600); return; }
+    const onScreen=$("#s-trainee-workout")&&$("#s-trainee-workout").classList.contains("active"); e2.style.display=onScreen?"":"none";
+    const left=Math.max(0,(r2.until-Date.now())/1000), frac=Math.min(1,left/r2.total), C=e2.__C;
+    const ring=e2.querySelector("#rt-ring"); const col=`hsl(${Math.round(115*frac)},100%,${50+Math.round(5*frac)}%)`;   /* neon green -> red */
+    ring.style.strokeDashoffset=String(-(C*(1-frac)));   /* the empty part grows clockwise from the top */
+    ring.style.stroke=col; ring.style.filter=`drop-shadow(0 0 5px ${col})`; ring.style.opacity=frac>0.002?"1":"0";
+    const s=Math.ceil(left); e2.querySelector("#rt-time").textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+  };
+  paint(); if(!restTick) restTick=setInterval(paint,250);
+}
 function startTraineeSet(itemIndex,setIndex){
+  if(restBlocks()){ restNudge(); return; }   /* Item EU: resting */
   const it=currentAssigned.snapshot.items[itemIndex];
   openRecorder({
     title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}`,review:true,audio:true,useLabel:"✓ Use this take",
@@ -9819,6 +9876,7 @@ function buildIntervalSegments(it){
   return segs;
 }
 function startIntervalExercise(itemIndex){
+  if(restBlocks()){ restNudge(); return; }   /* Item EU: resting */
   const it=currentAssigned.snapshot.items[itemIndex];
   const segments=buildIntervalSegments(it);
   const first=segments[0];
@@ -10059,6 +10117,7 @@ async function runAnalysis(itemIndex,setIndex,capture){
   if(!localResults[itemIndex])localResults[itemIndex]=[];
   localResults[itemIndex][setIndex]=result;
   saveWorkoutDraft(); // persist progress so an early exit doesn't lose recorded sets
+  startRest(itemIndex);   /* Item EU: the rest starts when the set is submitted */
   A.classList.remove("on");ring.style.strokeDashoffset=264;
   showResult(it.name||"Set",it,setIndex,result,itemIndex);
 }
