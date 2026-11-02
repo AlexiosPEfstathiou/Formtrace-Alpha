@@ -76,3 +76,6 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 
 ## Design assets list (owner, 2026-11-02)
 Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page), add or update its row in `docs/DESIGN_ASSETS.md`. It is the brief for the openart theme (PRODUCT_LOG EW).
+
+## Last session (2026-11-02 evening)
+Domain live at https://formtrace.ie/ (EF done). Email EH in progress: Titan bought, MX + SPF done; **next: DKIM in the Titan admin panel, DMARC, Gmail test, aliases.** Built: EU rest timer; FI "Choose now" fix. See the top of docs/HANDOVER.md. Next item code: **FM**.

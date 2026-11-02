@@ -1,5 +1,13 @@
 # FormTrace Coach — Handover (as of 2026-10-29)
 
+## Session 2026-11-02 (evening) - summary
+- **Domain (EF) DONE:** formtrace.ie live on GitHub Pages with HTTPS enforced (4 A, www CNAME, GitHub TXT at Blacknight; old github.io address redirects). Supabase Site URL + redirect `https://formtrace.ie/**`, `APP_URL` secret, Stripe sandbox website set by the owner. Edge Function defaults (`checkout-create`, `connect-onboard`) now `https://formtrace.ie/` (take effect on next deploy; the secret already applies). Phones: reinstall from formtrace.ie, allow notifications, remove the old icon. The Lilly laptop's Zscaler blocks the new domain - test from the phone.
+- **Email (EH) IN PROGRESS:** Zoho dropped (no free plan here; Mail Lite demanded a UK phone). **Blacknight Titan Email 5GB bought** (EUR 1.85/month). MX + SPF in the zone; SPF tidied. **Next session: DKIM (Titan admin panel - owner could not find it), DMARC, Gmail test, aliases.** Titan SMTP `smtp.titan.email:587` STARTTLS, IMAP `imap.titan.email:993`.
+- **EU rest timer BUILT:** 2:30 after each submitted set; blocks the next set/exercise ("Take a break to rest before the next set"); stopwatch ring depleting clockwise, neon green -> red; no rest after the last set. To do: a per-exercise rest field in the builder (the app already reads `rest_seconds`).
+- **FI fix:** "Choose now" (coach-ended goal) opens the credit/refund choice in a panel instead of the Goal tab.
+- **Decisions:** no native app until there is a userbase (web-reachable integrations first, ET/FK); living design-assets list `docs/DESIGN_ASSETS.md` is the openart brief (EW) - add a row for every new visual element.
+- **No SQL this session.** Next item code still **FM**.
+
 Written so any Claude session (or person) can continue without the original chat.
 Refreshed every 5 owner prompts (see the session routine in `CLAUDE.md`).
 Working rules: `CLAUDE.md`. Full history and every decision: `PRODUCT_LOG.md`.
