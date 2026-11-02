@@ -17,7 +17,7 @@ with real values computed for each goal, so **no placeholders remain**:
 | Field | Value used | Note |
 |-------|-----------|------|
 | mode | `payment` | One deposit per goal. `payment_method_collection` applies only to subscriptions, so it is omitted. |
-| success_url | `APP_URL?checkout=success&session_id={CHECKOUT_SESSION_ID}#listings` | `APP_URL` defaults to the GitHub Pages URL; set the `APP_URL` secret if the app moves. |
+| success_url | `APP_URL?checkout=success&session_id={CHECKOUT_SESSION_ID}#listings` | `APP_URL` defaults to `https://formtrace.ie/` (EF, 2026-11-02); the `APP_URL` secret overrides it. |
 | cancel_url | `APP_URL?checkout=cancel#listings` | Returns to the Goal tab. |
 | line_items | `price_data` built from the accepted offer: weekly price × weeks (+ a "FormTrace service fee" line when the trainee fee is above 0) | No catalogue Price IDs - each goal has its own price. Currency from the pitch: € → eur, $ → usd, ¥ → jpy (zero-decimal). |
 

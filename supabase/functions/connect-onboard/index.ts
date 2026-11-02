@@ -11,7 +11,7 @@ const KEY = Deno.env.get("STRIPE_SECRET_KEY")!;
 const LIVE = KEY.startsWith("sk_live_") || KEY.startsWith("rk_live_");
 const stripe = new Stripe(KEY);
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-const APP_URL = Deno.env.get("APP_URL") ?? "https://alexiospefstathiou.github.io/Formtrace-Alpha/";
+const APP_URL = Deno.env.get("APP_URL") ?? "https://formtrace.ie/";   // EF 2026-11-02: the app moved to formtrace.ie
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",

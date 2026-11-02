@@ -3826,6 +3826,34 @@ async function goToCalendarWeek(monISO){
 /* Item FE: re-draw the checklist after weight / macros are saved (it was only refreshed on the next Home render). */
 function refreshChecklistSoon(){ try{ const el=window.__dcEl; if(el&&el.isConnected&&ME&&roleOf()==="trainee") renderHomeChecklist(window.__dcEngs||[], el); }catch(e){} }
 /* Item FI: the trainee is told, in the app, about every goal their coach ended (paid: choose credit or refund; unpaid: nothing was charged). */
+/* Owner bug 2026-11-02: "Choose now" opened the Goal tab, where the choice sat inside the ended goal's collapsed payment
+   details - it looked as if nothing happened. The choice now opens in a panel, with the same amounts and server call
+   (choose_goal_end) as the Goal tab's block. */
+async function openGoalEndChoice(engId){
+  try{
+    const { data:ch, error }=await store._sb.from("goal_end_choices").select("*").eq("engagement_id",engId).maybeSingle(); if(error) throw error;
+    if(!ch){ toast("Couldn't load the choice - try again",3000); return; }
+    if(ch.status!=="pending"){ toast(ch.status==="credit"?"Already kept as credit":"Refund already requested",2600); renderHomeCoachEnded().then(()=>refreshNotifDot()); return; }
+    const eur=v=>"\u20AC"+(Number(v||0)/100).toFixed(2); const cb=Number(ch.credit_back_cents||0);
+    const credit=Number(ch.price_cents)+Number(ch.processing_cents)+cb, refund=Number(ch.price_cents), fee=Number(ch.processing_cents);
+    pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:4px">Your coach ended this goal</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Choose what happens to the unused weeks.</div>
+      <button class="btn primary" data-gc="credit">Keep ${eur(credit)} as credit</button>
+      <div style="font-size:11.5px;color:var(--faint);margin:6px 0 14px;line-height:1.45">The full ${eur(credit)} goes towards your next goal.</div>
+      <button class="btn" data-gc="refund">Refund ${eur(refund)} to my card${cb?` + ${eur(cb)} credit`:""}</button>
+      <div style="font-size:11.5px;color:var(--faint);margin:6px 0 14px;line-height:1.45">${fee?`Stripe keeps its ${eur(fee)} card fee. `:""}Back on your card within 5-10 business days.</div>
+      <div style="font-size:11.5px;color:var(--faint);margin-bottom:10px">No choice by ${fmtDay(String(ch.default_at).slice(0,10))} = credit.</div>
+      <button class="btn ghost" data-gc="later">Decide later</button>`);
+    document.querySelectorAll("[data-gc]").forEach(b=>b.addEventListener("click",async()=>{
+      const pick=b.getAttribute("data-gc"); if(pick==="later"){ pwHide(); return; }
+      document.querySelectorAll("[data-gc]").forEach(x=>x.disabled=true);
+      try{ const { error:e2 }=await store._sb.rpc("choose_goal_end",{p_eng:engId,p_choice:pick}); if(e2) throw e2; }
+      catch(x){ toast(x.message||"Couldn't save your choice",4000); document.querySelectorAll("[data-gc]").forEach(y=>y.disabled=false); return; }
+      pwHide(); toast(pick==="credit"?"Kept as credit \u2713":"Refund requested \u2713",2600);
+      try{ await renderHomeCoachEnded(); refreshNotifDot(); if(typeof refreshTabBadges==="function") refreshTabBadges(); }catch(e){}
+    }));
+  }catch(x){ toast(x.message||"Couldn't load the choice",3600); }
+}
 async function renderHomeCoachEnded(){
   if(!ME||roleOf()!=="trainee") return;
   const host=$("#notif-body"); if(!host) return;
@@ -3841,9 +3869,10 @@ async function renderHomeCoachEnded(){
     const why={schedule:"their schedule no longer allows it",not_engaging:"the goal wasn't getting the engagement it needed",injury:"an injury or medical reason",fit:"it wasn't the right fit"};
     el.innerHTML=list.map(r=>{ const st=choices[r.id];
       const money=!r.deposit_at?"It ended before it was paid - nothing was charged.":st==="pending"?`<b style="color:var(--ink)">Choose credit or a refund</b> for the unused weeks.`:st==="credit"?"The unused weeks are kept as credit for your next goal.":st==="refund"?"A refund of the unused weeks is on its way to your card.":"";
-      return `<div class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:4px">Goal ended by your coach</div><div style="font-weight:800;font-size:14.5px">${escapeHtml(r.goal_title||"Your goal")}</div><div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:4px">${why[r.end_reason]?`Reason: ${escapeHtml(why[r.end_reason])}. `:""}${r.end_note?`"${escapeHtml(r.end_note)}" `:""}${money}</div><div style="display:flex;gap:8px;margin-top:10px">${r.deposit_at?`<button class="btn sm primary" data-ce-open="${r.id}" style="width:auto">${st==="pending"?"Choose now":"View goal"}</button>`:""}${st==="pending"?"":`<button class="btn sm ghost" data-ce-ok="${r.id}" style="width:auto">OK</button>`}</div></div>`; }).join("");
+      return `<div class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:4px">Goal ended by your coach</div><div style="font-weight:800;font-size:14.5px">${escapeHtml(r.goal_title||"Your goal")}</div><div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:4px">${why[r.end_reason]?`Reason: ${escapeHtml(why[r.end_reason])}. `:""}${r.end_note?`"${escapeHtml(r.end_note)}" `:""}${money}</div><div style="display:flex;gap:8px;margin-top:10px">${r.deposit_at?`<button class="btn sm primary" ${st==="pending"?"data-ce-choose":"data-ce-open"}="${r.id}" style="width:auto">${st==="pending"?"Choose now":"View goal"}</button>`:""}${st==="pending"?"":`<button class="btn sm ghost" data-ce-ok="${r.id}" style="width:auto">OK</button>`}</div></div>`; }).join("");
     el.style.display="";
     el.querySelectorAll("[data-ce-open]").forEach(b=>b.addEventListener("click",()=>{ listingsTab="offers"; offersCompletedOpen=true; go("listings"); }));
+    el.querySelectorAll("[data-ce-choose]").forEach(b=>b.addEventListener("click",()=>openGoalEndChoice(b.getAttribute("data-ce-choose"))));   /* owner 2026-11-02: Choose now opens the choice, not the goal */
     el.querySelectorAll("[data-ce-ok]").forEach(b=>b.addEventListener("click",()=>{ const id=b.getAttribute("data-ce-ok"); try{ const s=JSON.parse(localStorage.getItem("ft-ce-seen")||"{}")||{}; s[id]=1; localStorage.setItem("ft-ce-seen",JSON.stringify(s)); }catch(e){} renderHomeCoachEnded().then(()=>refreshNotifDot()); }));
   }catch(e){ console.warn("coach-ended card",e&&e.message); }
 }

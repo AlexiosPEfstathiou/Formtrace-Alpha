@@ -1,4 +1,4 @@
-﻿# FormTrace Coach
+# FormTrace Coach
 
 A two-sided fitness coaching app connecting **coaches** and **trainees** —
 coaches build and review workouts with real form feedback; trainees train,
@@ -7,7 +7,7 @@ log progress, and see exactly what they're paying for and why.
 Single-file Progressive Web App (`index.html`, no build step), backed by
 Supabase (auth, database, storage), hosted on GitHub Pages.
 
-**Live:** https://alexiospefstathiou.github.io/Formtrace-Alpha/
+**Live:** https://formtrace.ie/ (the old https://alexiospefstathiou.github.io/Formtrace-Alpha/ redirects there)
 
 ---
 
