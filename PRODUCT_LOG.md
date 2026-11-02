@@ -484,6 +484,8 @@ Owner, 2026-10-30. Umbrella for the domain work once formtrace.ie resolves: (1) 
 
 ## EW. Explore openart.ai for the app's look, videos and an animated persona
 
+**Owner 2026-11-02: the brief is a living list - `docs/DESIGN_ASSETS.md`.** Every visual element that could be replaced by a designed asset (brand core, tab icons, badges and achievement icons, celebrations and motion, shareable images, empty states, camera UI, and items outside the app), with where it is and its status. When it is time, take the whole list to openart and ask for **one theme across all of it**. Whoever builds or changes a visual element adds or updates its row.
+
 **Owner, 2026-11-02:** the aim is to make the app **look more professional and aesthetically pleasing** - explore what openart.ai offers for that (icons, illustrations, backgrounds, onboarding art, short animations, a brand persona), licence terms for commercial use, and how it fits the brand work (BJ) and the signature gold `#F0D231`.
 
 Owner, 2026-10-30. Evaluate openart.ai (AI image/video generation) for: visual assets (icons, hero images, exercise illustrations, achievement art), short videos for onboarding / marketing, and an animated persona that talks the trainee through the day's checklist (**ES**). Check licence terms for commercial use, style consistency, cost per asset, and whether generated faces/bodies are acceptable for a fitness brand. Output: a short recommendation + sample assets. Not started.

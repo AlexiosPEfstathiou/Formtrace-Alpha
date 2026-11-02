@@ -73,3 +73,6 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 - Achievements and the Consistency badge are **friends-only**, never public.
 - The owner prefers concise, formal replies; screenshots identify UI problems fastest —
   ask for one on the first "doesn't work" report, and read Review → Client errors.
+
+## Design assets list (owner, 2026-11-02)
+Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page), add or update its row in `docs/DESIGN_ASSETS.md`. It is the brief for the openart theme (PRODUCT_LOG EW).
