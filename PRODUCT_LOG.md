@@ -366,7 +366,9 @@ EG step 2 finding, 2026-10-30. A Stripe-paid goal while `payments_via_stripe = 0
 
 ---
 
-## EN. After acceptance: push both parties to arrange their first call
+## EN. After acceptance: push both parties to arrange their first call - BUILT 2026-11-02 (run the migration)
+
+**Built 2026-11-02 (Lilly account), `migrations_first_call_push.sql`:** a goal "starts" when it is created active (manual route, Stripe off) or when its **deposit lands** (escrow) - acceptance alone is not a start while the deposit is unpaid. Then one push each, once (`push_once` ledger, no recursion): coach "You're on with <trainee> - arrange your first call" → `/#coach`; trainee → `/#listings`. Kind **call**, so the Video calls switch mutes it. Both triggers catch their own errors. Existing goals are marked so nobody gets a retroactive push. The 48 h follow-up stays optional (not built).
 
 Owner, 2026-10-30. When a trainee accepts an offer (and, under escrow, once the deposit is paid), push the coach and the trainee: "You're on - arrange your first call" with a deep link to the engagement (the scheduling screen from G, if built; otherwise the chat/notes). One push each, once; a follow-up after 48 h if no call has been scheduled is optional. Hook: the acceptance / deposit trigger in SQL (push_outbox, catches its own errors). Not started.
 

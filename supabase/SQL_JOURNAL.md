@@ -78,3 +78,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-30 | DZ-2 | `migrations_refunds_evidence.sql` | run ✔ | flagged_col 1, window 72 (owner). Superseded by DZ-3 below. |
 | 2026-10-30 | DZ-3 | `migrations_refunds_business_days.sql` | run ✔ | ran fine (owner). |
 | 2026-10-30 | DY test | simulated `week_closures` insert (this week) + `select public.queue_weekly_releases()` | run ✔ | 1 queued -> sent (tr_...). Rows deleted at step 6. |
+| 2026-11-02 | EN | `migrations_first_call_push.sql` | given | Expected: goals_marked = number of existing goals, triggers = 2. |
