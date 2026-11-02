@@ -42,7 +42,7 @@ the list below are done, superseded, or parked (bottom).
 22. **CB** Launch timeline - revisit with pilot learnings.
 
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
-**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · ~~FF~~ built 2026-11-02 · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
+**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · ~~FF~~ built 2026-11-02 · ~~FD~~ built 2026-11-02 · **FG** badges on every tab · **FH** coach checklist (items to agree).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
@@ -353,7 +353,9 @@ when Home is showing. Small. Not started.
 
 ---
 
-## FD. Trainees tab badge (coach): sessions to assign + sessions to review
+## FD. Trainees tab badge (coach): sessions to assign + sessions to review - BUILT 2026-11-02 (run the migration)
+
+**Built 2026-11-02:** `migrations_trainees_badge.sql` - `my_tab_badges()` gains **to_assign** (per active goal: the offer's `workouts_per_week_cap` minus sessions assigned this week, never below 0; the coach's week from `profiles.tz`) and **to_review** (submitted, unreviewed). App: the coach's **Trainees** tab shows to_assign + to_review (one call now sets several tab badges); on the Trainees list a card with sessions left to assign **glistens** and its badge reads **"Offer accepted"** (new goal, nothing assigned yet) or **"N to assign"**. Also fixed: Home's "This week" read the cap from the goal (it lives on the offer). Gate green.
 
 **Owner refinement 2026-11-02:** when an offer is accepted the coach's **Trainees** badge goes **up by the number of sessions agreed** (e.g. 2 sessions agreed → +2) and **down by 1 for each workout assigned** to that trainee, up to the agreed number (per week). On the Trainees list the new trainee shows an **"Offer accepted"** badge and **glistens**, so the coach taps it and assigns workouts; the glisten stops once the agreed sessions are assigned. Sessions waiting for review add to the same tab count.
 
@@ -462,6 +464,8 @@ Owner, 2026-10-30. Trainees should log macros in one place. Investigate: MacroFa
 ---
 
 ## ES. Homepage daily checklist with a "day complete" celebration - BUILT 2026-11-02
+
+**Owner, 2026-11-02:** "Sleep 8 hours" renamed **"Slept 8 hours"** and moved to the **top** of the trainee's checklist.
 
 **Built 2026-11-02 (Lilly account), app only, no SQL:** a "Today" card on the trainee's Home under This week. Items: Open FormTrace (always ✓) · Weigh yourself (✓ when today's weight is logged; tap opens today's log) · Log yesterday's macros (✓ when yesterday has kcal or protein; tap opens yesterday's log) · See today's calorie budget (only when the coach set one; shows kcal / protein; tap to tick) · Do today's workout(s) (✓ when every session due today is submitted; tap → Training) or, on a rest day, "Rest day - focus on recovery" (tap) · Sleep 8 hours (self-reported tap). Counter "n of m"; all done → a once-a-day **Day complete** celebration (check pops, confetti, haptic; static under reduced motion). Self-reported ticks are kept on the phone for the day (not synced across devices). Not yet: feeding the streak / achievements, sleep from a health platform. Gate green.
 

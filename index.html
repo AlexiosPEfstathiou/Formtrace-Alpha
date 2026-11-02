@@ -3362,12 +3362,13 @@ let tabBadgeCache=null;
 async function refreshTabBadges(current){
   try{
     if(!ME) return;
-    const coach=roleOf()==="coach"; const btn=document.querySelector(`#app-tabbar [data-go="${coach?"market":"listings"}"]`); if(!btn) return;
-    const fresh=current==="market"||current==="listings";
+    const coach=roleOf()==="coach";
+    const fresh=current==="market"||current==="listings"||current==="trainee-home";
     if(fresh||tabBadgeCache==null||Date.now()-tabBadgeCache.t>60000){ const { data, error }=await store._sb.rpc("my_tab_badges"); if(error) throw error; tabBadgeCache={t:Date.now(),d:data||{}}; }
-    const n=Number(coach?tabBadgeCache.d.unpitched:(tabBadgeCache.d.to_answer!=null?tabBadgeCache.d.to_answer:tabBadgeCache.d.unseen))||0;   /* Item FJ: offers waiting for an answer */
-    let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); }
-    dot.textContent=n>99?"99+":String(n); dot.style.display=n?"":"none";
+    const D=tabBadgeCache.d; const setDot=(go_,v)=>{ const btn=document.querySelector(`#app-tabbar [data-go="${go_}"]`); if(!btn) return; let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); } const n=Number(v)||0; dot.textContent=n>99?"99+":String(n); dot.style.display=n?"":"none"; };
+    if(coach){ setDot("market",D.unpitched); setDot("trainee-home",(Number(D.to_assign)||0)+(Number(D.to_review)||0)); }   /* Item FD: sessions to assign + to review */
+    else setDot("listings",D.to_answer!=null?D.to_answer:D.unseen);   /* Item FJ: offers waiting for an answer */
+
   }catch(e){ console.warn("tab badges (run migrations_tab_badges.sql)",e&&e.message); }
 }
 /* Item FJ: coming back to the app refreshes the badges, and the Goal list if it is on screen (a pitch may have arrived meanwhile). */
@@ -3858,6 +3859,7 @@ async function renderHomeChecklist(engs, el){
   let weekRows=[]; if(active.length){ try{ const wk=weekStartISO(new Date()); weekRows=(await assignedLiteByEng(active)).flat().filter(a=>a.week_start===wk); }catch(e){} }   /* Item FF: sessions are set per week, not per day */
   let plan=null; if(active.length){ try{ const { data:mg }=await store._sb.from("macro_goals").select("kcal,protein_g").in("engagement_id",active.map(e=>e.id)).lte("week_start",weekStartISO(new Date())).order("week_start",{ascending:false}).order("updated_at",{ascending:false}).limit(1); plan=(mg||[])[0]||null; }catch(e){} }
   const man=dcGet(); const items=[];
+  items.push({k:"sleep",t:"Slept 8 hours",sub:man.sleep?"":"tap if you did",done:!!man.sleep,act:"tick"});   /* owner 2026-11-02: renamed, first */
   items.push({k:"login",t:"Open FormTrace",done:true});
   items.push({k:"weigh",t:"Weigh yourself",sub:(tLog&&tLog.weight_kg!=null)?`${tLog.weight_kg} kg`:"",done:!!(tLog&&tLog.weight_kg!=null),act:"weigh"});
   items.push({k:"macros",t:"Log yesterday's macros",sub:(yLog&&yLog.kcal!=null)?`${Number(yLog.kcal).toLocaleString()} kcal`:"",done:!!(yLog&&(yLog.kcal!=null||yLog.protein_g!=null)),act:"macros"});
@@ -3869,7 +3871,7 @@ async function renderHomeChecklist(engs, el){
     items.push({k:"workout",t:X?`Perform ${dn}/${X} workouts this week`:"No workouts assigned this week",sub:weekDone?"week complete":didToday?"done today":rest?"rest day":"",done:weekDone||didToday||rest,act:"workout",alt:(weekDone||didToday||rest)?null:"rest"});
 
   }
-  items.push({k:"sleep",t:"Sleep 8 hours",sub:man.sleep?"":"tap when you have",done:!!man.sleep,act:"tick"});
+
   const n=items.filter(i=>i.done).length, all=n===items.length;
   el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
@@ -3898,7 +3900,7 @@ async function renderHomeWeekStatus(engs, el){
   const thisMon=weekStartISO(new Date());
   let rows=[]; try{ rows=(await assignedLiteByEng(active)).flat().filter(a=>a.week_start===thisMon); }catch(e){ console.error("home week status",e); return; }
   const remaining=rows.filter(a=>a.status==="assigned").length;
-  const caps=active.map(e=>e.workouts_per_week_cap||0).reduce((s,x)=>s+x,0);
+  let caps=0; try{ const oids=active.map(e=>e.offer_id).filter(Boolean); if(oids.length){ const { data:of }=await store._sb.from("offers").select("id,workouts_per_week_cap,sessions_text").in("id",oids); caps=(of||[]).reduce((s,o)=>s+(offerCap(o)||0),0); } }catch(e){}   /* the weekly cap is on the offer */
   const planned=Math.max(caps, rows.length);
   const done=rows.length-remaining;
   el.className="home-today";
@@ -7089,6 +7091,7 @@ async function renderTraineeHome(){
         <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}${(WEEK_MODEL&&e.status==="active")?(()=>{const w=wkByEng[e.id]||{n:0,done:0};const t=capByEng[e.id]??w.n;return t?` · <b style="color:${w.done>=t?"#F5C542":"var(--ink)"}">${w.done}/${t}</b> this week`:" · nothing assigned this week";})():""}</div></div>
         <span class="badge ${e.status}">${e.status}</span></div>`;
     div.addEventListener("click",()=>openEngagement(e.id));
+    if(e.status==="active"&&WEEK_MODEL){ const w=wkByEng[e.id]||{n:0,done:0}; const toA=Math.max(0,(capByEng[e.id]||0)-w.n); if(toA>0){ div.classList.add("glisten"); const b=div.querySelector(".badge"); if(b){ b.textContent=(w.n===0&&weekNumber(e.started_at)<=1)?"Offer accepted":`${toA} to assign`; b.className="badge open"; } } }   /* Item FD */
     return div;
   };
 
