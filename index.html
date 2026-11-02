@@ -3197,7 +3197,7 @@ function go(name){
   const R=fn=>{ try{ const p=fn(); if(p&&p.catch)p.catch(err=>{console.error(name+" render failed",err);toast((err&&err.message)||"Something went wrong loading this screen",4500);}); }catch(err){console.error(name+" render threw",err);toast((err&&err.message)||"Something went wrong",4500);} };
   if(name==="home")R(renderHome);
   if(name==="notifications")R(async()=>{ await renderHome(); refreshNotifDot(); });   // Item CP: the cards render through renderHome into the notifications screen
-  if(name==="intouch")R(renderInTouch);   // Item CP: Social tab
+  if(name==="intouch")R(async()=>{ await renderInTouch(); try{ const { error }=await store._sb.rpc("mark_social_seen"); if(!error){ tabBadgeCache=null; refreshTabBadges(); } }catch(e){} });   // Item CP: Social tab; Item FG: opening it marks it seen
   if(name==="coach")R(renderCoach);
   if(name==="market")R(renderMarket);
   if(name==="trainee-home")R(renderTraineeHome);
@@ -3363,11 +3363,12 @@ async function refreshTabBadges(current){
   try{
     if(!ME) return;
     const coach=roleOf()==="coach";
-    const fresh=current==="market"||current==="listings"||current==="trainee-home";
+    const fresh=current==="market"||current==="listings"||current==="trainee-home"||current==="intouch";
     if(fresh||tabBadgeCache==null||Date.now()-tabBadgeCache.t>60000){ const { data, error }=await store._sb.rpc("my_tab_badges"); if(error) throw error; tabBadgeCache={t:Date.now(),d:data||{}}; }
     const D=tabBadgeCache.d; const setDot=(go_,v)=>{ const btn=document.querySelector(`#app-tabbar [data-go="${go_}"]`); if(!btn) return; let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); } const n=Number(v)||0; dot.textContent=n>99?"99+":String(n); dot.style.display=n?"":"none"; };
     if(coach){ setDot("market",D.unpitched); setDot("trainee-home",(Number(D.to_assign)||0)+(Number(D.to_review)||0)); }   /* Item FD: sessions to assign + to review */
     else setDot("listings",D.to_answer!=null?D.to_answer:D.unseen);   /* Item FJ: offers waiting for an answer */
+    setDot("intouch",D.social);   /* Item FG: friend requests + friends' achievements + congratulations */
 
   }catch(e){ console.warn("tab badges (run migrations_tab_badges.sql)",e&&e.message); }
 }
