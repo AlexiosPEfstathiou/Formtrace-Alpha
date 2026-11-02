@@ -91,6 +91,8 @@ real only after go-live below.
 
 - [ ] Sandbox: one test deposit and one coach onboarding, end to end
 - [ ] Weekly release and refunds built and tested (next DM parts)
+- [ ] Credit from a coach-ended goal applied at the next Checkout (PRODUCT_LOG FC)
+- [ ] `release_hold_days` back to 14 (sandbox test used 0); `release_hold_fast_days` 7
 - [ ] BI prerequisites: VAT advice; coach countries (accounts are created in the coach's
       profile country, default IE)
 - [ ] Outside-activity check

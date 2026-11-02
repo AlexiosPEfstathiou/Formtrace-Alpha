@@ -28,6 +28,7 @@ the list below are done, superseded, or parked (bottom).
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
+13b. **FC** Use the trainee's credit at the next Checkout (C) - must be done before go-live.
 14. **DW** Live keys and go-live (O + C).
 15. **EG** Test payment, live, with the ED code.
 16. **EB** Flip `payments_via_stripe` to 1.
@@ -43,7 +44,7 @@ the list below are done, superseded, or parked (bottom).
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
-**After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee DECIDED 2026-11-02: costs only) · **EL** early review incentive (DECIDED 2026-11-02: mark + 7-day release; build pending).
+**After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement.
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
@@ -96,6 +97,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 84 | **FC** Use the trainee's credit at the next Checkout - BEFORE GO-LIVE | Medium | checkout-create, webhook, release-send. |
 | 83 | **FB** Management calendar - every dated obligation in one place | Owner, later | First entries listed (FA, DP, DY, DX, BI, CZ, CE). |
 | 82 | **FA** REMINDER 30 Sep 2027 - formtrace.ie renewal (expires 30 Oct 2027) | Owner | Auto-renew, card, registrant, lock. |
 | 81 | **EG** Test payment between the owner's coach and trainee profiles (sandbox, then live with ED) | Owner + Claude | The end-to-end proof of escrow. |
@@ -260,6 +262,21 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## FC. Use the trainee's credit at the next Checkout - BEFORE GO-LIVE
+
+Follows EK part 1 (2026-11-02). Credit from a coach-ended goal sits in `trainee_credits` and
+is shown to the trainee, but is **not yet applied**. To build: `checkout-create` reads the
+balance (`my_credit_balance` / the ledger) and reduces the goal line by
+min(balance, price) - Checkout cannot take both `discounts` and promotion codes, so reduce
+the amount, not a coupon - with a "Credit applied" note; writes the matching negative
+ledger row only when the deposit lands (webhook), so an abandoned Checkout keeps the
+credit; if credit covers the whole price, skip Stripe and record a credit-funded deposit.
+**Payouts:** the credited part is already in FormTrace's balance from the earlier charge,
+so `release-send` must fund those weeks **without** `source_transaction` (or split per
+week). Ledger and tracker show "Paid with credit". Medium; touches checkout-create,
+stripe-webhook, release-send. Not started.
+
+---
 ## FB. Management calendar - every dated obligation in one place
 
 Owner, 2026-11-02: "We will make a management calendar later." The product log records
@@ -390,7 +407,9 @@ Owner, 2026-10-30, found during EG step 1. Trainee Notifications: the card "AFTE
 
 ---
 
-## EL. Early review incentive - rewarding reviews within 24 hours - DECIDED 2026-11-02
+## EL. Early review incentive - rewarding reviews within 24 hours - DECIDED 2026-11-02 - BUILT 2026-11-02 (run the migration)
+
+**Built 2026-11-02 (Lilly account):** `fast_reviewer_coaches()` (>= `fast_review_share_pct` 80 % of sessions reviewed within 24 h over 30 days, at least `fast_review_min_reviews` 5; late unreviewed sessions count against) → **"⚡ Reviews within a day"** on the coach's card (`coachBadgesInline`, loaded at sign-in). `week_reviewed_fast()` + `queue_weekly_releases` (copied unchanged except the hold line) → a week whose every session was reviewed within 24 h is released after `release_hold_fast_days` **7** days instead of `release_hold_days` (never longer than the normal hold). The coach walkthrough (EV) explains both.
 
 **Owner decision 2026-11-02 (pilot): options (1) + (3)** - a **"Reviews within a day" mark** on the coach's card and profile (last 30 days, >= 80 % of reviews within 24 h of submission) **and faster money**: a week in which every review landed within 24 h is released after **7 days instead of 14**. Ranking, achievement and commission step not now. Build pending.
 
@@ -408,7 +427,9 @@ pending; proposal: (1) + (3) for the pilot. Not started.
 
 ---
 
-## EK. Coach ends the goal - trainee chooses credit or refund-less-fee - FEE DECIDED 2026-11-02
+## EK. Coach ends the goal - trainee chooses credit or refund-less-fee - FEE DECIDED 2026-11-02 - PART 1 BUILT 2026-11-02 (run the migration); credit at checkout = FC
+
+**Part 1 built 2026-11-02 (Lilly account), `migrations_coach_end_goal_fast_reviews.sql` + app:** the coach's payment card has **End this goal** (reason chips, optional note; `coach_end_goal`, end_kind `coach_ended`; sessions not started removed). The existing `refund_on_end` trigger now routes coach-ended Stripe goals to `queue_end_choice` (queued releases cancelled; unreleased price + its processing share recorded in `goal_end_choices`; push to the trainee) - **no automatic refund**. The trainee chooses on the card (`choose_goal_end`): **credit** = the full unused amount into the new `trainee_credits` ledger; **refund** = a queued `payment_refunds` row with the unused price and **processing 0** (costs only), sent by the existing refund-send webhook. No choice in 14 days → credit (`apply_default_end_choices`, pg_cron daily 04:23). Goals paid directly: the trainee is just told. **Not yet: using the credit at the next Checkout - item FC, must be built before go-live.**
 
 **Owner decision 2026-11-02: the refund fee is COSTS ONLY** - the processing share of the refunded weeks (Stripe's non-returned fee), **no fixed amount**: the coach ended the goal, so the trainee pays no more than the real cost. Credit stays the default after 14 days. Terms s.8 placeholder to fill accordingly. Build still pending (after EG).
 

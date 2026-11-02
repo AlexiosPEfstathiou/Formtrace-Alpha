@@ -3269,7 +3269,7 @@ function renderAppTabs(current){
   try{ const q=new URLSearchParams(location.search); const ck=q.get("checkout"); if(ck){ history.replaceState(null,"",location.pathname+location.hash); if(ck==="success") toast("Payment received - confirming with Stripe… it appears on your goal in a moment.",5000); else if(ck==="cancel") toast("Checkout cancelled - nothing was charged.",3500); } }catch(e){}   /* Item DM: back from Stripe Checkout */
   try{ const q=new URLSearchParams(location.search); const so=q.get("stripe"); if(so){ history.replaceState(null,"",location.pathname+location.hash); if(so==="return") toast("Back from Stripe - your payout status is on your Profile.",4000); else if(so==="refresh") toast("That Stripe link expired - tap Set up payouts again.",4000); } }catch(e){}   /* Item DU: back from Stripe onboarding */
   if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); checkStreakBadgeLevelUp(); }   // Item CY catch-up; Item BW level-up animation
-  setTimeout(ensurePushDefault,1500); setTimeout(ensurePayoutsPrompt,4000);   /* Item ER: payouts prompt for coaches */   /* Item DO: push on by default (silent if already allowed, else one explained prompt) */
+  loadFastReviewers(); setTimeout(ensurePushDefault,1500); setTimeout(ensurePayoutsPrompt,4000);   /* Item ER: payouts prompt for coaches */   /* Item DO: push on by default (silent if already allowed, else one explained prompt) */
   try{ const tz=Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz&&tz!==ME.tz){ store._sb.rpc("set_my_tz",{p_tz:tz}).then(()=>{ ME.tz=tz; }); } }catch(e){}   // Item DI: the morning summary goes out at 08:00 in this zone
   try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
 }
@@ -4351,6 +4351,47 @@ async function renderStripeConnectCard(ph){
   ph.innerHTML=shell(`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${body}</div><div style="margin-top:10px">${btn}</div>`);
   ph.querySelectorAll("[data-sc]").forEach(b=>b.addEventListener("click",async()=>{ b.disabled=true; try{ const { data, error }=await store._sb.functions.invoke("connect-onboard",{body:{action:b.getAttribute("data-sc")}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(!data||!data.url) throw new Error("No link returned"); location.href=data.url; }catch(x){ console.error("connect action",x); toast(x.message||"Couldn't open Stripe",4500); b.disabled=false; } }));
 }
+/* ---- Item EK: the coach can end a goal; under Stripe the trainee chooses credit (full unused amount) or a refund
+   less Stripe's non-returned card fee (costs only). No choice in 14 days = credit (server job). ---- */
+function openCoachEndGoal(e,holder,role,offer){
+  const reasons=[["schedule","My schedule no longer allows it"],["not_engaging","The trainee isn't engaging"],["injury","Injury or medical reason"],["fit","Not the right fit"],["other","Other"]];
+  pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:4px">End this goal?</div>
+    <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Sessions not started are removed. Weeks already released to you stay yours; ${e.deposit_at?"your trainee chooses between credit and a refund for the unused weeks.":"settle any unused weeks with your trainee directly."}</div>
+    <div id="ce-reasons" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${reasons.map(r=>`<button class="btn sm ghost" data-r="${r[0]}" style="width:auto;margin:0">${r[1]}</button>`).join("")}</div>
+    <textarea id="ce-note" rows="2" maxlength="500" placeholder="A note for your trainee (optional)" style="width:100%;box-sizing:border-box;margin-bottom:10px"></textarea>
+    <button class="btn primary" id="ce-yes" disabled style="background:var(--red);color:#fff">End the goal</button><button class="btn ghost" id="ce-no" style="margin-top:8px">Keep the goal</button>`);
+  let reason=null;
+  document.querySelectorAll("#ce-reasons [data-r]").forEach(b=>b.addEventListener("click",()=>{ reason=b.getAttribute("data-r"); document.querySelectorAll("#ce-reasons [data-r]").forEach(x=>{ x.style.borderColor=(x===b)?"var(--lime)":""; x.style.color=(x===b)?"var(--lime)":""; }); $("#ce-yes").disabled=false; }));
+  $("#ce-no").onclick=()=>pwHide();
+  $("#ce-yes").onclick=async()=>{ const b=$("#ce-yes"); b.disabled=true; try{ const { error }=await store._sb.rpc("coach_end_goal",{p_eng:e.id,p_reason:reason,p_note:($("#ce-note").value||"").trim()||null}); if(error) throw error; pwHide(); toast("Goal ended - your trainee has been told",2600); e.status="ended"; e.end_kind="coach_ended"; renderPaymentTracker(holder,e,role,offer); }catch(x){ toast(x.message||"Couldn't end the goal",3500); b.disabled=false; } };
+}
+async function renderGoalEndBlock(card,e,role,holder,offer){
+  try{
+    const isCoach=role==="coach"; const box=document.createElement("div"); box.style.marginTop="10px";
+    const eur=v=>"€"+(Number(v||0)/100).toFixed(2); const dday=t=>t?fmtDay(String(t).slice(0,10)):"";
+    if(isCoach&&e.status==="active"){
+      box.innerHTML=`<button class="btn sm ghost" data-ge="end" style="width:auto;color:var(--red)">End this goal</button>`;
+      card.appendChild(box); box.querySelector("[data-ge]").addEventListener("click",()=>openCoachEndGoal(e,holder,role,offer)); return;
+    }
+    if(e.end_kind!=="coach_ended"||!e.deposit_at) return;
+    const { data:ch }=await store._sb.from("goal_end_choices").select("*").eq("engagement_id",e.id).maybeSingle();
+    if(!ch) return;
+    const credit=Number(ch.price_cents)+Number(ch.processing_cents), refund=Number(ch.price_cents), fee=Number(ch.processing_cents);
+    if(ch.status==="pending"){
+      box.innerHTML=isCoach
+        ?`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">You ended this goal. Your trainee is choosing between ${eur(credit)} credit and a ${eur(refund)} refund for the unused weeks - credit if they don't choose by ${dday(ch.default_at)}.</div>`
+        :`<div style="font-size:12.5px;color:var(--ink);font-weight:700;margin-bottom:6px">Your coach ended this goal. Choose what happens to the unused weeks:</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" data-ge="credit" style="width:auto">Keep ${eur(credit)} as credit</button><button class="btn sm ghost" data-ge="refund" style="width:auto">Refund ${eur(refund)} to my card</button></div>
+          <div style="font-size:11.5px;color:var(--faint);margin-top:6px;line-height:1.45">Credit keeps the full ${eur(credit)} for your next goal. A refund returns ${eur(refund)}${fee?` - Stripe keeps its ${eur(fee)} card fee`:""}. No choice by ${dday(ch.default_at)} = credit.</div>`;
+    } else {
+      box.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${ch.status==="credit"
+        ?`${eur(credit)} kept as credit${ch.chosen_by==="default"?" (no choice within 14 days)":""} - it goes towards ${isCoach?"the trainee's":"your"} next goal.`
+        :`Refund of ${eur(refund)} ${isCoach?"chosen by your trainee":"on its way"} - back on the card within 5-10 business days.`}</div>`;
+    }
+    card.appendChild(box);
+    box.querySelectorAll("[data-ge]").forEach(b=>b.addEventListener("click",async()=>{ const pick=b.getAttribute("data-ge"); box.querySelectorAll("[data-ge]").forEach(x=>x.disabled=true); try{ const { error }=await store._sb.rpc("choose_goal_end",{p_eng:e.id,p_choice:pick}); if(error) throw error; toast(pick==="credit"?"Kept as credit ✓":"Refund requested ✓",2200); renderPaymentTracker(holder,e,role,offer); }catch(x){ toast(x.message||"Couldn't save your choice",3500); box.querySelectorAll("[data-ge]").forEach(y=>y.disabled=false); } }));
+  }catch(x){ console.warn("goal end block (run migrations_coach_end_goal_fast_reviews.sql)",x&&x.message); }
+}
 async function renderPaymentTracker(holder,eng,role,offer){
   if(!holder||!eng||!eng.id) return;
   const s=await paymentState(eng,offer); if(!s) return; const {e}=s; const isCoach=role==="coach";
@@ -4407,7 +4448,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
     <div class="pt-steps">${steps.map(x=>`<div class="pt-step ${x.st}"><div class="pt-dot">${x.st==="done"?"✓":x.st==="skip"?"–":x.st==="warn"?"!":""}</div><div class="pt-lbl">${x.l}</div><div class="pt-date">${escapeHtml(x.d||"")}</div></div>`).join("")}</div>
     ${(e.deposit_at||(STRIPE_LIVE&&!e.paid_at&&!e.received_at))?"":`<div style="font-size:11px;color:var(--faint);text-align:center">Deposit skipped during the pilot - paid directly to the coach</div>`}
     <div class="pt-now">${now}${actions?`<div style="display:flex;gap:8px;margin-top:8px">${actions}</div>`:""}</div>${editor}`;
-  holder.innerHTML=""; holder.appendChild(card);
+  holder.innerHTML=""; holder.appendChild(card); renderGoalEndBlock(card,e,role,holder,s.o);   /* Item EK */
   const rpc=async(fn,msg)=>{ try{ const { error }=await store._sb.rpc(fn,{p_eng:e.id}); if(error) throw error; toast(msg,1800); renderPaymentTracker(holder,e,role,s.o); refreshNotifDot(); }catch(x){ console.error("payment "+fn+" (run migrations_payment_tracker.sql)",x); toast(x.message||"Couldn't update",3500); } };
   card.querySelectorAll("[data-pt]").forEach(b=>b.addEventListener("click",()=>{ b.disabled=true; const a=b.getAttribute("data-pt");
     if(a==="card"){ (async()=>{ try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:e.id}}); if(error){ let msg=error.message; try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(_){} throw new Error(msg); } if(!data||!data.url) throw new Error("No checkout link returned"); location.href=data.url; }catch(x){ console.error("stripe checkout",x); toast(x.message||"Couldn't open checkout",4500); b.disabled=false; } })(); return; }   /* Item DM */
@@ -6496,10 +6537,13 @@ function openCounterSheet(o){
   });
 }
 /* Item BH: badges + average rating shown ON the offer card. */
+/* Item EL: "Reviews within a day" - coaches who reviewed >= 80 % of sessions within 24 h over 30 days (at least 5). Loaded at sign-in. */
+let FAST_REVIEWERS=new Set();
+async function loadFastReviewers(){ try{ const { data, error }=await store._sb.rpc("fast_reviewer_coaches"); if(error) throw error; FAST_REVIEWERS=new Set((data||[]).map(x=>typeof x==="string"?x:(x&&(x.fast_reviewer_coaches||x.coach_id||x.id))).filter(Boolean)); }catch(e){ console.warn("fast reviewers (run migrations_coach_end_goal_fast_reviews.sql)",e&&e.message); } }
 function coachBadgesInline(c){
   const p=c&&c._pub||{}; const f=c&&c._facts||{};
   const rating = p.rating_count ? `<span style="font-size:12px;color:var(--ink);font-weight:700;white-space:nowrap">★ ${Number(p.rating_avg).toFixed(1)} <span style="color:var(--faint);font-weight:400">(${p.rating_count})</span></span>` : `<span style="font-size:11.5px;color:var(--faint)">No ratings yet</span>`;
-  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">${rating}${badgeSpans(f,false)}</div>`;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">${rating}${badgeSpans(f,false)}${(c&&FAST_REVIEWERS.has(c.id))?`<span style="font-size:11px;font-weight:800;color:var(--lime);border:1px solid var(--lime-dim);border-radius:999px;padding:1px 7px;white-space:nowrap">⚡ Reviews within a day</span>`:""}</div>`;
 }/* Item BH: precise terms. Length and sessions as numbers, start and last day
    on one line, price as "[full] ([per session] / session)". Falls back to the
    coach's free text for offers made before the structured fields existed. */
