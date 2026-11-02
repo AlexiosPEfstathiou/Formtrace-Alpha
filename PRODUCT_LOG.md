@@ -1,4 +1,4 @@
-# FormTrace — Product Log
+﻿# FormTrace — Product Log
 
 Opened 2026-08-07. Body is chronological (newest first) - a development
 record, kept that way because it is what every bug hunt has been traced
@@ -11,8 +11,8 @@ the list below are done, superseded, or parked (bottom).
 
 **A. Next session - foundations**
 1. **DV** Outside-activity check (O) - first: it gates money and the domain's ownership.
-2. **BJ** Choose the name (O) - the domain depends on it.
-3. **EE** Buy the domain (O) - DECIDED: formtrace.ie at Blacknight; awaiting registry ID check.  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
+2. **BJ** Choose the name (O) - **settled by the domain: the name stays FormTrace** (logo / visual identity still open).
+3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered and active.**  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
 4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
 5. **DX** Terms of Service page - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
@@ -434,7 +434,9 @@ go out, and keep github.io redirecting to the domain.
 
 ---
 
-## EE. Buy the domain - DECIDED 2026-10-30: formtrace.ie
+## EE. Buy the domain - DONE: formtrace.ie registered and ACTIVE
+
+**Owner, 2026-11-02:** confirmation received - formtrace.ie is registered and active (the registry's Ireland-connection check passed). Next: **EF**.
 
 **Decision, owner, 2026-10-30:** the domain is **formtrace.ie**, registered at **Blacknight**
 (Irish registrar), 1 year at EUR 5.99 (renewal ~EUR 28/yr), auto-renew on, in the owner's
