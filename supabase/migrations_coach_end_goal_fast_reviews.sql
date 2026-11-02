@@ -230,7 +230,8 @@ $$;
 revoke execute on function public.fast_reviewer_coaches() from public;
 grant  execute on function public.fast_reviewer_coaches() to authenticated;
 
--- (2b) the weekly release job: copied from migrations_weekly_release.sql, only the hold changescreate or replace function public.queue_weekly_releases()
+-- (2b) the weekly release job: copied from migrations_weekly_release.sql, only the hold changes
+create or replace function public.queue_weekly_releases()
 returns integer language plpgsql security definer set search_path = public as $$
 declare
   v_hold   integer := coalesce((select value::int from platform_rates where key = 'release_hold_days'), 14);
