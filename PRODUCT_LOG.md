@@ -47,6 +47,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
+**Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
 **Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
@@ -288,6 +289,8 @@ Ties to achievements (CY) and the rewards plan (BW / BR / BS). Not started.
 
 ## FK. Smartwatch connectivity - steps and other health metrics
 
+**Owner decision 2026-11-02: the native app is DEFERRED until FormTrace has a userbase** ("I know FormTrace needs a native app but we are not ready for that step yet. I want a userbase first."). So explore **web-reachable routes first**: brand cloud APIs and aggregator services that work from a web app, account linking by OAuth, CSV/export import - and keep the native-only routes (Apple Health / Health Connect) for when the app goes native.
+
 Owner, 2026-11-02. Log **steps** and other health metrics (sleep, heart rate, active
 calories, workouts, weight from a smart scale) from the trainee's smartwatch automatically.
 Routes: **Apple Health** (iPhone, Apple Watch and most watches that sync to it) and **Google
@@ -502,6 +505,8 @@ Owner, 2026-10-30. In the workout player: a rest timer between exercises/sets (c
 ---
 
 ## ET. Macro logging once: connect MacroFactor or a popular alternative
+
+**Owner decision 2026-11-02: the native app is DEFERRED until FormTrace has a userbase** ("I know FormTrace needs a native app but we are not ready for that step yet. I want a userbase first."). So explore **web-reachable routes first**: brand cloud APIs and aggregator services that work from a web app, account linking by OAuth, CSV/export import - and keep the native-only routes (Apple Health / Health Connect) for when the app goes native.
 
 **Owner, 2026-11-02:** explore **food-logger apps that can give FormTrace an API**, so trainees keep using the app they like **through** FormTrace (their macros flow in, no double logging). Candidates: **Yazio**, **MacroFactor**, and others (Cronometer, MyFitnessPal, Lose It!, FatSecret). For each: public / partner API or none, what data (calories, macros, weight), how a user links their account (OAuth), cost and terms; fallback = the phone's health platform (Apple Health / Health Connect) which most of these write to - see FK.
 

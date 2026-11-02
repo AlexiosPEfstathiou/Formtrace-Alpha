@@ -131,6 +131,7 @@ awaiting the owner's migration run: weight plausibility and body-achievement re-
   Pending check: the user with a timezone is the one with push on (query given).
 - DN code comparison waits for the owner to paste the deployed push-send code.
 ## Open decisions (owner)
+- **Decided 2026-11-02: no native app until FormTrace has a userbase.** It stays a web app (PWA); integrations that need a native app (Apple Health, Health Connect) wait - explore web-reachable routes first (brand cloud APIs, aggregators, OAuth account linking).
 - Pilot price, period and early-ending rule — to agree with the coaches.
 - Streak rewards: 12-month reward TBD; cap on the €5 monthly credit (BW economics note).
 - Branding / name (BJ) — final mark replaces `badge-96.png` and the placeholder colours.
