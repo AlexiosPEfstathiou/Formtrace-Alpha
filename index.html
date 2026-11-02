@@ -7083,6 +7083,9 @@ async function renderTraineeHome(){
     const capByOffer=Object.fromEntries((r2.data||[]).map(o=>[o.id,offerCap(o)]));
     for(const e of active) capByEng[e.id]=e.offer_id?capByOffer[e.offer_id]:null;
   }
+  /* owner 2026-11-02: per-trainee counts - red = sessions to assign this week, green = sessions waiting for review (any week) */
+  const revByEng={}; if(active.length){ try{ const { data:sub }=await store._sb.from("assigned_workouts").select("engagement_id").in("engagement_id",active.map(e=>e.id)).eq("status","submitted"); for(const r of (sub||[])) revByEng[r.engagement_id]=(revByEng[r.engagement_id]||0)+1; }catch(e){ console.error("review counts",e); } }
+  const countPill=(n,bg,fg,title)=>`<span title="${title}" style="min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:${bg};color:${fg};font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box">${n}</span>`;
   const engCard=(e)=>{
     const other=profs[e.trainee_id]||{};
     const wk=weekNumber(e.started_at);
@@ -7092,11 +7095,19 @@ async function renderTraineeHome(){
         <div class="lr-main"><h3>${escapeHtml(other.display_name||"Trainee")}${e.status==="active"?` — Week ${wk}`:""}</h3><div class="sub">${escapeHtml(e.goal_title||"Goal")}${(WEEK_MODEL&&e.status==="active")?(()=>{const w=wkByEng[e.id]||{n:0,done:0};const t=capByEng[e.id]??w.n;return t?` · <b style="color:${w.done>=t?"#F5C542":"var(--ink)"}">${w.done}/${t}</b> this week`:" · nothing assigned this week";})():""}</div></div>
         <span class="badge ${e.status}">${e.status}</span></div>`;
     div.addEventListener("click",()=>openEngagement(e.id));
-    if(e.status==="active"&&WEEK_MODEL){ const w=wkByEng[e.id]||{n:0,done:0}; const toA=Math.max(0,(capByEng[e.id]||0)-w.n); if(toA>0){ div.classList.add("glisten"); const b=div.querySelector(".badge"); if(b){ b.textContent=(w.n===0&&weekNumber(e.started_at)<=1)?"Offer accepted":`${toA} to assign`; b.className="badge open"; } } }   /* Item FD */
+    if(e.status==="active"){   /* Item FD + owner 2026-11-02: red = to assign this week, green = to review */
+      const w=wkByEng[e.id]||{n:0,done:0}; const toA=WEEK_MODEL?Math.max(0,(capByEng[e.id]||0)-w.n):0; const rev=revByEng[e.id]||0;
+      if(toA>0) div.classList.add("glisten");
+      const b=div.querySelector(".badge"); if(b&&toA>0&&w.n===0&&weekNumber(e.started_at)<=1){ b.textContent="Offer accepted"; b.className="badge open"; }
+      if(toA||rev){ const pills=document.createElement("div"); pills.style.cssText="display:flex;gap:6px;align-items:center;margin-left:8px;flex:0 0 auto";
+        pills.innerHTML=(toA?countPill(toA,"var(--red)","#fff",`${toA} session${toA===1?"":"s"} to assign this week`):"")+(rev?countPill(rev,"#22C55E","#052E14",`${rev} session${rev===1?"":"s"} to review`):"");
+        const row=div.querySelector(".list-row"); if(row) row.appendChild(pills); }
+    }
     return div;
   };
 
   if(!active.length && !past.length){ return; }
+  if(active.length){ const lg=document.createElement("div"); lg.style.cssText="display:flex;gap:14px;align-items:center;font-size:11.5px;color:var(--muted);margin:0 2px 10px"; lg.innerHTML=`<span style="display:inline-flex;align-items:center;gap:6px">${countPill("",  "var(--red)","#fff","")} to assign this week</span><span style="display:inline-flex;align-items:center;gap:6px">${countPill("","#22C55E","#052E14","")} to review</span>`; lg.querySelectorAll("span[title]").forEach(s=>{ s.style.minWidth="12px"; s.style.height="12px"; s.style.padding="0"; }); wrap.appendChild(lg); }
   for(const e of active){ wrap.appendChild(engCard(e)); }
   if(active.length && !past.length){ return; }
   if(!active.length){

@@ -357,6 +357,8 @@ when Home is showing. Small. Not started.
 
 ## FD. Trainees tab badge (coach): sessions to assign + sessions to review - LIVE 2026-11-02
 
+**Owner, 2026-11-02 (screenshot: tab 16 = 2 + 7 to assign + 7 to review):** each trainee on the Trainees list now shows a **red** count (sessions to assign this week) and a **green** count (sessions waiting for review, any week), with a legend above the list; the text badge is the goal's status again, except **"Offer accepted"** for a new trainee. The glisten stays while sessions are left to assign.
+
 **Built 2026-11-02:** `migrations_trainees_badge.sql` - `my_tab_badges()` gains **to_assign** (per active goal: the offer's `workouts_per_week_cap` minus sessions assigned this week, never below 0; the coach's week from `profiles.tz`) and **to_review** (submitted, unreviewed). App: the coach's **Trainees** tab shows to_assign + to_review (one call now sets several tab badges); on the Trainees list a card with sessions left to assign **glistens** and its badge reads **"Offer accepted"** (new goal, nothing assigned yet) or **"N to assign"**. Also fixed: Home's "This week" read the cap from the goal (it lives on the offer). Gate green.
 
 **Owner refinement 2026-11-02:** when an offer is accepted the coach's **Trainees** badge goes **up by the number of sessions agreed** (e.g. 2 sessions agreed → +2) and **down by 1 for each workout assigned** to that trainee, up to the agreed number (per week). On the Trainees list the new trainee shows an **"Offer accepted"** badge and **glistens**, so the coach taps it and assigns workouts; the glisten stops once the agreed sessions are assigned. Sessions waiting for review add to the same tab count.
