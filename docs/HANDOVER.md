@@ -65,6 +65,7 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   accept + payouts prompt for coaches · DP admin liability card (disputes/losses wait for EJ).
 - **Decided:** EK refund fee = costs only · EL = "Reviews within a day" mark + 7-day release.
 - **Built:** ES daily checklist on Home (app only) · **EK** coach ends a goal (trainee: credit or costs-only refund; default credit after 14 days) · **EL** "Reviews within a day" mark + 7-day release · **FC** credit used at the next Checkout (payouts credit-first from the balance; refunds return unused credit as credit; deposit_processing/credit now server-only). All migrations run; checkout-create, stripe-webhook, release-send redeployed. **Next: a sandbox test of the credit path.**
+- **From the owner's tests (2026-11-02), built:** Goal tab - Answer-offers button, lands on Offers, refresh on return, badge = offers to answer (FJ) · checklist re-drawn after saving (FE) · coach-ended goal card in Notifications (FI) · weekly workout line + I'll take a rest day (FF) · Slept 8 hours first · coach Trainees badge = to assign + to review, Offer accepted / N to assign + glisten (FD). **Pending:** run migrations_trainees_badge.sql; then Social badge (FG) and the coach checklist (FH, items to agree).
 - Owner skipped group 2 (owner tasks) for now; working through the backlog next.
 - Logged: FA renewal reminder 30 Sep 2027 · FB management calendar (later).
 - Always check the log's highest item code before allocating (both accounts write items).
