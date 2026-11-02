@@ -57,6 +57,16 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
   offer copy "per week reviewed, never a lump sum" before live.
 
+## Latest (2026-11-02, Lilly account) - read with "Start here" below
+- **formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not
+  editable - **EF blocked** until Blacknight activates it (records to enter are in the EF
+  entry). GitHub TXT verification can be prepared meanwhile.
+- Logged: **FA** renewal reminder 30 Sep 2027 · **FB** management calendar (later).
+- Built today: **EM** (between-goals card hides once a new goal is posted) · **EO** (payment
+  map follows the goal) · **EN** (first-call push when a goal starts - migration given).
+- Working through the product log by readiness; next ready builds: **EQ**, **ER**, **DP**.
+- The item counter in CLAUDE.md had gone stale (both accounts write items) - always check
+  the log's highest code before allocating.
 ## Start here next session (refreshed 2026-10-30 night, Lilly account)
 **EG PASSED in the sandbox (2026-10-30 night):** coach onboarding (IE Express, transfers-only,
 standard agreement), deposit with the EA line, weekly release (Transfer), refund (partial Refund,
