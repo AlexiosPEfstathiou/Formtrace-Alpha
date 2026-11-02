@@ -353,7 +353,7 @@ when Home is showing. Small. Not started.
 
 ---
 
-## FD. Trainees tab badge (coach): sessions to assign + sessions to review - BUILT 2026-11-02 (run the migration)
+## FD. Trainees tab badge (coach): sessions to assign + sessions to review - LIVE 2026-11-02
 
 **Built 2026-11-02:** `migrations_trainees_badge.sql` - `my_tab_badges()` gains **to_assign** (per active goal: the offer's `workouts_per_week_cap` minus sessions assigned this week, never below 0; the coach's week from `profiles.tz`) and **to_review** (submitted, unreviewed). App: the coach's **Trainees** tab shows to_assign + to_review (one call now sets several tab badges); on the Trainees list a card with sessions left to assign **glistens** and its badge reads **"Offer accepted"** (new goal, nothing assigned yet) or **"N to assign"**. Also fixed: Home's "This week" read the cap from the goal (it lives on the offer). Gate green.
 
