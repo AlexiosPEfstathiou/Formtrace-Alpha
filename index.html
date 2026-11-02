@@ -3201,7 +3201,7 @@ function go(name){
   if(name==="market")R(renderMarket);
   if(name==="trainee-home")R(renderTraineeHome);
   if(name==="trainee-workout")R(renderAssignedWorkout);
-  if(name==="listings")R(renderListings);
+  if(name==="listings")R(async()=>{ await renderListings(); markOffersSeen(); });   /* Item EQ: opening the Goal tab marks pitches seen */
   if(name==="profile")R(async()=>{ await renderProfile(); moveSettingsSections(); });   // CQ-6
   if(name==="settings")R(async()=>{ if(!$("#settings-body").children.length){ await renderProfile(); } moveSettingsSections(); });   // CQ-6
   if(name==="admin")R(renderAdmin);
@@ -3263,6 +3263,7 @@ function renderAppTabs(current){
   bar.style.display="flex";
   if(ME.is_admin) refreshAdminDot();   // CN-4
   showHeader(true); refreshNotifDot();   // Item CP
+  refreshTabBadges(current);   // Item EQ
   if(pwRecovery){ pwRecovery=false; setTimeout(openSetNewPassword,100); }   // Item DC: arrived from a reset link
   try{ const q=new URLSearchParams(location.search); const ck=q.get("checkout"); if(ck){ history.replaceState(null,"",location.pathname+location.hash); if(ck==="success") toast("Payment received - confirming with Stripe… it appears on your goal in a moment.",5000); else if(ck==="cancel") toast("Checkout cancelled - nothing was charged.",3500); } }catch(e){}   /* Item DM: back from Stripe Checkout */
   try{ const q=new URLSearchParams(location.search); const so=q.get("stripe"); if(so){ history.replaceState(null,"",location.pathname+location.hash); if(so==="return") toast("Back from Stripe - your payout status is on your Profile.",4000); else if(so==="refresh") toast("That Stripe link expired - tap Set up payouts again.",4000); } }catch(e){}   /* Item DU: back from Stripe onboarding */
@@ -3338,6 +3339,23 @@ function showHeader(on){
   }
 }
 /* Notifications tab: a red count of visible cards. */
+/* Item EQ: tab badges - coach "Open goals" = open goals not yet pitched or hidden; trainee "Goal" = pitches not yet seen.
+   One server call (my_tab_badges), cached a minute; refreshed at once on the two screens that change the counts. */
+let tabBadgeCache=null;
+async function refreshTabBadges(current){
+  try{
+    if(!ME) return;
+    const coach=roleOf()==="coach"; const btn=document.querySelector(`#app-tabbar [data-go="${coach?"market":"listings"}"]`); if(!btn) return;
+    const fresh=current==="market"||current==="listings";
+    if(fresh||tabBadgeCache==null||Date.now()-tabBadgeCache.t>60000){ const { data, error }=await store._sb.rpc("my_tab_badges"); if(error) throw error; tabBadgeCache={t:Date.now(),d:data||{}}; }
+    const n=Number(coach?tabBadgeCache.d.unpitched:tabBadgeCache.d.unseen)||0;
+    let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); }
+    dot.textContent=n>99?"99+":String(n); dot.style.display=n?"":"none";
+  }catch(e){ console.warn("tab badges (run migrations_tab_badges.sql)",e&&e.message); }
+}
+async function markOffersSeen(){
+  try{ if(!ME||roleOf()==="coach") return; const { data, error }=await store._sb.rpc("mark_my_offers_seen"); if(error) throw error; if(data){ tabBadgeCache=null; refreshTabBadges(); } }catch(e){ console.warn("mark seen",e&&e.message); }
+}
 function refreshNotifDot(){
   const btn=document.querySelector('#app-tabbar [data-go="notifications"]'); if(!btn) return;
   const n=[...document.querySelectorAll("#notif-body > div[id^=home-]")].filter(d=>d.style.display!=="none"&&d.innerHTML.trim()).length;

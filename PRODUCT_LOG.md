@@ -346,7 +346,9 @@ Owner, 2026-10-30. (1) **Trainee:** accepting an offer should open the payment o
 
 ---
 
-## EQ. Tab badges: unpitched goals (coach) and unviewed pitches (trainee)
+## EQ. Tab badges: unpitched goals (coach) and unviewed pitches (trainee) - BUILT 2026-11-02 (run the migration)
+
+**Built 2026-11-02 (Lilly account):** `migrations_tab_badges.sql` - `offers.seen_at`; `my_tab_badges()` returns both counts in one call (coach: open goals not their own, not hidden, not yet pitched; trainee: pending pitches not seen); `mark_my_offers_seen()` runs when the trainee opens the Goal tab. Existing pitches are marked seen (no sudden badge). Safe: the offers triggers act only on a change of status. App: red count on **Open goals** (coach) / **Goal** (trainee), same style as the Notifications dot; cached a minute, refreshed at once on those two screens. Gate green.
 
 Owner, 2026-10-30. Coach: when open goals exist that this coach has not pitched (and not dismissed), the **Open goals** tab shows a red badge with the count. Trainee: the **Goal** tab shows a red badge with the count of pitches not yet viewed. Needs a "viewed" marker per pitch for the trainee (e.g. `offers.seen_at` set when the pitch card is rendered, via a security-definer function); the coach side can be computed from existing data (open goals minus own offers minus dismissals). Badge on the tab bar in `renderAppTabs`; refresh on the same cadence as notifications. Not started.
 
