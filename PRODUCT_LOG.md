@@ -407,7 +407,7 @@ Owner, 2026-10-30, found during EG step 1. Trainee Notifications: the card "AFTE
 
 ---
 
-## EL. Early review incentive - rewarding reviews within 24 hours - DECIDED 2026-11-02 - BUILT 2026-11-02 (run the migration)
+## EL. Early review incentive - rewarding reviews within 24 hours - DECIDED 2026-11-02 - LIVE 2026-11-02 (migration run)
 
 **Built 2026-11-02 (Lilly account):** `fast_reviewer_coaches()` (>= `fast_review_share_pct` 80 % of sessions reviewed within 24 h over 30 days, at least `fast_review_min_reviews` 5; late unreviewed sessions count against) → **"⚡ Reviews within a day"** on the coach's card (`coachBadgesInline`, loaded at sign-in). `week_reviewed_fast()` + `queue_weekly_releases` (copied unchanged except the hold line) → a week whose every session was reviewed within 24 h is released after `release_hold_fast_days` **7** days instead of `release_hold_days` (never longer than the normal hold). The coach walkthrough (EV) explains both.
 
@@ -427,7 +427,7 @@ pending; proposal: (1) + (3) for the pilot. Not started.
 
 ---
 
-## EK. Coach ends the goal - trainee chooses credit or refund-less-fee - FEE DECIDED 2026-11-02 - PART 1 BUILT 2026-11-02 (run the migration); credit at checkout = FC
+## EK. Coach ends the goal - trainee chooses credit or refund-less-fee - FEE DECIDED 2026-11-02 - PART 1 LIVE 2026-11-02 (migration run 6/2/7); credit at checkout = FC
 
 **Part 1 built 2026-11-02 (Lilly account), `migrations_coach_end_goal_fast_reviews.sql` + app:** the coach's payment card has **End this goal** (reason chips, optional note; `coach_end_goal`, end_kind `coach_ended`; sessions not started removed). The existing `refund_on_end` trigger now routes coach-ended Stripe goals to `queue_end_choice` (queued releases cancelled; unreleased price + its processing share recorded in `goal_end_choices`; push to the trainee) - **no automatic refund**. The trainee chooses on the card (`choose_goal_end`): **credit** = the full unused amount into the new `trainee_credits` ledger; **refund** = a queued `payment_refunds` row with the unused price and **processing 0** (costs only), sent by the existing refund-send webhook. No choice in 14 days → credit (`apply_default_end_choices`, pg_cron daily 04:23). Goals paid directly: the trainee is just told. **Not yet: using the credit at the next Checkout - item FC, must be built before go-live.**
 

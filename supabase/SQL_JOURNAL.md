@@ -81,4 +81,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | EN | `migrations_first_call_push.sql` | run ✓ (owner reported 2026-11-02; result not shown) | Expected: goals_marked = number of existing goals, triggers = 2. |
 | 2026-11-02 | EQ | `migrations_tab_badges.sql` | run ✓ (owner reported 2026-11-02; result not shown) | Expected: seen_column 1, functions 2. |
 | 2026-11-02 | ER + DP | `migrations_payouts_prompt_liability_card.sql` | run ✓ | approval_trigger 1, stats_function 1. |
-| 2026-11-02 | EK + EL | `migrations_coach_end_goal_fast_reviews.sql` | given | Expected: functions 6, tables 2, fast_hold_days 7. |
+| 2026-11-02 | EK + EL | `migrations_coach_end_goal_fast_reviews.sql` (fixed version: function header on its own line) | run ✓ | functions 6, tables 2, fast_hold_days 7. |
