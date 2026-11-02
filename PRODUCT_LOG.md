@@ -302,6 +302,8 @@ choice; unpaid: "nothing was charged"), on the Goal tab and in Notifications. No
 
 ## FH. Coach daily checklist on Home (and its tab badge) - BUILT 2026-11-02 (run the migration)
 
+**Latency fix 2026-11-02 (owner: "clicking task lists has a lot of latency"):** a tap on review / assign / calls / calorie goals used to wait for a `coach_todo_targets` round trip before opening anything. Home now fetches the targets **in parallel** with the counts while drawing the checklist, and a tap opens the trainee from that list at once (fresh for 2 minutes; cleared on use so the next Home draw fetches afresh); instant visual feedback on tap.
+
 **Owner, 2026-11-02 (screenshot):** a **Trainee activity** row on coach Home opened the goal **and** that day's sheet with "Propose a coaching call" - now it opens the trainee's goal page only. The call prompt belongs to the checklist's calls item only, as a **walkthrough**: it opens the first trainee without a call this week, **this week's remaining days glisten** (today to Sunday; the view scrolls there), tapping one makes **Propose a coaching call** pulse, tapping it ends the guide (20-minute limit). Reduced motion: a static outline.
 
 **Owner refinement 2026-11-02 (`migrations_coach_checklist_targets.sql`):** "Arrange first calls with new trainees" → **"Arrange your weekly calls with each trainee"** - every active trainee with no call proposed/booked **this week**; the Home badge counts **one per trainee** for it. **Review / Assign / Calls / Calorie goals** now open the **first trainee who still needs it** (`coach_todo_targets()`: reviews by oldest submission, the rest by start date) instead of the Trainees tab; the item is crossed off only when no trainee needs it, so the next tap goes to the next trainee.

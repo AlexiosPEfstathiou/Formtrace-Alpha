@@ -3868,14 +3868,19 @@ function coachTodo(D){
 }
 async function renderCoachChecklist(el){
   if(!el||!ME||roleOf()!=="coach") return;
-  let D=null; try{ const { data, error }=await store._sb.rpc("my_tab_badges"); if(error) throw error; D=data||{}; tabBadgeCache={t:Date.now(),d:D}; }catch(e){ console.warn("coach checklist (run migrations_coach_checklist.sql)",e&&e.message); el.style.display="none"; return; }
+  let D=null; try{ const [r1,r2]=await Promise.all([store._sb.rpc("my_tab_badges"), Promise.resolve(store._sb.rpc("coach_todo_targets")).catch(e=>({error:e}))]);   /* latency: both at once; the targets make a tap instant */
+    if(r1.error) throw r1.error; D=r1.data||{}; tabBadgeCache={t:Date.now(),d:D};
+    if(!r2.error&&r2.data) window.__ftCoachTargets={t:Date.now(),d:r2.data}; }catch(e){ console.warn("coach checklist (run migrations_coach_checklist.sql)",e&&e.message); el.style.display="none"; return; }
   const items=coachTodo(D); const n=items.filter(i=>i.done).length, all=n===items.length;
   el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
     ${items.map(i=>`<button data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
   el.style.display="";
   el.querySelectorAll("[data-cgo]").forEach(b=>b.addEventListener("click",async()=>{ const tg=b.getAttribute("data-ctgt");
-    if(tg){ b.disabled=true; try{ const { data, error }=await store._sb.rpc("coach_todo_targets"); if(error) throw error; const ids=(data&&data[tg])||[]; if(ids.length){ if(tg==="calls"){ window.__ftCallGuide={eng:ids[0],t:Date.now()}; window.__ftCallGuideScrolled=false; toast("Pick a day this week for the call",2600); } openEngagement(ids[0]); return; } toast("All done ✓",1600); renderCoachChecklist(el); return; }catch(x){ console.warn("checklist target (run migrations_coach_checklist_targets.sql)",x&&x.message); b.disabled=false; } }
+    if(tg){ b.disabled=true; b.style.opacity=".55"; try{ const cached=window.__ftCoachTargets&&Date.now()-window.__ftCoachTargets.t<120000?window.__ftCoachTargets.d:null;   /* latency: no round trip on a tap */
+      let data=cached; if(!data){ const res=await store._sb.rpc("coach_todo_targets"); if(res.error) throw res.error; data=res.data; window.__ftCoachTargets={t:Date.now(),d:data}; }
+      window.__ftCoachTargets=null;   /* the coach is about to change something - fetch afresh next time Home draws */
+      const ids=(data&&data[tg])||[]; if(ids.length){ if(tg==="calls"){ window.__ftCallGuide={eng:ids[0],t:Date.now()}; window.__ftCallGuideScrolled=false; toast("Pick a day this week for the call",2600); } openEngagement(ids[0]); return; } toast("All done ✓",1600); renderCoachChecklist(el); return; }catch(x){ console.warn("checklist target (run migrations_coach_checklist_targets.sql)",x&&x.message); b.disabled=false; b.style.opacity=""; } }
     go(b.getAttribute("data-cgo")); }));   /* owner 2026-11-02: review / assign / calls / macros open the first trainee who still needs it */
   const hb=document.querySelector('#app-tabbar [data-go="home"]'); if(hb){ refreshTabBadges(); }
   if(all){ const ck=`ft-dcdone-coach-${ME.id}-${todayISO()}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){} playDayComplete(); } }
