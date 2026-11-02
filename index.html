@@ -3268,7 +3268,7 @@ function renderAppTabs(current){
   try{ const q=new URLSearchParams(location.search); const ck=q.get("checkout"); if(ck){ history.replaceState(null,"",location.pathname+location.hash); if(ck==="success") toast("Payment received - confirming with Stripe… it appears on your goal in a moment.",5000); else if(ck==="cancel") toast("Checkout cancelled - nothing was charged.",3500); } }catch(e){}   /* Item DM: back from Stripe Checkout */
   try{ const q=new URLSearchParams(location.search); const so=q.get("stripe"); if(so){ history.replaceState(null,"",location.pathname+location.hash); if(so==="return") toast("Back from Stripe - your payout status is on your Profile.",4000); else if(so==="refresh") toast("That Stripe link expired - tap Set up payouts again.",4000); } }catch(e){}   /* Item DU: back from Stripe onboarding */
   if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); checkStreakBadgeLevelUp(); }   // Item CY catch-up; Item BW level-up animation
-  setTimeout(ensurePushDefault,1500);   /* Item DO: push on by default (silent if already allowed, else one explained prompt) */
+  setTimeout(ensurePushDefault,1500); setTimeout(ensurePayoutsPrompt,4000);   /* Item ER: payouts prompt for coaches */   /* Item DO: push on by default (silent if already allowed, else one explained prompt) */
   try{ const tz=Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz&&tz!==ME.tz){ store._sb.rpc("set_my_tz",{p_tz:tz}).then(()=>{ ME.tz=tz; }); } }catch(e){}   // Item DI: the morning summary goes out at 08:00 in this zone
   try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
 }
@@ -3307,6 +3307,21 @@ async function pushUnsubscribe(){
 /* Item DO: push ON by default. Browsers require the person to allow notifications, so: already allowed →
    subscribe silently; not yet asked → one explained prompt ("Not now" re-asks after 7 days); opted out in
    Settings (push_prefs.all = false) → never re-subscribed; blocked in the phone → left alone. */
+/* Item ER: a coach whose Stripe payouts are not set up is asked once after sign-in (again after 3 days), so no release waits on onboarding. */
+async function ensurePayoutsPrompt(){
+  try{
+    if(!ME||roleOf()!=="coach"||!(STRIPE_LIVE||STRIPE_TEST)||window.__ftPushAsked) return;
+    let last=0; try{ last=+(localStorage.getItem("ft-payouts-ask")||0); }catch(e){}
+    if(Date.now()-last<3*86400000) return;
+    const { data:row }=await store._sb.from("coach_stripe_accounts").select("details_submitted,transfers_active").eq("coach_id",ME.id).maybeSingle();
+    if(row&&row.details_submitted&&row.transfers_active) return;
+    pwShow(`<div style="font-size:28px;margin-bottom:6px">💶</div><div style="font-weight:800;font-size:17px;margin-bottom:6px">${row?"Finish your payout setup":"Set up payouts"}</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Trainees pay a deposit that FormTrace holds and releases to you week by week. Set up payouts with Stripe so every delivered week reaches your bank - it takes a few minutes.</div>
+      <button class="btn primary" id="po-yes">${row?"Finish setup":"Set up payouts"}</button><button class="btn ghost" id="po-no" style="margin-top:8px">Not now</button>`);
+    $("#po-no").onclick=()=>{ try{ localStorage.setItem("ft-payouts-ask",String(Date.now())); }catch(e){} pwHide(); };
+    $("#po-yes").onclick=async()=>{ const b=$("#po-yes"); b.disabled=true; try{ const { data, error }=await store._sb.functions.invoke("connect-onboard",{body:{action:"onboard"}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(!data||!data.url) throw new Error("No link returned"); location.href=data.url; }catch(x){ console.error("payouts prompt",x); toast(x.message||"Couldn't open Stripe",4500); b.disabled=false; } };
+  }catch(e){ console.warn("payouts prompt",e&&e.message); }
+}
 async function ensurePushDefault(){
   try{
     if(!ME||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)) return;
@@ -3319,6 +3334,7 @@ async function ensurePushDefault(){
     pwShow(`<div style="font-size:28px;margin-bottom:6px">🔔</div><div style="font-weight:800;font-size:17px;margin-bottom:6px">Turn on notifications?</div>
       <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">${roleOf()==="coach"?"Know the moment a trainee accepts, pays, or sends a workout to review - and get a short summary each morning.":"Hear about offers, your coach's reviews and calls, friends' cheers - and get a short plan for your day each morning."} You can turn any of it off in Settings.</div>
       <button class="btn primary" id="pa-yes">Turn on</button><button class="btn ghost" id="pa-no" style="margin-top:8px">Not now</button>`);
+    window.__ftPushAsked=true;   /* Item ER: the payouts prompt waits for another sign-in */
     $("#pa-no").onclick=()=>{ try{ localStorage.setItem("ft-push-ask",String(Date.now())); }catch(e){} pwHide(); };
     $("#pa-yes").onclick=async()=>{ const b=$("#pa-yes"); b.disabled=true; try{ await pushSubscribe(false); pwHide(); toast("Notifications on ✓",1800); }catch(e){ try{ localStorage.setItem("ft-push-ask",String(Date.now())); }catch(_){} pwHide(); if(Notification.permission==="denied") toast("Notifications are blocked for this site - you can allow them later in Settings",4500); else toast(e.message||"Couldn't turn on notifications",3500); } };
   }catch(e){ console.error("push default",e); }
@@ -6558,13 +6574,19 @@ async function acceptOffer(offerId){
     /* Item BK: the engagement records what was accepted - weeks and the end date. */
       const engRow={offer_id:o.id,coach_id:o.coach_id,trainee_id:o.trainee_id,goal_title:o.title,status:"active"};
       if(o.length_weeks){ engRow.committed_weeks=o.length_weeks; engRow.committed_end_date=addDaysISO(todayISO(),7*o.length_weeks); }
-      await store.engagements.add(engRow);
+      const newEng=await store.engagements.add(engRow);
     // 3. close the goal + auto-decline the other pending offers on it
     if(o.listing_id){
       await store.listings.update(o.listing_id,{status:"closed"});
       const siblings=await store.offers.list({listing_id:o.listing_id});
       /* Latency: sibling declines in parallel rather than one at a time. */
       await Promise.all(siblings.filter(s=>s.id!==offerId && s.status==="pending").map(s=>store.offers.update(s.id,{status:"rejected"}).catch(e=>console.error("auto-decline",e))));
+    }
+    /* Item ER: under Stripe escrow, accepting goes straight to secure payment; the Payment card stays as the fallback */
+    if((STRIPE_LIVE||STRIPE_TEST)&&newEng&&newEng.id){
+      toast("Offer accepted ✓ - opening secure payment…",3000);
+      try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:newEng.id}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(data&&data.url){ location.href=data.url; return; } throw new Error("No payment link returned"); }
+      catch(x){ console.error("checkout after accept",x); toast("Accepted ✓ - pay from the goal's Payment card when you're ready.",4500); go("trainee-home"); return; }
     }
     // 4. into training
     toast("Offer accepted — engagement started ✓",3400);
@@ -12335,12 +12357,38 @@ async function openAssignBadgesSheet(c){
       toast("Badges saved ✓",1800); closeSheet(); renderAdmin();
     }catch(err){ console.error("set badges (run migrations_badges.sql)",err); toast(err.message||"Couldn't save",4000); btn.disabled=false; }
   });
-}async function renderAdmin(){
+}/* Item DP: the liability review triggers, with the live numbers behind them (admins). Any one over its line = review the liability plan. */
+async function renderAdminLiability(body){
+  const card=document.createElement("div"); card.className="card"; card.style.margin="0 0 12px";
+  card.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Loss-liability review</div><div style="font-size:12px;color:var(--muted)">Loading…</div>`;
+  body.appendChild(card);
+  try{
+    const { data:s, error }=await store._sb.rpc("admin_liability_stats"); if(error) throw error;
+    const eur=c=>"€"+(Number(c||0)/100).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2});
+    const last3=(s.last3_cents||[]).map(Number); const run3=last3.length===3&&last3.every(v=>v>500000);
+    const rows=[
+      ["Payment volume this month", eur(s.month_volume_cents)+` · ${s.payments_month||0} payment${s.payments_month===1?"":"s"}`, "over €10,000", Number(s.month_volume_cents)>1000000],
+      ["Last 3 months", last3.map(eur).join(" · ")||"-", "over €5,000 each month", run3],
+      ["Coaches", String(s.coaches||0), "over 25, or one you don't know personally", Number(s.coaches)>25],
+      ["Coaches outside Ireland", String(s.coaches_outside_ie||0), "any (new country)", Number(s.coaches_outside_ie)>0],
+      ["Refunds this quarter", eur(s.refunds_quarter_cents), "for context - refunds are not losses", false],
+      ["Dispute rate", "not tracked yet", "over 0.5% of payments in a month", null],
+      ["Losses", "not tracked yet", "any over €500, or over 2% of revenue a quarter", null]
+    ];
+    const over=rows.some(r=>r[3]===true);
+    card.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Loss-liability review</div>
+      <div style="font-size:12.5px;color:${over?"var(--red)":"var(--muted)"};margin-bottom:8px">${over?"<b>A trigger is over its line - review the liability plan.</b>":"All tracked numbers are under their review lines."} Also review before coach sign-up opens to the public, and every quarter.</div>
+      ${rows.map(r=>`<div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px"><div style="flex:1;min-width:0"><div style="font-weight:700">${r[0]}</div><div style="color:var(--faint);font-size:11.5px">Review if ${r[2]}</div></div><div style="text-align:right;color:${r[3]===true?"var(--red)":r[3]===null?"var(--faint)":"var(--ink)"};font-weight:700">${r[1]}${r[3]===true?" ⚠":r[3]===false?"":""}</div></div>`).join("")}
+      ${Number(s.month_volume_test_cents)?`<div style="font-size:11px;color:var(--faint);margin-top:6px">Test-mode deposits this month (not counted): ${eur(s.month_volume_test_cents)}</div>`:""}`;
+  }catch(e){ card.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Loss-liability review</div><div style="font-size:12px;color:var(--faint)">Not available yet (run migrations_payouts_prompt_liability_card.sql).</div>`; }
+}
+async function renderAdmin(){
   const body=$("#admin-body");body.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   let apps=[];
   try{ apps=await store.coachApps.pending(); }catch(err){ body.innerHTML=`<div class="empty" style="padding:60px 20px"><p>${escapeHtml(err.message||"Couldn't load applications")}</p></div>`; return; }
   $("#admin-sub").textContent=apps.length?`${apps.length} pending`:"Nothing pending";
   body.innerHTML="";
+  await renderAdminLiability(body);   // Item DP: liability review numbers
   await renderAdminErrors(body);
   await renderAdminInactivity(body);
   await renderAdminBadges(body);   // badges (BH/BQ)

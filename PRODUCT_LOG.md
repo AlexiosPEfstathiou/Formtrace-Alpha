@@ -24,7 +24,7 @@ the list below are done, superseded, or parked (bottom).
 8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
 9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
 10. **DY** Weekly releases - BUILT 2026-10-30 (owner setup done).  11. **DZ** Refunds - BUILT 2026-10-30 (owner: migration, deploy `refund-send`, webhook).
-12. **DP** Admin card with the liability review numbers; owner confirms the thresholds.
+12. **DP** Admin card - BUILT 2026-11-02 (migration to run); owner confirms the thresholds; disputes/losses wait for EJ.
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
@@ -340,7 +340,9 @@ Owner, 2026-10-30. Home shows a daily list that gets crossed off as the day goes
 
 ---
 
-## ER. Pay straight after accepting; Stripe setup straight after coach approval
+## ER. Pay straight after accepting; Stripe setup straight after coach approval - BUILT 2026-11-02 (run the migration)
+
+**Built 2026-11-02 (Lilly account):** (1) **Trainee:** under Stripe (switch on, or a test phone) accepting an offer opens Checkout at once for the new goal; if that fails, a toast points to the goal's Payment card. (2) **Coach:** `migrations_payouts_prompt_liability_card.sql` - approving a coach application pushes "You're approved - set up payouts" (only while Stripe payments are on; never blocks the approval); and in the app a coach without a finished Stripe setup gets a one-time prompt after sign-in (re-asked after 3 days; never on top of the notifications prompt) that opens Stripe onboarding. Gate green.
 
 Owner, 2026-10-30. (1) **Trainee:** accepting an offer should open the payment options at once (Pay by card -> Checkout), not leave the trainee on another screen looking for how to pay; under escrow the natural flow is accept -> Checkout in one tap, with the Payment card as the fallback. (2) **Coach:** when a coach profile is approved, send them straight to the Stripe payouts setup (`connect-onboard`) - a push + the Profile card opened, or a one-time full-screen prompt - so no release ever waits on onboarding. Not started.
 
@@ -810,7 +812,9 @@ rolled-back no-op status update on a real goal - it fails loudly if the bug rema
 close a week, confirm a friend - each must save.
 
 ---
-## DP. When and why to rethink the loss-liability plan
+## DP. When and why to rethink the loss-liability plan - ADMIN CARD BUILT 2026-11-02 (thresholds still to confirm)
+
+**Built 2026-11-02 (Lilly account):** Review screen card **Loss-liability review** from `admin_liability_stats()` (admins only; live money only, test deposits shown separately): volume this month and the last three months, coach count, coaches outside Ireland, refunds this quarter (context - not losses). **Dispute rate and losses show "not tracked yet"** - they need the chargeback item (EJ: dispute webhook). Any tracked number over its line turns the card red. Thresholds as proposed; owner to confirm.
 
 Owner, 2026-10-29, right after accepting platform liability for refunds and chargebacks
 (BI prerequisite 1): plan WHEN and WHY the decision must be revisited, and what scale
