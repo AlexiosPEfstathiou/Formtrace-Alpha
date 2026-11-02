@@ -318,6 +318,8 @@ Owner, 2026-10-30. Evaluate openart.ai (AI image/video generation) for: visual a
 
 ## EV. Onboarding walkthroughs ("walk me") for new users
 
+**Owner, 2026-11-02:** the **coach** walkthrough must tell coaches about the fast-review reward (EL): the "Reviews within a day" mark on their card and the faster payout (7 days instead of 14 for weeks where every review landed within 24 h).
+
 Owner, 2026-10-30. First-run guided tours per role: a few coach-marks / spotlight steps showing where things are (Home, Training, Goal / Open goals, Notifications, Social, Review; recording a session; the payment tracker). Skippable, replayable from Profile ("Show me around again"), one tour per major screen on first visit. Not started.
 
 ---
