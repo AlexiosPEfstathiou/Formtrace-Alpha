@@ -42,7 +42,7 @@ the list below are done, superseded, or parked (bottom).
 22. **CB** Launch timeline - revisit with pilot learnings.
 
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
-**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · **FF** weekly workout line + rest-day option · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
+**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · ~~FF~~ built 2026-11-02 · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
@@ -329,7 +329,9 @@ pitches - built; Notifications: built; Social: as above). Needs "seen" markers f
 
 ---
 
-## FF. Checklist: the workout line is weekly, with "I'll take a rest day"
+## FF. Checklist: the workout line is weekly, with "I'll take a rest day" - BUILT 2026-11-02
+
+**Built 2026-11-02:** the checklist's workout line reads **"Perform d/X workouts this week"** (this week's assigned sessions; tap → this week's calendar) with **"I'll take a rest day"** on the same line; it is ticked for the day by a session done today (the count rose since the first look today) or the rest-day tap; "week complete" when all are done. App only. Gate green.
 
 Owner, 2026-11-02 (test): the checklist said "Do today's 2 workouts" though the sessions
 were assigned **for the week**, not for today. Change the line to **"Perform 1/X workouts
