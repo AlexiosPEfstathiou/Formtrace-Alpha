@@ -91,7 +91,7 @@ real only after go-live below.
 
 - [ ] Sandbox: one test deposit and one coach onboarding, end to end
 - [ ] Weekly release and refunds built and tested (next DM parts)
-- [ ] Credit from a coach-ended goal applied at the next Checkout (PRODUCT_LOG FC)
+- [x] Credit from a coach-ended goal applied at the next Checkout (PRODUCT_LOG FC) - built 2026-11-02; test in the sandbox: end a paid goal as coach → trainee keeps credit → accept a new offer → Checkout shows the credit (or no Stripe page if it covers everything)
 - [ ] `release_hold_days` back to 14 (sandbox test used 0); `release_hold_fast_days` 7
 - [ ] BI prerequisites: VAT advice; coach countries (accounts are created in the coach's
       profile country, default IE)

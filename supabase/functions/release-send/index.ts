@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
   if (!rel || rel.status !== "queued") return ok("nothing to do");
 
   const { data: e } = await sb.from("engagements")
-    .select("id,coach_id,trainee_id,goal_title,stripe_payment_intent,deposit_livemode,deposit_currency").eq("id", rel.engagement_id).maybeSingle();
+    .select("id,coach_id,trainee_id,goal_title,stripe_payment_intent,deposit_livemode,deposit_currency,deposit_credit_cents").eq("id", rel.engagement_id).maybeSingle();
   if (!e) return ok("no engagement");
   const { data: acct } = await sb.from("coach_stripe_accounts").select("account_id,transfers_active,details_submitted,livemode").eq("coach_id", e.coach_id).maybeSingle();
 
@@ -45,19 +45,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!e.stripe_payment_intent) throw new Error("deposit has no PaymentIntent");
-    const pi = await stripe.paymentIntents.retrieve(e.stripe_payment_intent);
-    const charge = typeof pi.latest_charge === "string" ? pi.latest_charge : pi.latest_charge?.id;
-    if (!charge) throw new Error("deposit charge not found");
+    // FC: a week funded by the trainee's credit is paid from FormTrace's balance (that money arrived with an earlier goal's charge)
+    let charge: string | undefined;
+    if (rel.funding !== "credit") {
+      if (!e.stripe_payment_intent) throw new Error("deposit has no PaymentIntent");
+      const pi = await stripe.paymentIntents.retrieve(e.stripe_payment_intent);
+      charge = typeof pi.latest_charge === "string" ? pi.latest_charge : pi.latest_charge?.id;
+      if (!charge) throw new Error("deposit charge not found");
+    }
 
     const tr = await stripe.transfers.create({
       amount: rel.amount_cents,
       currency: rel.currency,
       destination: acct.account_id,
-      source_transaction: charge,
+      ...(charge ? { source_transaction: charge } : {}),
       transfer_group: `eng_${e.id}`,
       description: `FormTrace – ${e.goal_title || "Coaching goal"} – week of ${weekOf(rel.week_start)}`,
-      metadata: { release_id: rel.id, engagement_id: e.id, week_start: rel.week_start, coach_id: e.coach_id, gross_cents: String(rel.gross_cents), commission_cents: String(rel.commission_cents) },
+      metadata: { release_id: rel.id, engagement_id: e.id, week_start: rel.week_start, coach_id: e.coach_id, gross_cents: String(rel.gross_cents), commission_cents: String(rel.commission_cents), funding: rel.funding || "charge" },
     }, { idempotencyKey: `release_${rel.id}` });
 
     await sb.from("payment_releases").update({ status: "sent", stripe_transfer_id: tr.id, sent_at: new Date().toISOString(), error: null, attempts: rel.attempts + 1 }).eq("id", rel.id);

@@ -4376,12 +4376,12 @@ async function renderGoalEndBlock(card,e,role,holder,offer){
     if(e.end_kind!=="coach_ended"||!e.deposit_at) return;
     const { data:ch }=await store._sb.from("goal_end_choices").select("*").eq("engagement_id",e.id).maybeSingle();
     if(!ch) return;
-    const credit=Number(ch.price_cents)+Number(ch.processing_cents), refund=Number(ch.price_cents), fee=Number(ch.processing_cents);
+    const cb=Number(ch.credit_back_cents||0); const credit=Number(ch.price_cents)+Number(ch.processing_cents)+cb, refund=Number(ch.price_cents), fee=Number(ch.processing_cents);   /* FC: unused credit always returns as credit */
     if(ch.status==="pending"){
       box.innerHTML=isCoach
         ?`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">You ended this goal. Your trainee is choosing between ${eur(credit)} credit and a ${eur(refund)} refund for the unused weeks - credit if they don't choose by ${dday(ch.default_at)}.</div>`
         :`<div style="font-size:12.5px;color:var(--ink);font-weight:700;margin-bottom:6px">Your coach ended this goal. Choose what happens to the unused weeks:</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" data-ge="credit" style="width:auto">Keep ${eur(credit)} as credit</button><button class="btn sm ghost" data-ge="refund" style="width:auto">Refund ${eur(refund)} to my card</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" data-ge="credit" style="width:auto">Keep ${eur(credit)} as credit</button><button class="btn sm ghost" data-ge="refund" style="width:auto">Refund ${eur(refund)} to my card${cb?` + ${eur(cb)} credit`:""}</button></div>
           <div style="font-size:11.5px;color:var(--faint);margin-top:6px;line-height:1.45">Credit keeps the full ${eur(credit)} for your next goal. A refund returns ${eur(refund)}${fee?` - Stripe keeps its ${eur(fee)} card fee`:""}. No choice by ${dday(ch.default_at)} = credit.</div>`;
     } else {
       box.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${ch.status==="credit"
@@ -4425,7 +4425,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
                :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
     if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
   } else if(e.status==="active"){
-    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b>${e.deposit_at&&!e.deposit_amount?" (free code)":""}${e.deposit_processing>0?` incl. ${s.cur}${(e.deposit_processing/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} payment processing`:""} received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.${(s.releases||[]).length?` ${s.releases.filter(r=>r.status==="sent"||r.status==="skipped").length} of ${s.weeks||"?"} weeks released to your coach${s.releasedCents?` (${s.money(s.releasedCents/(e.deposit_currency==="jpy"?1:100))})`:""}.`:""}`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b>${e.deposit_at&&!e.deposit_amount&&!e.deposit_credit_cents?" (free code)":""}${e.deposit_credit_cents>0?` plus ${s.cur}${(e.deposit_credit_cents/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} paid with ${isCoach?"the trainee's":"your"} credit`:""}${e.deposit_processing>0?` incl. ${s.cur}${(e.deposit_processing/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} payment processing`:""} received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.${(s.releases||[]).length?` ${s.releases.filter(r=>r.status==="sent"||r.status==="skipped").length} of ${s.weeks||"?"} weeks released to your coach${s.releasedCents?` (${s.money(s.releasedCents/(e.deposit_currency==="jpy"?1:100))})`:""}.`:""}`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){
@@ -4451,7 +4451,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
   holder.innerHTML=""; holder.appendChild(card); renderGoalEndBlock(card,e,role,holder,s.o);   /* Item EK */
   const rpc=async(fn,msg)=>{ try{ const { error }=await store._sb.rpc(fn,{p_eng:e.id}); if(error) throw error; toast(msg,1800); renderPaymentTracker(holder,e,role,s.o); refreshNotifDot(); }catch(x){ console.error("payment "+fn+" (run migrations_payment_tracker.sql)",x); toast(x.message||"Couldn't update",3500); } };
   card.querySelectorAll("[data-pt]").forEach(b=>b.addEventListener("click",()=>{ b.disabled=true; const a=b.getAttribute("data-pt");
-    if(a==="card"){ (async()=>{ try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:e.id}}); if(error){ let msg=error.message; try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(_){} throw new Error(msg); } if(!data||!data.url) throw new Error("No checkout link returned"); location.href=data.url; }catch(x){ console.error("stripe checkout",x); toast(x.message||"Couldn't open checkout",4500); b.disabled=false; } })(); return; }   /* Item DM */
+    if(a==="card"){ (async()=>{ try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:e.id}}); if(error){ let msg=error.message; try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(_){} throw new Error(msg); } if(data&&data.paid_with_credit){ toast("Paid with your credit ✓",2600); renderPaymentTracker(holder,e,role,s.o); return; }   /* FC: credit covered it all - no Stripe page */ if(!data||!data.url) throw new Error("No checkout link returned"); location.href=data.url; }catch(x){ console.error("stripe checkout",x); toast(x.message||"Couldn't open checkout",4500); b.disabled=false; } })(); return; }   /* Item DM */
     if(a==="out"){ b.disabled=false; endGoalEarly(e,"cancelled",s.payout?null:"no_payment_details"); return; }
     if(a==="ask"){ rpc("request_payout_details","Asked your coach for payment details"); return; }
     if(a==="paid") rpc("mark_paid","Marked as paid - your coach will confirm"); else if(a==="recv") rpc("confirm_received","Payment confirmed ✓");
@@ -6675,7 +6675,7 @@ async function acceptOffer(offerId){
     /* Item ER: under Stripe escrow, accepting goes straight to secure payment; the Payment card stays as the fallback */
     if((STRIPE_LIVE||STRIPE_TEST)&&newEng&&newEng.id){
       toast("Offer accepted ✓ - opening secure payment…",3000);
-      try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:newEng.id}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(data&&data.url){ location.href=data.url; return; } throw new Error("No payment link returned"); }
+      try{ const { data, error }=await store._sb.functions.invoke("checkout-create",{body:{engagement_id:newEng.id}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(data&&data.paid_with_credit){ toast("Accepted ✓ - paid with your credit",3000); go("trainee-home"); return; }   /* FC */ if(data&&data.url){ location.href=data.url; return; } throw new Error("No payment link returned"); }
       catch(x){ console.error("checkout after accept",x); toast("Accepted ✓ - pay from the goal's Payment card when you're ready.",4500); go("trainee-home"); return; }
     }
     // 4. into training

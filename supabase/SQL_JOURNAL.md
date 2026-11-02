@@ -82,3 +82,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | EQ | `migrations_tab_badges.sql` | run ✓ (owner reported 2026-11-02; result not shown) | Expected: seen_column 1, functions 2. |
 | 2026-11-02 | ER + DP | `migrations_payouts_prompt_liability_card.sql` | run ✓ | approval_trigger 1, stats_function 1. |
 | 2026-11-02 | EK + EL | `migrations_coach_end_goal_fast_reviews.sql` (fixed version: function header on its own line) | run ✓ | functions 6, tables 2, fast_hold_days 7. |
+| 2026-11-02 | FC | `migrations_credit_at_checkout.sql` | given | Expected: new_columns 3, functions 5. Then redeploy checkout-create (JWT on), stripe-webhook (JWT off), release-send (JWT off). |

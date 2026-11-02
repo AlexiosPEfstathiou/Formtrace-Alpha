@@ -28,7 +28,7 @@ the list below are done, superseded, or parked (bottom).
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
-13b. **FC** Use the trainee's credit at the next Checkout (C) - must be done before go-live.
+13b. **FC** Use the trainee's credit at the next Checkout - BUILT 2026-11-02 (owner: migration + redeploy checkout-create, stripe-webhook, release-send).
 14. **DW** Live keys and go-live (O + C).
 15. **EG** Test payment, live, with the ED code.
 16. **EB** Flip `payments_via_stripe` to 1.
@@ -97,7 +97,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
-| 84 | **FC** Use the trainee's credit at the next Checkout - BEFORE GO-LIVE | Medium | checkout-create, webhook, release-send. |
+| 84 | **FC** Use the trainee's credit at the next Checkout - BUILT 2026-11-02 | - | Migration + redeploy 3 Edge Functions. |
 | 83 | **FB** Management calendar - every dated obligation in one place | Owner, later | First entries listed (FA, DP, DY, DX, BI, CZ, CE). |
 | 82 | **FA** REMINDER 30 Sep 2027 - formtrace.ie renewal (expires 30 Oct 2027) | Owner | Auto-renew, card, registrant, lock. |
 | 81 | **EG** Test payment between the owner's coach and trainee profiles (sandbox, then live with ED) | Owner + Claude | The end-to-end proof of escrow. |
@@ -262,7 +262,11 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
-## FC. Use the trainee's credit at the next Checkout - BEFORE GO-LIVE
+## FC. Use the trainee's credit at the next Checkout - BUILT 2026-11-02 (run the migration, redeploy 3 functions)
+
+**Built 2026-11-02 (Lilly account):** `checkout-create` reads the trainee's credit (same currency): covering price + payout costs → **no card payment**, the goal is paid at once (deposit_amount 0, deposit_credit_cents, processing = Connect costs only, ledger −credit, coach push, app shows "Paid with your credit"); otherwise the card pays the rest (Stripe's €0.50 minimum respected), the goal line says "less €X of your FormTrace credit", and the processing line is computed on the card part only. `stripe-webhook` records `deposit_credit_cents` and takes the credit off the ledger only when the deposit lands (an abandoned Checkout keeps it). `migrations_credit_at_checkout.sql`: payouts use **credit first** (`payment_releases.funding = credit`, paid by `release-send` from FormTrace's balance - no source_transaction), then the card charge; release cap and comp test include credit; **refunds** (`queue_refund`, copied + patched) return unused credit as credit and only card money to the card; the coach-ended choice (`queue_end_choice`, `_apply_end_choice`) keeps the credit part as credit in both options (`credit_back_cents`); a goal funded only by credit needs no choice. **Also closed a gap:** `deposit_processing` and `deposit_credit_cents` are now server-only like the other deposit fields. Gate green.
+
+**Original plan:**
 
 Follows EK part 1 (2026-11-02). Credit from a coach-ended goal sits in `trainee_credits` and
 is shown to the trainee, but is **not yet applied**. To build: `checkout-create` reads the

@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
       if (s.payment_status === "paid" || s.payment_status === "no_payment_required") {
         const free = s.payment_status === "no_payment_required" || !s.amount_total;
         const processing = Number((s.metadata && s.metadata.processing_cents) || 0) || 0;   // EA: the pass-through line, kept apart from the price
+        const credit = Number((s.metadata && s.metadata.credit_cents) || 0) || 0;           // FC: the trainee's credit applied to this goal
         const id = (s.metadata && s.metadata.engagement_id) || s.client_reference_id;
         const pi = typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent?.id ?? null;
         const { data: e, error: updErr } = await sb.from("engagements")
@@ -34,6 +35,7 @@ Deno.serve(async (req) => {
             deposit_at: new Date().toISOString(),
             deposit_amount: s.amount_total ?? 0,                 // 0 = comp (ED): DY/DZ move the steps, not money
             deposit_processing: free ? 0 : processing,          // EA: excluded from releases and refunds
+            deposit_credit_cents: credit,                        // FC: paid with credit (released first, from the balance)
             deposit_currency: s.currency,
             deposit_livemode: s.livemode,
             stripe_checkout_session: s.id,
@@ -42,6 +44,10 @@ Deno.serve(async (req) => {
           .eq("id", id).is("deposit_at", null)          // idempotent: Stripe may retry
           .select("id,coach_id,trainee_id,goal_title").maybeSingle();
         if (updErr) throw updErr;                        // DB failure -> 500 below, so Stripe retries
+        if (e && credit > 0) {                            // FC: take the credit off the balance now that the deposit landed (once: only the first update matches)
+          const { error: crErr } = await sb.from("trainee_credits").insert({ trainee_id: e.trainee_id, amount_cents: -credit, currency: s.currency, used_engagement: e.id, note: "credit used for this goal" });
+          if (crErr) console.error("stripe-webhook credit ledger", crErr);
+        }
         if (e) {
           try {
           const { data: p } = await sb.from("profiles").select("display_name").eq("id", e.trainee_id).maybeSingle();
