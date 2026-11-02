@@ -12,12 +12,11 @@ the list below are done, superseded, or parked (bottom).
 **A. Next session - foundations**
 1. **DV** Outside-activity check (O) - first: it gates money and the domain's ownership.
 2. **BJ** Choose the name (O) - **settled by the domain: the name stays FormTrace** (logo / visual identity still open).
-3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered and active.**  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
+3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not editable yet - EF waits.  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
 4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
 5. **DX** Terms of Service page - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
-6. **Pending SQL** (O): `migrations_stripe_checkout.sql`, `migrations_stripe_connect.sql`,
-   `migrations_body_achievements_recheck.sql` (SQL journal: given).
+6. **Pending SQL** - DONE 2026-10-30 (checkout, connect and body-achievement migrations confirmed run; SQL journal).
 7. **Stripe sandbox setup** (O) - DONE 2026-10-30 (all functions deployed, all migrations run, coach onboarded in sandbox): STRIPE_INTEGRATION_TODO.md steps 1-9 - three Edge
    Functions, webhook endpoint, secrets, **EC** Connect branding.
 
@@ -359,7 +358,9 @@ EG step 3 finding. Tapping the "EUR 25 released" push opened `https://alexiospef
 
 ---
 
-## EO. Tracker map: pick the escrow variant per goal, not from the global switch
+## EO. Tracker map: pick the escrow variant per goal, not from the global switch - FIXED 2026-11-02
+
+**Fix 2026-11-02 (Lilly account):** the map variant now follows the goal: **escrow map** (Deposit is the payment, no manual Paid step, no "Deposit skipped" caption) when the goal has a Stripe deposit, or when Stripe is on and the goal was not paid another way; **pilot map** otherwise - so directly-paid goals stay right after the switch flips. Three places in the tracker; index.html, gate green.
 
 EG step 2 finding, 2026-10-30. A Stripe-paid goal while `payments_via_stripe = 0` shows the pilot map: Deposit and Paid both ticked, caption "Deposit skipped during the pilot - paid directly to the coach", although the text below correctly says the deposit is held by FormTrace. Fix: the map variant should follow the goal (`e.deposit_at` present -> escrow map: Deposit = the payment step, no manual Paid step) with the switch only deciding what *new* goals offer. Small, index.html. Also log: Checkout settings changed by the owner 2026-10-30 - Adaptive Pricing off (EUR only; GBP had been offered to a UK browser), payment methods narrowed to cards + wallets. Not started.
 
@@ -371,7 +372,9 @@ Owner, 2026-10-30. When a trainee accepts an offer (and, under escrow, once the 
 
 ---
 
-## EM. Bug: "Post your next goal" card stays after a new goal is posted
+## EM. Bug: "Post your next goal" card stays after a new goal is posted - FIXED 2026-11-02
+
+**Fix 2026-11-02 (Lilly account):** the card (`renderHomeNextGoal`) hid only when the trainee had an **active** goal with a coach; a newly posted goal is an **open listing**, not an active goal. It now also hides while the trainee has an open listing. index.html, gate green.
 
 Owner, 2026-10-30, found during EG step 1. Trainee Notifications: the card "AFTER '<goal>' - Take a breath - and when you're ready, the next one. [Post your next goal -> ] [See offers]" remained after the trainee had posted a new goal. Expected: the card disappears once an open goal exists (or once the new goal is posted). Check the card's condition in the notifications renderer (probably keyed on the ended goal, not on "has an open goal"). Queued by the owner; not started.
 

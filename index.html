@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4277,13 +4277,13 @@ async function renderPaymentTracker(holder,eng,role,offer){
   const day=t=>t?fmtDay(String(t).slice(0,10)):"";
   const steps=[
     {k:"acc",l:"Accepted",st:"done",d:day(e.started_at||e.created_at)},
-    {k:"dep",l:"Deposit",st:e.deposit_at?"done":(STRIPE_LIVE?"now":"skip"),d:e.deposit_at?day(e.deposit_at):(STRIPE_LIVE?"":"pilot")},
+    {k:"dep",l:"Deposit",st:e.deposit_at?"done":((STRIPE_LIVE&&!e.paid_at&&!e.received_at)?"now":"skip"),d:e.deposit_at?day(e.deposit_at):((STRIPE_LIVE&&!e.paid_at&&!e.received_at)?"":"pilot")},
     {k:"paid",l:"Paid",st:(e.received_at||e.deposit_at)?"done":"now",d:e.deposit_at?day(e.deposit_at):(e.received_at?day(e.received_at):(e.paid_at?"awaiting":""))},
     {k:"trn",l:"Training",st:e.status==="active"?((e.received_at||e.deposit_at)?"now":""):"done",d:e.status==="active"&&s.weekNow?`wk ${s.weekNow}/${s.weeks}`:""},
     {k:"end",l:s.ended?"Ended":"Complete",st:e.status==="completed"?"done":(s.ended?(s.refundDue>0&&!e.refund_received_at?"warn":"done"):""),d:e.completed_at?day(e.completed_at):""}
   ];
   { const ps=steps.find(x=>x.k==="paid"); if(ps&&(e.received_at||e.deposit_at)&&e.status==="active") ps.st="done"; }
-  if(STRIPE_LIVE&&!e.paid_at&&!e.received_at){ const i=steps.findIndex(x=>x.k==="paid"); if(i>=0) steps.splice(i,1); }   /* DU: escrow - no separate manual payment step */
+  if(e.deposit_at||(STRIPE_LIVE&&!e.paid_at&&!e.received_at)){ const i=steps.findIndex(x=>x.k==="paid"); if(i>=0) steps.splice(i,1); }   /* DU + EO: escrow goals (Stripe deposit, or Stripe on and not paid another way) have no manual payment step */
   let now="", actions="";
   const who=isCoach?"your trainee":"your coach";
   if(!e.paid_at&&!e.received_at&&!e.deposit_at){
@@ -4325,7 +4325,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
   const card=document.createElement("div"); card.className="card"; card.style.marginTop="12px";
   card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="eyebrow">Payment</div><div style="font-size:12px;color:var(--muted)">${s.money(s.total)}</div></div>
     <div class="pt-steps">${steps.map(x=>`<div class="pt-step ${x.st}"><div class="pt-dot">${x.st==="done"?"✓":x.st==="skip"?"–":x.st==="warn"?"!":""}</div><div class="pt-lbl">${x.l}</div><div class="pt-date">${escapeHtml(x.d||"")}</div></div>`).join("")}</div>
-    ${STRIPE_LIVE?"":`<div style="font-size:11px;color:var(--faint);text-align:center">Deposit skipped during the pilot - paid directly to the coach</div>`}
+    ${(e.deposit_at||(STRIPE_LIVE&&!e.paid_at&&!e.received_at))?"":`<div style="font-size:11px;color:var(--faint);text-align:center">Deposit skipped during the pilot - paid directly to the coach</div>`}
     <div class="pt-now">${now}${actions?`<div style="display:flex;gap:8px;margin-top:8px">${actions}</div>`:""}</div>${editor}`;
   holder.innerHTML=""; holder.appendChild(card);
   const rpc=async(fn,msg)=>{ try{ const { error }=await store._sb.rpc(fn,{p_eng:e.id}); if(error) throw error; toast(msg,1800); renderPaymentTracker(holder,e,role,s.o); refreshNotifDot(); }catch(x){ console.error("payment "+fn+" (run migrations_payment_tracker.sql)",x); toast(x.message||"Couldn't update",3500); } };
@@ -4671,6 +4671,7 @@ function streakGraceCopy(streak, pendingOffer){
 async function renderHomeNextGoal(el, engs){
   if(!el||!ME||roleOf()!=="trainee") return; el.style.display="none"; el.innerHTML="";
   const list=engs||[]; if(list.some(e=>e.status==="active")) return;
+  try{ const { data }=await store._sb.from("listings").select("id").eq("trainee_id",ME.id).eq("status","open").limit(1); if((data||[]).length) return; }catch(e){}   /* Item EM: a new goal is posted - the card has done its job */
   const done=list.filter(e=>e.status==="completed"&&e.completed_at).sort((a,b)=>new Date(b.completed_at)-new Date(a.completed_at));
   if(!done.length) return;
   const last=done[0]; const days=Math.floor((Date.now()-new Date(last.completed_at).getTime())/86400000);
