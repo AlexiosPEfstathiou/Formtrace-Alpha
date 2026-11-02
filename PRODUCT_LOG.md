@@ -47,7 +47,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
-**Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement.
+**Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
 traffic grows). **Blocked:** **CX** iPhone (no device) · **AA** / **AH** (need a repro).
@@ -98,6 +98,8 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 93 | **FL** Points for completing Home tasks, spent on privileges / looks - explore | Decision + medium | Non-cash; earning rules that resist gaming. |
+| 92 | **FK** Smartwatch connectivity - steps and health metrics | Medium-large | Apple Health / Health Connect need a native app; or an aggregator API. |
 | 91 | **FJ** BUG: Goal tab card stale after a pitch arrives (until reload); Goal badge = offers to answer | Small | Refresh on focus / push / tab open. |
 | 90 | **FI** BUG: coach ended a goal right after acceptance - trainee saw nothing about credit/refund | Small | Check paid vs unpaid; in-app card either way. |
 | 89 | **FH** Coach daily checklist on Home (+ Home tab badge) | Medium + decision | Items list to agree. |
@@ -270,6 +272,34 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## FL. Points for completing Home tasks - spent later on privileges or looks
+
+Owner, 2026-11-02 - explore. Trainees (and coaches?) earn **points** for completing the
+items on their Home checklist (ES / FH) - e.g. a point per item, a bonus for "Day complete",
+more for streaks - and spend them later on **privileges** (e.g. priority on pitches, an
+extra free postponement, a profile highlight) or **aesthetic add-ons** (avatar frames,
+colour themes, badge styles, celebration animations). To decide: who earns (trainees only,
+or coaches too), earning rules that cannot be gamed (self-reported ticks like sleep earn
+little or nothing), whether points ever touch money (keep them non-cash - no value, no
+transfer, no cash-out - to stay clear of e-money rules), and the first rewards catalogue.
+Ties to achievements (CY) and the rewards plan (BW / BR / BS). Not started.
+
+---
+
+## FK. Smartwatch connectivity - steps and other health metrics
+
+Owner, 2026-11-02. Log **steps** and other health metrics (sleep, heart rate, active
+calories, workouts, weight from a smart scale) from the trainee's smartwatch automatically.
+Routes: **Apple Health** (iPhone, Apple Watch and most watches that sync to it) and **Google
+Health Connect** (Android, Wear OS, Samsung, Fitbit, Garmin via their apps) - both are read
+on the phone and **need a native app wrapper**; a plain web app (PWA) cannot read them.
+Alternatives: brand cloud APIs (Fitbit Web API, Garmin Health API, Oura, Whoop, Polar) or an
+aggregator service (e.g. Terra, Vital / Junction) that connects many at once from the web.
+Uses: auto-tick "Slept 8 hours" and a steps item on the checklist (ES), the coach's view of
+the trainee's activity, achievements. Decide with the native-app question; health data is
+special-category under GDPR - explicit consent and the privacy notice. Not started.
+
+---
 ## FJ. BUG: the Goal tab shows a stale card after a pitch arrives (until a reload) - FIXED 2026-11-02 (run the small migration)
 
 **Cause found 2026-11-02:** not a stale cache - the Goal tab has two views, **My goals** and **Offers**; after posting a goal the app switches to My goals and stays there for the session, while a new pitch lives in Offers (a reload opens Offers, the default - the "pitched" look). **Fix:** a goal card with offers waiting shows **"Answer N offer(s)"** (and the card itself is tappable) → Offers for that goal; opening the Goal tab with offers waiting lands on **Offers** (except straight after posting); returning to the app refreshes the badges and, if on screen, the Goal list. **Goal badge = offers waiting for an answer** (`my_tab_badges()` gains `to_answer`; `migrations_goal_badge_to_answer.sql`). Gate green.
@@ -451,6 +481,8 @@ Owner, 2026-10-30. Umbrella for the domain work once formtrace.ie resolves: (1) 
 
 ## EW. Explore openart.ai for the app's look, videos and an animated persona
 
+**Owner, 2026-11-02:** the aim is to make the app **look more professional and aesthetically pleasing** - explore what openart.ai offers for that (icons, illustrations, backgrounds, onboarding art, short animations, a brand persona), licence terms for commercial use, and how it fits the brand work (BJ) and the signature gold `#F0D231`.
+
 Owner, 2026-10-30. Evaluate openart.ai (AI image/video generation) for: visual assets (icons, hero images, exercise illustrations, achievement art), short videos for onboarding / marketing, and an animated persona that talks the trainee through the day's checklist (**ES**). Check licence terms for commercial use, style consistency, cost per asset, and whether generated faces/bodies are acceptable for a fitness brand. Output: a short recommendation + sample assets. Not started.
 
 ---
@@ -470,6 +502,8 @@ Owner, 2026-10-30. In the workout player: a rest timer between exercises/sets (c
 ---
 
 ## ET. Macro logging once: connect MacroFactor or a popular alternative
+
+**Owner, 2026-11-02:** explore **food-logger apps that can give FormTrace an API**, so trainees keep using the app they like **through** FormTrace (their macros flow in, no double logging). Candidates: **Yazio**, **MacroFactor**, and others (Cronometer, MyFitnessPal, Lose It!, FatSecret). For each: public / partner API or none, what data (calories, macros, weight), how a user links their account (OAuth), cost and terms; fallback = the phone's health platform (Apple Health / Health Connect) which most of these write to - see FK.
 
 Owner, 2026-10-30. Trainees should log macros in one place. Investigate: MacroFactor (no public API today - check; export/import via CSV or Apple Health / Health Connect as the bridge), Cronometer and MyFitnessPal APIs (partner programmes), and the platform route (Apple HealthKit nutrition + Google Health Connect) that any of these apps write to. Likely answer: read nutrition from HealthKit / Health Connect, which needs a native wrapper (not available to a plain PWA) - tie to the native-app decision. Not started.
 
