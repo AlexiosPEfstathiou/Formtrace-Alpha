@@ -3366,7 +3366,7 @@ async function refreshTabBadges(current){
     const fresh=current==="market"||current==="listings"||current==="trainee-home"||current==="intouch";
     if(fresh||tabBadgeCache==null||Date.now()-tabBadgeCache.t>60000){ const { data, error }=await store._sb.rpc("my_tab_badges"); if(error) throw error; tabBadgeCache={t:Date.now(),d:data||{}}; }
     const D=tabBadgeCache.d; const setDot=(go_,v)=>{ const btn=document.querySelector(`#app-tabbar [data-go="${go_}"]`); if(!btn) return; let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); } const n=Number(v)||0; dot.textContent=n>99?"99+":String(n); dot.style.display=n?"":"none"; };
-    if(coach){ setDot("market",D.unpitched); setDot("trainee-home",(Number(D.to_assign)||0)+(Number(D.to_review)||0)); setDot("home",coachTodo(D).filter(i=>!i.done).length); }   /* Item FD: sessions to assign + to review; FH: Home = checklist items not done */
+    if(coach){ setDot("market",D.unpitched); setDot("trainee-home",(Number(D.to_assign)||0)+(Number(D.to_review)||0)); setDot("home",coachTodo(D).reduce((s,i)=>s+(i.done?0:(i.weight||1)),0)); }   /* Item FD: sessions to assign + to review; FH: Home = checklist items not done */
     else setDot("listings",D.to_answer!=null?D.to_answer:D.unseen);   /* Item FJ: offers waiting for an answer */
     setDot("intouch",D.social);   /* Item FG: friend requests + friends' achievements + congratulations */
 
@@ -3859,10 +3859,11 @@ function coachTodo(D){
   items.push({k:"review",t:"Review submitted sessions",sub:n("to_review")?`${n("to_review")} waiting`:"",done:n("to_review")===0,go:"trainee-home"});
   items.push({k:"assign",t:"Assign this week's sessions",sub:n("to_assign")?`${n("to_assign")} to assign`:"",done:n("to_assign")===0,go:"trainee-home"});
   items.push({k:"counters",t:"Answer counter-offers",sub:n("counters")?`${n("counters")} waiting`:"",done:n("counters")===0,go:"market"});
-  items.push({k:"calls",t:"Arrange first calls with new trainees",sub:n("first_calls")?`${n("first_calls")} to arrange`:"",done:n("first_calls")===0,go:"trainee-home"});
+  { const wc=D.weekly_calls!=null?n("weekly_calls"):n("first_calls"); items.push({k:"calls",t:"Arrange your weekly calls with each trainee",sub:wc?`${wc} to arrange`:"",done:wc===0,go:"trainee-home",weight:Math.max(1,wc)}); }   /* owner 2026-11-02: one count per trainee */
   items.push({k:"macros",t:"Set this week's calorie goals",sub:n("macros_missing")?`${n("macros_missing")} trainee${n("macros_missing")===1?"":"s"} without one`:"",done:n("macros_missing")===0,go:"trainee-home"});
   if(STRIPE_LIVE||STRIPE_TEST) items.push({k:"payouts",t:"Finish Stripe payout setup",sub:D.payouts_ready?"":"Profile → Get paid with Stripe",done:!!D.payouts_ready,go:"profile"});
   items.push({k:"market",t:"Check Open goals for new opportunities",sub:n("unpitched")&&!coachMarketCheckedToday()?`${n("unpitched")} new`:"",done:n("unpitched")===0||coachMarketCheckedToday(),go:"market"});
+  for(const it of items){ if(["review","assign","calls","macros"].includes(it.k)) it.tgt=it.k; }   /* owner 2026-11-02: tap = the next trainee who needs it */
   return items;
 }
 async function renderCoachChecklist(el){
@@ -3871,9 +3872,11 @@ async function renderCoachChecklist(el){
   const items=coachTodo(D); const n=items.filter(i=>i.done).length, all=n===items.length;
   el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
-    ${items.map(i=>`<button data-cgo="${i.go}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
+    ${items.map(i=>`<button data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
   el.style.display="";
-  el.querySelectorAll("[data-cgo]").forEach(b=>b.addEventListener("click",()=>go(b.getAttribute("data-cgo"))));
+  el.querySelectorAll("[data-cgo]").forEach(b=>b.addEventListener("click",async()=>{ const tg=b.getAttribute("data-ctgt");
+    if(tg){ b.disabled=true; try{ const { data, error }=await store._sb.rpc("coach_todo_targets"); if(error) throw error; const ids=(data&&data[tg])||[]; if(ids.length){ openEngagement(ids[0]); return; } toast("All done ✓",1600); renderCoachChecklist(el); return; }catch(x){ console.warn("checklist target (run migrations_coach_checklist_targets.sql)",x&&x.message); b.disabled=false; } }
+    go(b.getAttribute("data-cgo")); }));   /* owner 2026-11-02: review / assign / calls / macros open the first trainee who still needs it */
   const hb=document.querySelector('#app-tabbar [data-go="home"]'); if(hb){ refreshTabBadges(); }
   if(all){ const ck=`ft-dcdone-coach-${ME.id}-${todayISO()}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){} playDayComplete(); } }
 }

@@ -85,5 +85,6 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | FC | `migrations_credit_at_checkout.sql` | run ✓ | new_columns 3, functions 5. checkout-create, stripe-webhook, release-send redeployed (owner reported). |
 | 2026-11-02 | FJ | `migrations_goal_badge_to_answer.sql` | run ✓ | has_to_answer = true. |
 | 2026-11-02 | FD | `migrations_trainees_badge.sql` | run ✓ | has_new_counts = true. |
-| 2026-11-02 | FG | `migrations_social_badge.sql` | given | Expected: has_social true, profiles_unset 0. |
-| 2026-11-02 | FH | `migrations_coach_checklist.sql` | given | Run after the social badge one. Expected: has_coach_counts = true. |
+| 2026-11-02 | FG | `migrations_social_badge.sql` | run ✓ (implied) | The coach checklist migration reads social_seen_at and ran cleanly. |
+| 2026-11-02 | FH | `migrations_coach_checklist.sql` | run ✓ | has_coach_counts = true. |
+| 2026-11-02 | FH | `migrations_coach_checklist_targets.sql` | given | Expected: has_weekly_calls true, has_targets true. |
