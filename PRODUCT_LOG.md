@@ -41,7 +41,7 @@ the list below are done, superseded, or parked (bottom).
 20. **BP** Seed trainee goals (O).  21. **BL** First successful real transaction.
 22. **CB** Launch timeline - revisit with pilot learnings.
 
-**Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027).
+**Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** **EK** coach-ends-goal path (credit or refund-less-fee; fee TBD by owner) · **EL** early review incentive (decision pending).
@@ -97,6 +97,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 83 | **FB** Management calendar - every dated obligation in one place | Owner, later | First entries listed (FA, DP, DY, DX, BI, CZ, CE). |
 | 82 | **FA** REMINDER 30 Sep 2027 - formtrace.ie renewal (expires 30 Oct 2027) | Owner | Auto-renew, card, registrant, lock. |
 | 81 | **EG** Test payment between the owner's coach and trainee profiles (sandbox, then live with ED) | Owner + Claude | The end-to-end proof of escrow. |
 | 80 | **EF** Point the domain at GitHub Pages, Supabase and Stripe | Small | New origin: installs and push must be redone - before pilot invites. |
@@ -260,6 +261,25 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## FB. Management calendar - every dated obligation in one place
+
+Owner, 2026-11-02: "We will make a management calendar later." The product log records
+dates but sends no reminders. A calendar for FormTrace's dated obligations, on the
+**formtrace.ie** account (Zoho, EH) so it stays with the business, not with a personal or
+Lilly calendar. **First entries, gathered from the log:**
+| When | What | Item |
+|---|---|---|
+| 30 Sep 2027 | formtrace.ie renewal check (expires 30 Oct 2027) | FA |
+| Every quarter from go-live | Loss-liability review against the triggers | DP |
+| Before go-live | Restore `release_hold_days` to 14 (0 for the sandbox test) | DY |
+| Before go-live | Terms reviewed by a lawyer; 28 bracketed items resolved | DX |
+| When traffic grows / before wider launch | VAT advice | BI |
+| One month after go-live | Achievement tiers review | CZ |
+| Yearly | Stripe and Supabase key review; VAPID key safe in the password manager | CE |
+Decide later: the tool (Zoho Calendar with the email, or another), who is invited, and
+whether the app's admin card (DP) links to it. Not started.
+
+---
 ## FA. REMINDER 30 Sep 2027 - formtrace.ie renewal (expires 30 Oct 2027)
 
 Owner, 2026-11-02: the domain **formtrace.ie** (Blacknight, Domain #257640) expires on
