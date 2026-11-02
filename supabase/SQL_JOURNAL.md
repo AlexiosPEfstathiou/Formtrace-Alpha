@@ -86,3 +86,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | FJ | `migrations_goal_badge_to_answer.sql` | run ✓ | has_to_answer = true. |
 | 2026-11-02 | FD | `migrations_trainees_badge.sql` | run ✓ | has_new_counts = true. |
 | 2026-11-02 | FG | `migrations_social_badge.sql` | given | Expected: has_social true, profiles_unset 0. |
+| 2026-11-02 | FH | `migrations_coach_checklist.sql` | given | Run after the social badge one. Expected: has_coach_counts = true. |

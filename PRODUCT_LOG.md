@@ -42,7 +42,7 @@ the list below are done, superseded, or parked (bottom).
 22. **CB** Launch timeline - revisit with pilot learnings.
 
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
-**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · ~~FF~~ built 2026-11-02 · ~~FD~~ built 2026-11-02 · ~~FG~~ badges built 2026-11-02 except Home (needs FH) · **FH** coach checklist (items to agree).
+**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · ~~FF~~ built 2026-11-02 · ~~FD~~ built 2026-11-02 · ~~FG~~ badges built 2026-11-02 except Home (needs FH) · ~~FH~~ coach checklist built 2026-11-02.
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
@@ -300,7 +300,9 @@ choice; unpaid: "nothing was charged"), on the Goal tab and in Notifications. No
 
 ---
 
-## FH. Coach daily checklist on Home (and its tab badge)
+## FH. Coach daily checklist on Home (and its tab badge) - BUILT 2026-11-02 (run the migration)
+
+**Owner's items, 2026-11-02:** review submitted sessions · assign this week's sessions · answer counter-offers · arrange first calls with new trainees · finish Stripe payout setup · check Open goals for new opportunities · **assign this week's calorie goal to each trainee** (new). **Built:** `migrations_coach_checklist.sql` - `my_tab_badges()` gains `counters`, `first_calls` (goals started in the last 14 days with no call proposed/booked), `macros_missing` (no calorie goal for this week), `payouts_ready`. App: a "Today" card on the coach's Home (`renderCoachChecklist`, same look as the trainee's): each item ticks from data, taps go to the right tab; Stripe item only once Stripe is on; "Check Open goals" ticks when the tab was opened today or nothing is new; all done → Day complete once a day. **Home tab badge = items not done** (same function, `coachTodo`). Gate green.
 
 Owner, 2026-11-02. The coach's Home needs its own daily checklist, like the trainee's (ES),
 and the **Home tab badge** = the number of items not yet done. Candidate items (to agree):
@@ -311,7 +313,7 @@ once-a-day "day complete". Not started - the items list is a decision for the ow
 
 ---
 
-## FG. Badges on every tab (coach first) - SOCIAL + TRAINEES BUILT 2026-11-02 (Home waits for FH)
+## FG. Badges on every tab (coach first) - ALL BUILT 2026-11-02 (Home via FH)
 
 **Built 2026-11-02:** `migrations_social_badge.sql` - `profiles.social_seen_at`, `mark_social_seen()`; `my_tab_badges()` gains **social** = friend requests waiting for my yes (they count until answered) + friends' achievements earned since I last opened Social + congratulations (`celebrations`) received since then. Everyone starts "seen now". App: the **Social** tab shows it for coach and trainee; opening Social marks it seen. Trainees badge built in FD; Open goals in EQ; Goal (trainee) in FJ. **Home** badge waits for the coach checklist (FH).
 
