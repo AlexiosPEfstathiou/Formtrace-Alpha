@@ -24,7 +24,7 @@ the list below are done, superseded, or parked (bottom).
 8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
 9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
 10. **DY** Weekly releases - BUILT 2026-10-30 (owner setup done).  11. **DZ** Refunds - BUILT 2026-10-30 (owner: migration, deploy `refund-send`, webhook).
-12. **DP** Admin card - BUILT 2026-11-02 (migration to run); owner confirms the thresholds; disputes/losses wait for EJ.
+12. **DP** Admin card - BUILT 2026-11-02 (migration run); owner confirms the thresholds; disputes/losses wait for EJ.
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
@@ -340,7 +340,7 @@ Owner, 2026-10-30. Home shows a daily list that gets crossed off as the day goes
 
 ---
 
-## ER. Pay straight after accepting; Stripe setup straight after coach approval - BUILT 2026-11-02 (run the migration)
+## ER. Pay straight after accepting; Stripe setup straight after coach approval - BUILT 2026-11-02 (migration run)
 
 **Built 2026-11-02 (Lilly account):** (1) **Trainee:** under Stripe (switch on, or a test phone) accepting an offer opens Checkout at once for the new goal; if that fails, a toast points to the goal's Payment card. (2) **Coach:** `migrations_payouts_prompt_liability_card.sql` - approving a coach application pushes "You're approved - set up payouts" (only while Stripe payments are on; never blocks the approval); and in the app a coach without a finished Stripe setup gets a one-time prompt after sign-in (re-asked after 3 days; never on top of the notifications prompt) that opens Stripe onboarding. Gate green.
 

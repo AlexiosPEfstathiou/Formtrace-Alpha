@@ -80,4 +80,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-10-30 | DY test | simulated `week_closures` insert (this week) + `select public.queue_weekly_releases()` | run ✔ | 1 queued -> sent (tr_...). Rows deleted at step 6. |
 | 2026-11-02 | EN | `migrations_first_call_push.sql` | run ✓ (owner reported 2026-11-02; result not shown) | Expected: goals_marked = number of existing goals, triggers = 2. |
 | 2026-11-02 | EQ | `migrations_tab_badges.sql` | run ✓ (owner reported 2026-11-02; result not shown) | Expected: seen_column 1, functions 2. |
-| 2026-11-02 | ER + DP | `migrations_payouts_prompt_liability_card.sql` | given | Expected: approval_trigger 1, stats_function 1. |
+| 2026-11-02 | ER + DP | `migrations_payouts_prompt_liability_card.sql` | run ✓ | approval_trigger 1, stats_function 1. |
