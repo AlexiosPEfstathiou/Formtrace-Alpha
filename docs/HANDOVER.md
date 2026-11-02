@@ -64,7 +64,7 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   card · EO payment map per goal · EN first-call push · EQ tab badges · ER pay straight after
   accept + payouts prompt for coaches · DP admin liability card (disputes/losses wait for EJ).
 - **Decided:** EK refund fee = costs only · EL = "Reviews within a day" mark + 7-day release.
-- **Built:** ES daily checklist on Home (app only).
+- **Built:** ES daily checklist on Home (app only) · **EK** coach ends a goal (trainee: credit or costs-only refund; default credit after 14 days) · **EL** "Reviews within a day" mark + 7-day release · **FC** credit used at the next Checkout (payouts credit-first from the balance; refunds return unused credit as credit; deposit_processing/credit now server-only). All migrations run; checkout-create, stripe-webhook, release-send redeployed. **Next: a sandbox test of the credit path.**
 - Owner skipped group 2 (owner tasks) for now; working through the backlog next.
 - Logged: FA renewal reminder 30 Sep 2027 · FB management calendar (later).
 - Always check the log's highest item code before allocating (both accounts write items).

@@ -28,7 +28,7 @@ the list below are done, superseded, or parked (bottom).
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
-13b. **FC** Use the trainee's credit at the next Checkout - BUILT 2026-11-02 (owner: migration + redeploy checkout-create, stripe-webhook, release-send).
+13b. **FC** Use the trainee's credit at the next Checkout - LIVE 2026-11-02; sandbox test pending (end a paid goal as coach → keep credit → accept a new offer).
 14. **DW** Live keys and go-live (O + C).
 15. **EG** Test payment, live, with the ED code.
 16. **EB** Flip `payments_via_stripe` to 1.
@@ -262,7 +262,7 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
-## FC. Use the trainee's credit at the next Checkout - BUILT 2026-11-02 (run the migration, redeploy 3 functions)
+## FC. Use the trainee's credit at the next Checkout - LIVE 2026-11-02 (migration run 3/5; functions redeployed) - sandbox test pending
 
 **Built 2026-11-02 (Lilly account):** `checkout-create` reads the trainee's credit (same currency): covering price + payout costs → **no card payment**, the goal is paid at once (deposit_amount 0, deposit_credit_cents, processing = Connect costs only, ledger −credit, coach push, app shows "Paid with your credit"); otherwise the card pays the rest (Stripe's €0.50 minimum respected), the goal line says "less €X of your FormTrace credit", and the processing line is computed on the card part only. `stripe-webhook` records `deposit_credit_cents` and takes the credit off the ledger only when the deposit lands (an abandoned Checkout keeps it). `migrations_credit_at_checkout.sql`: payouts use **credit first** (`payment_releases.funding = credit`, paid by `release-send` from FormTrace's balance - no source_transaction), then the card charge; release cap and comp test include credit; **refunds** (`queue_refund`, copied + patched) return unused credit as credit and only card money to the card; the coach-ended choice (`queue_end_choice`, `_apply_end_choice`) keeps the credit part as credit in both options (`credit_back_cents`); a goal funded only by credit needs no choice. **Also closed a gap:** `deposit_processing` and `deposit_credit_cents` are now server-only like the other deposit fields. Gate green.
 
