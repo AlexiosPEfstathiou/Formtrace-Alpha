@@ -262,6 +262,8 @@ week-close trigger makes that window tiny).
 
 ## EH. Email hosting - Zoho Mail on the domain
 
+**Owner decision 2026-11-02 - Zoho dropped, Blacknight Titan chosen.** Zoho's free plan is not offered in this region and Zoho Mail Lite demanded a UK phone number. Chosen instead: **Blacknight Titan Email 5GB** (about EUR 1.50/month excl. VAT, ~EUR 22/year incl. VAT) - one mailbox (e.g. `alex@formtrace.ie`), two-factor sign-in, web and phone apps; DNS already at Blacknight. Premium (50GB, send later, branding) not needed yet. Titan settings for later: **SMTP `smtp.titan.email` port 587 STARTTLS; IMAP `imap.titan.email` port 993 SSL**; username = the full address. SMTP is what lets Supabase send the app's sign-in / password emails from `@formtrace.ie` (separate later step). To confirm after purchase: email aliases (`support@`, `privacy@`, `hello@`); mail records (MX, SPF, DKIM) in the zone; add DMARC.
+
 Owner, 2026-10-30. Host email separately from the registrar (GoDaddy's bundled mailbox
 is portable only within GoDaddy). **Zoho Mail**: free tier (up to 5 users, 5 GB each,
 web/mobile only) is enough for the pilot; Mail Lite (~EUR 1/user/month) adds IMAP/POP if
