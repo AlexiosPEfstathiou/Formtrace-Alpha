@@ -42,7 +42,7 @@ the list below are done, superseded, or parked (bottom).
 22. **CB** Launch timeline - revisit with pilot learnings.
 
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
-**From the 2026-11-02 tests (C, next):** **FI** coach-ended goal with no trainee notice (bug) · **FE** checklist not refreshing (bug) · **FF** weekly workout line + rest-day option · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
+**From the 2026-11-02 tests (C, next):** **FJ** stale Goal card after a pitch + Goal badge = offers to answer (bug) · **FI** coach-ended goal with no trainee notice (bug) · **FE** checklist not refreshing (bug) · **FF** weekly workout line + rest-day option · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
@@ -98,6 +98,7 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 91 | **FJ** BUG: Goal tab card stale after a pitch arrives (until reload); Goal badge = offers to answer | Small | Refresh on focus / push / tab open. |
 | 90 | **FI** BUG: coach ended a goal right after acceptance - trainee saw nothing about credit/refund | Small | Check paid vs unpaid; in-app card either way. |
 | 89 | **FH** Coach daily checklist on Home (+ Home tab badge) | Medium + decision | Items list to agree. |
 | 88 | **FG** Badges on every tab (coach first): Home, Trainees, Social | Medium | Open goals and Review already built. |
@@ -269,6 +270,16 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## FJ. BUG: the Goal tab shows a stale card after a pitch arrives (until a reload)
+
+Owner, 2026-11-02 (screenshot): after a coach pitched, the trainee's Goal list showed the
+goal as a plain OPEN card ("1 offer · 1 to answer · 7 days left", Cancel) and only after a
+page reload did it show as a pitched goal. Fix: refresh the Goal list (and its badge) when
+the app regains focus / becomes visible, when a push for an offer arrives while the app is
+open, and when the tab is opened - not only on the first render. Also check the coach-side
+equivalent (Open goals after a counter-offer). Small. Not started.
+
+---
 ## FI. BUG: coach ended a goal right after acceptance - the trainee saw nothing about credit or refund
 
 Owner, 2026-11-02 (test): goal posted → coach pitched → trainee accepted → coach ended it
@@ -335,6 +346,8 @@ when Home is showing. Small. Not started.
 ---
 
 ## FD. Trainees tab badge (coach): sessions to assign + sessions to review
+
+**Owner refinement 2026-11-02:** when an offer is accepted the coach's **Trainees** badge goes **up by the number of sessions agreed** (e.g. 2 sessions agreed → +2) and **down by 1 for each workout assigned** to that trainee, up to the agreed number (per week). On the Trainees list the new trainee shows an **"Offer accepted"** badge and **glistens**, so the coach taps it and assigns workouts; the glisten stops once the agreed sessions are assigned. Sessions waiting for review add to the same tab count.
 
 Owner, 2026-11-02 (tests): after a trainee completed a workout, the coach's **Trainees** tab
 should show a red **1** (one session to review); after a trainee accepted, it should show
@@ -457,6 +470,8 @@ Owner, 2026-10-30. (1) **Trainee:** accepting an offer should open the payment o
 ---
 
 ## EQ. Tab badges: unpitched goals (coach) and unviewed pitches (trainee) - BUILT 2026-11-02 (run the migration)
+
+**Owner change 2026-11-02:** the trainee's **Goal** badge should count **offers waiting for an answer** (pending pitches, to accept or refuse) and stay until each is answered - not only pitches not yet *seen* (today it clears when the tab is opened, so a goal with "1 to answer" shows no badge). To build with FJ.
 
 **Built 2026-11-02 (Lilly account):** `migrations_tab_badges.sql` - `offers.seen_at`; `my_tab_badges()` returns both counts in one call (coach: open goals not their own, not hidden, not yet pitched; trainee: pending pitches not seen); `mark_my_offers_seen()` runs when the trainee opens the Goal tab. Existing pitches are marked seen (no sudden badge). Safe: the offers triggers act only on a change of status. App: red count on **Open goals** (coach) / **Goal** (trainee), same style as the Notifications dot; cached a minute, refreshed at once on those two screens. Gate green.
 
