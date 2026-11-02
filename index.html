@@ -3202,7 +3202,7 @@ function go(name){
   if(name==="market")R(renderMarket);
   if(name==="trainee-home")R(renderTraineeHome);
   if(name==="trainee-workout")R(renderAssignedWorkout);
-  if(name==="listings")R(async()=>{ await renderListings(); markOffersSeen(); });   /* Item EQ: opening the Goal tab marks pitches seen */
+  if(name==="listings")R(async()=>{ if(listingsTab==="goals"&&!window.__ftStayOnGoals&&tabBadgeCache&&Number(tabBadgeCache.d.to_answer)>0) listingsTab="offers"; window.__ftStayOnGoals=false; await renderListings(); markOffersSeen(); });   /* Item FJ: offers waiting -> land on Offers */   /* Item EQ: opening the Goal tab marks pitches seen */
   if(name==="profile")R(async()=>{ await renderProfile(); moveSettingsSections(); });   // CQ-6
   if(name==="settings")R(async()=>{ if(!$("#settings-body").children.length){ await renderProfile(); } moveSettingsSections(); });   // CQ-6
   if(name==="admin")R(renderAdmin);
@@ -3365,11 +3365,13 @@ async function refreshTabBadges(current){
     const coach=roleOf()==="coach"; const btn=document.querySelector(`#app-tabbar [data-go="${coach?"market":"listings"}"]`); if(!btn) return;
     const fresh=current==="market"||current==="listings";
     if(fresh||tabBadgeCache==null||Date.now()-tabBadgeCache.t>60000){ const { data, error }=await store._sb.rpc("my_tab_badges"); if(error) throw error; tabBadgeCache={t:Date.now(),d:data||{}}; }
-    const n=Number(coach?tabBadgeCache.d.unpitched:tabBadgeCache.d.unseen)||0;
+    const n=Number(coach?tabBadgeCache.d.unpitched:(tabBadgeCache.d.to_answer!=null?tabBadgeCache.d.to_answer:tabBadgeCache.d.unseen))||0;   /* Item FJ: offers waiting for an answer */
     let dot=btn.querySelector(".tab-dot"); if(!dot){ dot=document.createElement("span"); dot.className="tab-dot"; btn.appendChild(dot); }
     dot.textContent=n>99?"99+":String(n); dot.style.display=n?"":"none";
   }catch(e){ console.warn("tab badges (run migrations_tab_badges.sql)",e&&e.message); }
 }
+/* Item FJ: coming back to the app refreshes the badges, and the Goal list if it is on screen (a pitch may have arrived meanwhile). */
+document.addEventListener("visibilitychange",()=>{ try{ if(document.visibilityState!=="visible"||!ME) return; tabBadgeCache=null; refreshTabBadges(); if($("#s-listings")&&$("#s-listings").classList.contains("active")) renderListings(); }catch(e){} });
 async function markOffersSeen(){
   try{ if(!ME||roleOf()==="coach") return; const { data, error }=await store._sb.rpc("mark_my_offers_seen"); if(error) throw error; if(data){ tabBadgeCache=null; refreshTabBadges(); } }catch(e){ console.warn("mark seen",e&&e.message); }
 }
@@ -3722,6 +3724,7 @@ async function renderHome(){
       renderHomeStreakRisk($("#home-streakrisk"), engs),
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
+      renderHomeCoachEnded(),   // Item FI: goals the coach ended
       renderHomePayments($("#home-payments")),   // Item DL
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
@@ -3758,6 +3761,7 @@ async function renderHome(){
       renderHomeCertStatus($("#home-certstatus")),   // certification approved / rejected
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
+      renderHomeCoachEnded(),   // Item FI: goals the coach ended
       renderHomePayments($("#home-payments")),   // Item DL
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
@@ -3816,11 +3820,36 @@ async function goToCalendarWeek(monISO){
 }
 /* ---- Item ES: the daily checklist on Home. Auto-ticks what the app can see (weigh-in, yesterday's macros, today's
    sessions); the rest is self-reported and kept on this phone for the day. All done -> "Day complete" once a day. ---- */
+/* Item FE: re-draw the checklist after weight / macros are saved (it was only refreshed on the next Home render). */
+function refreshChecklistSoon(){ try{ const el=window.__dcEl; if(el&&el.isConnected&&ME&&roleOf()==="trainee") renderHomeChecklist(window.__dcEngs||[], el); }catch(e){} }
+/* Item FI: the trainee is told, in the app, about every goal their coach ended (paid: choose credit or refund; unpaid: nothing was charged). */
+async function renderHomeCoachEnded(){
+  if(!ME||roleOf()!=="trainee") return;
+  const host=$("#notif-body"); if(!host) return;
+  let el=$("#home-coachended"); if(!el){ el=document.createElement("div"); el.id="home-coachended"; const empty=$("#notif-empty"); if(empty&&empty.parentElement===host) host.insertBefore(el,empty); else host.appendChild(el); }
+  el.style.display="none"; el.innerHTML="";
+  try{
+    const since=new Date(Date.now()-30*86400000).toISOString();
+    const { data:rows }=await store._sb.from("engagements").select("id,goal_title,end_reason,end_note,deposit_at,completed_at").eq("trainee_id",ME.id).eq("end_kind","coach_ended").gte("completed_at",since).order("completed_at",{ascending:false}).limit(3);
+    let seen={}; try{ seen=JSON.parse(localStorage.getItem("ft-ce-seen")||"{}")||{}; }catch(e){}
+    let choices={}; const ids=(rows||[]).map(r=>r.id);
+    if(ids.length){ try{ const { data:ch }=await store._sb.from("goal_end_choices").select("engagement_id,status").in("engagement_id",ids); for(const x of (ch||[])) choices[x.engagement_id]=x.status; }catch(e){} }
+    const list=(rows||[]).filter(r=>choices[r.id]==="pending"||!seen[r.id]); if(!list.length) return;
+    const why={schedule:"their schedule no longer allows it",not_engaging:"the goal wasn't getting the engagement it needed",injury:"an injury or medical reason",fit:"it wasn't the right fit"};
+    el.innerHTML=list.map(r=>{ const st=choices[r.id];
+      const money=!r.deposit_at?"It ended before it was paid - nothing was charged.":st==="pending"?`<b style="color:var(--ink)">Choose credit or a refund</b> for the unused weeks.`:st==="credit"?"The unused weeks are kept as credit for your next goal.":st==="refund"?"A refund of the unused weeks is on its way to your card.":"";
+      return `<div class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:4px">Goal ended by your coach</div><div style="font-weight:800;font-size:14.5px">${escapeHtml(r.goal_title||"Your goal")}</div><div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:4px">${why[r.end_reason]?`Reason: ${escapeHtml(why[r.end_reason])}. `:""}${r.end_note?`"${escapeHtml(r.end_note)}" `:""}${money}</div><div style="display:flex;gap:8px;margin-top:10px">${r.deposit_at?`<button class="btn sm primary" data-ce-open="${r.id}" style="width:auto">${st==="pending"?"Choose now":"View goal"}</button>`:""}${st==="pending"?"":`<button class="btn sm ghost" data-ce-ok="${r.id}" style="width:auto">OK</button>`}</div></div>`; }).join("");
+    el.style.display="";
+    el.querySelectorAll("[data-ce-open]").forEach(b=>b.addEventListener("click",()=>{ listingsTab="offers"; offersCompletedOpen=true; go("listings"); }));
+    el.querySelectorAll("[data-ce-ok]").forEach(b=>b.addEventListener("click",()=>{ const id=b.getAttribute("data-ce-ok"); try{ const s=JSON.parse(localStorage.getItem("ft-ce-seen")||"{}")||{}; s[id]=1; localStorage.setItem("ft-ce-seen",JSON.stringify(s)); }catch(e){} renderHomeCoachEnded().then(()=>refreshNotifDot()); }));
+  }catch(e){ console.warn("coach-ended card",e&&e.message); }
+}
 function dcKey(){ return `ft-dc-${ME&&ME.id}-${todayISO()}`; }
 function dcGet(){ try{ return JSON.parse(localStorage.getItem(dcKey())||"{}")||{}; }catch(e){ return {}; } }
 function dcSet(k){ const s=dcGet(); s[k]=true; try{ localStorage.setItem(dcKey(),JSON.stringify(s)); }catch(e){} }
 async function renderHomeChecklist(engs, el){
   if(!el||!ME||roleOf()!=="trainee") return;
+  window.__dcEl=el; window.__dcEngs=engs;   /* Item FE */
   const iso=todayISO(), yest=addDaysISO(iso,-1);
   const active=(engs||[]).filter(e=>e.status==="active");
   let logs=[]; try{ logs=(await store.logs.list({trainee_id:ME.id}))||[]; }catch(e){}
@@ -4069,7 +4098,7 @@ async function saveHomeMacro(iso){
     const existing=(await store.logs.list({trainee_id:ME.id,log_date:iso}))[0];
     if(existing){ await store.logs.update(existing.id,patch); }
     else{ await store.logs.add({trainee_id:ME.id,log_date:iso,...patch}); }
-    toast("You're all set.");
+    toast("You're all set."); refreshChecklistSoon();   /* Item FE */
     const el=$("#home-macro"); if(el){ el.style.display="none"; el.innerHTML=""; }
   }catch(err){console.error(err);toast(err.message||"Couldn't save log",4000);btn.disabled=false;btn.textContent=o;}
 }
@@ -4373,7 +4402,8 @@ async function renderGoalEndBlock(card,e,role,holder,offer){
       box.innerHTML=`<button class="btn sm ghost" data-ge="end" style="width:auto;color:var(--red)">End this goal</button>`;
       card.appendChild(box); box.querySelector("[data-ge]").addEventListener("click",()=>openCoachEndGoal(e,holder,role,offer)); return;
     }
-    if(e.end_kind!=="coach_ended"||!e.deposit_at) return;
+    if(e.end_kind!=="coach_ended") return;
+    if(!e.deposit_at){ box.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${isCoach?"You ended this goal before it was paid":"Your coach ended this goal before it was paid"} - nothing was charged.</div>`; card.appendChild(box); return; }   /* Item FI */
     const { data:ch }=await store._sb.from("goal_end_choices").select("*").eq("engagement_id",e.id).maybeSingle();
     if(!ch) return;
     const cb=Number(ch.credit_back_cents||0); const credit=Number(ch.price_cents)+Number(ch.processing_cents)+cb, refund=Number(ch.price_cents), fee=Number(ch.processing_cents);   /* FC: unused credit always returns as credit */
@@ -6274,6 +6304,11 @@ async function renderListings(){
                        : l.status==="matched"||l.status==="closed" && !l.closed_reason ? `Matched with a coach` : l.closed_reason==="expired" ? `Expired without a match` : l.closed_reason==="cancelled" ? `Cancelled by you` : "";
             return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--faint)"><span>${line}</span>${l.status==="open"?`<button class="btn ghost sm" style="width:auto;height:30px;padding:0 10px;color:var(--red)" data-cancel-listing="${l.id}">Cancel</button>`:""}</div>`; })()}`;
       body.appendChild(div);
+      { const cc=offerCounts[l.id]; if(l.status==="open"&&cc&&cc.pending){   /* Item FJ: offers waiting - one tap to answer them */
+          const bt=document.createElement("button"); bt.className="btn primary sm"; bt.style.cssText="width:auto;height:30px;padding:0 10px;margin:0 6px 0 auto"; bt.textContent=`Answer ${cc.pending} offer${cc.pending===1?"":"s"}`;
+          const open=ev=>{ if(ev) ev.stopPropagation(); offersGoalFilter=l.id; listingsTab="offers"; renderListings(); };
+          bt.addEventListener("click",open); const cx=div.querySelector("[data-cancel-listing]"); if(cx) cx.parentElement.insertBefore(bt,cx); else div.lastElementChild.appendChild(bt);
+          div.style.cursor="pointer"; div.addEventListener("click",open); } }
       div.querySelector("[data-cancel-listing]")?.addEventListener("click",async e=>{
         e.stopPropagation();
         await cancelListing(l.id,l.title);
@@ -6718,7 +6753,7 @@ $("#lst-post").addEventListener("click",async()=>{
     const path=pendingListingVideo?await store.video.upload(pendingListingVideo.blob,"webm"):null;
     await store.listings.add({trainee_id:ME.id,title,focus:listingFocus,details:$("#lst-details").value.trim(),pitch_video_path:path,status:"open"});
     window.__lstNoVideoOk=false;
-    toast("Goal posted ✓"); listingsTab="goals"; go("listings"); checkAchievementsAndPlay();
+    toast("Goal posted ✓"); listingsTab="goals"; window.__ftStayOnGoals=true; go("listings"); checkAchievementsAndPlay();
   }catch(err){console.error(err);toast(err.message||"Couldn't post",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
@@ -8981,6 +9016,7 @@ async function saveMacroLog(){
     macroLogDate=null;
     closeSheet();$("#sheet-add").textContent="Add selected";$("#sheet-add").style.display="";$("#sheet-lib").querySelector("h3").textContent="Add from library";
     toast("Logged ✓"+closeMsg, closeMsg?5500:2500); checkAchievementsAndPlay();
+    refreshChecklistSoon();   /* Item FE */
     /* Refresh whatever screen we're actually on. This used to call
        renderEngagement() unconditionally, which from the homepage rendered
        the calendar with currentEng still null and threw on coach_id. */

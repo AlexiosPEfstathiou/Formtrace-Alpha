@@ -83,3 +83,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | ER + DP | `migrations_payouts_prompt_liability_card.sql` | run ✓ | approval_trigger 1, stats_function 1. |
 | 2026-11-02 | EK + EL | `migrations_coach_end_goal_fast_reviews.sql` (fixed version: function header on its own line) | run ✓ | functions 6, tables 2, fast_hold_days 7. |
 | 2026-11-02 | FC | `migrations_credit_at_checkout.sql` | run ✓ | new_columns 3, functions 5. checkout-create, stripe-webhook, release-send redeployed (owner reported). |
+| 2026-11-02 | FJ | `migrations_goal_badge_to_answer.sql` | given | Expected: has_to_answer = true. |

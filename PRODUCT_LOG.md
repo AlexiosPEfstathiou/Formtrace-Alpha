@@ -42,7 +42,7 @@ the list below are done, superseded, or parked (bottom).
 22. **CB** Launch timeline - revisit with pilot learnings.
 
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
-**From the 2026-11-02 tests (C, next):** **FJ** stale Goal card after a pitch + Goal badge = offers to answer (bug) · **FI** coach-ended goal with no trainee notice (bug) · **FE** checklist not refreshing (bug) · **FF** weekly workout line + rest-day option · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
+**From the 2026-11-02 tests (C, next):** ~~FJ, FI, FE~~ fixed 2026-11-02 · **FF** weekly workout line + rest-day option · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
@@ -270,7 +270,9 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
-## FJ. BUG: the Goal tab shows a stale card after a pitch arrives (until a reload)
+## FJ. BUG: the Goal tab shows a stale card after a pitch arrives (until a reload) - FIXED 2026-11-02 (run the small migration)
+
+**Cause found 2026-11-02:** not a stale cache - the Goal tab has two views, **My goals** and **Offers**; after posting a goal the app switches to My goals and stays there for the session, while a new pitch lives in Offers (a reload opens Offers, the default - the "pitched" look). **Fix:** a goal card with offers waiting shows **"Answer N offer(s)"** (and the card itself is tappable) → Offers for that goal; opening the Goal tab with offers waiting lands on **Offers** (except straight after posting); returning to the app refreshes the badges and, if on screen, the Goal list. **Goal badge = offers waiting for an answer** (`my_tab_badges()` gains `to_answer`; `migrations_goal_badge_to_answer.sql`). Gate green.
 
 Owner, 2026-11-02 (screenshot): after a coach pitched, the trainee's Goal list showed the
 goal as a plain OPEN card ("1 offer · 1 to answer · 7 days left", Cancel) and only after a
@@ -280,7 +282,9 @@ open, and when the tab is opened - not only on the first render. Also check the 
 equivalent (Open goals after a counter-offer). Small. Not started.
 
 ---
-## FI. BUG: coach ended a goal right after acceptance - the trainee saw nothing about credit or refund
+## FI. BUG: coach ended a goal right after acceptance - the trainee saw nothing about credit or refund - FIXED 2026-11-02
+
+**Fix 2026-11-02:** a **Notifications card** "Goal ended by your coach" for every coach-ended goal of the last 30 days - reason and note, then: unpaid → "ended before it was paid - nothing was charged"; paid → "Choose credit or a refund" (**Choose now** opens the goal; the card stays until the choice is made) or what was chosen; OK dismisses the others. The goal's payment card also says it for unpaid goals (coach and trainee). The push for unpaid goals was already sent - the test phone likely had push off. Gate green.
 
 Owner, 2026-11-02 (test): goal posted → coach pitched → trainee accepted → coach ended it
 immediately → the trainee received nothing about credit or a refund. **Two possible
@@ -336,7 +340,9 @@ option on the same line, **"I'll take a rest day"**. **Either completes the item
 
 ---
 
-## FE. BUG: checklist stays unticked after saving weight / macros
+## FE. BUG: checklist stays unticked after saving weight / macros - FIXED 2026-11-02
+
+**Fix 2026-11-02:** both saves (`saveMacroLog` - the sheet - and `saveHomeMacro` - the Home card) re-draw the checklist straight after a successful save (`refreshChecklistSoon`). Gate green.
 
 Owner, 2026-11-02 (test): tapped "Weigh yourself", the weight & macros sheet opened, saved
 it - the item stayed unticked until another tab was opened and Home re-rendered. Fix: after
