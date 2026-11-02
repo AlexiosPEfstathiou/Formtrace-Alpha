@@ -42,6 +42,7 @@ the list below are done, superseded, or parked (bottom).
 22. **CB** Launch timeline - revisit with pilot learnings.
 
 **Dated reminders:** **FA** 30 Sep 2027 - formtrace.ie renewal check (expires 30 Oct 2027). To be gathered into a management calendar - **FB** (later).
+**From the 2026-11-02 tests (C, next):** **FI** coach-ended goal with no trainee notice (bug) · **FE** checklist not refreshing (bug) · **FF** weekly workout line + rest-day option · **FD** Trainees tab badge · **FG** badges on every tab · **FH** coach checklist (items to agree).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
@@ -97,6 +98,12 @@ BE) are not tasks and are left out.
 | 35 | **CM** In Touch - BUILT 2026-09-18 | gym tuning + IP hour | Knock (motion match + face confirm), code fallback, wins feed with Congratulate, clap animation; homepage block for both roles. |
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
+| 90 | **FI** BUG: coach ended a goal right after acceptance - trainee saw nothing about credit/refund | Small | Check paid vs unpaid; in-app card either way. |
+| 89 | **FH** Coach daily checklist on Home (+ Home tab badge) | Medium + decision | Items list to agree. |
+| 88 | **FG** Badges on every tab (coach first): Home, Trainees, Social | Medium | Open goals and Review already built. |
+| 87 | **FF** Checklist workout line weekly ("Perform 1/X workouts this week") + "I'll take a rest day" | Small | Either completes it. |
+| 86 | **FE** BUG: checklist not refreshed after saving weight/macros | Small | Re-render after save. |
+| 85 | **FD** Trainees tab badge: sessions to assign this week + sessions to review | Small-medium | Server count. |
 | 84 | **FC** Use the trainee's credit at the next Checkout - BUILT 2026-11-02 | - | Migration + redeploy 3 Edge Functions. |
 | 83 | **FB** Management calendar - every dated obligation in one place | Owner, later | First entries listed (FA, DP, DY, DX, BI, CZ, CE). |
 | 82 | **FA** REMINDER 30 Sep 2027 - formtrace.ie renewal (expires 30 Oct 2027) | Owner | Auto-renew, card, registrant, lock. |
@@ -262,6 +269,82 @@ Registered in the owner's personal name alongside the domain (see DV / EE).
 
 ---
 
+## FI. BUG: coach ended a goal right after acceptance - the trainee saw nothing about credit or refund
+
+Owner, 2026-11-02 (test): goal posted → coach pitched → trainee accepted → coach ended it
+immediately → the trainee received nothing about credit or a refund. **Two possible
+causes, to check first:** (a) **the goal was not paid yet** (accepting does not pay; under
+the switch at 0 the trainee pays later) - then there is no money to return and, by design,
+no choice is created; but the trainee should still get a clear **in-app card** ("Your coach
+ended <goal> before it started - nothing was charged"), not only a push (and push may be off
+on that phone); (b) **it was paid** and no choice appeared - then a real fault in the
+coach-ended path (`queue_end_choice` / `refund_on_end`). Diagnostic (read-only):
+`select e.goal_title, e.status, e.end_kind, e.deposit_at, e.deposit_amount, e.deposit_credit_cents, g.status as choice, g.price_cents, g.credit_back_cents from engagements e left join goal_end_choices g on g.engagement_id = e.id where e.end_kind = 'coach_ended' order by e.completed_at desc limit 5;`
+**Fix either way:** an in-app card for the trainee on every coach-ended goal (paid: the
+choice; unpaid: "nothing was charged"), on the Goal tab and in Notifications. Not started.
+
+---
+
+## FH. Coach daily checklist on Home (and its tab badge)
+
+Owner, 2026-11-02. The coach's Home needs its own daily checklist, like the trainee's (ES),
+and the **Home tab badge** = the number of items not yet done. Candidate items (to agree):
+review every submitted session (count) · assign this week's sessions for each trainee
+(count) · reply to counter-offers · arrange first calls with new trainees · pitch new open
+goals · finish Stripe payout setup (if not done). Auto-tick from data where possible; a
+once-a-day "day complete". Not started - the items list is a decision for the owner.
+
+---
+
+## FG. Badges on every tab (coach first)
+
+Owner, 2026-11-02. Every tab button shows a red count of what needs attention:
+| Tab (coach) | Count |
+|---|---|
+| **Home** | pending items on the coach checklist (**FH**, not built yet) |
+| **Library** | - (nothing pending) |
+| **Open goals** | open goals not yet pitched or hidden - **already built (EQ)** |
+| **Trainees** | sessions to assign this week + sessions waiting for review (**FD**) |
+| **Social** | new friend requests + friends' new achievements + congratulations received, unseen |
+| **Review** (admin) | already built (applications + certifications) |
+Trainee tabs to decide in the same pass (Training: sessions left this week; Goal: unseen
+pitches - built; Notifications: built; Social: as above). Needs "seen" markers for Social
+(requests, achievements in the feed, claps received) - one server count like
+`my_tab_badges()`. Not started.
+
+---
+
+## FF. Checklist: the workout line is weekly, with "I'll take a rest day"
+
+Owner, 2026-11-02 (test): the checklist said "Do today's 2 workouts" though the sessions
+were assigned **for the week**, not for today. Change the line to **"Perform 1/X workouts
+this week"** (done / assigned this week) - tap opens the week's workouts - with a second
+option on the same line, **"I'll take a rest day"**. **Either completes the item for today**
+(a session submitted today, or the rest-day tap). Replaces the today-only due-date logic in
+`renderHomeChecklist`. Small. Not started.
+
+---
+
+## FE. BUG: checklist stays unticked after saving weight / macros
+
+Owner, 2026-11-02 (test): tapped "Weigh yourself", the weight & macros sheet opened, saved
+it - the item stayed unticked until another tab was opened and Home re-rendered. Fix: after
+`saveMacroLog` / `saveHomeMacro` succeed, re-render the checklist (`renderHomeChecklist`)
+when Home is showing. Small. Not started.
+
+---
+
+## FD. Trainees tab badge (coach): sessions to assign + sessions to review
+
+Owner, 2026-11-02 (tests): after a trainee completed a workout, the coach's **Trainees** tab
+should show a red **1** (one session to review); after a trainee accepted, it should show
+the number of sessions the coach still has to **assign** for that trainee this week. Count
+= Σ over active goals (sessions per week agreed − sessions assigned this week, not below 0)
++ submitted sessions not yet reviewed. Add both to `my_tab_badges()` (server count), shown
+on the Trainees tab like the other badges; ideally also per trainee on the Trainees list.
+Small-medium. Not started.
+
+---
 ## FC. Use the trainee's credit at the next Checkout - LIVE 2026-11-02 (migration run 3/5; functions redeployed) - sandbox test pending
 
 **Built 2026-11-02 (Lilly account):** `checkout-create` reads the trainee's credit (same currency): covering price + payout costs → **no card payment**, the goal is paid at once (deposit_amount 0, deposit_credit_cents, processing = Connect costs only, ledger −credit, coach push, app shows "Paid with your credit"); otherwise the card pays the rest (Stripe's €0.50 minimum respected), the goal line says "less €X of your FormTrace credit", and the processing line is computed on the card part only. `stripe-webhook` records `deposit_credit_cents` and takes the credit off the ledger only when the deposit lands (an abandoned Checkout keeps it). `migrations_credit_at_checkout.sql`: payouts use **credit first** (`payment_releases.funding = credit`, paid by `release-send` from FormTrace's balance - no source_transaction), then the card charge; release cap and comp test include credit; **refunds** (`queue_refund`, copied + patched) return unused credit as credit and only card money to the card; the coach-ended choice (`queue_end_choice`, `_apply_end_choice`) keeps the credit part as credit in both options (`credit_back_cents`); a goal funded only by credit needs no choice. **Also closed a gap:** `deposit_processing` and `deposit_credit_cents` are now server-only like the other deposit fields. Gate green.
