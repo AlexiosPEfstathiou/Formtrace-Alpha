@@ -10,12 +10,11 @@ The order to do things in, by dependency. **(O)** = owner, **(C)** = Claude. Ite
 the list below are done, superseded, or parked (bottom).
 
 **A. Next session - foundations**
-1. **DV** Outside-activity check (O) - first: it gates money and the domain's ownership.
 2. **BJ** Choose the name (O) - **settled by the domain: the name stays FormTrace** (logo / visual identity still open).
 3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not editable yet - EF waits.  3b. **EH** Email on the domain (O) - **DONE 2026-11-03**: Titan, `contact@formtrace.ie` only; SPF/DKIM/DMARC PASS. Later: DMARC -> quarantine; optional Supabase SMTP via Titan.
 4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
-5. **DX** Terms of Service page - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
+5. **DX** Terms of Service page - **POSTPONED (owner, 2026-11-03)** - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
 6. **Pending SQL** - DONE 2026-10-30 (checkout, connect and body-achievement migrations confirmed run; SQL journal).
 7. **Stripe sandbox setup** (O) - DONE 2026-10-30 (all functions deployed, all migrations run, coach onboarded in sandbox): STRIPE_INTEGRATION_TODO.md steps 1-9 - three Edge
    Functions, webhook endpoint, secrets, **EC** Connect branding.
@@ -46,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**Before go-live (owner):** **EI** business bank account · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
+**Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
 **Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
@@ -120,9 +119,8 @@ BE) are not tasks and are left out.
 | 75 | **EA** Pilot fees at parity with Stripe costs | Small build | DECIDED: trainee pays all Stripe costs; processing line rounded up to the whole euro. |
 | 74 | **DZ** Refunds of unreleased weeks | Medium | Partial refund on the deposit; transfer reversal for disputed released weeks. |
 | 73 | **DY** Weekly releases to coaches | Medium | Scheduled transfers with source_transaction; waits for onboarding; optional hold. |
-| 72 | **DX** Terms of Service page - TOMORROW | Draft + lawyer | URL in Stripe; re-enable ToS consent. |
+| 72 | **DX** Terms of Service page - POSTPONED (owner, 2026-11-03) | Draft + lawyer | URL in Stripe; re-enable ToS consent. |
 | 71 | **DW** Live keys and go-live - TOMORROW | Owner + small | Live secret + webhook, branding, live test with ED, flip EB. |
-| 70 | **DV** Outside-activity check - TOMORROW | Owner | Before the pilot takes money. |
 | 69 | **DU** Payment switch + coach payouts (Connect Express, hosted) - BUILT in sandbox 2026-10-29; pilot moves to Stripe escrow (supersedes DK direct route) | release + refunds next; go-live checklist |
 | 68 | **DT** BUG: 1600 kg typo kept "Bulk up" - weight 20-400 kg enforced; body achievements re-checked on weight changes - BUILT 2026-10-29 | run the migration |
 | 67 | **DS** BUG: journey recap extract(unknown, integer) - FIXED 2026-10-29 (migration run, weeks_check 13) | owner re-opens the journey |
@@ -279,7 +277,7 @@ a desktop client is wanted. Needs the domain first (**EE**). Setup: verify the d
 Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / support@ as
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
-Registered in the owner's personal name alongside the domain (see DV / EE).
+Registered in the owner's personal name alongside the domain (see EE).
 
 ---
 
@@ -638,11 +636,11 @@ that engagement and alerts the owner; policy in terms s.8 ("ask us before your b
 
 ---
 
-## EI. Business bank account
+## EI. Business bank account - POSTPONED (owner, 2026-11-03)
 
 Owner, 2026-10-30. Open a dedicated account for FormTrace before live payments: Stripe payouts
 (platform balance: processing lines, commissions, refund float), the domain / Zoho / Supabase
-bills, and the reimbursement of pre-trading costs (DV / DX notes). As a sole trader an Irish
+bills, and the reimbursement of pre-trading costs (DX notes). As a sole trader an Irish
 business current account or a fintech business account (Revolut Business, Fire, N26 Business)
 works; once a company exists, open it in the company's name and move Stripe's payout account.
 Keep it separate from personal money from day one for the accounts and VAT advice. Not started.
@@ -706,8 +704,7 @@ Registrant transfer to the company after incorporation is allowed by the registr
 
 Original note, 2026-10-29. Depends on **BJ** (the name - still waiting on the shortlist): the
 domain should match the final name, so decide the name first, then check the .com / .ie
-and social handles together. Register in the owner's **personal** name and account (see
-DV), with auto-renew and registrar lock on. `.ie` needs a connection to Ireland (easy for
+and social handles together. Register in the owner's **personal** name and account, with auto-renew and registrar lock on. `.ie` needs a connection to Ireland (easy for
 an Irish resident).
 
 ---
@@ -881,7 +878,7 @@ Not started.
 
 ---
 
-## DX. Terms of Service page - DRAFTED 2026-10-30 (	erms.html), lawyer review pending
+## DX. Terms of Service page - DRAFTED 2026-10-30 (	erms.html), lawyer review pending - POSTPONED (owner, 2026-11-03)
 
 **DRAFT 2026-10-30 (Claude, Lilly account):** 	erms.html beside the app - static page, both themes,
 same tokens as the app. 15 sections (who we are, definitions, 18+ eligibility, platform /
@@ -920,14 +917,6 @@ test-mode accounts automatically); one live test with the ED promo code; then fl
 
 ---
 
-## DV. Outside-activity check (owner)
-
-Owner, 2026-10-29 - work tomorrow. FormTrace is a personal commercial project; before the
-pilot takes money, check Lilly's guidance on outside activities (disclosure / approval)
-and confirm the project runs on personal accounts and equipment (see HANDOVER "Moving off
-the Lilly machine"). Owner action; Claude can help draft a disclosure. Not started.
-
----
 ## DU. The payment switch and coach payouts - the pilot moves to Stripe escrow
 
 Owner, 2026-10-29: "The app still has the manual 'ask for details' route. Let's use Stripe
