@@ -7,6 +7,7 @@
 - Later: DMARC -> `quarantine` after a few weeks.
 - **Owner decisions 20:36:** **DX** (terms, lawyer review) and **EI** (business bank account) **postponed**. **DP thresholds confirmed as proposed.**
 - **FM built:** Profile shows the trainee's **credit balance** + last 5 movements. **FN fixed:** goal-end choice panel shows "Saving..." (the owner's tap had in fact saved: +EUR 25,553 credit at 20:42); all dates/numbers now `en-GB` (a Greek phone showed "Δευ 16 Νοε").
+- **Tests queued (owner):** FC-T1 goal paid fully with credit, FC-T2 goal paid partly with credit (steps in PRODUCT_LOG FC).
 - **No SQL this session.** Next item code **FO**.
 
 ## Session 2026-11-02 (evening) - summary

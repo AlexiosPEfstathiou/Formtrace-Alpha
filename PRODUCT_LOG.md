@@ -27,7 +27,7 @@ the list below are done, superseded, or parked (bottom).
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
-13b. **FC** Use the trainee's credit at the next Checkout - LIVE 2026-11-02; sandbox test pending (end a paid goal as coach → keep credit → accept a new offer).
+13b. **FC** Use the trainee's credit at the next Checkout - LIVE 2026-11-02; **sandbox tests pending (owner, 2026-11-03): FC-T1 goal paid fully with credit; FC-T2 goal paid partly with credit** - steps in the FC entry.
 14. **DW** Live keys and go-live (O + C).
 15. **EG** Test payment, live, with the ED code.
 16. **EB** Flip `payments_via_stripe` to 1.
@@ -441,6 +441,11 @@ Small-medium. Not started.
 
 ---
 ## FC. Use the trainee's credit at the next Checkout - LIVE 2026-11-02 (migration run 3/5; functions redeployed) - sandbox test pending
+
+**Sandbox tests to run (owner, 2026-11-03).** Starting balance: +EUR 25,553.00 (test account, Profile -> Credit, FM).
+- **FC-T1 - goal paid fully with credit.** Accept an offer whose total (price + service fee + payout costs) is **below** the balance. Expect: **no Stripe Checkout**; the goal shows "Paid with your credit"; the coach gets the "paid the deposit with credit (test)" push; Profile -> Credit shows a new **minus** line "Credit used for this goal (paid in full)" and the balance drops by exactly that total; weekly releases then run as for a card deposit.
+- **FC-T2 - goal paid partly with credit.** With the remaining balance **lower** than the next offer's total (e.g. reduce it first with FC-T1, or use an offer above the balance), accept the offer. Expect: Stripe Checkout opens for the **rest only** (at least EUR 0.50); the goal line reads "less EUR X of your FormTrace credit"; the processing line is on the card part only; after paying with test card 4242..., Profile -> Credit shows a minus line "Credit used for this goal" and the balance is **0** (or what was kept back for Stripe's minimum). Also check: cancel Checkout -> **no** credit is taken (it is deducted only when the payment lands).
+- Record the amounts seen in each step here.
 
 **Built 2026-11-02 (Lilly account):** `checkout-create` reads the trainee's credit (same currency): covering price + payout costs → **no card payment**, the goal is paid at once (deposit_amount 0, deposit_credit_cents, processing = Connect costs only, ledger −credit, coach push, app shows "Paid with your credit"); otherwise the card pays the rest (Stripe's €0.50 minimum respected), the goal line says "less €X of your FormTrace credit", and the processing line is computed on the card part only. `stripe-webhook` records `deposit_credit_cents` and takes the credit off the ledger only when the deposit lands (an abandoned Checkout keeps it). `migrations_credit_at_checkout.sql`: payouts use **credit first** (`payment_releases.funding = credit`, paid by `release-send` from FormTrace's balance - no source_transaction), then the card charge; release cap and comp test include credit; **refunds** (`queue_refund`, copied + patched) return unused credit as credit and only card money to the card; the coach-ended choice (`queue_end_choice`, `_apply_end_choice`) keeps the credit part as credit in both options (`credit_back_cents`); a goal funded only by credit needs no choice. **Also closed a gap:** `deposit_processing` and `deposit_credit_cents` are now server-only like the other deposit fields. Gate green.
 
