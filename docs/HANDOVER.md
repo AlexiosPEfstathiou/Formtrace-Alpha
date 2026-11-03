@@ -5,7 +5,7 @@
 - Titan admin panel for Blacknight: https://manage-euc1.titan.email/ (Email Reputation = DKIM).
 - **DC custom SMTP DONE:** Supabase Auth emails now come from `contact@formtrace.ie` (Titan `smtp0101.titan.email:465`; the generic `smtp.titan.email` failed with 535). Reset email verified 20:28. Email rate limit 30/hour.
 - Later: DMARC -> `quarantine` after a few weeks.
-- **Owner decisions 20:36:** **DX** (terms, lawyer review) and **EI** (business bank account) **postponed**. DP thresholds re-presented for confirmation.
+- **Owner decisions 20:36:** **DX** (terms, lawyer review) and **EI** (business bank account) **postponed**. **DP thresholds confirmed as proposed.**
 - **No SQL this session.** Next item code still **FM**.
 
 ## Session 2026-11-02 (evening) - summary

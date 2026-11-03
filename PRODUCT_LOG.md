@@ -23,7 +23,7 @@ the list below are done, superseded, or parked (bottom).
 8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
 9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
 10. **DY** Weekly releases - BUILT 2026-10-30 (owner setup done).  11. **DZ** Refunds - BUILT 2026-10-30 (owner: migration, deploy `refund-send`, webhook).
-12. **DP** Admin card - BUILT 2026-11-02 (migration run); owner confirms the thresholds; disputes/losses wait for EJ.
+12. **DP** Admin card - BUILT 2026-11-02 (migration run); **thresholds CONFIRMED by the owner 2026-11-03**; disputes/losses wait for EJ.
 
 **C. Prove it, then go live**
 13. **EG** Test payment, sandbox - PASSED 2026-10-30 (onboarding, deposit, release, refund, free code).
@@ -126,7 +126,7 @@ BE) are not tasks and are left out.
 | 67 | **DS** BUG: journey recap extract(unknown, integer) - FIXED 2026-10-29 (migration run, weeks_check 13) | owner re-opens the journey |
 | 66 | **DR** BUG: journey recap "store.journeySummary is not a function" - FIXED 2026-10-29; new store-call check in the gate | - |
 | 65 | **DQ** BUG: ending/completing a goal and level changes failed since 2026-09-22 (achievement trigger) - FIXED and verified 2026-10-29 | owner re-tries Mark achieved |
-| 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds proposed, owner to confirm. |
+| 64 | **DP** When to rethink loss liability - review triggers (volume, coaches, open sign-up, disputes, losses, geography, quarterly) | Decision + small admin card | Thresholds CONFIRMED 2026-11-03; dispute/loss rows wait for EJ. |
 | 63 | **DO** Push on by default (silent if allowed, one explained prompt, sticky opt-out) - BUILT 2026-10-29 | - |
 | 62 | **DN** Review the push-send setup (owner doubts) | Small | Code vs repo, Verify JWT, secret names, webhook, outbox health, logs. |
 | 61 | **DM** Embed Stripe - part 2 (Checkout deposit) BUILT in sandbox 2026-10-29 | see STRIPE_INTEGRATION_TODO.md; onboarding, release, refunds next |
@@ -1011,7 +1011,9 @@ rolled-back no-op status update on a real goal - it fails loudly if the bug rema
 close a week, confirm a friend - each must save.
 
 ---
-## DP. When and why to rethink the loss-liability plan - ADMIN CARD BUILT 2026-11-02 (thresholds still to confirm)
+## DP. When and why to rethink the loss-liability plan - ADMIN CARD BUILT 2026-11-02, THRESHOLDS CONFIRMED 2026-11-03
+
+**Owner decision 2026-11-03 (personal account): the review triggers below are accepted as proposed** (volume > EUR 10,000/month or > EUR 5,000 three months running; > 25 coaches or the first unknown coach; before open coach sign-up; disputes > 0.5 %/month; any loss > EUR 500 or losses > 2 % of quarterly platform revenue; a new country or currency; every quarter). Still open: dispute-rate and loss tracking (EJ); the transfer-reversal clause in the coach terms waits with DX (postponed).
 
 **Built 2026-11-02 (Lilly account):** Review screen card **Loss-liability review** from `admin_liability_stats()` (admins only; live money only, test deposits shown separately): volume this month and the last three months, coach count, coaches outside Ireland, refunds this quarter (context - not losses). **Dispute rate and losses show "not tracked yet"** - they need the chargeback item (EJ: dispute webhook). Any tracked number over its line turns the card red. Thresholds as proposed; owner to confirm.
 
