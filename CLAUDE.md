@@ -10,7 +10,7 @@ other's chats or memory - **this repository is the shared memory.**
    **`docs/HANDOVER.md`** and **`supabase/SQL_JOURNAL.md`** before doing anything else.
 2. **Every 5 owner prompts** in a session: update `docs/HANDOVER.md` (state, plan,
    decisions, blockers) and this file (any new rule or convention), commit
-   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-02 night, Lilly account - every tab has a badge; coach checklist + call walkthrough; see HANDOVER "Latest".)
+   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-03 19:20, personal account - EH email done, contact@ is the only public address; see top of HANDOVER.)
 3. **Every SQL command handed to the owner** gets a row in `supabase/SQL_JOURNAL.md`
    (status `given`); when the owner confirms, mark it `run ✓` with the result. Never
    assume SQL was run - check the journal, or run its verification query.
@@ -77,5 +77,8 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 ## Design assets list (owner, 2026-11-02)
 Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page), add or update its row in `docs/DESIGN_ASSETS.md`. It is the brief for the openart theme (PRODUCT_LOG EW).
 
-## Last session (2026-11-02 evening)
-Domain live at https://formtrace.ie/ (EF done). Email EH in progress: Titan bought, MX + SPF done; **next: DKIM in the Titan admin panel, DMARC, Gmail test, aliases.** Built: EU rest timer; FI "Choose now" fix. See the top of docs/HANDOVER.md. Next item code: **FM**.
+## Last session (2026-11-03, personal account)
+EH email DONE: `contact@formtrace.ie` is the single public address (terms + support link); SPF/DKIM/DMARC PASS; VAPID_SUBJECT set. Later: DMARC -> quarantine.
+
+## Session before (2026-11-02 evening)
+Domain live at https://formtrace.ie/ (EF done). Email EH then in progress. Built: EU rest timer; FI "Choose now" fix. See the top of docs/HANDOVER.md. Next item code: **FM**.

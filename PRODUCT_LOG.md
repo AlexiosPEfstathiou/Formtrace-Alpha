@@ -12,7 +12,7 @@ the list below are done, superseded, or parked (bottom).
 **A. Next session - foundations**
 1. **DV** Outside-activity check (O) - first: it gates money and the domain's ownership.
 2. **BJ** Choose the name (O) - **settled by the domain: the name stays FormTrace** (logo / visual identity still open).
-3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not editable yet - EF waits.  3b. **EH** Zoho email hosting on the domain (O) - MX/SPF/DKIM.
+3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not editable yet - EF waits.  3b. **EH** Email on the domain (O) - **DONE 2026-11-03**: Titan, `contact@formtrace.ie` only; SPF/DKIM/DMARC PASS. Later: DMARC -> quarantine; optional Supabase SMTP via Titan.
 4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
 5. **DX** Terms of Service page - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
@@ -261,6 +261,8 @@ week-close trigger makes that window tiny).
 ---
 
 ## EH. Email hosting - Zoho Mail on the domain
+
+**DONE 2026-11-03 19:20 (owner, personal account):** reply contact@ -> Gmail, Show original: **SPF PASS** (IP 18.198.78.245), **DKIM PASS** (formtrace.ie), **DMARC PASS**. Email on the domain is complete. Later (not blocking): DMARC `p=none` -> `p=quarantine` after a few weeks of clean reports; optional Supabase custom SMTP via Titan (`smtp.titan.email:587`) so auth emails come from `contact@` (DC postponed).
 
 **Progress 2026-11-03 (owner, personal account):** first mailbox created - **`contact@formtrace.ie`** (Titan). Not yet done: DKIM, DMARC, Gmail round-trip test, aliases. **2026-11-03 19:05 (owner): DKIM added and verified in Titan (manage-euc1.titan.email -> Email Reputation); DMARC TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:contact@formtrace.ie` (TTL 3600) added at Blacknight.** 19:13: `VAPID_SUBJECT` set to `mailto:contact@formtrace.ie` (owner); Gmail -> contact@ delivered. Remaining: reply contact@ -> Gmail and check Show original (SPF/DKIM/DMARC PASS), tighten DMARC to `quarantine` after a few weeks of passes.
 
