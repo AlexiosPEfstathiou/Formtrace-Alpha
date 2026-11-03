@@ -1985,7 +1985,7 @@ const WEEK_MODEL=true;   // Item AT step 2: trainee-side week header + start-a-s
 const pad2=n=>String(n).padStart(2,"0");
 const isoOf=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
 const todayISO=()=>isoOf(new Date());
-function fmtDay(iso){ if(!iso)return "—"; const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}); }
+function fmtDay(iso){ if(!iso)return "—"; const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
 function weekNumber(startedAt){ if(!startedAt)return 1; const start=new Date(startedAt); const ms=Date.now()-start.getTime(); const wk=Math.floor(ms/(7*24*3600*1000))+1; return wk<1?1:wk; }
 /* ---- streak / day-completion helpers (trainee) ---- */
 function macrosLogged(l){ return !!(l && (l.protein_g!=null || l.carbs_g!=null || l.fat_g!=null)); }
@@ -2265,7 +2265,7 @@ async function weekStreakSquares(){
   const doneThisWeek=rows.filter(a=>a.week_start===thisMon&&a.status!=="assigned").length;
   const targetThisWeek=weekCap!=null?weekCap:rows.filter(a=>a.week_start===thisMon).length;
   const mo=iso=>CAL_MONTHS[Number(iso.slice(5,7))-1].slice(0,3);
-  const dayLabel=iso=>({label:String(Number(iso.slice(8,10))), sub:new Date(iso+"T00:00:00").toLocaleDateString(undefined,{weekday:"short"}).slice(0,2)});
+  const dayLabel=iso=>({label:String(Number(iso.slice(8,10))), sub:new Date(iso+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short"}).slice(0,2)});
   let unit, squares=[];
   if(W<3){
     unit="day";
@@ -2311,7 +2311,7 @@ async function openStreakBurst(milestone){
   const shown=dates.slice(-14);   // keep it on one screen
   $("#sb-cal").innerHTML=shown.map((iso,i)=>{
     const [y,m,d]=iso.split("-").map(Number);
-    const dow=new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short"}).slice(0,2);
+    const dow=new Date(y,m-1,d).toLocaleDateString("en-GB",{weekday:"short"}).slice(0,2);
     return `<div class="sb-day" style="animation-delay:${i*85}ms"><span class="sb-dow">${escapeHtml(dow)}</span><span class="sb-n">${d}</span><span class="sb-flame" style="animation-delay:${i*85+260}ms">🔥</span></div>`;
   }).join("");
   const total=Math.max(n,dates.length);
@@ -3846,9 +3846,9 @@ async function openGoalEndChoice(engId){
       <button class="btn ghost" data-gc="later">Decide later</button>`);
     document.querySelectorAll("[data-gc]").forEach(b=>b.addEventListener("click",async()=>{
       const pick=b.getAttribute("data-gc"); if(pick==="later"){ pwHide(); return; }
-      document.querySelectorAll("[data-gc]").forEach(x=>x.disabled=true);
+      document.querySelectorAll("[data-gc]").forEach(x=>{ x.disabled=true; x.style.opacity=".55"; }); const was=b.textContent; b.textContent="Saving\u2026";   /* FN: show that the tap registered */
       try{ const { error:e2 }=await store._sb.rpc("choose_goal_end",{p_eng:engId,p_choice:pick}); if(e2) throw e2; }
-      catch(x){ toast(x.message||"Couldn't save your choice",4000); document.querySelectorAll("[data-gc]").forEach(y=>y.disabled=false); return; }
+      catch(x){ toast(x.message||"Couldn't save your choice",4000); b.textContent=was; document.querySelectorAll("[data-gc]").forEach(y=>{ y.disabled=false; y.style.opacity=""; }); return; }
       pwHide(); toast(pick==="credit"?"Kept as credit \u2713":"Refund requested \u2713",2600);
       try{ await renderHomeCoachEnded(); refreshNotifDot(); if(typeof refreshTabBadges==="function") refreshTabBadges(); }catch(e){}
     }));
@@ -4420,7 +4420,7 @@ async function paymentState(eng,offer){
   const cur=(((o&&o.price_text)||"").match(/^[^\d\s]+/)||["€"])[0];
   const weekly=o&&o.rate_per_workout_cents!=null?o.rate_per_workout_cents/100:null, weeks=(o&&o.length_weeks)||null;
   const total=(weekly!=null&&weeks)?weekly*weeks:null;
-  const money=v=>v==null?"":cur+(Math.round(v*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
+  const money=v=>v==null?"":cur+(Math.round(v*100)/100).toLocaleString("en-GB",{maximumFractionDigits:2});
   const start=e.started_at?new Date(e.started_at):null; const end=e.completed_at?new Date(e.completed_at):new Date();
   const elapsedWeeks=start?Math.max(0,Math.ceil((end-start)/(7*86400000))):0;
   const weekNow=weeks?Math.min(weeks,Math.max(1,Math.floor((Date.now()-(start?start.getTime():Date.now()))/(7*86400000))+1)):null;
@@ -6630,7 +6630,7 @@ function openCounterSheet(o){
     <button class="btn primary" id="co-send">Send proposal</button>`;
   body.appendChild(w); $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
   const prev=()=>{ const wk=Number($("#co-weeks").value)||0, s=Number($("#co-sess").value)||0, p=Number($("#co-price").value)||0; if(!wk||!s){ $("#co-preview").textContent=""; return; }
-    const total=p*wk, fee=serviceFeeFor(p,wk); $("#co-preview").innerHTML=`You would pay <b style="color:var(--ink)">${escapeHtml(cur)}${(total+fee).toLocaleString(undefined,{maximumFractionDigits:2})}</b> for ${wk*s} sessions over ${wk} week${wk===1?"":"s"} (${escapeHtml(cur)}${total.toLocaleString()} + ${TRAINEE_FEE_PCT}% service fee).`; };
+    const total=p*wk, fee=serviceFeeFor(p,wk); $("#co-preview").innerHTML=`You would pay <b style="color:var(--ink)">${escapeHtml(cur)}${(total+fee).toLocaleString("en-GB",{maximumFractionDigits:2})}</b> for ${wk*s} sessions over ${wk} week${wk===1?"":"s"} (${escapeHtml(cur)}${total.toLocaleString()} + ${TRAINEE_FEE_PCT}% service fee).`; };
   ["co-weeks","co-sess","co-price"].forEach(id=>$("#"+id).addEventListener("input",prev)); prev();
   $("#co-send").addEventListener("click",async()=>{
     const wk=Number($("#co-weeks").value), s=Number($("#co-sess").value), p=Number($("#co-price").value), note=$("#co-note").value.trim();
@@ -6657,7 +6657,7 @@ function coachBadgesInline(c){
 function offerDetailRows(o){
   const cur=((o.price_text||"").match(/^[^\d\s]+/)||["$"])[0];
   const weeks=o.length_weeks||null, cap=o.workouts_per_week_cap||null, weekly=o.rate_per_workout_cents!=null?o.rate_per_workout_cents/100:null;
-  const money=v=>cur+(Math.round(v*100)/100).toLocaleString(undefined,{maximumFractionDigits:2});
+  const money=v=>cur+(Math.round(v*100)/100).toLocaleString("en-GB",{maximumFractionDigits:2});
   const length = weeks ? `${weeks} week${weeks===1?"":"s"}` : (o.length_text||"—");
   const sessions = (weeks&&cap) ? `${weeks*cap} sessions (${cap} / week)` : (o.sessions_text||"—");
   let dates = o.start_text||"—";
@@ -7029,7 +7029,7 @@ function cadenceExplainer({sessions,price,cur,noshow,perspective,weeks}){
     const myPct=(perspective==="coach"&&MY_RATES&&isFinite(Number(MY_RATES.coach_commission_pct)))?Number(MY_RATES.coach_commission_pct):COACH_COMMISSION_PCT;
     const src=(perspective==="coach"&&MY_RATES)?MY_RATES.commission_source:"default";
     const fee=serviceFeeFor(price,weeks), payTotal=total+fee, coachNet=total*(1-myPct/100), feeIsMin=fee>total*TRAINEE_FEE_PCT/100+0.001;
-    const m=v=>cur+(Math.round(v*100)/100).toLocaleString(undefined,{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2});
+    const m=v=>cur+(Math.round(v*100)/100).toLocaleString("en-GB",{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2});
     lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)">${perspective==="coach"?`<b style="color:var(--ink)">The trainee pays ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} (${m(total)} + ${feeIsMin?`a minimum ${m(MIN_SERVICE_FEE)}/week`:`${TRAINEE_FEE_PCT}%`} service fee). <b style="color:var(--ink)">You receive ${m(coachNet)}</b> after ${src==="default"?`FormTrace's ${myPct}% commission - less if you reach a referral tier`:`your ${src==="founding"?"Founding coach":src==="partner"?"Partner":src==="ambassador"?"Ambassador":"agreed"} rate of ${myPct}%`}.${src!=="default"&&myPct<COACH_COMMISSION_PCT?` <span style="color:var(--lime)">The standard rate is ${COACH_COMMISSION_PCT}% - this privilege saves you ${m(total*(COACH_COMMISSION_PCT-myPct)/100)} on this offer.</span>`:""}</span>`:`<b style="color:var(--ink)">Committed total: ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} - ${m(total)} for the coaching plus a ${feeIsMin?`${m(MIN_SERVICE_FEE)}/week minimum`:`${TRAINEE_FEE_PCT}%`} service fee. That's the ceiling: you pay only for sessions actually reviewed.</span>`}</div>`);
   }
   return lines.join("");
@@ -7053,7 +7053,7 @@ $("#of-send").addEventListener("click",async()=>{
   if(!pendingOfferVideo){toast("Record your video pitch — it's required");return;}
   const length_text = `${lweeks} week${lweeks===1?"":"s"}`;
   const sessions_text = `${sessions} / week`;
-  const start_text = new Date(start+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+  const start_text = new Date(start+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
   const price_text = `${cur}${price} / week`;
   const btn=$("#of-send");btn.disabled=true;const o=btn.textContent;btn.textContent="Uploading…";
   try{
@@ -7331,7 +7331,7 @@ function openGoalRecap(e,coach){
     ${row("Duration",weeks)}
     ${row("Coach",escapeHtml(coach.display_name||"—"))}
     ${row("Outcome",verdict,vColor)}
-    <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5">${dl}${e.completed_at?` · ${new Date(e.completed_at).toLocaleDateString()}`:""}</div>`;
+    <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5">${dl}${e.completed_at?` · ${new Date(e.completed_at).toLocaleDateString("en-GB")}`:""}</div>`;
   body.appendChild(wrap);
   // open the full training history for this goal
   const openBtn=document.createElement("button");openBtn.className="btn sm";openBtn.style.marginTop="16px";openBtn.textContent="View training calendar";
@@ -11951,6 +11951,21 @@ async function renderProfile(){
           <div class="lr-main"><h3>Pause all trainees</h3><div class="sub">Away for a while? Puts every active goal on hold with one message.</div></div>
           <div class="arw">→</div></div></div>`;
   }
+  /* Item FM: the trainee's credit balance and its latest movements (trainee_credits ledger; RLS: own rows only) */
+  try{
+    const { data:crs }=await store._sb.from("trainee_credits").select("amount_cents,currency,note,created_at").eq("trainee_id",ME.id).order("created_at",{ascending:false});
+    if(crs&&crs.length){
+      const bal={}; crs.forEach(c=>{ bal[c.currency]=(bal[c.currency]||0)+Number(c.amount_cents||0); });
+      const sym=c=>c==="eur"?"\u20AC":c==="gbp"?"\u00A3":String(c||"").toUpperCase()+" ";
+      const fmt=(c,v)=>(v<0?"-":"")+sym(c)+(Math.abs(v)/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+      const note=t=>{ t=String(t||"Credit"); return t.charAt(0).toUpperCase()+t.slice(1); };
+      html+=`<div class="section-h"><div class="eyebrow">Credit</div></div>
+        <div class="card" id="pf-credit"><div style="font-size:24px;font-weight:800">${Object.entries(bal).map(([c,v])=>fmt(c,v)).join(" \u00B7 ")}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Available credit. It comes off your next goal automatically at checkout.</div>
+          ${crs.slice(0,5).map(c=>{ const v=Number(c.amount_cents||0); return `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span style="color:var(--muted);min-width:0">${escapeHtml(note(c.note))} \u00B7 ${fmtDay(String(c.created_at).slice(0,10))}</span><b style="color:${v<0?"var(--muted)":"var(--ink)"};white-space:nowrap">${v<0?"":"+"}${fmt(c.currency,v)}</b></div>`; }).join("")}
+        </div>`;
+    }
+  }catch(e){ console.warn("credit card (FM)",e&&e.message); }
   // completed goals (as coach or trainee) with on-time/late labels
   try{
     const [asT,asC]=await Promise.all([store.engagements.list({trainee_id:ME.id}),store.engagements.list({coach_id:ME.id})]);   // latency: independent, run in parallel
@@ -11963,7 +11978,7 @@ async function renderProfile(){
         const col=onTime?"var(--lime)":e.outcome==="late"?"var(--amber)":"var(--muted)";
         html+=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
             <div style="min-width:0;flex:1"><div style="font-weight:700">${escapeHtml(e.goal_title||"Goal")}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:3px">${e.completed_at?new Date(e.completed_at).toLocaleDateString():""}</div></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:3px">${e.completed_at?new Date(e.completed_at).toLocaleDateString("en-GB"):""}</div></div>
             <span class="badge" style="background:${onTime?'rgba(240, 210, 49,.14)':e.outcome==='late'?'rgba(255,194,74,.16)':'var(--panel2)'};color:${col}">${lab}</span></div></div>`;
       }
     }
@@ -12640,7 +12655,7 @@ async function renderAdminLiability(body){
   body.appendChild(card);
   try{
     const { data:s, error }=await store._sb.rpc("admin_liability_stats"); if(error) throw error;
-    const eur=c=>"€"+(Number(c||0)/100).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2});
+    const eur=c=>"€"+(Number(c||0)/100).toLocaleString("en-GB",{minimumFractionDigits:0,maximumFractionDigits:2});
     const last3=(s.last3_cents||[]).map(Number); const run3=last3.length===3&&last3.every(v=>v>500000);
     const rows=[
       ["Payment volume this month", eur(s.month_volume_cents)+` · ${s.payments_month||0} payment${s.payments_month===1?"":"s"}`, "over €10,000", Number(s.month_volume_cents)>1000000],

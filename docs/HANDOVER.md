@@ -6,7 +6,8 @@
 - **DC custom SMTP DONE:** Supabase Auth emails now come from `contact@formtrace.ie` (Titan `smtp0101.titan.email:465`; the generic `smtp.titan.email` failed with 535). Reset email verified 20:28. Email rate limit 30/hour.
 - Later: DMARC -> `quarantine` after a few weeks.
 - **Owner decisions 20:36:** **DX** (terms, lawyer review) and **EI** (business bank account) **postponed**. **DP thresholds confirmed as proposed.**
-- **No SQL this session.** Next item code still **FM**.
+- **FM built:** Profile shows the trainee's **credit balance** + last 5 movements. **FN fixed:** goal-end choice panel shows "Saving..." (the owner's tap had in fact saved: +EUR 25,553 credit at 20:42); all dates/numbers now `en-GB` (a Greek phone showed "Δευ 16 Νοε").
+- **No SQL this session.** Next item code **FO**.
 
 ## Session 2026-11-02 (evening) - summary
 - **Domain (EF) DONE:** formtrace.ie live on GitHub Pages with HTTPS enforced (4 A, www CNAME, GitHub TXT at Blacknight; old github.io address redirects). Supabase Site URL + redirect `https://formtrace.ie/**`, `APP_URL` secret, Stripe sandbox website set by the owner. Edge Function defaults (`checkout-create`, `connect-onboard`) now `https://formtrace.ie/` (take effect on next deploy; the secret already applies). Phones: reinstall from formtrace.ie, allow notifications, remove the old icon. The Lilly laptop's Zscaler blocks the new domain - test from the phone.

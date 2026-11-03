@@ -99,6 +99,8 @@ BE) are not tasks and are left out.
 | 36 | **CN** Test day 2026-09-19 findings (CN.1-12) | mixed | Currency in accept dialog; call time zones + accept/decline both ways; admin cert alert; videos not playing (need device info); reviewed-workout access; terminated-goal sessions; recap dismissal; layout rule. |
 | 37 | **CN-10 build** Trainee ends a goal early (achieved / cancel + reason) | Medium | Two buttons under the goal, reason list, exit survey on cancel, compensation rule per reason recorded now and applied when BI moves money. |
 | 93 | **FL** Points for completing Home tasks, spent on privileges / looks - explore | Decision + medium | Non-cash; earning rules that resist gaming. |
+| 94 | **FM** Credit balance in Profile - BUILT 2026-11-03 | - | Balance + last 5 movements from `trainee_credits`. |
+| 95 | **FN** Goal-end choice: no visible reaction; Greek dates - FIXED 2026-11-03 | - | Saving state on the button; all dates/numbers en-GB. |
 | 92 | **FK** Smartwatch connectivity - steps and health metrics | Medium-large | Apple Health / Health Connect need a native app; or an aggregator API. |
 | 91 | **FJ** BUG: Goal tab card stale after a pitch arrives (until reload); Goal badge = offers to answer | Small | Refresh on focus / push / tab open. |
 | 90 | **FI** BUG: coach ended a goal right after acceptance - trainee saw nothing about credit/refund | Small | Check paid vs unpaid; in-app card either way. |
@@ -278,6 +280,21 @@ Zoho (TXT), point MX to Zoho, add SPF and DKIM, then DMARC; create hello@ / supp
 the public addresses and keep the owner's own address private. Stripe, Supabase auth
 emails and the ToS contact address (**DX**) should use the domain address once live.
 Registered in the owner's personal name alongside the domain (see EE).
+
+---
+
+## FN. Goal-end choice panel looked dead; dates in the browser's language - FIXED 2026-11-03
+
+Owner test 2026-11-03 20:45 (personal account, screenshot): on "Your coach ended this goal" the owner tapped **Keep EUR 25,553.00 as credit** and "nothing happened"; the deadline line read "No choice by Δευ 16 Νοε".
+**Finding (database, via Supabase MCP):** the tap **worked** - `goal_end_choices` status `credit`, chosen by the trainee at 20:42:32, and `trainee_credits` gained +EUR 25,553.00 (note "coach ended the goal - kept as credit"); no client errors. So the fault was feedback: the buttons were disabled with no visible change while `choose_goal_end` ran.
+**Fix:** the tapped button shows "Saving..." and all three dim until the answer; on failure the label and buttons are restored. **Dates and numbers:** 11 calls used the browser locale (`toLocaleDateString(undefined|())`, `toLocaleString(undefined)`), so a Greek-language phone showed Greek weekdays inside English copy; all now use `en-GB` ("Mon 16 Nov").
+Not done: the amounts in the test data are oversized (EUR 25,000 goal) - test data, not a bug.
+
+---
+
+## FM. Credit balance in Profile - BUILT 2026-11-03
+
+Owner, 2026-11-03: "We should record the available credits in the profile." **Built:** a **Credit** card in Profile (shown when the user has any `trainee_credits` rows - the ledger already existed, FC; RLS lets a trainee read only their own rows): the balance per currency (sum of the ledger: + kept as credit, - used at checkout) and the last five movements with note and date; copy "Available credit. It comes off your next goal automatically at checkout." No SQL, no new table. Not done: a full history screen; coaches see nothing (credit is a trainee concept).
 
 ---
 

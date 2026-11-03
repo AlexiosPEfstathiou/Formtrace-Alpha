@@ -65,7 +65,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **FL**; next **FM**) - **always check the log for the highest code before allocating: both accounts write items**,
+- New product items take the next two-letter code (last used: **FN**; next **FO**) - **always check the log for the highest code before allocating: both accounts write items**,
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").
