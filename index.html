@@ -3462,7 +3462,7 @@ $("#au-submit").addEventListener("click",async()=>{
    The email IS the login - there is no username. Replies never reveal whether an address
    has an account (no enumeration). The reset link returns to this page; Supabase parses it
    and fires PASSWORD_RECOVERY, and the app asks for a new password. */
-const SUPPORT_EMAIL="";   // set to the support address once the domain exists (BJ); empty hides the link
+const SUPPORT_EMAIL="contact@formtrace.ie";   // EH: single public address (owner, 2026-11-03); empty hides the link
 let pwRecovery=/type=recovery/.test(location.hash||"");
 function pwShow(html){ $("#pw-card").innerHTML=html; $("#pw-overlay").style.display="flex"; }
 function pwHide(){ $("#pw-overlay").style.display="none"; $("#pw-card").innerHTML=""; }
