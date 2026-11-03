@@ -141,7 +141,7 @@ BE) are not tasks and are left out.
 | 54 | **DF** Test-day checklist v2 - BUILT 2026-10-29 | run it before inviting coaches |
 | 53 | **DE** Exercise equipment tag - LOW PRIORITY | Small | Second chip row + builder filter; exercises.equipment. |
 | 52 | **DD** Builder library: group search, workout filter, PC scroll, toggle chips - BUILT 2026-09-25 | - |
-| 51 | **DC** Forgot password / which email - BUILT 2026-09-25, working | SMTP postponed (≤30 users / 3 months) |
+| 51 | **DC** Forgot password / which email - BUILT 2026-09-25, working | **Custom SMTP DONE 2026-11-03** - auth emails from `contact@formtrace.ie` via Titan |
 | 50 | **DB** Workout builder v2 - BUILT 2026-09-25 (three passes) | equipment tag not built |
 | 49 | **DA** Achievement unlock animation - BUILT 2026-09-25 | colours are placeholders |
 | 48 | **CZ** Scalable achievements (series + thresholds) | after a month live |
@@ -264,7 +264,7 @@ week-close trigger makes that window tiny).
 
 **DONE 2026-11-03 19:20 (owner, personal account):** reply contact@ -> Gmail, Show original: **SPF PASS** (IP 18.198.78.245), **DKIM PASS** (formtrace.ie), **DMARC PASS**. Email on the domain is complete. Later (not blocking): DMARC `p=none` -> `p=quarantine` after a few weeks of clean reports; optional Supabase custom SMTP via Titan so auth emails come from `contact@` (DC postponed).
 
-**DC attempt 2026-11-03 20:00-20:24:** owner enabled Supabase custom SMTP with `smtp.titan.email:587`; every password reset failed - auth logs: `535 5.7.8 authentication failed` from Titan (password confirmed correct). **Correction:** Blacknight's Titan cluster uses numbered hosts - **SMTP `smtp0101.titan.email` port 465 SSL/TLS; IMAP `imap0101.titan.email` 993; POP `pop0101.titan.email` 995** (Titan's setup guide; matches MX `mx0101`). The generic `smtp.titan.email` / `imap.titan.email` recorded below were wrong for this account. Next: retry with `smtp0101.titan.email:465`; if still 535, check two-factor / third-party access on the mailbox.
+**DC attempt 2026-11-03 20:00-20:24:** owner enabled Supabase custom SMTP with `smtp.titan.email:587`; every password reset failed - auth logs: `535 5.7.8 authentication failed` from Titan (password confirmed correct). **Correction:** Blacknight's Titan cluster uses numbered hosts - **SMTP `smtp0101.titan.email` port 465 SSL/TLS; IMAP `imap0101.titan.email` 993; POP `pop0101.titan.email` 995** (Titan's setup guide; matches MX `mx0101`). The generic `smtp.titan.email` / `imap.titan.email` recorded below were wrong for this account. **DONE 20:28:** with `smtp0101.titan.email:465` the reset email arrived from "Formtrace <contact@formtrace.ie>". Supabase custom SMTP is live: sender `contact@formtrace.ie`, host `smtp0101.titan.email`, port 465, username = full address. Email rate limit now 30/hour (was 2/hour on Supabase's built-in sender). Mistake: Claude first gave the generic Titan host from earlier notes instead of checking the account's cluster.
 
 **Progress 2026-11-03 (owner, personal account):** first mailbox created - **`contact@formtrace.ie`** (Titan). Not yet done: DKIM, DMARC, Gmail round-trip test, aliases. **2026-11-03 19:05 (owner): DKIM added and verified in Titan (manage-euc1.titan.email -> Email Reputation); DMARC TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:contact@formtrace.ie` (TTL 3600) added at Blacknight.** 19:13: `VAPID_SUBJECT` set to `mailto:contact@formtrace.ie` (owner); Gmail -> contact@ delivered. Remaining: reply contact@ -> Gmail and check Show original (SPF/DKIM/DMARC PASS), tighten DMARC to `quarantine` after a few weeks of passes.
 
@@ -1477,6 +1477,8 @@ sideways, and a thin scrollbar shows where the pointer is a mouse
 ---
 
 ## DC. Forgot my password / forgot my username
+
+**2026-11-03: custom SMTP live** - Supabase Auth sends from `contact@formtrace.ie` via Titan (`smtp0101.titan.email:465`); reset email verified. Details under EH.
 
 Requested 2026-09-25. Today the sign-in screen has no recovery at all: no
 "Forgot password?" link, and nothing for someone who does not remember

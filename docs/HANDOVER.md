@@ -3,7 +3,8 @@
 ## Session 2026-11-03 (personal account) - summary
 - **EH DONE:** mailbox `contact@formtrace.ie` (Titan); owner decision: it is the **only public address** (no aliases) - terms.html and the app's "Contact support" link (`SUPPORT_EMAIL`) use it. DKIM verified, DMARC `p=none` added, Gmail check SPF/DKIM/DMARC PASS. `VAPID_SUBJECT` = `mailto:contact@formtrace.ie`.
 - Titan admin panel for Blacknight: https://manage-euc1.titan.email/ (Email Reputation = DKIM).
-- Later: DMARC -> `quarantine` after a few weeks; optional Supabase SMTP via Titan.
+- **DC custom SMTP DONE:** Supabase Auth emails now come from `contact@formtrace.ie` (Titan `smtp0101.titan.email:465`; the generic `smtp.titan.email` failed with 535). Reset email verified 20:28. Email rate limit 30/hour.
+- Later: DMARC -> `quarantine` after a few weeks.
 - **No SQL this session.** Next item code still **FM**.
 
 ## Session 2026-11-02 (evening) - summary
@@ -159,7 +160,6 @@ awaiting the owner's migration run: weight plausibility and body-achievement re-
 | CX iPhone install | no iPhone to test on |
 | BJ branding | name shortlist |
 | CZ scalable achievement tiers | a month of live data |
-| DC custom SMTP | postponed — ≤30 users for three months |
 
 ## Infrastructure
 - **Repo:** `AlexiosPEfstathiou/Formtrace-Alpha` (public), branch `main` → GitHub Pages
