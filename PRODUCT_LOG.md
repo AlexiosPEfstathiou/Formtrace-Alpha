@@ -262,7 +262,7 @@ week-close trigger makes that window tiny).
 
 ## EH. Email hosting - Zoho Mail on the domain
 
-**Progress 2026-11-03 (owner, personal account):** first mailbox created - **`contact@formtrace.ie`** (Titan). Not yet done: DKIM, DMARC, Gmail round-trip test, aliases. **2026-11-03 19:05 (owner): DKIM added and verified in Titan (manage-euc1.titan.email -> Email Reputation); DMARC TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:contact@formtrace.ie` (TTL 3600) added at Blacknight.** Remaining: Gmail round-trip test (SPF/DKIM/DMARC PASS), `VAPID_SUBJECT`, tighten DMARC to `quarantine` after a few weeks of passes.
+**Progress 2026-11-03 (owner, personal account):** first mailbox created - **`contact@formtrace.ie`** (Titan). Not yet done: DKIM, DMARC, Gmail round-trip test, aliases. **2026-11-03 19:05 (owner): DKIM added and verified in Titan (manage-euc1.titan.email -> Email Reputation); DMARC TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:contact@formtrace.ie` (TTL 3600) added at Blacknight.** 19:13: `VAPID_SUBJECT` set to `mailto:contact@formtrace.ie` (owner); Gmail -> contact@ delivered. Remaining: reply contact@ -> Gmail and check Show original (SPF/DKIM/DMARC PASS), tighten DMARC to `quarantine` after a few weeks of passes.
 
 **Owner decision 2026-11-03: one public address, `contact@formtrace.ie` - no aliases.** Done: terms.html `hello@` (3 links) and `privacy@` (2 links) -> `contact@`; `SUPPORT_EMAIL` set, so the forgot-password help shows "Contact support". Not done: `VAPID_SUBJECT` secret (push-send defaults to `mailto:hello@example.com`) - set it to `mailto:contact@formtrace.ie` in Supabase secrets.
 
