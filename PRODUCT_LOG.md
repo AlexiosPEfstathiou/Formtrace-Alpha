@@ -47,6 +47,7 @@ the list below are done, superseded, or parked (bottom).
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
+**North star (owner, 2026-11-04):** people use FormTrace to increase their fitness and their social life; FormTrace becomes a community brand that brings people together - quests, points, shop and Events serve it (**FS**).
 **Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
 **Product backlog (owner, 2026-10-30, unordered):** ~~**ES**~~ daily checklist built 2026-11-02 · **ET** macro-app connectivity · ~~**EU**~~ rest timer built 2026-11-02 (per-exercise rest field in the builder still to do) · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** domain / SEO / landing page (mail and domain done) · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
@@ -660,6 +661,29 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
+## FS. Quests, points, a shop and Events - the north star (owner, 2026-11-04)
+
+**Owner, 2026-11-04 - the north star of the app:** people use FormTrace to **increase their fitness and their social life**,
+and FormTrace becomes a **community brand that brings people together**.
+**Non-daily quests:** goals FormTrace sets for its users so they become stronger users and get the best out of the app -
+e.g. **install FormTrace**, **turn on push notifications**, **earn achievements**, and similar. Users set their eyes on them
+and are **rewarded with points**. (Daily tasks stay the Home checklist; points for those are **FL** - one points currency.)
+**Shop (later):** points redeemable for **credit / merch / digital swag**.
+**Events (later in the adventure):** users collect points by completing **solo or team quests**, ranked on a **leaderboard**.
+These are **not fitness-check quests** (owner: no ethics concern) - they rank **engagement** and **incentivise social behaviour**.
+**Notes for the design (C):**
+- Candidate quests: install the app (standalone display mode), allow notifications, complete the profile, post a first goal,
+  first session submitted / reviewed, first achievement, first friend (In Touch), first congratulations, share a handle,
+  refer a friend (QR - points when the friend completes a first week), a 4-week streak, a first check-in photo.
+- One **points ledger** like `trainee_credits` (signed movements, reason, FQ-style unique reference) so every point has a
+  report; quests completed by server-side triggers where possible (not the client), so points cannot be claimed by hand.
+- **Anti-gaming:** referral and social quests are the ones to protect (fake accounts, self-congratulations) - award on real
+  activity (the friend's first week, a mutual friendship) and cap per period.
+- **Shop for credit:** points turned into FormTrace credit become money owed - decide the rate, a monthly cap, and how it
+  shows in the liability numbers (DP) before opening it; merch / digital swag carry no such liability.
+- Coaches: quests for coaches too (payout setup, first review, fast reviews) - FH's checklist is the daily side.
+- Relates to: **FL** points for Home tasks, **CZ** achievement tiers, **BR / BS** payment-based rewards, **EV** walkthroughs,
+  **EW** / `docs/DESIGN_ASSETS.md` (quest badges, points icon, shop and leaderboard art).
 ## FR. admin.formtrace.ie - a control panel for everything FormTrace (owner, 2026-11-04)
 
 **Owner request:** an **admin.formtrace.ie** address with a control panel for everything FormTrace-related, **password

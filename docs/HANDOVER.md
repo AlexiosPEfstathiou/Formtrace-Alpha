@@ -1,5 +1,8 @@
 # FormTrace Coach — Handover (as of 2026-10-29)
 
+## North star (owner, 2026-11-04)
+People use FormTrace to **increase their fitness and their social life**, and FormTrace becomes a **community brand that brings people together**. Quests, points, a shop and Events (PRODUCT_LOG **FS**) serve it; weigh new features against it.
+
 ## Session 2026-11-03 (personal account) - summary
 - **EH DONE:** mailbox `contact@formtrace.ie` (Titan); owner decision: it is the **only public address** (no aliases) - terms.html and the app's "Contact support" link (`SUPPORT_EMAIL`) use it. DKIM verified, DMARC `p=none` added, Gmail check SPF/DKIM/DMARC PASS. `VAPID_SUBJECT` = `mailto:contact@formtrace.ie`.
 - Titan admin panel for Blacknight: https://manage-euc1.titan.email/ (Email Reputation = DKIM).
