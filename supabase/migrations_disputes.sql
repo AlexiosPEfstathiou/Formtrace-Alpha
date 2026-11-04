@@ -152,7 +152,7 @@ begin
         case when v_is_new then 'Card dispute opened' else 'Card dispute ' || replace(v_new, '_', ' ') end || case when v_live then '' else ' (test)' end,
         coalesce(v_title, 'A payment') || ' - ' || v_amt
           || case when v_is_new and v_due is not null then ' - respond in Stripe by ' || to_char(v_due, 'DD Mon') else '' end,
-        '/#admin'   -- the Review tab's key is 'admin');
+        '/#admin');   -- the Review tab's key is 'admin'
     end loop;
   end if;
   return v_id;
