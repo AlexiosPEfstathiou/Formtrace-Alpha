@@ -45,6 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
+**Brand consistency (owner, 2026-11-04):** **FV** write **Formtrace** everywhere - app, terms, manifest, Edge Functions, SQL push texts, Supabase and Stripe settings (counts in the FV entry).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **North star (owner, 2026-11-04):** people use FormTrace to increase their fitness and their social life; FormTrace becomes a community brand that brings people together - quests, points, shop and Events serve it (**FS**).
@@ -675,7 +676,9 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
-## FV. The name is Formtrace, not FormTrace (owner, 2026-11-04)
+## FV. The name is Formtrace, not FormTrace (owner, 2026-11-04) - SWEEP APPROVED, TO DO
+
+**Owner 2026-11-04 - the full sweep is APPROVED, to do:** the name must be **consistent everywhere**. Count on 2026-11-04: ``index.html`` **48** (screens, toasts, panels), ``terms.html`` **54**, ``manifest.json`` **2** (home-screen name and description), Edge Functions **16** (push titles, Stripe Checkout line names and descriptions - redeploy after), SQL push / email texts in the functions that write ``push_outbox`` (re-run as a migration), Supabase Auth email templates (Dashboard, owner) and the Stripe public business name / statement descriptor (Dashboard, owner). Leave code identifiers, file names and the repository name as they are (not user-visible); the wordmark keeps its design (FORM / TRACE).
 
 **Owner:** the brand is written **Formtrace**. Done on the landing page and in the search / share text (title, description, Open
 Graph, structured data) on 2026-11-04. **Still spelled FormTrace** elsewhere - the app's own screens and toasts, `terms.html`,
