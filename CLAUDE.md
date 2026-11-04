@@ -77,8 +77,8 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 ## Design assets list (owner, 2026-11-02)
 Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page) **or a sound**, add or update its row in `docs/DESIGN_ASSETS.md`, with its tier (L1 / L2 / Later / Code) and spec. It is the brief for the openart theme (PRODUCT_LOG EW).
 
-## Last session (2026-11-03, personal account)
-EH email DONE: `contact@formtrace.ie` is the single public address (terms + support link); SPF/DKIM/DMARC PASS; VAPID_SUBJECT set. DC custom SMTP live (Titan `smtp0101.titan.email:465`). DX and EI postponed; DP thresholds confirmed. Next build candidate: EJ (chargebacks). Later: DMARC -> quarantine.
+## Last session (2026-11-04, work account)
+Read the top of docs/HANDOVER.md (session 2026-11-04 summary). Done: EJ disputes + 3D Secure, FO / FP / FQ refunds and credit history, EU part 2, EX landing page, FV Formtrace everywhere, design-assets list finalised. Pending SQL: FU clean-up and FV follow-up (given). Suggested next: FZ placeholder sounds, openart style brief + L1 prompts, FX email templates. Next item code: **GA**.
 
 ## Session before (2026-11-02 evening)
 Domain live at https://formtrace.ie/ (EF done). Email EH then in progress. Built: EU rest timer; FI "Choose now" fix. See the top of docs/HANDOVER.md. Next item code: **FM**.

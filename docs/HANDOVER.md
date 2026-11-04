@@ -1,5 +1,18 @@
 # Formtrace Coach — Handover (as of 2026-10-29)
 
+## Session 2026-11-04 (work account) - summary
+**Built / done (all pushed):**
+- **EJ disputes** - `payment_disputes`, payouts/refunds held while a dispute is open, admin push, evidence pack, Review card; SQL run, `stripe-webhook` redeployed, 5 dispute events added in Stripe. **EJ part 2** - 3D Secure on card payments (`three_ds_min_cents` = 0; confirmed working); owner keeps **Radar Standard** (EUR 0.05 per screened transaction + EUR 1 per active connected account, from 22 Jan 2027).
+- **FC-T1 / FC-T2 passed** (full and part credit). Deposit line worded per case.
+- **FO** full-credit refunds return the payout-cost share as credit (SQL run). **FP** every partial refund explains itself (breakdown, push, Notifications card, panel; SQL run). **FQ** unique hash-derived references CR-/RF- + Profile **Credit and refunds** history, tap any line for its report (SQL run).
+- **EU part 2** rest field per exercise in the builder. **EX landing page** live on formtrace.ie for signed-out visitors (SEO tags, structured data, robots.txt, sitemap.xml; squat figure with arms forward, gold hip + knee traces; "Optimize results" and "Pay for progress"). `_config.yml` keeps docs / SQL / tools **off the published site** (before: readable at formtrace.ie/<file>).
+- **FV** Formtrace (not FormTrace) everywhere users see it - code, live DB functions (functions_left 0), 3 functions redeployed, Stripe public details. Rule in CLAUDE.md.
+- **Repo history scanned** - no secrets (only the publishable key). **Design-assets list finalised for launch** (tiers L1 / L2 / Later / Code, specs, sounds section).
+**Logged (new items):** FR admin.formtrace.ie panel · FS quests / points / shop / Events (**north star**, top of this file) · FT GitHub Pro + private repo (owner steps) · FU old push subscriptions clean-up · FW expense log (`docs/EXPENSES.md`) · FX refine sign-in emails · FY Stripe branding (interim: icon-512, #F0D231 / #0B0E11) · FZ sound effects · EW openart: **Plus monthly, the month before pilot invitations**.
+**Owner to do / test:** run the FU clean-up SQL and the FV follow-up SQL (both "given" in the journal); re-allow notifications in the formtrace.ie app on test phones, then re-test the FP refund push; EJ dispute test with a no-credit trainee (card 4000 0000 0000 0259); check formtrace.ie/PRODUCT_LOG.md shows 404; FT GitHub Pro switch; FY interim Stripe branding; Google Search Console + sitemap; fill VAT on the Claude / Supabase rows in EXPENSES.md.
+**Suggested next builds:** FZ placeholder sounds (switches + no sound while recording) - openart style brief + L1 prompts - FX email templates.
+**Next item code: GA.**
+
 ## North star (owner, 2026-11-04)
 People use Formtrace to **increase their fitness and their social life**, and Formtrace becomes a **community brand that brings people together**. Quests, points, a shop and Events (PRODUCT_LOG **FS**) serve it; weigh new features against it.
 
