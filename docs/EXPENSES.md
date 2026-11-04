@@ -15,12 +15,13 @@ Everything Formtrace costs. Add a row whenever a cost starts, changes or stops. 
 | Stripe | Dispute fee | per dispute | - | per dispute | - | - | deducted by Stripe | Stripe dashboard | Tracked in payment_disputes (EJ) |
 | Supabase | Database, auth, storage, Edge Functions | to confirm (plan: to confirm) | to confirm | monthly | to confirm | to confirm | owner | Supabase billing | |
 | GitHub | Pro plan (private repository with Pages) | about USD 4 | to confirm | monthly | planned (FT) | - | owner | GitHub billing | Not yet bought |
-| Anthropic | Claude subscription (personal account) | to confirm | to confirm | monthly | to confirm | to confirm | owner | Anthropic billing | Development of Formtrace |
+| Anthropic | Claude subscription (personal account), 12 months | EUR 221.40 | to confirm (incl.?) | yearly | 2026-04-12 | 2027-04-12 | owner (personal) | Invoice 9BF0758D-671408 | Bought before Formtrace began; also personal use - share to attribute to Formtrace to decide |
 
 ## One-off payments
 
 | Date | Vendor | What | Amount | VAT | Paid by | Receipt | Notes |
 |---|---|---|---|---|---|---|---|
+| 2026-04-12 | Anthropic | Claude subscription, 12 months (personal account) | EUR 221.40 | to confirm | owner | Invoice 9BF0758D-671408 | Covers 12 Apr 2026 - 11 Apr 2027 |
 | 2026-10-30 | Blacknight | formtrace.ie registration (first year) | to confirm | to confirm | owner | Blacknight invoice | |
 | 2026-11-02 | Blacknight | Titan Email first month | EUR 1.85 | incl. | owner | Blacknight invoice + payment confirmation | |
 
