@@ -533,6 +533,18 @@ Owner, 2026-10-30. Umbrella for the domain work once formtrace.ie resolves: (1) 
 
 ## EW. Explore openart.ai for the app's look, videos and an animated persona
 
+**Pricing and timing decided 2026-11-04 (owner + C).** Plans (late 2026): Free (40 trial credits, 7 days, no commercial use),
+Starter USD 14/month (USD 13 yearly) 4,000 credits - **no commercial rights**, **Plus USD 34/month (USD 27 yearly) 12,000 credits
+with commercial rights**, Pro USD 56 / 44, Wonder USD 240 / 175. Credits on monthly plans do not roll over. **Choice: Plus, paid
+monthly, for one or two months** (the ~60-item list at ~50 tries each is about 3,000 images - a quarter of one month); yearly only
+once art is needed every month (FS shop / Events). **When: the month just before the pilot coaches are invited**, once (1) the
+name is Formtrace everywhere (FV), (2) `docs/DESIGN_ASSETS.md` is final for launch, (3) the owner has 2-3 free evenings or a
+weekend that month, (4) the pilot date is roughly set. **Prepare first (free):** a one-page style brief, prompts per item (C can
+draft them), sizes and formats per item. Check for a Black Friday deal (27 Nov 2026) on yearly Plus. Plan for: vector versions
+(SVG) of the logo and icons; AI-only art may not be copyrightable - a designer should refine the final logo (trademark still
+possible; check with the Terms lawyer, DX); OpenArt lists an "OpenArt MCP" integration worth trying from Claude. A **second paid
+month** later for FS (shop, Events) art.
+
 **Owner 2026-11-02: the brief is a living list - `docs/DESIGN_ASSETS.md`.** Every visual element that could be replaced by a designed asset (brand core, tab icons, badges and achievement icons, celebrations and motion, shareable images, empty states, camera UI, and items outside the app), with where it is and its status. When it is time, take the whole list to openart and ask for **one theme across all of it**. Whoever builds or changes a visual element adds or updates its row.
 
 **Owner, 2026-11-02:** the aim is to make the app **look more professional and aesthetically pleasing** - explore what openart.ai offers for that (icons, illustrations, backgrounds, onboarding art, short animations, a brand persona), licence terms for commercial use, and how it fits the brand work (BJ) and the signature gold `#F0D231`.

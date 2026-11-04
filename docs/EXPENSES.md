@@ -15,6 +15,7 @@ Everything Formtrace costs. Add a row whenever a cost starts, changes or stops. 
 | Stripe | Dispute fee | per dispute | - | per dispute | - | - | deducted by Stripe | Stripe dashboard | Tracked in payment_disputes (EJ) |
 | Supabase | Database, auth, storage, Edge Functions | EUR 25 (owner; Supabase usually bills USD 25 for Pro - currency and plan to confirm) | to confirm | monthly | to confirm | monthly | owner (personal) | Latest invoice OJMPKX-00008 | Invoice no. 00008 suggests about eight monthly invoices so far; usage above the plan is billed extra |
 | GitHub | Pro plan (private repository with Pages) | about USD 4 | to confirm | monthly | planned (FT) | - | owner | GitHub billing | Not yet bought |
+| OpenArt | Plus plan (commercial rights, 12,000 credits/month) - for the design theme (EW) | USD 34 | to confirm | monthly, 1-2 months | planned: the month before pilot invitations | - | owner | OpenArt billing | Not yet bought; yearly USD 27/month only if art is needed monthly later |
 | Anthropic | Claude subscription (personal account), 12 months | EUR 221.40 | to confirm (incl.?) | yearly | 2026-04-12 | 2027-04-12 | owner (personal) | Invoice 9BF0758D-671408 | Bought before Formtrace began; also personal use - share to attribute to Formtrace to decide |
 
 ## One-off payments
