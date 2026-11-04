@@ -4,15 +4,15 @@ Opened 2026-08-07. Body is chronological (newest first) - a development
 record, kept that way because it is what every bug hunt has been traced
 through. The index below is the sorted view.
 
-## PENDING - IN ORDER (as of 2026-10-29 night)
+## PENDING - IN ORDER (statuses refreshed 2026-11-04)
 
 The order to do things in, by dependency. **(O)** = owner, **(C)** = Claude. Items not in
 the list below are done, superseded, or parked (bottom).
 
 **A. Next session - foundations**
 2. **BJ** Choose the name (O) - **settled by the domain: the name stays FormTrace** (logo / visual identity still open).
-3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered** (registry); Blacknight order still *pending*, so DNS is not editable yet - EF waits.  3b. **EH** Email on the domain (O) - **DONE 2026-11-03**: Titan, `contact@formtrace.ie` only; SPF/DKIM/DMARC PASS. Later: DMARC -> quarantine; optional Supabase SMTP via Titan.
-4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - before anyone
+3. **EE** Buy the domain (O) - **DONE 2026-11-02: formtrace.ie registered** (registry); order activated, DNS at Blacknight.  3b. **EH** Email on the domain (O) - **DONE 2026-11-03**: Titan, `contact@formtrace.ie` only; SPF/DKIM/DMARC PASS. Supabase custom SMTP via Titan **DONE 2026-11-03** (DC). Later: DMARC -> quarantine.
+4. **EF** Point the domain at GitHub Pages, Supabase, Stripe (O + C) - **DONE 2026-11-02: live at https://formtrace.ie/ with HTTPS** - before anyone
    installs for the pilot (new origin = reinstall, re-allow push).
 5. **DX** Terms of Service page - **POSTPONED (owner, 2026-11-03)** - DRAFTED (	erms.html, 28 bracketed items for owner/lawyer); link from app + Stripe URL after EF (C draft → lawyer) - published on the domain; URL in Stripe.
 6. **Pending SQL** - DONE 2026-10-30 (checkout, connect and body-achievement migrations confirmed run; SQL journal).
@@ -47,7 +47,7 @@ the list below are done, superseded, or parked (bottom).
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management (Radar, dispute webhook, evidence pack).
 **Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
-**Product backlog (owner, 2026-10-30, unordered):** **ES** daily checklist + celebration · **ET** macro-app connectivity · **EU** rest timers · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** @formtrace.ie mail / domain / SEO · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
+**Product backlog (owner, 2026-10-30, unordered):** ~~**ES**~~ daily checklist built 2026-11-02 · **ET** macro-app connectivity · ~~**EU**~~ rest timer built 2026-11-02 (per-exercise rest field in the builder still to do) · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** domain / SEO / landing page (mail and domain done) · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
 **After the pilot / later:** **BR** / **BS** rewards that need payments · **CZ** achievement
 tiers (after a month live) · **DE** equipment tag (low) · **VAT** advice (postponed until
 traffic grows). **Blocked:** **CX** iPhone (no device) · **AA** / **AH** (need a repro).
