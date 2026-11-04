@@ -517,8 +517,8 @@ and a big bright button to try it).** Plain HTML inside `index.html` (search eng
 signed-out visitors in a browser; skipped before anything is drawn for the installed app, a saved session, sign-in / reset /
 payment returns, or a visitor who already tapped through this session. Hero: "A real coach for every rep you record", one
 paragraph, gold **Try FormTrace** button (opens sign-up; "Sign in" top right), and an animated **pose-traced squat** (joints in
-lime, bar path in gold; still for reduced motion). Then "Why FormTrace is different" (form traced, a coach who watches, pay for
-progress, better with friends), "How it works" (post your goal, choose your coach, train-record-improve), a closing button with a
+lime, bar path in gold; still for reduced motion). Then "Why Formtrace is different" (form traced, a coach who watches, **optimize results** - owner 2026-11-04,
+replacing "pay for progress", better with friends), "How it works" (post your goal, choose your coach, train-record-improve), a closing button with a
 coach line, and a footer (terms, contact@formtrace.ie). Type: Big Shoulders Display (Bunny Fonts - EU, no tracking) for headlines,
 system font for text. SEO: title, description, canonical, Open Graph / Twitter tags (image = icon-512 until a designed share
 image exists), WebApplication structured data, `robots.txt`, `sitemap.xml`. **Note:** "Pay for progress" describes the Stripe
@@ -675,6 +675,18 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
+## FV. The name is Formtrace, not FormTrace (owner, 2026-11-04)
+
+**Owner:** the brand is written **Formtrace**. Done on the landing page and in the search / share text (title, description, Open
+Graph, structured data) on 2026-11-04. **Still spelled FormTrace** elsewhere - the app's own screens and toasts, `terms.html`,
+`manifest.json` (the home-screen name), Edge Function texts (pushes, Stripe line names) and SQL push texts - to sweep when the
+owner says go. The wordmark stays as designed (FORM / TRACE in capitals). From now on new text uses **Formtrace** (CLAUDE.md rule).
+
+## FU. Push subscriptions from the old github.io app (2026-11-04)
+
+Subscriptions created before formtrace.ie went live (evening of 2 Nov 2026) belong to the old github.io app: pushes to them are
+"delivered" but reach no phone (the FP test). The app already re-subscribes on the new address (`ensurePushDefault`: silent if
+allowed, else the prompt). One-off clean-up SQL given: delete subscriptions created before 2026-11-02 20:00 UTC (count first).
 ## FT. Make the repository private - GitHub Pro (owner decision, 2026-11-04)
 
 **Owner decision:** a public repository is a security risk - move to **GitHub Pro** (about USD 4/month), which keeps GitHub

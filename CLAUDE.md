@@ -82,3 +82,6 @@ EH email DONE: `contact@formtrace.ie` is the single public address (terms + supp
 
 ## Session before (2026-11-02 evening)
 Domain live at https://formtrace.ie/ (EF done). Email EH then in progress. Built: EU rest timer; FI "Choose now" fix. See the top of docs/HANDOVER.md. Next item code: **FM**.
+
+## Brand name (owner, 2026-11-04)
+Write **Formtrace** (not FormTrace) in all new text. Older text is swept under PRODUCT_LOG FV when the owner says go.

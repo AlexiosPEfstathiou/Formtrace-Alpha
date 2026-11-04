@@ -10,7 +10,7 @@ generic · **future** = not built yet, design needed when it is.
 **Theme constraints to give openart:** dark UI first (light theme exists); signature accent
 **gold `#F0D231`** (light theme `#B8960A`); attention lime `#C8FF3D`; status red `#FF5A5A`,
 amber `#FFC24A`, blue `#5AB0FF`, violet `#B79CFF`; backgrounds `#0B0E11` / cards `#151B21`.
-Name: **FormTrace** (wordmark today: "FORM**TRACE**" with TRACE in gold). Audience: trainees and
+Name: **Formtrace** (owner, 2026-11-04 - not FormTrace; wordmark today: "FORM**TRACE**" with TRACE in gold). Audience: trainees and
 coaches, fitness, form and progress. Must work small (16–24 px) and on phones; animations need
 a calm reduced-motion version.
 
@@ -96,6 +96,7 @@ Also: settings gear, back arrow, the header avatar — one icon family for all.
 | Stripe Checkout and Connect branding (icon, colour) | Stripe settings (EC) | current (gold + placeholder icon) | |
 | Sign-in / password-reset emails | Supabase Auth templates | current (default) | |
 | Email signature and templates | Zoho, @formtrace.ie (EH) | future | |
+| **Landing page - the whole page** (layout, hero, section art, typography, button) | formtrace.ie for signed-out visitors (EX, 2026-11-04) | current (built in code) | Owner 2026-11-04: an openart item - keep the copy and structure, redesign the look within the theme |
 | Landing page hero: pose-traced squat (SVG, animated) | `#landing` in index.html (EX, 2026-11-04) | current | Joints lime, bar path gold; a designed version should keep the "traced form" idea |
 | Share preview (Open Graph) image 1200x630 | `og:image` (EX) | placeholder (icon-512) | Shown on WhatsApp / Instagram / Facebook links |
 | Landing display typeface: Big Shoulders Display | landing headlines (EX) | current | Candidate for the brand face across the app |
