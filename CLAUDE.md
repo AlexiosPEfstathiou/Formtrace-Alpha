@@ -85,3 +85,6 @@ Domain live at https://formtrace.ie/ (EF done). Email EH then in progress. Built
 
 ## Brand name (owner, 2026-11-04)
 Write **Formtrace** (not FormTrace) in all new text. Older text is swept under PRODUCT_LOG FV when the owner says go.
+
+## Expense log (owner, 2026-11-04)
+Whenever a cost starts, changes or stops (a subscription, a plan change, a domain, a fee), add or update its row in `docs/EXPENSES.md` (PRODUCT_LOG FW).

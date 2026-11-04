@@ -676,6 +676,14 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
+## FW. Expense log (owner, 2026-11-04)
+
+**Owner request:** keep an expense log of everything Formtrace costs - GitHub, Supabase, Stripe, Blacknight, the Claude
+subscription, etc. **Started 2026-11-04 (C):** `docs/EXPENSES.md` - one table of running costs (vendor, what, price, VAT,
+billing cycle, renewal date, paid by, receipt) plus a dated list of one-off payments. Amounts not yet known are marked "to
+confirm". Keep it current: whoever records a new cost or a price change adds a row (CLAUDE.md rule). Useful later for the
+business bank account (EI), reimbursing pre-trading costs, tax, and pricing (EA / DK). The file is excluded from the published
+site (`_config.yml`: `docs/`); the repository itself stays public until FT (GitHub Pro + private).
 ## FV. The name is Formtrace, not FormTrace (owner, 2026-11-04) - SWEEP APPROVED, TO DO
 
 **Owner 2026-11-04 - the full sweep is APPROVED, to do:** the name must be **consistent everywhere**. Count on 2026-11-04: ``index.html`` **48** (screens, toasts, panels), ``terms.html`` **54**, ``manifest.json`` **2** (home-screen name and description), Edge Functions **16** (push titles, Stripe Checkout line names and descriptions - redeploy after), SQL push / email texts in the functions that write ``push_outbox`` (re-run as a migration), Supabase Auth email templates (Dashboard, owner) and the Stripe public business name / statement descriptor (Dashboard, owner). Leave code identifiers, file names and the repository name as they are (not user-visible); the wordmark keeps its design (FORM / TRACE).
