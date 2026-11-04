@@ -518,7 +518,7 @@ and a big bright button to try it).** Plain HTML inside `index.html` (search eng
 signed-out visitors in a browser; skipped before anything is drawn for the installed app, a saved session, sign-in / reset /
 payment returns, or a visitor who already tapped through this session. Hero: "A real coach for every rep you record", one
 paragraph, gold **Try FormTrace** button (opens sign-up; "Sign in" top right), and an animated **pose-traced squat** (joints in
-lime; owner 2026-11-04: **arms held out in front** - a bodyweight squat, so the barbell was removed and the gold trace follows the hands; still for reduced motion). Then "Why Formtrace is different" (form traced, a coach who watches, **optimize results** and **pay for progress** (owner 2026-11-04: "Optimize results" added, "Pay for progress" kept after all - its escrow claim is true once EB flips payments to Stripe),
+lime; owner 2026-11-04: **arms held out in front** - a bodyweight squat, so the barbell was removed; gold traces follow the **hips and the knees** (owner, 2026-11-04); still for reduced motion). Then "Why Formtrace is different" (form traced, a coach who watches, **optimize results** and **pay for progress** (owner 2026-11-04: "Optimize results" added, "Pay for progress" kept after all - its escrow claim is true once EB flips payments to Stripe),
 replacing "pay for progress", better with friends), "How it works" (post your goal, choose your coach, train-record-improve), a closing button with a
 coach line, and a footer (terms, contact@formtrace.ie). Type: Big Shoulders Display (Bunny Fonts - EU, no tracking) for headlines,
 system font for text. SEO: title, description, canonical, Open Graph / Twitter tags (image = icon-512 until a designed share

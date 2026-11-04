@@ -97,7 +97,7 @@ Also: settings gear, back arrow, the header avatar — one icon family for all.
 | Sign-in / password-reset emails | Supabase Auth templates | current (default) | |
 | Email signature and templates | Zoho, @formtrace.ie (EH) | future | |
 | **Landing page - the whole page** (layout, hero, section art, typography, button) | formtrace.ie for signed-out visitors (EX, 2026-11-04) | current (built in code) | Owner 2026-11-04: an openart item - keep the copy and structure, redesign the look within the theme |
-| Landing page hero: pose-traced squat (SVG, animated) | `#landing` in index.html (EX, 2026-11-04) | current | Bodyweight squat, arms held forward (owner, 2026-11-04); joints lime, hand path gold; a designed version should keep the "traced form" idea |
+| Landing page hero: pose-traced squat (SVG, animated) | `#landing` in index.html (EX, 2026-11-04) | current | Bodyweight squat, arms held forward (owner, 2026-11-04); joints lime, hip and knee paths gold; a designed version should keep the "traced form" idea |
 | Share preview (Open Graph) image 1200x630 | `og:image` (EX) | placeholder (icon-512) | Shown on WhatsApp / Instagram / Facebook links |
 | Landing display typeface: Big Shoulders Display | landing headlines (EX) | current | Candidate for the brand face across the app |
 | Onboarding walkthrough art | first-run tours (EV) | future | |
