@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**Brand consistency (owner, 2026-11-04):** **FV** write **Formtrace** everywhere - code DONE 2026-11-04; SQL, 3 redeploys and the Supabase / Stripe dashboards to do.
+**Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **North star (owner, 2026-11-04):** people use FormTrace to increase their fitness and their social life; FormTrace becomes a community brand that brings people together - quests, points, shop and Events serve it (**FS**).
@@ -688,6 +688,26 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
+## FX. Refine the sign-in emails (owner, 2026-11-04)
+
+**Owner:** Supabase's sign-in emails carry no Formtrace branding at all (found during FV). Refine them: Supabase ->
+Authentication -> **Email templates** - confirm sign-up, reset password, magic link, change email address, invite (and
+reauthentication if used). For each: a subject line that names Formtrace ("Confirm your Formtrace account", "Reset your
+Formtrace password"...), a short friendly body in the app's voice (en-GB), the action button, what to do if it was not them,
+and a footer (Formtrace, Ireland, contact@formtrace.ie, link to terms). Simple HTML that survives every mail client (inline
+styles, one column, the gold button), dark-mode safe, plain-text fallback. Sender name **Formtrace** (Authentication -> SMTP:
+the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
+`docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
+
+## FY. Stripe branding (owner, 2026-11-04)
+
+**Owner:** Stripe -> Settings -> Business -> **Branding** needs work - the **icon**, **logo**, **brand colour** and **accent colour**
+used on Stripe Checkout, receipts, invoices, customer emails and the coaches' Connect onboarding (Connect branding was a
+prerequisite for hosted onboarding - EC). **Interim (now):** icon = `icon-512.png`, brand colour **#F0D231** (gold), accent
+**#0B0E11** (the app's background) so Checkout matches the app. **Final:** after OpenArt (EW) delivers the logo and icon - square
+icon (at least 128 x 128, no transparency issues on white), logo (horizontal wordmark), both checked on Stripe's light pages.
+Repeat on the **live** account at go-live (DW). Already listed in `docs/DESIGN_ASSETS.md` ("Stripe Checkout and Connect
+branding").
 ## FW. Expense log (owner, 2026-11-04)
 
 **Owner request:** keep an expense log of everything Formtrace costs - GitHub, Supabase, Stripe, Blacknight, the Claude
@@ -696,7 +716,9 @@ billing cycle, renewal date, paid by, receipt) plus a dated list of one-off paym
 confirm". Keep it current: whoever records a new cost or a price change adds a row (CLAUDE.md rule). Useful later for the
 business bank account (EI), reimbursing pre-trading costs, tax, and pricing (EA / DK). The file is excluded from the published
 site (`_config.yml`: `docs/`); the repository itself stays public until FT (GitHub Pro + private).
-## FV. The name is Formtrace, not FormTrace (owner, 2026-11-04) - SWEEP DONE IN CODE 2026-11-04 (SQL + 3 redeploys + dashboards to do)
+## FV. The name is Formtrace, not FormTrace (owner, 2026-11-04) - DONE 2026-11-04
+
+**Owner confirmed 2026-11-04:** brand-name SQL run (``functions_left = 0``; data report: 11 already-sent pushes left as history, 1 settings note - follow-up SQL given); ``checkout-create``, ``release-send`` and ``stripe-webhook`` redeployed; Stripe public details updated. Supabase sign-in emails had no brand name at all - refinement moved to **FX**. Stripe branding (icon, logo, colours) - **FY**.
 
 **Sweep 2026-11-04 (C):** 151 replacements - app (`index.html`, incl. the Settings section matched by its heading), `terms.html`, `manifest.json` (home-screen name), `sw.js` (fallback notification title), `store.supabase.js`, `config.js`, `smoke-test.html`, `tools/check.mjs`, the six Edge Functions and the current docs (the rule text "not FormTrace" kept). The product log and old migration files are history and stay as written. Live database: `supabase/migrations_brand_name.sql` re-creates every function containing the old spelling from its live definition and reports stored data that still has it. **Owner:** run the SQL; redeploy `checkout-create` (JWT ON), `release-send` and `stripe-webhook` (JWT OFF) - the other three changed in comments only; Supabase -> Authentication -> Email templates; Stripe -> Settings -> Business -> Public details (business name, statement descriptor). Installed apps pick up the new home-screen name when the phone refreshes the manifest (Android: within a day; iPhone: remove and re-add).
 

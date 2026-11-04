@@ -93,8 +93,8 @@ Also: settings gear, back arrow, the header avatar — one icon family for all.
 ## 8. Outside the app
 | Asset | Where | Status | Notes |
 |---|---|---|---|
-| Stripe Checkout and Connect branding (icon, colour) | Stripe settings (EC) | current (gold + placeholder icon) | |
-| Sign-in / password-reset emails | Supabase Auth templates | current (default) | |
+| Stripe Checkout and Connect branding (icon, logo, brand and accent colours) | Stripe -> Settings -> Business -> Branding (EC, FY) | placeholder | Icon at least 128 x 128; check on Stripe's light pages; live account too |
+| Sign-in / password-reset emails | Supabase Auth templates (FX) | placeholder (Supabase default, no branding) | Logo, gold button, footer; must work in every mail client |
 | Email signature and templates | Zoho, @formtrace.ie (EH) | future | |
 | **Landing page - the whole page** (layout, hero, section art, typography, button) | formtrace.ie for signed-out visitors (EX, 2026-11-04) | current (built in code) | Owner 2026-11-04: an openart item - keep the copy and structure, redesign the look within the theme |
 | Landing page hero: pose-traced squat (SVG, animated) | `#landing` in index.html (EX, 2026-11-04) | current | Bodyweight squat, arms held forward (owner, 2026-11-04); joints lime, hip and knee paths gold; a designed version should keep the "traced form" idea |
