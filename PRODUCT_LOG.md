@@ -45,6 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
+**HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full (what was kept and why) · **FO** full-credit refund keeps payout costs - FIXED (SQL given).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
 **Product backlog (owner, 2026-10-30, unordered):** ~~**ES**~~ daily checklist built 2026-11-02 · **ET** macro-app connectivity · ~~**EU**~~ rest timer built 2026-11-02 (per-exercise rest field in the builder still to do) · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** domain / SEO / landing page (mail and domain done) · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
@@ -646,6 +647,28 @@ releases cancelled as in DZ. Build after EG. Not started.
 
 ---
 
+## FO. Refund of a goal paid entirely with credit kept the payout costs - FIXED 2026-11-04 (SQL given)
+
+**Owner bug, 2026-11-04.** A goal paid entirely with test credit took EUR 2,511 (EUR 2,500 price + EUR 11 payout costs, no
+card). The trainee ended it at once with "coach not responsive"; EUR 2,000 came back as credit. **EUR 500** = the week in
+progress kept for the coach, **by design**: no evidence of coach failure (no session past its 5-business-day review window),
+so the rule is trainee_stopped and the refund is flagged for the owner ("owner may top up the week in progress by hand").
+**EUR 11** = a real gap: `queue_refund()` and `queue_end_choice()` treated `deposit_processing` as part of the card payment,
+so for a full-credit goal the card part came out at -EUR 11 and no share of the payout costs was returned (about EUR 8.80
+was due, 4 of 5 weeks). **Fix** `supabase/migrations_refund_credit_fees.sql`: for a full-credit goal (deposit_amount = 0)
+the payout costs count as part of the credit; the unused share returns as credit with the rest (owner's case -> EUR 2,008.80;
+coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
+Refunds already made are not changed (test money). Check `fixed = 2`.
+
+## FP. Every refund that is not full explains what was kept and why - HIGH PRIORITY (owner, 2026-11-04)
+
+**Owner request:** any refund that is not a full refund must come with a **detailed explanation** of how much was not
+refunded and why. Covers trainee-ended goals (week in progress kept, weeks already delivered and released, a coach-failure
+claim without evidence), coach-ended goals (refund to card less Stripe's unreturned card fee), and payout / card costs.
+To design (C): record the breakdown with each refund (`payment_refunds`) and credit return, line by line - paid, by card /
+by credit, released to the coach (weeks), week in progress kept (rule + reason), costs kept, returned to card, returned as
+credit - and show it to the trainee (Notifications card, goal tracker, Profile credit movements) and in the refund push, in
+plain words with the amounts; also on the admin card for flagged refunds. Builds on FO.
 ## EJ. Risk management for chargebacks - BUILT 2026-11-04 (SQL run ✓ 1|7|2; webhook redeploy + Stripe events + test + Radar to do)
 
 **Built 2026-11-04 (C):** `supabase/migrations_disputes.sql` - table `payment_disputes` (one row per Stripe dispute, linked to the goal by its payment intent; an older event never overwrites a newer state); new status **'held'** on payouts and refunds - while a dispute is **open** that goal's queued payouts and refunds are held (also any queued later); **won / inquiry closed** -> payouts back to queued (the Insert+Update webhook sends them) and held refunds re-issued as fresh rows (refund-send fires on Insert only); **lost** -> held payouts and refunds cancelled (the cardholder already has the money); push to every admin when a dispute opens (with Stripe's deadline) and when it closes, opening the Review tab; `admin_disputes()`, `admin_dispute_evidence()` (plain-text pack: what was bought, customer and consent, workouts, sessions, reviews, calls, weeks paid, refunds, policy) and `admin_liability_stats()` (keeps every earlier key; adds disputes open / this month, losses this quarter, largest loss, revenue). `stripe-webhook`: every `charge.dispute.*` event -> `record_dispute()` (Stripe's dispute fee from the balance transactions; a DB failure returns 500 so Stripe retries). App: admin card's **Dispute rate** and **Losses** lines now real; new **Card disputes** card (amount, trainee -> coach, reason, deadline in red, payouts held, **Copy evidence**, **Open in Stripe**). The SQL was first written by a session whose reply never reached the owner; reviewed against the schema before use (columns, status checks, webhook events, push link corrected to `/#admin`).
