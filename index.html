@@ -17,7 +17,76 @@
      Install app option wasn't appearing: its actual installability check
      wants real PNG icons at specific sizes, not just a spec-valid SVG. -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-<title>FormTrace Coach</title>
+<title>FormTrace – Online coaching with video form review</title>
+<!-- Item EX (owner, 2026-11-04): SEO and the landing page for signed-out visitors. -->
+<meta name="description" content="Post your fitness goal, choose a coach and record your sets on your phone. FormTrace traces your form and your coach reviews every session. Free to join." />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://formtrace.ie/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="FormTrace" />
+<meta property="og:title" content="FormTrace – A real coach for every rep you record" />
+<meta property="og:description" content="Post your goal, choose a coach, record your sets. FormTrace traces your form and your coach reviews every session." />
+<meta property="og:url" content="https://formtrace.ie/" />
+<meta property="og:image" content="https://formtrace.ie/icon-512.png" />
+<meta property="og:image:alt" content="FormTrace" />
+<meta property="og:locale" content="en_IE" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="FormTrace – A real coach for every rep you record" />
+<meta name="twitter:description" content="Post your goal, choose a coach, record your sets. FormTrace traces your form and your coach reviews every session." />
+<meta name="twitter:image" content="https://formtrace.ie/icon-512.png" />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"FormTrace","url":"https://formtrace.ie/","applicationCategory":"HealthApplication","operatingSystem":"Web app for Android, iPhone and desktop","description":"Online fitness coaching: post your goal, choose a coach, record your sets on your phone and get every session reviewed, with your form traced rep by rep.","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR","description":"Free to join. You pay for a goal when you accept a coach's offer."},"publisher":{"@type":"Organization","name":"FormTrace","url":"https://formtrace.ie/","email":"contact@formtrace.ie"}}</script>
+<script>/* EX: the landing page is for signed-out visitors in a browser. The installed app, a saved session, a sign-in or
+   payment return, or a visitor who already tapped through goes straight to the app - decided before anything is drawn. */
+(function(){var R=document.documentElement;try{var off=false;if((window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true)off=true;
+if(!off){for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/^sb-.+-auth-token$/.test(k)&&localStorage.getItem(k)){off=true;break;}}}
+if(!off&&/type=recovery|access_token|error_description|checkout=|stripe=|stripetest=/.test(location.search+location.hash))off=true;
+if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp-off');}catch(e){R.classList.add('lp-off');}})();</script>
+<link rel="preconnect" href="https://fonts.bunny.net" />
+<link rel="stylesheet" href="https://fonts.bunny.net/css?family=big-shoulders-display:800,900&display=swap" />
+<style>
+  /* ---- EX landing page (signed-out visitors). Brand tokens; display face Big Shoulders Display via Bunny Fonts (EU, no tracking). ---- */
+  html.lp-off #landing{display:none!important}
+  html:not(.lp-off) body{overflow:hidden}
+  #landing{--lp-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:#0B0E11;color:#EEF3F6;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+  #landing *{box-sizing:border-box}
+  #landing .lp-wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  #landing .lp-top{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+  #landing .lp-logo{font-family:var(--lp-display);font-weight:900;font-size:26px;letter-spacing:.5px;color:#EEF3F6;margin:0}
+  #landing .lp-logo span{color:#F0D231}
+  #landing .lp-signin{color:#A9B5BF;font:inherit;font-size:15px;text-decoration:underline;text-underline-offset:3px;background:none;border:0;cursor:pointer;padding:8px 4px}
+  #landing .lp-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:32px;align-items:center;padding:22px 0 60px}
+  #landing h1{font-family:var(--lp-display);font-weight:900;font-size:clamp(50px,8.4vw,100px);line-height:.9;letter-spacing:-.3px;margin:0 0 20px;text-wrap:balance}
+  #landing .lp-lead{font-size:18.5px;color:#C9D3DA;max-width:32em;margin:0 0 28px}
+  #landing .lp-cta{display:inline-block;font-family:var(--lp-display);font-weight:800;font-size:28px;letter-spacing:.6px;line-height:1;color:#2c2400;background:#F0D231;
+    border:0;border-radius:999px;padding:20px 46px 21px;cursor:pointer;box-shadow:0 10px 34px rgba(240,210,49,.28)}
+  #landing .lp-cta:hover{background:#FBE577}
+  #landing .lp-cta:focus-visible,#landing .lp-signin:focus-visible,#landing .lp-link:focus-visible,#landing .lp-foot a:focus-visible{outline:3px solid #C8FF3D;outline-offset:3px}
+  #landing .lp-note{font-size:14px;color:#8593A0;margin:14px 0 0}
+  #landing .lp-fig{display:block;width:100%;max-width:400px;height:auto;justify-self:center}
+  #landing .lp-sec{padding:54px 0;border-top:1px solid #232C35}
+  #landing h2{font-family:var(--lp-display);font-weight:800;font-size:clamp(36px,5.4vw,56px);line-height:.95;margin:0 0 30px}
+  #landing h3{font-size:19px;line-height:1.3;margin:0 0 6px;color:#EEF3F6}
+  #landing .lp-why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 48px;margin:0;padding:0;list-style:none}
+  #landing .lp-why li{border-left:3px solid #F0D231;padding:2px 0 2px 18px}
+  #landing .lp-why p,#landing .lp-steps p{margin:0;color:#A9B5BF;max-width:34em}
+  #landing .lp-steps{counter-reset:lps;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px}
+  #landing .lp-steps li{counter-increment:lps}
+  #landing .lp-steps li::before{content:counter(lps);display:block;font-family:var(--lp-display);font-weight:900;font-size:64px;line-height:1;color:#F0D231;margin-bottom:6px}
+  #landing .lp-end{text-align:center;padding:70px 0 64px;border-top:1px solid #232C35}
+  #landing .lp-end h2{margin-bottom:26px}
+  #landing .lp-coach{margin:26px auto 0;color:#A9B5BF;font-size:15.5px;max-width:32em}
+  #landing .lp-link{color:#F0D231;background:none;border:0;padding:0;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  #landing .lp-foot{border-top:1px solid #232C35;padding:22px 0 36px;color:#5B6773;font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px 24px}
+  #landing .lp-foot a{color:#8593A0}
+  @media (max-width:780px){
+    #landing .lp-hero{grid-template-columns:1fr;gap:26px;padding:6px 0 48px}
+    #landing .lp-fig{max-width:280px}
+    #landing .lp-cta{display:block;width:100%;text-align:center}
+    #landing .lp-why,#landing .lp-steps{grid-template-columns:1fr}
+  }
+</style>
 <style>
   :root{
     /* ---- DARK (default) ---- */
@@ -1220,6 +1289,114 @@
 </script>
 </head>
 <body>
+<!-- Item EX (owner, 2026-11-04): landing page - a short advertisement and one bright button. Plain HTML so search engines
+     read it without running the app; hidden before drawing for the installed app and signed-in visitors (script in <head>). -->
+<div id="landing">
+  <div class="lp-wrap">
+    <header class="lp-top">
+      <p class="lp-logo">FORM<span>TRACE</span></p>
+      <button type="button" class="lp-signin" data-lp-go="signin">Sign in</button>
+    </header>
+    <main>
+      <section class="lp-hero" aria-labelledby="lp-h1">
+        <div>
+          <h1 id="lp-h1">A real coach for every rep you record</h1>
+          <p class="lp-lead">Post your fitness goal and coaches pitch you their plan. You record your sets on your phone, FormTrace traces your form, and your coach reviews every session.</p>
+          <button type="button" class="lp-cta" data-lp-go="signup">Try FormTrace</button>
+          <p class="lp-note">Free to join. You only pay for a goal when you accept a coach's offer.</p>
+        </div>
+        <svg class="lp-fig" id="lp-fig" viewBox="0 0 320 380" role="img" aria-labelledby="lp-fig-t">
+          <title id="lp-fig-t">A squat traced by FormTrace: the joints are marked and the bar path is drawn in gold</title>
+          <rect x="0" y="0" width="320" height="380" rx="28" fill="#10151A"/>
+          <line x1="36" y1="352" x2="284" y2="352" stroke="#232C35" stroke-width="2"/>
+          <path d="M150 92 C 155 120, 161 150, 165 175" fill="none" stroke="#F0D231" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
+          <g stroke="#EEF3F6" stroke-width="7" stroke-linecap="round" opacity=".92">
+            <line x1="150" y1="92" x2="146" y2="190">
+              <animate attributeName="x1" values="150;165;165;150" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y1" values="92;175;175;92" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="x2" values="146;112;112;146" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y2" values="190;256;256;190" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </line>
+            <line x1="146" y1="190" x2="154" y2="270">
+              <animate attributeName="x1" values="146;112;112;146" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y1" values="190;256;256;190" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="x2" values="154;190;190;154" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y2" values="270;282;282;270" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </line>
+            <line x1="154" y1="270" x2="150" y2="346">
+              <animate attributeName="x1" values="154;190;190;154" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y1" values="270;282;282;270" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </line>
+            <line x1="150" y1="346" x2="184" y2="348"/>
+          </g>
+          <g>
+            <line x1="80" y1="92" x2="220" y2="92" stroke="#8593A0" stroke-width="5" stroke-linecap="round">
+              <animate attributeName="x1" values="80;95;95;80" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="x2" values="220;235;235;220" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y1" values="92;175;175;92" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="y2" values="92;175;175;92" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </line>
+            <circle cx="150" cy="92" r="21" fill="none" stroke="#8593A0" stroke-width="7">
+              <animate attributeName="cx" values="150;165;165;150" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="92;175;175;92" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="153" cy="57" r="15" fill="#10151A" stroke="#EEF3F6" stroke-width="5">
+              <animate attributeName="cx" values="153;176;176;153" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="57;142;142;57" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+          <g fill="#C8FF3D">
+            <circle cx="150" cy="92" r="6.5">
+              <animate attributeName="cx" values="150;165;165;150" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="92;175;175;92" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="146" cy="190" r="6.5">
+              <animate attributeName="cx" values="146;112;112;146" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="190;256;256;190" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="154" cy="270" r="6.5">
+              <animate attributeName="cx" values="154;190;190;154" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+              <animate attributeName="cy" values="270;282;282;270" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="150" cy="346" r="6.5"/>
+          </g>
+        </svg>
+      </section>
+      <section class="lp-sec" aria-labelledby="lp-why-h">
+        <h2 id="lp-why-h">Why FormTrace is different</h2>
+        <ul class="lp-why">
+          <li><h3>Your form, traced</h3><p>Every set you record is checked against your coach's reference movement, rep by rep, so you see what to fix straight away.</p></li>
+          <li><h3>A coach who actually watches</h3><p>Your coach reviews each session with voice notes and drawings on your video, plans your weeks and books calls with you.</p></li>
+          <li><h3>Pay for progress, not promises</h3><p>FormTrace holds your payment and releases it to your coach one delivered week at a time. Weeks you don't use come back to you.</p></li>
+          <li><h3>Better with friends</h3><p>Streaks, achievements and friends cheering you on keep you showing up week after week.</p></li>
+        </ul>
+      </section>
+      <section class="lp-sec" aria-labelledby="lp-how-h">
+        <h2 id="lp-how-h">How it works</h2>
+        <ol class="lp-steps">
+          <li><h3>Post your goal</h3><p>Say what you want to achieve, for how long, and how often you can train.</p></li>
+          <li><h3>Choose your coach</h3><p>Coaches send you their plan and price. Compare them and accept the one that fits you.</p></li>
+          <li><h3>Train, record, improve</h3><p>Do your workouts, record your sets and get your coach's review after every session.</p></li>
+        </ol>
+      </section>
+      <section class="lp-end" aria-labelledby="lp-end-h">
+        <h2 id="lp-end-h">Start with your goal</h2>
+        <button type="button" class="lp-cta" data-lp-go="signup">Try FormTrace</button>
+        <p class="lp-coach">Are you a coach? <button type="button" class="lp-link" data-lp-go="signup">Create an account</button> and apply to coach on FormTrace.</p>
+      </section>
+    </main>
+    <footer class="lp-foot">
+      <span>&copy; 2026 FormTrace, Ireland</span>
+      <a href="terms.html">Terms and privacy</a>
+      <a href="mailto:contact@formtrace.ie">contact@formtrace.ie</a>
+    </footer>
+  </div>
+</div>
+<script>/* EX: the buttons open the app's sign-up (or sign-in) screen; the figure stays still for reduced motion */
+(function(){var R=document.documentElement;function open(m){R.classList.add('lp-off');try{sessionStorage.setItem('ft-lp-off','1');sessionStorage.setItem('ft-lp-mode',m);}catch(e){}
+  var n=0;(function w(){if(typeof window.setAuthMode==='function'){try{window.setAuthMode(m);}catch(e){}}else if(n++<50){setTimeout(w,100);}})();try{window.scrollTo(0,0);}catch(e){}}
+  var b=document.querySelectorAll('[data-lp-go]');for(var i=0;i<b.length;i++){b[i].addEventListener('click',function(e){e.preventDefault();open(this.getAttribute('data-lp-go'));});}
+  var s=document.getElementById('lp-fig');try{if(s&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches&&s.pauseAnimations){s.pauseAnimations();s.setCurrentTime(1.7);}}catch(e){}})();</script>
 <div id="frame"><div id="phone">
 
   <!-- persistent discipline-streak badge (trainee) -->
@@ -3498,6 +3675,7 @@ try{ store._sb.auth.onAuthStateChange(ev=>{ if(ev==="PASSWORD_RECOVERY"){ pwReco
 $("#au-forgot-btn").addEventListener("click",openForgotPassword);$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); hideStreakBadge(); showAuth(); });
 
 function showAuth(){
+  try{ const lpm=sessionStorage.getItem("ft-lp-mode"); if(lpm){ sessionStorage.removeItem("ft-lp-mode"); setTimeout(()=>{ try{ setAuthMode(lpm); }catch(e){} },0); } }catch(e){}   /* EX: the landing page asked for sign-up or sign-in */
   $("#app-loading").style.display="none";
   $$(".screen").forEach(s=>s.classList.remove("active"));
   $("#s-auth").classList.add("active");

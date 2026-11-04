@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /smoke-test.html
+
+Sitemap: https://formtrace.ie/sitemap.xml

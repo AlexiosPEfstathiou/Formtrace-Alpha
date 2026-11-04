@@ -96,7 +96,9 @@ Also: settings gear, back arrow, the header avatar — one icon family for all.
 | Stripe Checkout and Connect branding (icon, colour) | Stripe settings (EC) | current (gold + placeholder icon) | |
 | Sign-in / password-reset emails | Supabase Auth templates | current (default) | |
 | Email signature and templates | Zoho, @formtrace.ie (EH) | future | |
-| Landing page hero, section art, share preview (Open Graph) image | public site (EX) | future | |
+| Landing page hero: pose-traced squat (SVG, animated) | `#landing` in index.html (EX, 2026-11-04) | current | Joints lime, bar path gold; a designed version should keep the "traced form" idea |
+| Share preview (Open Graph) image 1200x630 | `og:image` (EX) | placeholder (icon-512) | Shown on WhatsApp / Instagram / Facebook links |
+| Landing display typeface: Big Shoulders Display | landing headlines (EX) | current | Candidate for the brand face across the app |
 | Onboarding walkthrough art | first-run tours (EV) | future | |
 | Encouragement-video frame / card | EY | future | |
 | Points and cosmetic add-ons (avatar frames, themes, celebration styles) | FL | future | The add-ons themselves are design work |

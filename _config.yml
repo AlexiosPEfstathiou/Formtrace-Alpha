@@ -1,0 +1,17 @@
+# FT (2026-11-04): GitHub Pages publishes every file in the repository unless told otherwise - making the repository
+# private does NOT stop that. Keep documentation, SQL, Edge Function code and tools out of the published site.
+# Only the app's own files are served (index.html, sw.js, manifest.json, config.js, store.supabase.js, icons, terms.html,
+# robots.txt, sitemap.xml, CNAME).
+exclude:
+  - CLAUDE.md
+  - PRODUCT_LOG.md
+  - README.md
+  - STRIPE_INTEGRATION_TODO.md
+  - PORT-BRIEF.md
+  - check.ps1.txt
+  - config.example.js
+  - migrations_default_interval_exercise.sql
+  - smoke-test.html
+  - docs/
+  - supabase/
+  - tools/

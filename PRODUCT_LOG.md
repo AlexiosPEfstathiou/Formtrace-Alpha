@@ -510,7 +510,21 @@ Owner, 2026-10-30. When a trainee looks like a quit candidate (signals: no sessi
 
 ---
 
-## EX. @formtrace.ie emails, connect the domain to the app, SEO
+## EX. @formtrace.ie emails, connect the domain to the app, SEO - LANDING PAGE BUILT 2026-11-04
+
+**Landing page built 2026-11-04 (owner brief: SEO-optimised, a short advertisement of what the app is and why it is special,
+and a big bright button to try it).** Plain HTML inside `index.html` (search engines read it without running the app), shown to
+signed-out visitors in a browser; skipped before anything is drawn for the installed app, a saved session, sign-in / reset /
+payment returns, or a visitor who already tapped through this session. Hero: "A real coach for every rep you record", one
+paragraph, gold **Try FormTrace** button (opens sign-up; "Sign in" top right), and an animated **pose-traced squat** (joints in
+lime, bar path in gold; still for reduced motion). Then "Why FormTrace is different" (form traced, a coach who watches, pay for
+progress, better with friends), "How it works" (post your goal, choose your coach, train-record-improve), a closing button with a
+coach line, and a footer (terms, contact@formtrace.ie). Type: Big Shoulders Display (Bunny Fonts - EU, no tracking) for headlines,
+system font for text. SEO: title, description, canonical, Open Graph / Twitter tags (image = icon-512 until a designed share
+image exists), WebApplication structured data, `robots.txt`, `sitemap.xml`. **Note:** "Pay for progress" describes the Stripe
+escrow - true once `payments_via_stripe` is 1 (EB); during the manual pilot, trainees pay the coach directly.
+**Next for SEO (owner):** Google Search Console - add `formtrace.ie` (DNS TXT at Blacknight), submit the sitemap; then a designed
+share image (DESIGN_ASSETS).
 
 Owner, 2026-10-30. Umbrella for the domain work once formtrace.ie resolves: (1) mailboxes hello@ / support@ / privacy@ on Zoho (**EH**); (2) point the app at the domain (**EF**) and move Supabase auth / Stripe / terms URLs; (3) SEO basics for a PWA: a public landing page (index for logged-out visitors) with title, description, Open Graph tags, sitemap.xml, robots.txt, Search Console verification, and a few content pages (what FormTrace is, for coaches, for trainees). Not started.
 
@@ -672,6 +686,7 @@ itself stays public (any website's code can be viewed), and its data stays prote
 **History scan 2026-11-04 (C), all 517 commits:** no Stripe secret / restricted / webhook keys, no `sb_secret_` or service-role
 keys, no JWTs, private keys, passwords, AWS or GitHub tokens. The only key ever committed is the Supabase **publishable** key in
 `config.js` (public by design). **Nothing to rotate.**
+**Found 2026-11-04 while building EX:** GitHub Pages publishes **every file** in the repository - the product log, handover, SQL and Edge Function code were readable at formtrace.ie/<file> - and **making the repository private does not change that**. Fixed with ``_config.yml`` (``exclude:`` the docs, ``supabase/``, ``tools/`` and the Markdown files), so only the app's own files are served. Owner to check after the next build: https://formtrace.ie/PRODUCT_LOG.md should show **404**.
 **Owner steps:** (1) GitHub -> Settings -> Billing and plans -> upgrade to **Pro**; (2) the repository -> Settings -> General ->
 Danger Zone -> **Change visibility -> Private**; (3) Settings -> Pages: check the custom domain `formtrace.ie` and Enforce
 HTTPS are still set; (4) open https://formtrace.ie/ to confirm it still loads. Both Claude accounts keep access (same GitHub
