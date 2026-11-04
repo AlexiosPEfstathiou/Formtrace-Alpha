@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     if (!currency) return json({ error: `Unsupported currency ${sym}` }, 400);
 
     // trainee fee from platform_rates (0 during the pilot): max(pct of the week, minimum) per week
-    const { data: rates } = await sb.from("platform_rates").select("key,value").in("key", ["trainee_fee_pct", "trainee_fee_min", "stripe_card_pct", "stripe_card_fixed", "stripe_payout_pct", "stripe_payout_fixed", "stripe_account_monthly"]);
+    const { data: rates } = await sb.from("platform_rates").select("key,value").in("key", ["trainee_fee_pct", "trainee_fee_min", "stripe_card_pct", "stripe_card_fixed", "stripe_payout_pct", "stripe_payout_fixed", "stripe_account_monthly", "three_ds_min_cents"]);
     const r = Object.fromEntries((rates || []).map((x: any) => [x.key, Number(x.value)]));
     const weeklyCents = Number(o.rate_per_workout_cents), weeks = Number(o.length_weeks);
     const feePerWeek = (r.trainee_fee_pct > 0 || r.trainee_fee_min > 0)
@@ -110,6 +110,12 @@ Deno.serve(async (req) => {
     if (processingCents > 0) line_items.push({ quantity: 1, price_data: { currency, unit_amount: unit(processingCents), product_data: { name: "Payment processing", description: "Card and payout costs charged by Stripe, passed on at cost and rounded up to the euro" } } });
 
     Object.assign(meta, { processing_cents: String(processingCents), base_cents: String(baseCents), credit_cents: String(creditUsed) });
+    // EJ (2026-11-04): ask for 3D Secure so a "fraudulent" dispute on an authenticated payment is generally the issuing bank's
+    // loss, not FormTrace's. platform_rates.three_ds_min_cents: 0 (default) = every card payment; N = card payments of N cents
+    // or more; -1 = leave it to Stripe ("automatic"). "any" prefers the frictionless path (the bank may approve silently).
+    const threeDsMin = Number.isFinite(r.three_ds_min_cents) ? r.three_ds_min_cents : 0;
+    const want3ds = threeDsMin >= 0 && (chargedBase + processingCents) >= threeDsMin;
+    meta.three_ds = want3ds ? "any" : "automatic";
     const session = await stripe.checkout.sessions.create({
       // Checkout Studio configuration (exact):
       ui_mode: "hosted_page",
@@ -129,6 +135,7 @@ Deno.serve(async (req) => {
       customer_email: user.email,
       client_reference_id: e.id,
       metadata: meta,
+      payment_method_options: { card: { request_three_d_secure: want3ds ? "any" : "automatic" } },   // EJ
       payment_intent_data: { transfer_group: `eng_${e.id}`, metadata: meta },
     } as any);
 

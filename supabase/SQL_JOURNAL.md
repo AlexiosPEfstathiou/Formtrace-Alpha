@@ -94,3 +94,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-04 | FP | `migrations_refund_explain.sql` | run ✓ 2026-11-04 (as expected) | Expect `column_ok 1 | functions 3`. |
 | 2026-11-04 | FQ | `migrations_ledger_refs.sql` | run ✓ 2026-11-04 (missing 0, unique_indexes 2, sample CR-F34A-FB5F-AF25-A99C) | Expect `missing 0 | unique_indexes 2 | sample CR-xxxx-xxxx-xxxx-xxxx`. |
 | 2026-11-04 | FP push | diagnosis (read only): push_outbox rows + push_subscriptions for the test trainee | run (part) | Subscriptions: 1, newest 2026-10-29 19:43 (before the move to formtrace.ie, i.e. the old github.io app), last delivered 2026-11-04 15:48. Outbox rows not yet reported. | Look at result: muted / no subscription / codes / sent_at null. |
+| 2026-11-04 | EJ | `migrations_three_ds.sql` | given | Expect `three_ds_min_cents | 0`. Then redeploy checkout-create (Verify JWT ON). |
