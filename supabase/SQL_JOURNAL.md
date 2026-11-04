@@ -88,4 +88,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | FG | `migrations_social_badge.sql` | run ✓ (implied) | The coach checklist migration reads social_seen_at and ran cleanly. |
 | 2026-11-02 | FH | `migrations_coach_checklist.sql` | run ✓ | has_coach_counts = true. |
 | 2026-11-02 | FH | `migrations_coach_checklist_targets.sql` | run ✓ | has_weekly_calls true, has_targets true. |
-| 2026-11-04 | EJ | `migrations_disputes.sql` | given (re-run) | First run failed: 42601 "unexpected end of function definition" at line 159 - Claude's push-link edit put `);` inside a `--` comment; fixed in the file. Expect `table_ok 1 | functions 7 | triggers 2`. Then redeploy stripe-webhook and add the charge.dispute.* events in Stripe. |
+| 2026-11-04 | EJ | `migrations_disputes.sql` | run ✓ 2026-11-04 (1 | 7 | 2, as expected) | First run failed: 42601 "unexpected end of function definition" at line 159 - Claude's push-link edit put `);` inside a `--` comment; fixed in the file. Expect `table_ok 1 | functions 7 | triggers 2`. Then redeploy stripe-webhook and add the charge.dispute.* events in Stripe. |
