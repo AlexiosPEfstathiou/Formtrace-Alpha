@@ -75,7 +75,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
   ask for one on the first "doesn't work" report, and read Review → Client errors.
 
 ## Design assets list (owner, 2026-11-02)
-Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page), add or update its row in `docs/DESIGN_ASSETS.md`. It is the brief for the openart theme (PRODUCT_LOG EW).
+Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page) **or a sound**, add or update its row in `docs/DESIGN_ASSETS.md`, with its tier (L1 / L2 / Later / Code) and spec. It is the brief for the openart theme (PRODUCT_LOG EW).
 
 ## Last session (2026-11-03, personal account)
 EH email DONE: `contact@formtrace.ie` is the single public address (terms + support link); SPF/DKIM/DMARC PASS; VAPID_SUBJECT set. DC custom SMTP live (Titan `smtp0101.titan.email:465`). DX and EI postponed; DP thresholds confirmed. Next build candidate: EJ (chargebacks). Later: DMARC -> quarantine.

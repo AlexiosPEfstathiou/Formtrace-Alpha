@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
+**Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects (logged; placeholder sounds can be built now) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **North star (owner, 2026-11-04):** people use FormTrace to increase their fitness and their social life; FormTrace becomes a community brand that brings people together - quests, points, shop and Events serve it (**FS**).
@@ -533,7 +533,7 @@ Owner, 2026-10-30. Umbrella for the domain work once formtrace.ie resolves: (1) 
 
 ## EW. Explore openart.ai for the app's look, videos and an animated persona
 
-**Pricing and timing decided 2026-11-04 (owner + C).** Plans (late 2026): Free (40 trial credits, 7 days, no commercial use),
+**List finalised for launch 2026-11-04 (C):** ``docs/DESIGN_ASSETS.md`` now gives every row a tier (**L1** before pilot invitations / **L2** same month if time / **Later** / **Code** = drawn by the app, theme colours only - no credits needed) and a deliverable spec (sizes, formats, SVG for icons, logo and badges), and adds **sounds** (section 9, FZ). L1 = logo + wordmark, app icons, notification icon, favicon, Stripe icon + logo, share image 1200x630, landing page look, the 13-icon tab / header family, the core workout sounds and the achievement-unlock sound. **Pricing and timing decided 2026-11-04 (owner + C).** Plans (late 2026): Free (40 trial credits, 7 days, no commercial use),
 Starter USD 14/month (USD 13 yearly) 4,000 credits - **no commercial rights**, **Plus USD 34/month (USD 27 yearly) 12,000 credits
 with commercial rights**, Pro USD 56 / 44, Wonder USD 240 / 175. Credits on monthly plans do not roll over. **Choice: Plus, paid
 monthly, for one or two months** (the ~60-item list at ~50 tries each is about 3,000 images - a quarter of one month); yearly only
@@ -699,6 +699,19 @@ styles, one column, the gold button), dark-mode safe, plain-text fallback. Sende
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
 
+## FZ. Sound effects (owner, 2026-11-04)
+
+**Owner:** add sound effects for button clicks, refreshes, timers during workouts, achievement unlocks and other events.
+The app has **none today** (cues are vibration and the spoken interval announcements). Full list, tiers and file spec in
+`docs/DESIGN_ASSETS.md` section 9. **L1 (launch):** button tap, success, error, recording countdown 3-2-1 + go, recording
+start / stop, rest timer last-3-seconds ticks, rest over, interval change, workout complete, achievement unlock. **L2:** refresh,
+sheet open / close, tab switch, in-app notification, day complete, streak / tier up, goal complete, personal best, offer
+accepted, deposit / payout coin, social. **Rules (C to build):** Settings -> **Sounds** (on) and **Workout sounds** (on), so
+timers can stay when the rest is off; **never while a video is recording** (it would be in the coach's review video) - the
+pre-recording countdown is the exception; quiet by default; vibration stays; unlock audio on the first tap; one small sound
+engine (Web Audio, preloaded, one volume). **Sources:** openart if its audio tools make SFX, else ElevenLabs Sound Effects
+(commercial on paid plans) or CC0 libraries (Kenney UI Audio, Freesound CC0). **Interim:** synthesised placeholder sounds in
+code, so the behaviour can ship and be tested before the designed files exist.
 ## FY. Stripe branding (owner, 2026-11-04)
 
 **Owner:** Stripe -> Settings -> Business -> **Branding** needs work - the **icon**, **logo**, **brand colour** and **accent colour**
