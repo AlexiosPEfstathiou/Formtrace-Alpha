@@ -5,6 +5,7 @@
 - **FP refund push test PASSED** on the phone (Chrome) - test `push_outbox` row 61 sent 23:16:07, no error.
 - **EJ dispute test:** walkthrough given (Alex Stinson trainee has 0 credit; `?stripetest=1`; card 4000 0000 0000 0259; close with `winning_evidence` / `losing_evidence` in Stripe sandbox). Not yet run.
 - **New: GA** camera refine / restart in general (desktop: phone-shaped preview but landscape recording).
+- **EJ tests:** test 1 (1-week goal) recorded the dispute but nothing to hold; test 2 (3-week goal) - refund held, then **cancelled** when the owner accepted (lost) the dispute. **EJ part 3 BUILT + SQL applied (owner decision): a dispute cancels the goal and all its payouts on opening; coach and trainee are pushed and see a notice on the goal; won restores, lost keeps everything cancelled (closes the payout-after-loss leak).** Test next with a fresh 0259 payment.
 - **Next item code: GB.**
 
 ## Session 2026-11-04 (work account) - summary

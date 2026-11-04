@@ -4798,6 +4798,9 @@ async function renderPaymentTracker(holder,eng,role,offer){
     if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
   } else if(e.status==="active"){
     now=e.deposit_at?`${depositLine(e,s,isCoach,day(e.deposit_at))}${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.${(s.releases||[]).length?` ${s.releases.filter(r=>r.status==="sent"||r.status==="skipped").length} of ${s.weeks||"?"} weeks released to your coach${s.releasedCents?` (${s.money(s.releasedCents/(e.deposit_currency==="jpy"?1:100))})`:""}.`:""}`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+  } else if(e.end_kind==="disputed"){   /* EJ part 3 (owner 2026-11-04): a card dispute cancels the goal and stops every payout */
+    now=isCoach?`Cancelled ${day(e.completed_at)}: your trainee's bank disputed the card payment. The goal has stopped and so have payouts for it. Formtrace handles the dispute with Stripe; if it is resolved in Formtrace's favour, weeks you delivered are paid as usual.`
+               :`Cancelled ${day(e.completed_at)}: your bank disputed the card payment, so this goal has stopped. Your bank is handling the dispute. If this is a mistake, contact <a href="mailto:contact@formtrace.ie" style="color:var(--lime)">contact@formtrace.ie</a>.`;
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){
@@ -5130,7 +5133,7 @@ function playClap(p,text){
 async function renderHomeGoalEnded(el){
   if(!el||!ME||roleOf()!=="coach") return; el.style.display="none"; el.innerHTML="";
   try{
-    const { data }=await store._sb.from("engagements").select("id,goal_title,trainee_id,end_kind,end_reason,end_note,completed_at").eq("coach_id",ME.id).not("end_kind","is",null).is("end_ack_at",null).order("completed_at",{ascending:false}).limit(5); const rows=data||[]; if(!rows.length) return;
+    const { data }=await store._sb.from("engagements").select("id,goal_title,trainee_id,end_kind,end_reason,end_note,completed_at").eq("coach_id",ME.id).not("end_kind","is",null).neq("end_kind","disputed").is("end_ack_at",null).order("completed_at",{ascending:false}).limit(5); const rows=data||[]; if(!rows.length) return;
     let names={}; try{ const { data:p }=await store._sb.from("profiles").select("id,display_name").in("id",[...new Set(rows.map(r=>r.trainee_id))]); for(const x of (p||[])) names[x.id]=x.display_name; }catch(e){}
     const label=k=>(Object.values(END_REASONS).flat().find(([x])=>x===k)||[k,k])[1];
     el.innerHTML=`<div class="rv-title">${rows.some(r=>r.end_kind==="cancelled")?"⏹":"🎯"} Goal ended by your trainee</div><div class="rv-row">`+rows.map(r=>`<div class="rv-chip" style="cursor:default"><span class="rv-ic">${r.end_kind==="achieved"?"🎯":"⏹"}</span><span class="rv-tx"><b>${escapeHtml(names[r.trainee_id]||"Your trainee")} ${r.end_kind==="achieved"?"marked":"ended"} "${escapeHtml(r.goal_title||"the goal")}"${r.end_kind==="achieved"?" achieved":""}</b><span>${escapeHtml(label(r.end_reason))}${r.end_note?` · "${escapeHtml(r.end_note)}"`:""}</span><span style="display:block;margin-top:6px"><button class="btn sm ghost" data-ack="${r.id}" style="width:auto">Got it</button></span></span></div>`).join("")+`</div>`;
