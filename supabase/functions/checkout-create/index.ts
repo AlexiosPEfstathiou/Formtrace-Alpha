@@ -1,5 +1,5 @@
-// FormTrace — checkout-create Edge Function (Item DM, Stripe Checkout, sandbox first).
-// The trainee pays the whole goal as a DEPOSIT to FormTrace (escrow: separate charges and
+// Formtrace — checkout-create Edge Function (Item DM, Stripe Checkout, sandbox first).
+// The trainee pays the whole goal as a DEPOSIT to Formtrace (escrow: separate charges and
 // transfers). Weekly transfers to the coach and refunds come later and link to this charge
 // through transfer_group / metadata. Parameters marked "Checkout Studio" are the owner's
 // configuration and are used exactly; ToS consent is deliberately OFF (owner, 2026-10-29).
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       await sb.from("trainee_credits").insert({ trainee_id: e.trainee_id, amount_cents: -fullNeed, currency, used_engagement: e.id, note: "credit used for this goal (paid in full)" });
       try {
         const { data: p } = await sb.from("profiles").select("display_name").eq("id", e.trainee_id).maybeSingle();
-        await sb.from("push_outbox").insert({ to_user: e.coach_id, kind: "offer", title: `💶 ${(p && p.display_name) || "Your trainee"} paid the deposit with credit${LIVE ? "" : " (test)"}`, body: `${e.goal_title || "Goal"} · held by FormTrace, released to you week by week`, url: "/#coach" });
+        await sb.from("push_outbox").insert({ to_user: e.coach_id, kind: "offer", title: `💶 ${(p && p.display_name) || "Your trainee"} paid the deposit with credit${LIVE ? "" : " (test)"}`, body: `${e.goal_title || "Goal"} · held by Formtrace, released to you week by week`, url: "/#coach" });
       } catch (pushErr) { console.error("checkout-create push", pushErr); }
       return json({ paid_with_credit: true, credit_cents: fullNeed });
     }
@@ -93,9 +93,9 @@ Deno.serve(async (req) => {
     const line_items: any[] = [];
     if (goalLine > 0) line_items.push({
       quantity: 1,
-      price_data: { currency, unit_amount: unit(goalLine), product_data: { name: `${e.goal_title || "Coaching goal"} · ${weeks} week${weeks === 1 ? "" : "s"}`, ...(creditUsed > 0 ? { description: `${eur(priceCents)} less ${eur(Math.min(creditUsed, priceCents))} of your FormTrace credit` } : {}) } },
+      price_data: { currency, unit_amount: unit(goalLine), product_data: { name: `${e.goal_title || "Coaching goal"} · ${weeks} week${weeks === 1 ? "" : "s"}`, ...(creditUsed > 0 ? { description: `${eur(priceCents)} less ${eur(Math.min(creditUsed, priceCents))} of your Formtrace credit` } : {}) } },
     });
-    if (feeLine > 0) line_items.push({ quantity: 1, price_data: { currency, unit_amount: unit(feeLine), product_data: { name: "FormTrace service fee" } } });
+    if (feeLine > 0) line_items.push({ quantity: 1, price_data: { currency, unit_amount: unit(feeLine), product_data: { name: "Formtrace service fee" } } });
 
     // EA (owner, 2026-10-29): the trainee covers Stripe's costs, so the platform nets the full price.
     // Exact parity on the gross: Stripe keeps p*G + f on the card plus the Connect costs (one payout
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
 
     Object.assign(meta, { processing_cents: String(processingCents), base_cents: String(baseCents), credit_cents: String(creditUsed) });
     // EJ (2026-11-04): ask for 3D Secure so a "fraudulent" dispute on an authenticated payment is generally the issuing bank's
-    // loss, not FormTrace's. platform_rates.three_ds_min_cents: 0 (default) = every card payment; N = card payments of N cents
+    // loss, not Formtrace's. platform_rates.three_ds_min_cents: 0 (default) = every card payment; N = card payments of N cents
     // or more; -1 = leave it to Stripe ("automatic"). "any" prefers the frictionless path (the bank may approve silently).
     const threeDsMin = Number.isFinite(r.three_ds_min_cents) ? r.three_ds_min_cents : 0;
     const want3ds = threeDsMin >= 0 && (chargedBase + processingCents) >= threeDsMin;
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       locale: "en",
       integration_identifier: "hosted_mobile_app_0001",
       origin_context: "mobile_app",
-      // FormTrace values:
+      // Formtrace values:
       mode: "payment",
       line_items,
       success_url: `${APP_URL}?checkout=success&session_id={CHECKOUT_SESSION_ID}#listings`,

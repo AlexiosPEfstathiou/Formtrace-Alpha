@@ -1,6 +1,6 @@
 {
-  "name": "FormTrace",
-  "short_name": "FormTrace",
+  "name": "Formtrace",
+  "short_name": "Formtrace",
   "description": "Fitness coaching between trainees and coaches — assigned workouts, form review, and progress tracking.",
   "id": "./",
   "start_url": "./index.html",

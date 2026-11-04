@@ -1,7 +1,7 @@
-# FormTrace Coach — Handover (as of 2026-10-29)
+# Formtrace Coach — Handover (as of 2026-10-29)
 
 ## North star (owner, 2026-11-04)
-People use FormTrace to **increase their fitness and their social life**, and FormTrace becomes a **community brand that brings people together**. Quests, points, a shop and Events (PRODUCT_LOG **FS**) serve it; weigh new features against it.
+People use Formtrace to **increase their fitness and their social life**, and Formtrace becomes a **community brand that brings people together**. Quests, points, a shop and Events (PRODUCT_LOG **FS**) serve it; weigh new features against it.
 
 ## Session 2026-11-03 (personal account) - summary
 - **EH DONE:** mailbox `contact@formtrace.ie` (Titan); owner decision: it is the **only public address** (no aliases) - terms.html and the app's "Contact support" link (`SUPPORT_EMAIL`) use it. DKIM verified, DMARC `p=none` added, Gmail check SPF/DKIM/DMARC PASS. `VAPID_SUBJECT` = `mailto:contact@formtrace.ie`.
@@ -54,7 +54,7 @@ are done (loss liability, VAT advice, coach countries).
 - In parallel: create the Stripe account so verification is done by the pilot's end.
 
 ## The payment model (owner decision — do not drift from it)
-**Escrow.** FormTrace receives the trainee's payment as a **deposit**, **releases it to
+**Escrow.** Formtrace receives the trainee's payment as a **deposit**, **releases it to
 the coach as the service is delivered**, or **refunds the trainee** if it was not.
 Tracking is an **order-tracking steps map** (Accepted → Deposit → Paid → Training week
 k of n → Complete; early end → Refund). In the pilot there is no escrow: the Deposit
@@ -73,7 +73,7 @@ one constant `PILOT_REFUND_REASONS` — change it to the agreed pilot terms.
   `STRIPE_WEBHOOK_SECRET` - steps in **`STRIPE_INTEGRATION_TODO.md`** (single source
   of truth). Then the first test payment.
 - BI prerequisite 1 (loss liability) **set** 2026-10-29: Connect platform setup = buyers
-  purchase from FormTrace, sellers paid individually, hosted onboarding, Express
+  purchase from Formtrace, sellers paid individually, hosted onboarding, Express
   Dashboard, platform responsible for refunds/chargebacks (onboarding shown complete,
   Connect Platform Agreement accepted). Still open: **VAT advice**, **coach countries**.
 - Next DM parts: coach onboarding (Connect Express), weekly release, refunds; fix the
@@ -153,7 +153,7 @@ awaiting the owner's migration run: weight plausibility and body-achievement re-
   Pending check: the user with a timezone is the one with push on (query given).
 - DN code comparison waits for the owner to paste the deployed push-send code.
 ## Open decisions (owner)
-- **Decided 2026-11-02: no native app until FormTrace has a userbase.** It stays a web app (PWA); integrations that need a native app (Apple Health, Health Connect) wait - explore web-reachable routes first (brand cloud APIs, aggregators, OAuth account linking).
+- **Decided 2026-11-02: no native app until Formtrace has a userbase.** It stays a web app (PWA); integrations that need a native app (Apple Health, Health Connect) wait - explore web-reachable routes first (brand cloud APIs, aggregators, OAuth account linking).
 - Pilot price, period and early-ending rule — to agree with the coaches.
 - Streak rewards: 12-month reward TBD; cap on the €5 monthly credit (BW economics note).
 - Branding / name (BJ) — final mark replaces `badge-96.png` and the placeholder colours.

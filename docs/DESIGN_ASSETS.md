@@ -1,6 +1,6 @@
-# FormTrace — design assets for an openart theme (living list)
+# Formtrace — design assets for an openart theme (living list)
 
-**Purpose:** every visual element of FormTrace that could be replaced by a designed asset.
+**Purpose:** every visual element of Formtrace that could be replaced by a designed asset.
 When it is time, take this whole list to openart.ai (PRODUCT_LOG **EW**) and ask for **one
 consistent theme across all of it** — not one-off pieces.
 **Keep it current:** whoever builds or changes a visual element adds or updates its row

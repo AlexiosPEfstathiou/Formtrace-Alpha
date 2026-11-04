@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// FormTrace Coach — store.supabase.js
+// Formtrace Coach — store.supabase.js
 // Drop-in backend for the app's data layer, backed by Supabase.
 // Exposes window.store with the same surface the app already uses,
 // plus auth + video helpers the multi-user alpha needs.
@@ -12,7 +12,7 @@
 (function () {
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.FT_CONFIG || {};
   if (!SUPABASE_URL || SUPABASE_URL.includes("YOUR-PROJECT")) {
-    alert("FormTrace: edit config.js with your Supabase URL and anon key.");
+    alert("Formtrace: edit config.js with your Supabase URL and anon key.");
   }
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -257,5 +257,5 @@
     }
   };
 
-  console.log("FormTrace store (Supabase) ready.");
+  console.log("Formtrace store (Supabase) ready.");
 })();

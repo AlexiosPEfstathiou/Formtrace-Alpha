@@ -1,4 +1,4 @@
-// FormTrace smoke test — run:  node tools/check.mjs
+// Formtrace smoke test — run:  node tools/check.mjs
 // Catches the classes of bug that actually bit us: parse errors, JS
 // referencing elements that no longer exist, router targets with no screen,
 // and render functions the router calls but nobody defined.

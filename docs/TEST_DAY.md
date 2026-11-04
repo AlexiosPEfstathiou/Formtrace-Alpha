@@ -1,4 +1,4 @@
-# FormTrace — Test day (v2, pilot readiness)
+# Formtrace — Test day (v2, pilot readiness)
 
 Two phones: **C** = a coach account, **T** = a trainee account (Android, app installed
 from Chrome). Optional third phone **F** = a second trainee, for Social.
@@ -17,7 +17,7 @@ the platform fee is 0 (`platform_rates`, see DK).
 |---|---|---|---|
 | 1.1 | C | Sign in | Tabs: Home · Library · Open goals · Trainees · Social (+ Review if admin) |
 | 1.2 | C | Profile → **Invite a friend** | QR (dark on white, lime frame, FT mark); matrix shows commission tiers; "0 joined through your link" |
-| 1.3 | T | **Signed out, fresh account.** Scan C's QR with the phone camera → open the link | FormTrace opens on sign-up (in Chrome is fine - it shares storage with the installed app) |
+| 1.3 | T | **Signed out, fresh account.** Scan C's QR with the phone camera → open the link | Formtrace opens on sign-up (in Chrome is fine - it shares storage with the installed app) |
 | 1.4 | T | Sign up | Toast "You joined through <coach>'s link 🎉". Lands on Home. Header: avatar left, gear + streak right. Tabs: Home · Training · Goal · Notifications · Social |
 | 1.5 | C | Refresh Profile → Invite a friend | "**1** joined through your link · **0** completed a goal"; Recruiter still the next target |
 | 1.6 | C | **Share** on the invite card | Phone share sheet with the invite image (QR + name); the link is in the text |

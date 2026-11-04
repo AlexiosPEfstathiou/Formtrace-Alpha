@@ -1,6 +1,6 @@
-# FormTrace Coach — Port Brief (for the next conversation)
+# Formtrace Coach — Port Brief (for the next conversation)
 
-Purpose: hand a fresh session everything it needs to port the FormTrace app onto
+Purpose: hand a fresh session everything it needs to port the Formtrace app onto
 the already-built Supabase backend. Read this file first, then the files it
 references in this same folder (formtrace-alpha).
 
@@ -16,7 +16,7 @@ references in this same folder (formtrace-alpha).
   - README.md                (setup + test plan)
 
 ## The ONE remaining task
-Port the FormTrace app (single HTML file, ~164 KB, internally called
+Port the Formtrace app (single HTML file, ~164 KB, internally called
 coachtrace.html) so that it uses `window.store` instead of its old IndexedDB
 `store`, add an auth gate, and layer in the role logic. Save the result as
 `index.html` in this folder, then push to GitHub Pages.

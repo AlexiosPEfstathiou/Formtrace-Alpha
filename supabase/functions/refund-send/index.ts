@@ -1,4 +1,4 @@
-// FormTrace – refund-send Edge Function (Item DZ: refunds).
+// Formtrace – refund-send Edge Function (Item DZ: refunds).
 // Called by a Database Webhook on INSERT into public.payment_refunds (push_outbox pattern).
 // For a 'queued' row it creates ONE partial Stripe Refund on the deposit's PaymentIntent.
 // Idempotent through Stripe's idempotency key refund_<id> and the row's status.

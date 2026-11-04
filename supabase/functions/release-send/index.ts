@@ -1,4 +1,4 @@
-// FormTrace – release-send Edge Function (Item DY: weekly releases).
+// Formtrace – release-send Edge Function (Item DY: weekly releases).
 // Called by a Database Webhook on INSERT and UPDATE of public.payment_releases (same pattern
 // as push_outbox -> push-send). For a 'queued' row it creates ONE Stripe Transfer from the
 // deposit's charge to the coach's connected account (source_transaction keeps it valid before
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // FC: a week funded by the trainee's credit is paid from FormTrace's balance (that money arrived with an earlier goal's charge)
+    // FC: a week funded by the trainee's credit is paid from Formtrace's balance (that money arrived with an earlier goal's charge)
     let charge: string | undefined;
     if (rel.funding !== "credit") {
       if (!e.stripe_payment_intent) throw new Error("deposit has no PaymentIntent");
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       destination: acct.account_id,
       ...(charge ? { source_transaction: charge } : {}),
       transfer_group: `eng_${e.id}`,
-      description: `FormTrace – ${e.goal_title || "Coaching goal"} – week of ${weekOf(rel.week_start)}`,
+      description: `Formtrace – ${e.goal_title || "Coaching goal"} – week of ${weekOf(rel.week_start)}`,
       metadata: { release_id: rel.id, engagement_id: e.id, week_start: rel.week_start, coach_id: e.coach_id, gross_cents: String(rel.gross_cents), commission_cents: String(rel.commission_cents), funding: rel.funding || "charge" },
     }, { idempotencyKey: `release_${rel.id}` });
 

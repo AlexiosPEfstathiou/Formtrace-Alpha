@@ -1,4 +1,4 @@
-// FormTrace — push-send Edge Function (Item CE)
+// Formtrace — push-send Edge Function (Item CE)
 // Called by a Database Webhook on INSERT into public.push_outbox. Loads the
 // recipient's subscriptions, honours their per-type prefs, sends a Web Push to
 // each, and records the result on the outbox row. Prunes dead subscriptions.

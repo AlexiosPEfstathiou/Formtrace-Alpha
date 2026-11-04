@@ -96,3 +96,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-04 | FP push | diagnosis (read only): push_outbox rows + push_subscriptions for the test trainee | run (part) | Subscriptions: 1, newest 2026-10-29 19:43 (before the move to formtrace.ie, i.e. the old github.io app), last delivered 2026-11-04 15:48. Outbox rows not yet reported. | Look at result: muted / no subscription / codes / sent_at null. |
 | 2026-11-04 | EJ | `migrations_three_ds.sql` | run ✓ 2026-11-04 (checkout-create redeployed by the owner) | Expect `three_ds_min_cents | 0`. Then redeploy checkout-create (Verify JWT ON). |
 | 2026-11-04 | FU | one-off: delete push_subscriptions created before 2026-11-02 20:00 UTC (old github.io app) | given | Expect old_left = 0. |
+| 2026-11-04 | FV | `migrations_brand_name.sql` | given | Expect `functions_left = 0`; report the data list (may be empty). |

@@ -1,4 +1,4 @@
-# FormTrace Coach
+# Formtrace Coach
 
 A two-sided fitness coaching app connecting **coaches** and **trainees** —
 coaches build and review workouts with real form feedback; trainees train,

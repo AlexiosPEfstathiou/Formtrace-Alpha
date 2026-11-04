@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#0B0E11" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="FormTrace" />
+<meta name="apple-mobile-web-app-title" content="Formtrace" />
 <!-- Real PNG icons now exist (rendered locally via .NET's drawing library,
      since no AI image-generation tool was available) — this replaces the
      earlier SVG-only fallback, which very likely explains why Chrome's
@@ -725,7 +725,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
   @keyframes top1-flare{0%{transform:scaleY(.85) scaleX(.96) translateY(1px);opacity:.75;}100%{transform:scaleY(1.25) scaleX(1.04) translateY(-3px);opacity:1;}}
   @media (prefers-reduced-motion: reduce){ .cbadge.top1, .cbadge.top1::before, .cbadge.top1::after{animation:none;} }
   /* Item BY: a Top 1% coach's pitch - a slowly moving gold frame, the badge's colours, and a small label */
-  /* Item DG: referral QR - dark modules on white inside the card (scans on every phone), FormTrace mark in the centre */
+  /* Item DG: referral QR - dark modules on white inside the card (scans on every phone), Formtrace mark in the centre */
   .ref-qr-wrap{position:relative;width:204px;height:204px;margin:4px auto 10px;padding:14px;background:#fff;border-radius:16px;border:2px solid var(--lime);box-sizing:border-box;}
   .ref-qr{width:172px;height:172px;} .ref-qr canvas,.ref-qr img{width:172px!important;height:172px!important;display:block;}
   .ref-qr-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:10px;background:#0B0E11;color:#C8FF3D;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;}
@@ -1400,7 +1400,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
   <!-- ============ APP LOADING ============ -->
   <div class="loading-screen" id="app-loading">
     <div class="spin"></div>
-    <div style="font-size:13px;color:var(--muted)">Starting FormTrace…</div>
+    <div style="font-size:13px;color:var(--muted)">Starting Formtrace…</div>
   </div>
 
   <!-- ============ AUTH ============ -->
@@ -1828,7 +1828,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
     <div class="top"><div style="flex:1"><h1>Before you start</h1><div class="sub">One-off confirmation</div></div></div>
     <div class="body">
       <div class="card">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">What FormTrace stores about you</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">What Formtrace stores about you</div>
         <div style="font-size:12.5px;color:var(--muted);line-height:1.6">
           To coach you, this app records: <b style="color:var(--ink)">videos of you exercising, with sound</b>, <b style="color:var(--ink)">weekly progress photos</b>, <b style="color:var(--ink)">body measurements and weight</b>, and <b style="color:var(--ink)">what you eat</b>.
         </div>
@@ -1849,7 +1849,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
         <div class="field"><label for="cg-dob">Your date of birth</label>
           <input id="cg-dob" type="date">
         </div>
-        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:-4px">You must be 18 or over to use FormTrace, because it records progress photos.</div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:-4px">You must be 18 or over to use Formtrace, because it records progress photos.</div>
         <label class="cb-toggle" for="cg-agree" style="margin-top:14px">
           <div style="flex:1"><div style="font-size:13px;font-weight:700">I understand and agree</div>
             <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">You're agreeing to the data use described above and to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--lime)">Terms and Privacy Notice</a>.</div></div>
@@ -2730,7 +2730,7 @@ function drawStreakStory(){
   const what=sbState.milestone
     ? (sbState.milestone<30 ? sbState.milestone+"-day" : milestoneLabel(sbState.milestone))
     : (sbState.unit==="week" ? sbState.count+"-week" : sbState.count+"-day");
-  const lines=[`${who} just hit a`,`${what} milestone`,`on FormTrace`];
+  const lines=[`${who} just hit a`,`${what} milestone`,`on Formtrace`];
   x.fillStyle="#fff";
   x.font="700 64px system-ui, sans-serif";
   lines.forEach((ln,i)=>x.fillText(ln,W/2,H*0.70+i*84));
@@ -2747,7 +2747,7 @@ async function shareStreakStory(){
     const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
     if(!blob) throw new Error("Couldn't render the image");
     const file=new File([blob],"formtrace-streak.png",{type:"image/png"});
-    const txt=`${sbState.milestone?milestoneLabel(sbState.milestone):sbState.count+" day"} streak on FormTrace`;
+    const txt=`${sbState.milestone?milestoneLabel(sbState.milestone):sbState.count+" day"} streak on Formtrace`;
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       await navigator.share({files:[file],text:txt});
     }else{
@@ -2817,8 +2817,8 @@ function permHelpHtml(kind,retryFnName){
   const ua=navigator.userAgent||""; const ios=/iPhone|iPad|iPod/.test(ua); const android=/Android/.test(ua); const chrome=/Chrome|CriOS|Edg/.test(ua); const safari=ios&&!/CriOS|FxiOS/.test(ua);
   const what=kind==="mic"?"microphone":"camera";
   let steps;
-  if(safari) steps=`Tap <b>aA</b> (left of the address bar) → <b>Website Settings</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. If FormTrace is installed on your home screen: iPhone <b>Settings → Safari → ${what[0].toUpperCase()+what.slice(1)}</b> → Allow, then reopen the app.`;
-  else if(android&&chrome) steps=`Tap the <b>lock icon</b> (left of the address bar) → <b>Permissions</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. Installed as an app: long-press the FormTrace icon → <b>App info → Permissions</b>.`;
+  if(safari) steps=`Tap <b>aA</b> (left of the address bar) → <b>Website Settings</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. If Formtrace is installed on your home screen: iPhone <b>Settings → Safari → ${what[0].toUpperCase()+what.slice(1)}</b> → Allow, then reopen the app.`;
+  else if(android&&chrome) steps=`Tap the <b>lock icon</b> (left of the address bar) → <b>Permissions</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. Installed as an app: long-press the Formtrace icon → <b>App info → Permissions</b>.`;
   else if(chrome) steps=`Click the <b>${what} icon</b> in the address bar (right side) and choose <b>Always allow</b>, then Try again.`;
   else steps=`Open your browser's site settings for this page and allow the ${what}, then Try again.`;
   return `<div style="text-align:left;font-size:12.5px;line-height:1.55"><b style="color:var(--amber)">${what[0].toUpperCase()+what.slice(1)} access was denied.</b><div style="margin-top:6px">${steps}</div><button class="btn sm primary" style="width:auto;margin-top:10px" onclick="${retryFnName}()">Try again</button></div>`;
@@ -3084,7 +3084,7 @@ function cancelCountdown(){
 function countingDown(){ return !!cdTimer; }
 
 /* =========================================================================
-   3. Skeleton renderer (FormTrace vocabulary)
+   3. Skeleton renderer (Formtrace vocabulary)
    ========================================================================= */
 const P={nose:0,Leye:2,Reye:5,Lear:7,Rear:8,Lsh:11,Rsh:12,Lel:13,Rel:14,Lwr:15,Rwr:16,
   Lpinky:17,Rpinky:18,Lindex:19,Rindex:20,Lthumb:21,Rthumb:22,Lhip:23,Rhip:24,Lknee:25,Rknee:26,Lank:27,Rank:28,Ltoe:31,Rtoe:32};
@@ -3471,7 +3471,7 @@ async function pushSubscribe(quiet){
   const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(cfg.value)});
   const j=sub.toJSON();
   const { error:e2 }=await store._sb.from("push_subscriptions").upsert({endpoint:j.endpoint,user_id:ME.id,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,200)},{onConflict:"endpoint"}); if(e2) throw e2;
-  if(!quiet) try{ reg.showNotification("FormTrace",{body:"Push is on. You'll hear about offers, reviews, calls and friends here.",icon:"icon-192.png",badge:"badge-96.png",tag:"test"}); }catch(e){}
+  if(!quiet) try{ reg.showNotification("Formtrace",{body:"Push is on. You'll hear about offers, reviews, calls and friends here.",icon:"icon-192.png",badge:"badge-96.png",tag:"test"}); }catch(e){}
 }
 async function pushUnsubscribe(){
   const reg=await navigator.serviceWorker.getRegistration(); const sub=reg?await reg.pushManager.getSubscription():null;
@@ -3489,7 +3489,7 @@ async function ensurePayoutsPrompt(){
     const { data:row }=await store._sb.from("coach_stripe_accounts").select("details_submitted,transfers_active").eq("coach_id",ME.id).maybeSingle();
     if(row&&row.details_submitted&&row.transfers_active) return;
     pwShow(`<div style="font-size:28px;margin-bottom:6px">💶</div><div style="font-weight:800;font-size:17px;margin-bottom:6px">${row?"Finish your payout setup":"Set up payouts"}</div>
-      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Trainees pay a deposit that FormTrace holds and releases to you week by week. Set up payouts with Stripe so every delivered week reaches your bank - it takes a few minutes.</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Trainees pay a deposit that Formtrace holds and releases to you week by week. Set up payouts with Stripe so every delivered week reaches your bank - it takes a few minutes.</div>
       <button class="btn primary" id="po-yes">${row?"Finish setup":"Set up payouts"}</button><button class="btn ghost" id="po-no" style="margin-top:8px">Not now</button>`);
     $("#po-no").onclick=()=>{ try{ localStorage.setItem("ft-payouts-ask",String(Date.now())); }catch(e){} pwHide(); };
     $("#po-yes").onclick=async()=>{ const b=$("#po-yes"); b.disabled=true; try{ const { data, error }=await store._sb.functions.invoke("connect-onboard",{body:{action:"onboard"}}); if(error){ let m=error.message; try{ const j=await error.context.json(); if(j&&j.error) m=j.error; }catch(_){} throw new Error(m); } if(!data||!data.url) throw new Error("No link returned"); location.href=data.url; }catch(x){ console.error("payouts prompt",x); toast(x.message||"Couldn't open Stripe",4500); b.disabled=false; } };
@@ -3645,7 +3645,7 @@ function openForgotPassword(){
     <button class="btn primary" id="pw-send">Send reset link</button>
     <div id="pw-msg" style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:10px"></div>
     <details style="margin-top:12px;font-size:12.5px;color:var(--muted);line-height:1.5"><summary style="cursor:pointer;color:var(--ink);font-weight:700">Forgot which email you used?</summary>
-      <div style="margin-top:6px">Your email is your login - there's no separate username. Try each address you use: this form never says whether an address has an account, so trying is safe and private. If a coach invited you, it's the address the invite was sent to.${SUPPORT_EMAIL?` Still stuck? <a href="mailto:${SUPPORT_EMAIL}?subject=FormTrace%20account%20help" style="color:var(--lime)">Contact support</a>.`:""}</div></details>
+      <div style="margin-top:6px">Your email is your login - there's no separate username. Try each address you use: this form never says whether an address has an account, so trying is safe and private. If a coach invited you, it's the address the invite was sent to.${SUPPORT_EMAIL?` Still stuck? <a href="mailto:${SUPPORT_EMAIL}?subject=Formtrace%20account%20help" style="color:var(--lime)">Contact support</a>.`:""}</div></details>
     <button class="btn ghost sm" id="pw-close" style="width:auto;margin-top:12px">Back to sign in</button>`);
   $("#pw-close").onclick=pwHide;
   $("#pw-send").onclick=async()=>{ const em=$("#pw-email").value.trim(); if(!/^\S+@\S+\.\S+$/.test(em)){ toast("Enter a valid email",2500); return; } const b=$("#pw-send"); b.disabled=true;
@@ -3698,7 +3698,7 @@ function showConsentGate(){
   btn.onclick=async()=>{
     const v=(dob.value||"").trim();
     if(!v){ toast("Enter your date of birth"); return; }
-    if(!isAtLeast18(v)){ toast("You need to be 18 or over to use FormTrace",4200); return; }
+    if(!isAtLeast18(v)){ toast("You need to be 18 or over to use Formtrace",4200); return; }
     if(!agree.checked){ toast("Please confirm you agree to continue",3400); return; }
     btn.disabled=true; const o=btn.textContent; btn.textContent="Saving…";
     try{
@@ -4058,7 +4058,7 @@ async function openRefundExplain(engId){
       h+=`<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--faint);margin:16px 0 2px">NOT REFUNDED: ${m(b.kept_cents)}</div>`;
       if(n(b.released_cents)) h+=row(`${n(b.released_weeks)} week${n(b.released_weeks)===1?"":"s"} already delivered`,m(b.released_cents),false,"Paid to your coach week by week as your sessions were delivered. Weeks already paid out are final.");
       if(n(b.week_kept_cents)) h+=row("The week in progress",m(b.week_kept_cents),false,b.flagged
-        ?`You ended the goal with the reason "${escapeHtml(why)}", but every session you submitted was still inside your coach's review window (5 business days). So it counts as ending the goal yourself, and the week in progress stays with your coach. FormTrace reviews every case like this; if you think it is wrong, write to ${mailRef}.`
+        ?`You ended the goal with the reason "${escapeHtml(why)}", but every session you submitted was still inside your coach's review window (5 business days). So it counts as ending the goal yourself, and the week in progress stays with your coach. Formtrace reviews every case like this; if you think it is wrong, write to ${mailRef}.`
         :"You ended the goal during this week, so it stays with your coach. Whole unused weeks are refunded.");
       if(n(b.costs_kept_cents)) h+=row("Card and payout costs",m(b.costs_kept_cents),false,b.rule==="coach_ended"
         ?"Stripe keeps its card fee when a payment goes back to the card (keeping the amount as credit returns it in full), plus the costs of the weeks already paid to your coach."
@@ -4183,7 +4183,7 @@ async function renderHomeChecklist(engs, el){
   let plan=null; if(active.length){ try{ const { data:mg }=await store._sb.from("macro_goals").select("kcal,protein_g").in("engagement_id",active.map(e=>e.id)).lte("week_start",weekStartISO(new Date())).order("week_start",{ascending:false}).order("updated_at",{ascending:false}).limit(1); plan=(mg||[])[0]||null; }catch(e){} }
   const man=dcGet(); const items=[];
   items.push({k:"sleep",t:"Slept 8 hours",sub:man.sleep?"":"tap if you did",done:!!man.sleep,act:"tick"});   /* owner 2026-11-02: renamed, first */
-  items.push({k:"login",t:"Open FormTrace",done:true});
+  items.push({k:"login",t:"Open Formtrace",done:true});
   items.push({k:"weigh",t:"Weigh yourself",sub:(tLog&&tLog.weight_kg!=null)?`${tLog.weight_kg} kg`:"",done:!!(tLog&&tLog.weight_kg!=null),act:"weigh"});
   items.push({k:"macros",t:"Log yesterday's macros",sub:(yLog&&yLog.kcal!=null)?`${Number(yLog.kcal).toLocaleString()} kcal`:"",done:!!(yLog&&(yLog.kcal!=null||yLog.protein_g!=null)),act:"macros"});
   if(plan&&(plan.kcal||plan.protein_g)) items.push({k:"budget",t:"See today's calorie budget",sub:[plan.kcal?`${Number(plan.kcal).toLocaleString()} kcal`:"",plan.protein_g?`${plan.protein_g} g protein`:""].filter(Boolean).join(" · "),done:!!man.budget,act:"tick"});
@@ -4539,7 +4539,7 @@ const FEEDBACK_Q={
     {id:"find",   t:"Finding things in the app was…",                                        type:"scale5",labels:SCALE5_EASE},
     {id:"post",   t:"Posting your goal was…",                                                 type:"scale5",labels:SCALE5_EASE},
     {id:"choose", t:"Choosing an offer was…",                                                 type:"scale5",labels:SCALE5_EASE},
-    {id:"ref",    t:"The coach's reference videos with the FormTrace lines were…",             type:"scale5",labels:SCALE5_USE},
+    {id:"ref",    t:"The coach's reference videos with the Formtrace lines were…",             type:"scale5",labels:SCALE5_USE},
     {id:"written",t:"Written feedback from your coach",                                        type:"scale5",labels:SCALE5_LIKE},
     {id:"voice",  t:"Voice-over feedback on your videos",                                      type:"scale5",labels:SCALE5_LIKE},
     {id:"visual", t:"Visual feedback (form lines and tags on your video)",                    type:"scale5",labels:SCALE5_LIKE},
@@ -4549,14 +4549,14 @@ const FEEDBACK_Q={
     {id:"bud_ses",t:"…per session",                                                            type:"choice",options:["Under €5","€5-10","€10-20","€20-40","Over €40"]},
     {id:"bud_goal",t:"…per goal (a few weeks)",                                                type:"choice",options:["Under €50","€50-100","€100-200","€200-400","Over €400"]},
     {id:"longterm",t:"How likely are you to use the app regularly for long-term goals?",       type:"scale10"},
-    {id:"nps",    t:"How likely are you to recommend FormTrace to a friend?",                  type:"scale10"},
+    {id:"nps",    t:"How likely are you to recommend Formtrace to a friend?",                  type:"scale10"},
     {id:"else",   t:"Anything else?",                                                          type:"text"}
   ],
   coach:[
     {id:"find",   t:"Finding things in the app was…",                                        type:"scale5",labels:SCALE5_EASE},
-    {id:"findtr", t:"Would you use FormTrace to find new trainees?",                           type:"scale5",labels:SCALE5_LIKELY},
+    {id:"findtr", t:"Would you use Formtrace to find new trainees?",                           type:"scale5",labels:SCALE5_LIKELY},
     {id:"useful", t:"How useful is the app for delivering your coaching, compared to your current tools?", type:"scale5",labels:SCALE5_USE},
-    {id:"ref",    t:"Recording reference videos with the FormTrace lines",                     type:"scale5",labels:SCALE5_USE},
+    {id:"ref",    t:"Recording reference videos with the Formtrace lines",                     type:"scale5",labels:SCALE5_USE},
     {id:"assist", t:"The form-match assist and pose overlay when reviewing",                   type:"scale5",labels:SCALE5_USE},
     {id:"voice",  t:"Recording voice-over reviews",                                            type:"scale5",labels:SCALE5_LIKE},
     {id:"assign", t:"Building and assigning weeks",                                            type:"scale5",labels:SCALE5_EASE},
@@ -4564,7 +4564,7 @@ const FEEDBACK_Q={
     {id:"time",   t:"Time this saved you versus messaging + spreadsheets",                     type:"choice",options:["It took longer","About the same","Saved some","Saved a lot"]},
     {id:"comm",   t:"What commission would you accept for these benefits?",                    type:"choice",options:["0-5%","5-10%","10-15%","15-20%","Over 20%"]},
     {id:"again",  t:"Would you take another trainee here next month?",                        type:"choice",options:["Yes","Maybe","No"]},
-    {id:"nps",    t:"How likely are you to recommend FormTrace to another coach?",              type:"scale10"},
+    {id:"nps",    t:"How likely are you to recommend Formtrace to another coach?",              type:"scale10"},
     {id:"else",   t:"Anything else?",                                                          type:"text"}
   ]
 };
@@ -4576,7 +4576,7 @@ FEEDBACK_Q.exit=[
   {id:"when",   t:"When did you decide?",                             type:"choice",options:["First week","Mid-way","Near the end"]},
   {id:"kept",   t:"What would have kept you going?",                  type:"text"},
   {id:"again",  t:"Would you try another goal here?",                 type:"scale10"},
-  {id:"nps",    t:"How likely are you to recommend FormTrace?",        type:"scale10"},
+  {id:"nps",    t:"How likely are you to recommend Formtrace?",        type:"scale10"},
   {id:"else",   t:"Anything else?",                                   type:"text"}
 ];
 async function renderHomeGoalFeedback(el){
@@ -4662,7 +4662,7 @@ async function renderSoloCalendar(card){
   }catch(e){ card.remove(); }
 }
 /* ---- Item DL: payment tracker (pilot) ---------------------------------------------
-   The real model is escrow: FormTrace holds the deposit and releases it to the coach as
+   The real model is escrow: Formtrace holds the deposit and releases it to the coach as
    the service is delivered, or refunds the trainee. In the pilot there is no escrow -
    the trainee pays the coach directly - so the deposit step is drawn SKIPPED until
    Stripe (BI) is live. Both sides see the same map. */
@@ -4704,7 +4704,7 @@ async function renderStripeConnectCard(ph){
   const ready=st.connected&&st.details_submitted&&st.transfers_active;
   const test=st.livemode===false?` <span style="color:var(--amber)">(Stripe test mode)</span>`:"";
   let body, btn;
-  if(!st.connected){ body=`Trainees' deposits are held by FormTrace and released to you week by week. Set up payouts with Stripe to receive them${test}.`; btn=`<button class="btn sm primary" data-sc="onboard" style="width:auto">Set up payouts</button>`; }
+  if(!st.connected){ body=`Trainees' deposits are held by Formtrace and released to you week by week. Set up payouts with Stripe to receive them${test}.`; btn=`<button class="btn sm primary" data-sc="onboard" style="width:auto">Set up payouts</button>`; }
   else if(!ready){ body=`Your Stripe setup isn't finished${st.requirements_due?` - ${st.requirements_due} item${st.requirements_due===1?"":"s"} to complete`:""}${test}. Releases wait until it is.`; btn=`<button class="btn sm primary" data-sc="onboard" style="width:auto">Finish setup</button>`; }
   else { body=`<b style="color:var(--lime)">Payouts ready ✓</b> - each delivered week is released to your bank through Stripe${test}.`; btn=`<button class="btn sm ghost" data-sc="dashboard" style="width:auto">Open Stripe dashboard</button>`; }
   ph.innerHTML=shell(`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">${body}</div><div style="margin-top:10px">${btn}</div>`);
@@ -4760,9 +4760,9 @@ function depositLine(e,s,isCoach,when){
   const B=x=>`<b style="color:var(--ink)">${x}</b>`;
   const card=Number(e.deposit_amount||0), credit=Number(e.deposit_credit_cents||0), proc=Number(e.deposit_processing||0), whose=isCoach?"the trainee's":"your";
   if(!card&&!credit) return `Deposit of ${B(d(0))} (free code) received ${when}`;
-  if(!card) return `Paid ${B(d(credit))} with ${whose} credit on ${when}${proc?`, incl. ${d(proc)} payout costs`:""}, no card payment. Held by FormTrace`;
-  if(credit) return `Paid ${B(d(card))} by card and ${B(d(credit))} with ${whose} credit on ${when}${proc?`; the card part includes ${d(proc)} card and payout costs`:""}. Held by FormTrace`;
-  return `Deposit of ${B(d(card))}${proc?` incl. ${d(proc)} payment processing`:""} received ${when} and held by FormTrace`;
+  if(!card) return `Paid ${B(d(credit))} with ${whose} credit on ${when}${proc?`, incl. ${d(proc)} payout costs`:""}, no card payment. Held by Formtrace`;
+  if(credit) return `Paid ${B(d(card))} by card and ${B(d(credit))} with ${whose} credit on ${when}${proc?`; the card part includes ${d(proc)} card and payout costs`:""}. Held by Formtrace`;
+  return `Deposit of ${B(d(card))}${proc?` incl. ${d(proc)} payment processing`:""} received ${when} and held by Formtrace`;
 }
 async function renderPaymentTracker(holder,eng,role,offer){
   if(!holder||!eng||!eng.id) return;
@@ -4781,8 +4781,8 @@ async function renderPaymentTracker(holder,eng,role,offer){
   const who=isCoach?"your trainee":"your coach";
   if(!e.paid_at&&!e.received_at&&!e.deposit_at){
    if(STRIPE_LIVE){   /* Item DU: Stripe escrow replaces the manual route for new goals */
-    now=isCoach?`Waiting for your trainee's deposit of <b style="color:var(--ink)">${s.money(s.total)}</b>. FormTrace holds it and releases it to you week by week. Make sure payouts are set up: Profile → Get paid with Stripe.`
-               :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> by card${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. FormTrace holds it and releases it to your coach week by week as your sessions are delivered; unused weeks are refunded if the goal ends early.`;
+    now=isCoach?`Waiting for your trainee's deposit of <b style="color:var(--ink)">${s.money(s.total)}</b>. Formtrace holds it and releases it to you week by week. Make sure payouts are set up: Profile → Get paid with Stripe.`
+               :`Pay <b style="color:var(--ink)">${s.money(s.total)}</b> by card${s.weeks?` (${s.money(s.weekly)} × ${s.weeks} weeks)`:""}. Formtrace holds it and releases it to your coach week by week as your sessions are delivered; unused weeks are refunded if the goal ends early.`;
     actions=isCoach?"":`<button class="btn sm primary" data-pt="card" style="width:auto">Pay by card</button>`+(e.status==="active"?`<button class="btn sm ghost" data-pt="out" style="width:auto;color:var(--red)">Cancel goal</button>`:"");
    } else {
     now=isCoach?`Waiting for ${who} to pay <b style="color:var(--ink)">${s.money(s.total)}</b> directly to you.`
@@ -4806,7 +4806,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
       if(!rf) now=`Ended early. Working out the refund of the unused weeks…`;
       else if(rf.status==="sent") now=`Ended early. Refund of <b style="color:var(--ink)">${amt}</b> returned to ${isCoach?"your trainee's":"your"} card ${day(rf.sent_at)}${rf.rule==="trainee_stopped"?" (the week in progress stays with the coach)":""}. Weeks already released are unaffected.`;
       else if(rf.status==="skipped") now=(rf.breakdown&&Number(rf.breakdown.credit_back_cents)>0)?`Ended early. <b style="color:var(--ink)">${s.money(Number(rf.breakdown.credit_back_cents)/100)}</b> returned to ${isCoach?"your trainee's":"your"} credit.`:`Ended early. ${rf.rule==="comp"?"Nothing to refund (free code).":"No unused weeks left to refund."}`;   /* FP: a credit-funded goal refunds as credit */
-      else if(rf.status==="failed") now=`Ended early. The refund of ${amt} could not be sent automatically - FormTrace is looking into it.`;
+      else if(rf.status==="failed") now=`Ended early. The refund of ${amt} could not be sent automatically - Formtrace is looking into it.`;
       else now=`Ended early. Refund of ${amt} on its way to ${isCoach?"your trainee":"you"}.`;
       if(!isCoach&&rf&&rf.breakdown&&rf.breakdown.full===false) now+=` <a href="#" data-rf-why="${e.id}" style="color:var(--lime);font-weight:700;white-space:nowrap">Why not the full amount?</a>`;   /* FP */
     } else if(s.refundDue>0){
@@ -6851,10 +6851,10 @@ async function loadCoachFacts(ids){
 function badgeTitle(kind,f){
   f=f||{};
   switch(kind){
-    case "verified":     return `Verified coach${f.verified_at?` · since ${fmtDay(String(f.verified_at).slice(0,10))}`:""} - FormTrace reviewed and approved their application.`;
+    case "verified":     return `Verified coach${f.verified_at?` · since ${fmtDay(String(f.verified_at).slice(0,10))}`:""} - Formtrace reviewed and approved their application.`;
     case "professional": return f.pro_employer?`Works at ${f.pro_employer}`:"Professional coach - coaching is their profession.";
-    case "certified":    { const c=(f.certs||[]).map(x=>`${x.title}${x.cert_date?` (${fmtDay(String(x.cert_date).slice(0,10))})`:""}`).join(" · "); return `Certified Professional${c?` - ${c}`:""}, checked by FormTrace.`; }
-    case "founding":     return "Founding coach - this coach has been part of FormTrace's development.";
+    case "certified":    { const c=(f.certs||[]).map(x=>`${x.title}${x.cert_date?` (${fmtDay(String(x.cert_date).slice(0,10))})`:""}`).join(" · "); return `Certified Professional${c?` - ${c}`:""}, checked by Formtrace.`; }
+    case "founding":     return "Founding coach - this coach has been part of Formtrace's development.";
     case "top1":         { const s=f.streak||{}; return `Top 1% of coaches by their trainees' combined week streaks · ${s.score||0} weeks across ${s.trainees||0} trainee${(s.trainees||0)===1?"":"s"}${s.rank?` · rank ${s.rank} of ${s.of_coaches}`:""}.`; }
     case "referral":     { const r=f.referral||{}; return `${r.title||"Referral tier"} · ${r.qualified||0} referred trainee${(r.qualified||0)===1?"":"s"} completed a goal.`; }
   }
@@ -7306,7 +7306,7 @@ function cadenceExplainer({sessions,price,cur,noshow,perspective,weeks}){
     const src=(perspective==="coach"&&MY_RATES)?MY_RATES.commission_source:"default";
     const fee=serviceFeeFor(price,weeks), payTotal=total+fee, coachNet=total*(1-myPct/100), feeIsMin=fee>total*TRAINEE_FEE_PCT/100+0.001;
     const m=v=>cur+(Math.round(v*100)/100).toLocaleString("en-GB",{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2});
-    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)">${perspective==="coach"?`<b style="color:var(--ink)">The trainee pays ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} (${m(total)} + ${feeIsMin?`a minimum ${m(MIN_SERVICE_FEE)}/week`:`${TRAINEE_FEE_PCT}%`} service fee). <b style="color:var(--ink)">You receive ${m(coachNet)}</b> after ${src==="default"?`FormTrace's ${myPct}% commission - less if you reach a referral tier`:`your ${src==="founding"?"Founding coach":src==="partner"?"Partner":src==="ambassador"?"Ambassador":"agreed"} rate of ${myPct}%`}.${src!=="default"&&myPct<COACH_COMMISSION_PCT?` <span style="color:var(--lime)">The standard rate is ${COACH_COMMISSION_PCT}% - this privilege saves you ${m(total*(COACH_COMMISSION_PCT-myPct)/100)} on this offer.</span>`:""}</span>`:`<b style="color:var(--ink)">Committed total: ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} - ${m(total)} for the coaching plus a ${feeIsMin?`${m(MIN_SERVICE_FEE)}/week minimum`:`${TRAINEE_FEE_PCT}%`} service fee. That's the ceiling: you pay only for sessions actually reviewed.</span>`}</div>`);
+    lines.push(`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line2)">${perspective==="coach"?`<b style="color:var(--ink)">The trainee pays ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} (${m(total)} + ${feeIsMin?`a minimum ${m(MIN_SERVICE_FEE)}/week`:`${TRAINEE_FEE_PCT}%`} service fee). <b style="color:var(--ink)">You receive ${m(coachNet)}</b> after ${src==="default"?`Formtrace's ${myPct}% commission - less if you reach a referral tier`:`your ${src==="founding"?"Founding coach":src==="partner"?"Partner":src==="ambassador"?"Ambassador":"agreed"} rate of ${myPct}%`}.${src!=="default"&&myPct<COACH_COMMISSION_PCT?` <span style="color:var(--lime)">The standard rate is ${COACH_COMMISSION_PCT}% - this privilege saves you ${m(total*(COACH_COMMISSION_PCT-myPct)/100)} on this offer.</span>`:""}</span>`:`<b style="color:var(--ink)">Committed total: ${m(payTotal)}</b> <span style="color:var(--muted)">for ${weeks} week${weeks===1?"":"s"} - ${m(total)} for the coaching plus a ${feeIsMin?`${m(MIN_SERVICE_FEE)}/week minimum`:`${TRAINEE_FEE_PCT}%`} service fee. That's the ceiling: you pay only for sessions actually reviewed.</span>`}</div>`);
   }
   return lines.join("");
 }
@@ -11858,7 +11858,7 @@ async function shareJourneyStory(){
     const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
     if(!blob) throw new Error("Couldn't render the image");
     const file=new File([blob],"formtrace-journey.png",{type:"image/png"});
-    const txt=`My journey on FormTrace: ${journeyCtx.eng.goal_title||"a goal"}, ${journeyCtx.summary.weeks} weeks`;
+    const txt=`My journey on Formtrace: ${journeyCtx.eng.goal_title||"a goal"}, ${journeyCtx.summary.weeks} weeks`;
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       await navigator.share({files:[file],text:txt});
     }else{
@@ -11996,7 +11996,7 @@ async function wireCertCard(){
         const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
         const path=await store.video.upload(file,ext);
         const { error }=await store._sb.from("coach_certifications").insert({coach_id:ME.id,title,issuer:issuer||null,cert_date:date||null,file_path:path}); if(error) throw error;
-        toast("Submitted - FormTrace will review it ✓",3000); closeSheet(); paint();
+        toast("Submitted - Formtrace will review it ✓",3000); closeSheet(); paint();
       }catch(err){ console.error("add certification",err); toast(err.message||"Couldn't submit",4000); btn.disabled=false; btn.textContent="Submit for approval"; }
     });
   });
@@ -12014,7 +12014,7 @@ async function referralShareImage(link,name){
   g.imageSmoothingEnabled=false; g.drawImage(src,x+40,y+40,box-80,box-80);
   g.fillStyle="#0B0E11"; g.beginPath(); g.roundRect(W/2-44,y+box/2-44,88,88,18); g.fill(); g.fillStyle="#C8FF3D"; g.font="900 30px system-ui,sans-serif"; g.fillText("FT",W/2,y+box/2+11);
   g.fillStyle="#EEF3F6"; g.font="800 40px system-ui,sans-serif"; g.fillText(name||"",W/2,y+box+90);
-  g.fillStyle="#8593A0"; g.font="400 28px system-ui,sans-serif"; g.fillText("Scan to train with me on FormTrace",W/2,y+box+140);
+  g.fillStyle="#8593A0"; g.font="400 28px system-ui,sans-serif"; g.fillText("Scan to train with me on Formtrace",W/2,y+box+140);
   return await new Promise(r=>cv.toBlob(b=>r(b?new File([b],"formtrace-invite.png",{type:"image/png"}):null),"image/png"));
 }
 function markReferralTiers(q){ const tiers=[...document.querySelectorAll("#ref-matrix .ref-tier")]; let nextSet=false; for(const t of tiers){ const n=+t.getAttribute("data-tier"); t.classList.toggle("done",q>=n); if(q<n&&!nextSet){ t.classList.add("next"); nextSet=true; } else t.classList.remove("next"); } }
@@ -12024,8 +12024,8 @@ async function wireReferralCard(){
   { const q=$("#ref-qr"); if(q) renderQrInto(q,link).catch(e=>{ console.error("referral QR",e); q.innerHTML=`<div style="font-size:11px;color:#0B0E11;padding:60px 8px;text-align:center">QR unavailable offline - use Copy link</div>`; }); }   // Item DG
   $("#ref-copy")?.addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(link); toast("Link copied ✓",1500); }catch(e){ $("#ref-link").select(); toast("Long-press the link to copy",2500); } });
   $("#ref-share")?.addEventListener("click",async()=>{   // Item DG: share the QR card as an image; the link rides in the text for anyone who cannot scan
-    try{ const f=await referralShareImage(link,ME.display_name||""); if(f&&navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:"Train with me on FormTrace",text:"Scan the code, or open: "+link}); return; } }catch(e){ if(e&&e.name==="AbortError") return; console.error("share QR",e); }
-    if(navigator.share){ navigator.share({title:"Train with me on FormTrace",text:"Join me on FormTrace Coach:",url:link}).catch(()=>{}); } else { try{ await navigator.clipboard.writeText(link); toast("Link copied ✓",1500); }catch(e){} } });
+    try{ const f=await referralShareImage(link,ME.display_name||""); if(f&&navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:"Train with me on Formtrace",text:"Scan the code, or open: "+link}); return; } }catch(e){ if(e&&e.name==="AbortError") return; console.error("share QR",e); }
+    if(navigator.share){ navigator.share({title:"Train with me on Formtrace",text:"Join me on Formtrace Coach:",url:link}).catch(()=>{}); } else { try{ await navigator.clipboard.writeText(link); toast("Link copied ✓",1500); }catch(e){} } });
   try{
     const { data, error } = await store._sb.rpc("referral_stats",{p_user:ME.id}); if(error) throw error;
     const s=data||{}; const el=$("#ref-stats"); if(!el) return;
@@ -12037,7 +12037,7 @@ async function wireReferralCard(){
 }
 /* CQ-6: Profile is identity; these sections live on the Settings screen. The nodes are
    MOVED after Profile renders (listeners travel with them), so no wiring is duplicated. */
-const SETTINGS_SECTIONS=["Social profile","Appearance","Install FormTrace","Danger zone"];
+const SETTINGS_SECTIONS=["Social profile","Appearance","Install Formtrace","Danger zone"];
 function moveSettingsSections(){
   const from=$("#profile-body"), to=$("#settings-body"); if(!from||!to) return;
   const kids=[...from.children]; let cur=null; const moving=[]; const dropping=[];
@@ -12154,7 +12154,7 @@ async function renderProfile(){
      (nothing to show), iOS (instructions, since nothing can trigger it),
      or Chromium (a real button once the browser has actually signalled
      it's ready). */
-  html+=`<div class="section-h"><div class="eyebrow">Install FormTrace</div></div>
+  html+=`<div class="section-h"><div class="eyebrow">Install Formtrace</div></div>
     <div class="card" id="install-card" style="margin:0 0 12px"></div>`;
   /* Item G: declared weekly availability, the input both a trainee's own
      proposal and a coach's response need to check against. Recurring
@@ -12169,7 +12169,7 @@ async function renderProfile(){
       <input id="ref-link" type="hidden" value="${escapeHtml(location.origin+location.pathname)}?ref=${escapeHtml(ME.referral_code||"")}">
         <div class="ref-qr-wrap"><div id="ref-qr" class="ref-qr"></div><div class="ref-qr-logo">FT</div></div>
         <div style="text-align:center;font-weight:800;font-size:15px">${escapeHtml(ME.display_name||"")}</div>
-        <div style="text-align:center;font-size:11.5px;color:var(--faint);margin-bottom:10px">Scan to join FormTrace with me</div>
+        <div style="text-align:center;font-size:11.5px;color:var(--faint);margin-bottom:10px">Scan to join Formtrace with me</div>
         <div class="ref-matrix" id="ref-matrix">${(roleOf()==="coach"?[[3,"Recruiter","Badge"],[10,"Ambassador","Commission 8.9%"],[25,"Partner","Commission 5.9%"]]:[[3,"Recruiter","€20 off a goal over €100"],[10,"Ambassador","€50 off + merch"],[25,"Partner","€100 off + merch + fee 3.9% for good"]]).map(([n,t,r])=>`<div class="ref-tier" data-tier="${n}"><b>${t}</b><span class="rn">${n} friends</span><span>${r}</span></div>`).join("")}</div>
         <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm primary" id="ref-share" style="flex:1;width:auto">Share</button><button class="btn sm ghost" id="ref-copy" style="width:auto">Copy link</button></div>
       <div id="ref-stats" style="font-size:12.5px;color:var(--muted);margin-top:10px">Loading…</div>
@@ -12191,7 +12191,7 @@ async function renderProfile(){
   if(roleOf()==="coach"){
     html+=`<div class="section-h"><div class="eyebrow">Certifications</div></div>
     <div class="card" style="margin:0 0 12px" id="cert-card">
-      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Attach a coaching certification. Once FormTrace approves it you get the 🎓 Certified badge, and its title and date show on your public profile.</div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Attach a coaching certification. Once Formtrace approves it you get the 🎓 Certified badge, and its title and date show on your public profile.</div>
       <div id="cert-list" style="font-size:12.5px;color:var(--muted)">Loading…</div>
       <button class="btn sm" id="cert-add" style="width:auto;margin-top:10px">+ Add a certification</button>
     </div>`;
@@ -12319,8 +12319,8 @@ function updateInstallUI(){
     return;
   }
   if(window.deferredInstallPrompt){
-    card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">Installs FormTrace as its own app — no browser bar, launches like anything else on your home screen.</div>
-      <button class="btn" id="do-install-btn" style="width:100%">⬇ Install FormTrace</button>`;
+    card.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px">Installs Formtrace as its own app — no browser bar, launches like anything else on your home screen.</div>
+      <button class="btn" id="do-install-btn" style="width:100%">⬇ Install Formtrace</button>`;
     $("#do-install-btn").addEventListener("click",async()=>{
       const btn=$("#do-install-btn");btn.disabled=true;btn.textContent="Installing…";
       try{ window.deferredInstallPrompt.prompt(); await window.deferredInstallPrompt.userChoice; }
@@ -12540,7 +12540,7 @@ function renderCoachProfile(p){
   // over-reading two reviews as a track record.
   h+=`<div class="card"><div class="eyebrow">Ratings</div>`;
   if(!rc){
-    h+=`<div class="cp-norate">No ratings yet — this coach is new to FormTrace.</div>`;
+    h+=`<div class="cp-norate">No ratings yet — this coach is new to Formtrace.</div>`;
   }else{
     h+=`<div class="cp-avg">${starsHtml(avg)}<b>${avg.toFixed(1)}</b><span>from ${rc} rating${rc===1?"":"s"}</span></div>`;
     if(anySub) h+=`<div class="sb-wrap">${SUBR.map(([k,l])=>subBar(l,sub[k])).join("")}</div>`;
@@ -12918,7 +12918,7 @@ async function openAssignBadgesSheet(c){
           ${x.file_path?`<button class="btn sm ghost" style="width:auto" data-cert-view="${x.file_path}">View</button>`:""}
           ${x.status==="pending"?`<button class="btn sm ghost" style="width:auto;color:var(--red)" data-cert-rej="${x.id}">Reject</button><button class="btn primary sm" style="width:auto" data-cert-ok="${x.id}">Approve</button>`:""}
         </div>`).join(""):`<div style="font-size:12px;color:var(--faint)">No certifications attached yet.</div>`}</div></div>
-    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="ab-founding" ${c.founding_at?"checked":""} style="width:18px;height:18px"> ⭐ Founding coach</label><div style="font-size:11.5px;color:var(--faint);margin-top:4px">Hover will say this coach has been part of FormTrace's development.</div></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="ab-founding" ${c.founding_at?"checked":""} style="width:18px;height:18px"> ⭐ Founding coach</label><div style="font-size:11.5px;color:var(--faint);margin-top:4px">Hover will say this coach has been part of Formtrace's development.</div></div>
     <button class="btn primary" id="ab-save" style="margin-top:8px">Save badges</button>`;
   body.appendChild(wrap);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");

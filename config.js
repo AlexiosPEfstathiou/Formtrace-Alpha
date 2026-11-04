@@ -1,5 +1,5 @@
 // ============================================================
-// FormTrace Coach — Supabase config
+// Formtrace Coach — Supabase config
 // Filled with your project's values.
 // The publishable key is SAFE to ship in client code; Row Level
 // Security (in schema.sql) is what actually protects the data.

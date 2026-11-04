@@ -1,4 +1,4 @@
-# CLAUDE.md — working rules for FormTrace Coach
+# CLAUDE.md — working rules for Formtrace Coach
 
 Read this first, then `docs/HANDOVER.md` (where things stand) and `PRODUCT_LOG.md`
 (every item, decision and finding, newest items at the top of the index).

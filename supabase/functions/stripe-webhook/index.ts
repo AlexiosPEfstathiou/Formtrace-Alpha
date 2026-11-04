@@ -1,4 +1,4 @@
-// FormTrace — stripe-webhook Edge Function (Item DM).
+// Formtrace — stripe-webhook Edge Function (Item DM).
 // Stripe calls this; it cannot send a Supabase JWT, so deploy with **Verify JWT OFF** -
 // the Stripe signature check below is the authentication.
 // Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (whsec_… from the Stripe webhook endpoint).
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
           await sb.from("push_outbox").insert({
             to_user: e.coach_id, kind: "offer",
             title: `💶 ${(p && p.display_name) || "Your trainee"} paid the deposit${free ? " (free code)" : ""}${s.livemode ? "" : " (test)"}`,
-            body: `${e.goal_title || "Goal"} · held by FormTrace, released to you week by week`,
+            body: `${e.goal_title || "Goal"} · held by Formtrace, released to you week by week`,
             url: "/#coach",
           });
           } catch (pushErr) { console.error("stripe-webhook push", pushErr); }   // a missed notification must not fail the webhook

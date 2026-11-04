@@ -8,7 +8,7 @@ Edge Function log line, or the Stripe object).
 ## 0. Prerequisites (EC) – once
 
 - [ ] `connect-onboard` deployed (Verify JWT **ON**).
-- [ ] Stripe → Settings → Connect → Branding (sandbox): name FormTrace, icon, colour #F0D231.
+- [ ] Stripe → Settings → Connect → Branding (sandbox): name Formtrace, icon, colour #F0D231.
 - [ ] Both test phones opened once with `?stripetest=1` (shows the test-only buttons).
 - [ ] Sandbox `release_hold_days` = 0 (done 2026-10-30). Remember: back to 14 before go-live.
 - [ ] A fresh goal: trainee posts a goal (2 weeks is enough), coach pitches a weekly price

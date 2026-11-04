@@ -1,4 +1,4 @@
-/* FormTrace service worker — installability only, deliberately not a cache.
+/* Formtrace service worker — installability only, deliberately not a cache.
    Scoped this way on purpose: almost everything this app shows is live
    Supabase data (assigned workouts, review status, streaks, payment
    cycles) where a stale cached response could show something that's no
@@ -21,8 +21,8 @@ self.addEventListener("fetch", (event) => {
 /* Item CE: Web Push. The server sends {title, body, url, kind, tag}. */
 self.addEventListener("push", (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: "FormTrace", body: event.data ? event.data.text() : "" }; }
-  const title = data.title || "FormTrace";
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: "Formtrace", body: event.data ? event.data.text() : "" }; }
+  const title = data.title || "Formtrace";
   event.waitUntil(self.registration.showNotification(title, {
     body: data.body || "",
     icon: "icon-192.png",

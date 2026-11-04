@@ -1,5 +1,5 @@
-// FormTrace — connect-onboard Edge Function (Item DU: coach payouts via Stripe Connect).
-// Coaches get an Express connected account with the TRANSFERS capability only: FormTrace
+// Formtrace — connect-onboard Edge Function (Item DU: coach payouts via Stripe Connect).
+// Coaches get an Express connected account with the TRANSFERS capability only: Formtrace
 // charges the trainee (escrow, separate charges and transfers) and transfers each delivered
 // week to the coach. Onboarding is hosted by Stripe (Account Links); the coach manages payouts
 // in the Express Dashboard (login link). Body: { action: "onboard" | "status" | "dashboard" }.

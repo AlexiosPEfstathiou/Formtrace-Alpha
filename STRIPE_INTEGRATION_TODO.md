@@ -2,7 +2,7 @@
 
 **This file is the single source of truth for the remaining Stripe setup.**
 Hosted Stripe Checkout: the trainee is sent to a Stripe-hosted payment page and pays
-the whole goal as a **deposit** held by FormTrace (escrow — *separate charges and
+the whole goal as a **deposit** held by Formtrace (escrow — *separate charges and
 transfers*). Weekly releases to coaches and refunds are later parts of DM.
 Status: **sandbox / test mode only.** Pilot users do not see it.
 
@@ -19,7 +19,7 @@ with real values computed for each goal, so **no placeholders remain**:
 | mode | `payment` | One deposit per goal. `payment_method_collection` applies only to subscriptions, so it is omitted. |
 | success_url | `APP_URL?checkout=success&session_id={CHECKOUT_SESSION_ID}#listings` | `APP_URL` defaults to `https://formtrace.ie/` (EF, 2026-11-02); the `APP_URL` secret overrides it. |
 | cancel_url | `APP_URL?checkout=cancel#listings` | Returns to the Goal tab. |
-| line_items | `price_data` built from the accepted offer: weekly price × weeks (+ a "FormTrace service fee" line when the trainee fee is above 0) | No catalogue Price IDs - each goal has its own price. Currency from the pitch: € → eur, $ → usd, ¥ → jpy (zero-decimal). |
+| line_items | `price_data` built from the accepted offer: weekly price × weeks (+ a "Formtrace service fee" line when the trainee fee is above 0) | No catalogue Price IDs - each goal has its own price. Currency from the pitch: € → eur, $ → usd, ¥ → jpy (zero-decimal). |
 
 ## Configured Parameters
 
@@ -34,7 +34,7 @@ From Checkout Studio, used exactly:
 | billing_address_collection | `auto` |
 | phone_number_collection | `{ enabled: false }` |
 | automatic_tax | `{ enabled: false }` — until the VAT advice (BI prerequisite 2) |
-| allow_promotion_codes | `true` — must not stack with FormTrace vouchers (BW) later |
+| allow_promotion_codes | `true` — must not stack with Formtrace vouchers (BW) later |
 | submit_type | `pay` |
 | locale | `en` |
 | integration_identifier | `hosted_mobile_app_0001` |
@@ -72,7 +72,7 @@ No new dependencies on any machine: the functions import `npm:stripe` and
    [supabase/functions/connect-onboard/index.ts](supabase/functions/connect-onboard/index.ts),
    **Verify JWT ON**. Uses the same `STRIPE_SECRET_KEY` secret.
 8. **Connect branding (required before hosted onboarding works):** Stripe → Settings →
-   Connect → Branding: business name **FormTrace**, an icon, and a brand colour (#F0D231).
+   Connect → Branding: business name **Formtrace**, an icon, and a brand colour (#F0D231).
 9. **Test (sandbox):** a coach phone opened once with `?stripetest=1` → Profile → **Get paid
    with Stripe → Set up payouts** → Stripe's test onboarding (use test data; Stripe shows
    the test values to enter) → back in the app the card reads **Payouts ready ✓**.
@@ -146,6 +146,6 @@ real only after go-live below.
 
 **2026-10-30 (DZ):** 1) run `supabase/migrations_refunds.sql`; 2) deploy Edge Function `refund-send` (paste `supabase/functions/refund-send/index.ts`, **Verify JWT OFF**); 3) Database Webhook: name `refund-send`, table `public.payment_refunds`, event **Insert**, Supabase Edge Function -> `refund-send`, timeout 5000 ms; 4) EG: end a test goal early from the trainee phone and check Stripe -> Payments -> the deposit shows a partial refund.
 
-**2026-11-04 (EJ, disputes):** 1) run `supabase/migrations_disputes.sql`; 2) redeploy `stripe-webhook` (paste the file, **Verify JWT OFF**); 3) Stripe -> Developers -> Webhooks -> the FormTrace endpoint -> **add events** `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`, `charge.dispute.funds_withdrawn`, `charge.dispute.funds_reinstated` (repeat on the live endpoint at go-live); 4) sandbox test: pay with `4000 0000 0000 0259` (opens a dispute automatically) and check the Review tab card + the push.
+**2026-11-04 (EJ, disputes):** 1) run `supabase/migrations_disputes.sql`; 2) redeploy `stripe-webhook` (paste the file, **Verify JWT OFF**); 3) Stripe -> Developers -> Webhooks -> the Formtrace endpoint -> **add events** `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`, `charge.dispute.funds_withdrawn`, `charge.dispute.funds_reinstated` (repeat on the live endpoint at go-live); 4) sandbox test: pay with `4000 0000 0000 0259` (opens a dispute automatically) and check the Review tab card + the push.
 
 **2026-11-04 (EJ part 2, 3D Secure + Radar):** 1) run `supabase/migrations_three_ds.sql`; 2) redeploy `checkout-create` (**Verify JWT ON**); 3) Stripe -> Settings -> Radar (plan): choose **Radar Lite** (free) unless paid features are wanted - an account that had Radar before 29 Jul 2026 is on a Radar Standard trial that becomes paid on 22 Jan 2027; 4) sandbox test: card `4000 0027 6000 3184` (3DS required) shows the bank challenge in Checkout. Repeat 3 on the live account at go-live.
