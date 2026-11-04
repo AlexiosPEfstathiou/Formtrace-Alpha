@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
         type: event.type, event_created: event.created, fee,
       } });
       if (dErr) throw dErr;                             // DB failure -> 500 below, so Stripe retries
-    }  } catch (err) {
+    }
+  } catch (err) {
     console.error("stripe-webhook handling", err);
     return new Response("Handler failed - Stripe will retry", { status: 500 });
   }
