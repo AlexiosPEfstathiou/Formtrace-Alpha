@@ -4579,6 +4579,18 @@ async function renderGoalEndBlock(card,e,role,holder,offer){
     box.querySelectorAll("[data-ge]").forEach(b=>b.addEventListener("click",async()=>{ const pick=b.getAttribute("data-ge"); box.querySelectorAll("[data-ge]").forEach(x=>x.disabled=true); try{ const { error }=await store._sb.rpc("choose_goal_end",{p_eng:e.id,p_choice:pick}); if(error) throw error; toast(pick==="credit"?"Kept as credit ✓":"Refund requested ✓",2200); renderPaymentTracker(holder,e,role,offer); }catch(x){ toast(x.message||"Couldn't save your choice",3500); box.querySelectorAll("[data-ge]").forEach(y=>y.disabled=false); } }));
   }catch(x){ console.warn("goal end block (run migrations_coach_end_goal_fast_reviews.sql)",x&&x.message); }
 }
+/* Owner 2026-11-04 (FC-T1 follow-up): the deposit sentence, worded for each case - a goal paid entirely with credit used to
+   read "Deposit of EUR 0 plus EUR X paid with your credit incl. EUR 11 payment processing", as if a card fee were charged.
+   The EUR 11 there is Stripe's payout costs (sending the coach's weekly payments), covered from the credit. */
+function depositLine(e,s,isCoach,when){
+  const d=v=>s.cur+(Number(v||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString("en-GB",{minimumFractionDigits:0,maximumFractionDigits:2});
+  const B=x=>`<b style="color:var(--ink)">${x}</b>`;
+  const card=Number(e.deposit_amount||0), credit=Number(e.deposit_credit_cents||0), proc=Number(e.deposit_processing||0), whose=isCoach?"the trainee's":"your";
+  if(!card&&!credit) return `Deposit of ${B(d(0))} (free code) received ${when}`;
+  if(!card) return `Paid ${B(d(credit))} with ${whose} credit on ${when}${proc?`, incl. ${d(proc)} payout costs`:""}, no card payment. Held by FormTrace`;
+  if(credit) return `Paid ${B(d(card))} by card and ${B(d(credit))} with ${whose} credit on ${when}${proc?`; the card part includes ${d(proc)} card and payout costs`:""}. Held by FormTrace`;
+  return `Deposit of ${B(d(card))}${proc?` incl. ${d(proc)} payment processing`:""} received ${when} and held by FormTrace`;
+}
 async function renderPaymentTracker(holder,eng,role,offer){
   if(!holder||!eng||!eng.id) return;
   const s=await paymentState(eng,offer); if(!s) return; const {e}=s; const isCoach=role==="coach";
@@ -4612,7 +4624,7 @@ async function renderPaymentTracker(holder,eng,role,offer){
                :`You marked the payment as sent on ${day(e.paid_at)}. Waiting for your coach to confirm it arrived.`;
     if(isCoach) actions=`<button class="btn sm primary" data-pt="recv" style="width:auto">Received ✓</button>`;
   } else if(e.status==="active"){
-    now=e.deposit_at?`Deposit of <b style="color:var(--ink)">${s.cur}${((e.deposit_amount||0)/(e.deposit_currency==="jpy"?1:100)).toLocaleString()}</b>${e.deposit_at&&!e.deposit_amount&&!e.deposit_credit_cents?" (free code)":""}${e.deposit_credit_cents>0?` plus ${s.cur}${(e.deposit_credit_cents/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} paid with ${isCoach?"the trainee's":"your"} credit`:""}${e.deposit_processing>0?` incl. ${s.cur}${(e.deposit_processing/(e.deposit_currency==="jpy"?1:100)).toLocaleString()} payment processing`:""} received ${day(e.deposit_at)} and held by FormTrace${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.${(s.releases||[]).length?` ${s.releases.filter(r=>r.status==="sent"||r.status==="skipped").length} of ${s.weeks||"?"} weeks released to your coach${s.releasedCents?` (${s.money(s.releasedCents/(e.deposit_currency==="jpy"?1:100))})`:""}.`:""}`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
+    now=e.deposit_at?`${depositLine(e,s,isCoach,day(e.deposit_at))}${e.deposit_livemode===false?" (Stripe test mode)":""}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.${(s.releases||[]).length?` ${s.releases.filter(r=>r.status==="sent"||r.status==="skipped").length} of ${s.weeks||"?"} weeks released to your coach${s.releasedCents?` (${s.money(s.releasedCents/(e.deposit_currency==="jpy"?1:100))})`:""}.`:""}`:`Payment confirmed ${day(e.received_at)}. Training${s.weekNow?` - week ${s.weekNow} of ${s.weeks}`:""}.`;
   } else if(e.status==="completed"){
     now=`Goal complete ${day(e.completed_at)}. Paid in full to ${isCoach?"you":"your coach"}.`;
   } else if(s.ended){
