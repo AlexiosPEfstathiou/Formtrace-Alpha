@@ -104,6 +104,7 @@ BE) are not tasks and are left out.
 | 93 | **FL** Points for completing Home tasks, spent on privileges / looks - explore | Decision + medium | Non-cash; earning rules that resist gaming. |
 | 94 | **FM** Credit balance in Profile - BUILT 2026-11-03 | - | Balance + last 5 movements from `trainee_credits`. |
 | 95 | **FN** Goal-end choice: no visible reaction; Greek dates - FIXED 2026-11-03 | - | Saving state on the button; all dates/numbers en-GB. |
+| 96 | **GA** Camera: refine / restart the recording camera in general (desktop shows a phone-shaped frame but records landscape) | Medium-large | Owner, 2026-11-04. Not started. |
 | 92 | **FK** Smartwatch connectivity - steps and health metrics | Medium-large | Apple Health / Health Connect need a native app; or an aggregator API. |
 | 91 | **FJ** BUG: Goal tab card stale after a pitch arrives (until reload); Goal badge = offers to answer | Small | Refresh on focus / push / tab open. |
 | 90 | **FI** BUG: coach ended a goal right after acceptance - trainee saw nothing about credit/refund | Small | Check paid vs unpaid; in-app card either way. |
@@ -698,6 +699,12 @@ and a footer (Formtrace, Ireland, contact@formtrace.ie, link to terms). Simple H
 styles, one column, the gold button), dark-mode safe, plain-text fallback. Sender name **Formtrace** (Authentication -> SMTP:
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
+
+## GA. Camera - refine / restart in general (owner, 2026-11-04)
+
+Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / restarted in general."** Finding that prompted it: **on desktop the camera preview is drawn like a phone camera (portrait frame) but the recording comes out landscape** - what the user frames is not what is saved. To scope before building: (1) the orientation and aspect contract - preview, recording and pose overlay must use the same frame on phone portrait, phone landscape and desktop webcams (most are 16:9 landscape only); (2) camera choice (front / back / external), resolution and frame-rate constraints, and what happens when the device cannot meet them; (3) permission and restart behaviour (CU), switching apps mid-recording, iOS Safari specifics (CX - no iPhone to test); (4) the pose overlay reliability (AH) and trim (BC) on the new pipeline; (5) a short test matrix (Android Chrome, desktop Chrome, iPhone when available). Related history: CS check-in photo, CU permission denied, CW portrait mode scrapped, AH pose overlay. Not started.
+
+---
 
 ## FZ. Sound effects (owner, 2026-11-04)
 

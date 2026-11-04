@@ -1,5 +1,12 @@
 # Formtrace Coach — Handover (as of 2026-10-29)
 
+## Session 2026-11-04 night (personal account) - summary
+- SQL journal: **FU** clean-up verified (old_left 0, via Supabase MCP). **FV follow-up still NOT run** (`platform_rates.note` still says FormTrace; unsent pushes 0).
+- **FP refund push test PASSED** on the phone (Chrome) - test `push_outbox` row 61 sent 23:16:07, no error.
+- **EJ dispute test:** walkthrough given (Alex Stinson trainee has 0 credit; `?stripetest=1`; card 4000 0000 0000 0259; close with `winning_evidence` / `losing_evidence` in Stripe sandbox). Not yet run.
+- **New: GA** camera refine / restart in general (desktop: phone-shaped preview but landscape recording).
+- **Next item code: GB.**
+
 ## Session 2026-11-04 (work account) - summary
 **Built / done (all pushed):**
 - **EJ disputes** - `payment_disputes`, payouts/refunds held while a dispute is open, admin push, evidence pack, Review card; SQL run, `stripe-webhook` redeployed, 5 dispute events added in Stripe. **EJ part 2** - 3D Secure on card payments (`three_ds_min_cents` = 0; confirmed working); owner keeps **Radar Standard** (EUR 0.05 per screened transaction + EUR 1 per active connected account, from 22 Jan 2027).
@@ -11,7 +18,7 @@
 **Logged (new items):** FR admin.formtrace.ie panel · FS quests / points / shop / Events (**north star**, top of this file) · FT GitHub Pro + private repo (owner steps) · FU old push subscriptions clean-up · FW expense log (`docs/EXPENSES.md`) · FX refine sign-in emails · FY Stripe branding (interim: icon-512, #F0D231 / #0B0E11) · FZ sound effects · EW openart: **Plus monthly, the month before pilot invitations**.
 **Owner to do / test:** run the FU clean-up SQL and the FV follow-up SQL (both "given" in the journal); re-allow notifications in the formtrace.ie app on test phones, then re-test the FP refund push (**passed on the phone, Chrome, 2026-11-04 23:16** via a test push_outbox row); EJ dispute test with a no-credit trainee (card 4000 0000 0000 0259); FT GitHub Pro switch; FY interim Stripe branding; Google Search Console + sitemap; fill VAT on the Claude / Supabase rows in EXPENSES.md.
 **Suggested next builds:** FZ placeholder sounds (switches + no sound while recording) - openart style brief + L1 prompts - FX email templates.
-**Next item code: GA.**
+**Next item code: GA** (now used - see the 2026-11-04 night summary below).
 
 ## North star (owner, 2026-11-04)
 People use Formtrace to **increase their fitness and their social life**, and Formtrace becomes a **community brand that brings people together**. Quests, points, a shop and Events (PRODUCT_LOG **FS**) serve it; weigh new features against it.
