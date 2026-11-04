@@ -88,3 +88,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | FG | `migrations_social_badge.sql` | run ✓ (implied) | The coach checklist migration reads social_seen_at and ran cleanly. |
 | 2026-11-02 | FH | `migrations_coach_checklist.sql` | run ✓ | has_coach_counts = true. |
 | 2026-11-02 | FH | `migrations_coach_checklist_targets.sql` | run ✓ | has_weekly_calls true, has_targets true. |
+| 2026-11-04 | EJ | `migrations_disputes.sql` | given | Expect `table_ok 1 | functions 7 | triggers 2`. Then redeploy stripe-webhook and add the charge.dispute.* events in Stripe. |

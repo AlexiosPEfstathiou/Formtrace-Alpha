@@ -12649,22 +12649,64 @@ async function openAssignBadgesSheet(c){
     }catch(err){ console.error("set badges (run migrations_badges.sql)",err); toast(err.message||"Couldn't save",4000); btn.disabled=false; }
   });
 }/* Item DP: the liability review triggers, with the live numbers behind them (admins). Any one over its line = review the liability plan. */
+/* ---- Item EJ (2026-11-04): card disputes. stripe-webhook records every charge.dispute.* event (record_dispute); while a
+   dispute is open that goal's payouts and refunds are held. This card lists disputes with Stripe's deadline, a pasteable
+   evidence pack (admin_dispute_evidence) and a link to the dispute in Stripe. ---- */
+async function renderAdminDisputes(body){
+  const card=document.createElement("div"); card.className="card"; card.style.margin="0 0 12px"; body.appendChild(card);
+  const head=`<div class="eyebrow" style="margin-bottom:6px">Card disputes</div>`;
+  card.innerHTML=head+`<div style="font-size:12px;color:var(--muted)">Loading\u2026</div>`;
+  try{
+    const { data, error }=await store._sb.rpc("admin_disputes"); if(error) throw error;
+    const list=Array.isArray(data)?data:[];
+    const money=(c,cur)=>(String(cur||"eur").toUpperCase()==="EUR"?"\u20AC":String(cur||"").toUpperCase()+" ")+(Number(c||0)/100).toFixed(2);
+    if(!list.length){ card.innerHTML=head+`<div style="font-size:12.5px;color:var(--muted);line-height:1.5">No card disputes. If a bank disputes a payment, it appears here with Stripe's deadline and an evidence pack, and that goal's payouts are held until it closes.</div>`; return; }
+    card.innerHTML=head+list.map(d=>{
+      const due=d.evidence_due_by?new Date(d.evidence_due_by):null; const days=due?Math.ceil((due-Date.now())/86400000):null;
+      const st=String(d.status||"").replace(/_/g," "); const needs=/needs response/.test(st);
+      const line=d.open?(needs&&due?`Respond in Stripe by ${due.toLocaleDateString("en-GB",{day:"numeric",month:"short"})} (${days<=0?"today":days+" day"+(days===1?"":"s")})`:`Open \u00B7 ${escapeHtml(st)}`):`Closed \u00B7 ${escapeHtml(st)}`;
+      const held=Number(d.held_releases||0);
+      return `<div style="padding:9px 0;border-top:1px solid var(--line)">
+        <div style="display:flex;gap:8px;align-items:baseline"><div style="flex:1;min-width:0;font-weight:700;font-size:13px">${escapeHtml(d.goal_title||"Payment not linked to a goal")}${d.livemode?"":` <span style="color:var(--faint);font-weight:600">(test)</span>`}</div><div style="font-weight:800">${money(d.amount_cents,d.currency)}</div></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${escapeHtml(d.trainee||"-")} \u2192 ${escapeHtml(d.coach||"-")} \u00B7 ${escapeHtml(String(d.reason||"").replace(/_/g," ")||"no reason given")}</div>
+        <div style="font-size:12px;margin-top:3px;color:${d.open?"var(--red)":"var(--faint)"};font-weight:${d.open?700:500}">${line}${held?` \u00B7 ${held} payout${held===1?"":"s"} held`:""}</div>
+        <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sm" data-dz-ev="${d.id}" style="width:auto">Copy evidence</button><a class="btn sm ghost" style="width:auto;text-decoration:none" target="_blank" rel="noopener" href="https://dashboard.stripe.com/${d.livemode?"":"test/"}disputes/${encodeURIComponent(d.stripe_dispute_id)}">Open in Stripe</a></div></div>`;
+    }).join("");
+    card.querySelectorAll("[data-dz-ev]").forEach(b=>b.addEventListener("click",async()=>{
+      b.disabled=true; const t0=b.textContent; b.textContent="Preparing\u2026";
+      try{
+        const { data:txt, error:e2 }=await store._sb.rpc("admin_dispute_evidence",{p_id:b.getAttribute("data-dz-ev")}); if(e2) throw e2;
+        let copied=false; try{ await navigator.clipboard.writeText(String(txt||"")); copied=true; }catch(e){}
+        if(copied) toast("Evidence copied - paste it into Stripe's response",3200);
+        else pwShow(`<div style="font-weight:800;margin-bottom:6px">Evidence pack</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Select all and copy into Stripe's response.</div><textarea readonly style="width:100%;height:320px;font-size:12px">${escapeHtml(String(txt||""))}</textarea>`);
+      }catch(x){ toast(x.message||"Couldn't build the evidence pack",3600); }
+      b.disabled=false; b.textContent=t0;
+    }));
+  }catch(e){ card.innerHTML=head+`<div style="font-size:12px;color:var(--faint)">Not available yet (run migrations_disputes.sql).</div>`; }
+}
 async function renderAdminLiability(body){
   const card=document.createElement("div"); card.className="card"; card.style.margin="0 0 12px";
   card.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Loss-liability review</div><div style="font-size:12px;color:var(--muted)">Loading…</div>`;
   body.appendChild(card);
   try{
+    renderAdminDisputes(body);   /* EJ: the disputes list, below this card */
     const { data:s, error }=await store._sb.rpc("admin_liability_stats"); if(error) throw error;
     const eur=c=>"€"+(Number(c||0)/100).toLocaleString("en-GB",{minimumFractionDigits:0,maximumFractionDigits:2});
-    const last3=(s.last3_cents||[]).map(Number); const run3=last3.length===3&&last3.every(v=>v>500000);
+    const last3=(s.last3_cents||[]).map(Number);
+    /* EJ: disputes and losses are tracked once migrations_disputes.sql has run */
+    const dispRate=Number(s.payments_month)?Number(s.disputes_month||0)/Number(s.payments_month):0;
+    const dispTxt=s.disputes_tracked?`${s.disputes_month||0} of ${s.payments_month||0} (${(dispRate*100).toFixed(1)}%)${Number(s.disputes_open)?` \u00B7 ${s.disputes_open} open`:""}`:"not tracked yet";
+    const lossQ=Number(s.losses_quarter_cents||0), lossMax=Number(s.largest_loss_cents||0), revQ=Number(s.revenue_quarter_cents||0);
+    const lossTxt=s.disputes_tracked?`${eur(lossQ)} this quarter`+(lossMax?` \u00B7 largest ${eur(lossMax)}`:""):"not tracked yet";
+    const lossOver=s.disputes_tracked?(lossMax>50000||(revQ>0&&lossQ>0.02*revQ)):null; const run3=last3.length===3&&last3.every(v=>v>500000);
     const rows=[
       ["Payment volume this month", eur(s.month_volume_cents)+` · ${s.payments_month||0} payment${s.payments_month===1?"":"s"}`, "over €10,000", Number(s.month_volume_cents)>1000000],
       ["Last 3 months", last3.map(eur).join(" · ")||"-", "over €5,000 each month", run3],
       ["Coaches", String(s.coaches||0), "over 25, or one you don't know personally", Number(s.coaches)>25],
       ["Coaches outside Ireland", String(s.coaches_outside_ie||0), "any (new country)", Number(s.coaches_outside_ie)>0],
       ["Refunds this quarter", eur(s.refunds_quarter_cents), "for context - refunds are not losses", false],
-      ["Dispute rate", "not tracked yet", "over 0.5% of payments in a month", null],
-      ["Losses", "not tracked yet", "any over €500, or over 2% of revenue a quarter", null]
+      ["Dispute rate", dispTxt, "over 0.5% of payments in a month", s.disputes_tracked?(dispRate>0.005):null],
+      ["Losses", lossTxt, "any over €500, or over 2% of revenue a quarter", lossOver]
     ];
     const over=rows.some(r=>r[3]===true);
     card.innerHTML=`<div class="eyebrow" style="margin-bottom:6px">Loss-liability review</div>

@@ -61,7 +61,21 @@ Deno.serve(async (req) => {
         }
       }
     }
-  } catch (err) {
+    // EJ (2026-11-04): card disputes. Every charge.dispute.* event (created, updated, closed, funds_withdrawn,
+    // funds_reinstated) goes to record_dispute(): it keeps the newest state, holds that goal's payouts and refunds
+    // while the dispute is open, releases or cancels them when it closes, and alerts the admins by push.
+    if (event.type.startsWith("charge.dispute.")) {
+      const dp = event.data.object as Stripe.Dispute;
+      const idOf = (x: any) => (typeof x === "string" ? x : x?.id ?? null);
+      const fee = ((dp as any).balance_transactions || []).reduce((t: number, bt: any) => t + Math.max(0, Number(bt?.fee || 0)), 0);   // Stripe's dispute fee
+      const { error: dErr } = await sb.rpc("record_dispute", { p: {
+        id: dp.id, charge: idOf(dp.charge), payment_intent: idOf((dp as any).payment_intent),
+        amount: dp.amount, currency: dp.currency, reason: dp.reason, status: dp.status,
+        due_by: dp.evidence_details?.due_by ?? null, livemode: dp.livemode,
+        type: event.type, event_created: event.created, fee,
+      } });
+      if (dErr) throw dErr;                             // DB failure -> 500 below, so Stripe retries
+    }  } catch (err) {
     console.error("stripe-webhook handling", err);
     return new Response("Handler failed - Stripe will retry", { status: 500 });
   }
