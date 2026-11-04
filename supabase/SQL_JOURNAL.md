@@ -92,5 +92,5 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-04 | FO | `migrations_refund_credit_fees.sql` | run ✓ 2026-11-04 (fixed = 2) | Expect `fixed = 2`. queue_refund + queue_end_choice: full-credit goals return the payout-cost share as credit. |
 | 2026-11-04 | FO test | one-off: EUR 1,000 test credit to the owner's test trainee (insert into trainee_credits by email; email not recorded - public repo) | run ✓ 2026-11-04 (as expected) | Expect 1 row inserted; balance shown. |
 | 2026-11-04 | FP | `migrations_refund_explain.sql` | run ✓ 2026-11-04 (as expected) | Expect `column_ok 1 | functions 3`. |
-| 2026-11-04 | FQ | `migrations_ledger_refs.sql` | given | Expect `missing 0 | unique_indexes 2 | sample CR-xxxx-xxxx-xxxx-xxxx`. |
-| 2026-11-04 | FP push | diagnosis (read only): push_outbox rows + push_subscriptions for the test trainee | given | Look at result: muted / no subscription / codes / sent_at null. |
+| 2026-11-04 | FQ | `migrations_ledger_refs.sql` | run ✓ 2026-11-04 (missing 0, unique_indexes 2, sample CR-F34A-FB5F-AF25-A99C) | Expect `missing 0 | unique_indexes 2 | sample CR-xxxx-xxxx-xxxx-xxxx`. |
+| 2026-11-04 | FP push | diagnosis (read only): push_outbox rows + push_subscriptions for the test trainee | run (part) | Subscriptions: 1, newest 2026-10-29 19:43 (before the move to formtrace.ie, i.e. the old github.io app), last delivered 2026-11-04 15:48. Outbox rows not yet reported. | Look at result: muted / no subscription / codes / sent_at null. |
