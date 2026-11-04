@@ -758,7 +758,7 @@ itself stays public (any website's code can be viewed), and its data stays prote
 **History scan 2026-11-04 (C), all 517 commits:** no Stripe secret / restricted / webhook keys, no `sb_secret_` or service-role
 keys, no JWTs, private keys, passwords, AWS or GitHub tokens. The only key ever committed is the Supabase **publishable** key in
 `config.js` (public by design). **Nothing to rotate.**
-**Found 2026-11-04 while building EX:** GitHub Pages publishes **every file** in the repository - the product log, handover, SQL and Edge Function code were readable at formtrace.ie/<file> - and **making the repository private does not change that**. Fixed with ``_config.yml`` (``exclude:`` the docs, ``supabase/``, ``tools/`` and the Markdown files), so only the app's own files are served. Owner to check after the next build: https://formtrace.ie/PRODUCT_LOG.md should show **404**.
+**Found 2026-11-04 while building EX:** GitHub Pages publishes **every file** in the repository - the product log, handover, SQL and Edge Function code were readable at formtrace.ie/<file> - and **making the repository private does not change that**. Fixed with ``_config.yml`` (``exclude:`` the docs, ``supabase/``, ``tools/`` and the Markdown files), so only the app's own files are served. **Owner confirmed 2026-11-04: https://formtrace.ie/PRODUCT_LOG.md shows 404** - the docs are no longer published.
 **Owner steps:** (1) GitHub -> Settings -> Billing and plans -> upgrade to **Pro**; (2) the repository -> Settings -> General ->
 Danger Zone -> **Change visibility -> Private**; (3) Settings -> Pages: check the custom domain `formtrace.ie` and Enforce
 HTTPS are still set; (4) open https://formtrace.ie/ to confirm it still loads. Both Claude accounts keep access (same GitHub
