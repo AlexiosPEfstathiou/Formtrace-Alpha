@@ -3865,11 +3865,13 @@ async function openRefundExplain(engId){
   const mail=(typeof SUPPORT_EMAIL!=="undefined"&&SUPPORT_EMAIL)||"contact@formtrace.ie";
   try{
     const [r1,r2]=await Promise.all([
-      store._sb.from("payment_refunds").select("amount_cents,currency,status,rule,breakdown,created_at").eq("engagement_id",engId).neq("status","cancelled").order("created_at",{ascending:false}).limit(1).maybeSingle(),
+      store._sb.from("payment_refunds").select("id,ref,amount_cents,currency,status,rule,breakdown,created_at").eq("engagement_id",engId).neq("status","cancelled").order("created_at",{ascending:false}).limit(1).maybeSingle(),
       store._sb.from("engagements").select("goal_title").eq("id",engId).maybeSingle()]);
     if(r1.error) throw r1.error;
     const b=r1.data&&r1.data.breakdown, title=escapeHtml((r2.data&&r2.data.goal_title)||"Your goal");
-    if(!b){ pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:6px">Refund details</div><div style="font-size:12.5px;color:var(--muted);line-height:1.5">${title}: the line-by-line details are not available for this refund (refunds made before 4 November 2026 have none). Questions: ${mail}</div><button class="btn ghost" data-rx="ok" style="margin-top:12px">OK</button>`); document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>pwHide())); return; }
+    const rawRef=(r1.data&&r1.data.ref)||"", ref=escapeHtml(rawRef);   /* FQ: the refund reference */
+    const mailRef=`<a href="mailto:${mail}?subject=${encodeURIComponent(rawRef?"Refund "+rawRef:"Refund question")}" style="color:var(--lime)">${mail}</a>${ref?` quoting <b>${ref}</b>`:""}`;
+    if(!b){ pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:6px">Refund details</div><div style="font-size:12.5px;color:var(--muted);line-height:1.5">${title}: ${r1.data?"the line-by-line details are not available for this refund (refunds made before 4 November 2026 have none).":"there is no refund report for this goal - nothing was kept back."} Questions: ${mail}</div><button class="btn ghost" data-rx="ok" style="margin-top:12px">OK</button>`); document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>pwHide())); return; }
     const m=v=>refundMoney(b.currency,v), n=v=>Number(v||0);
     const row=(l,v,strong,sub)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px"><div style="min-width:0"><div style="font-weight:${strong?800:600}">${l}</div>${sub?`<div style="font-size:11.5px;color:var(--faint);margin-top:2px;line-height:1.45">${sub}</div>`:""}</div><div style="white-space:nowrap;font-weight:${strong?800:600}">${v}</div></div>`;
     const paidHow=[n(b.paid_card_cents)?`${m(b.paid_card_cents)} by card`:"",n(b.paid_credit_cents)?`${m(b.paid_credit_cents)} with credit`:""].filter(Boolean).join(" + ")+(n(b.costs_cents)?` \u00B7 incl. ${m(b.costs_cents)} card and payout costs`:"");
@@ -3883,17 +3885,40 @@ async function openRefundExplain(engId){
       h+=`<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--faint);margin:16px 0 2px">NOT REFUNDED: ${m(b.kept_cents)}</div>`;
       if(n(b.released_cents)) h+=row(`${n(b.released_weeks)} week${n(b.released_weeks)===1?"":"s"} already delivered`,m(b.released_cents),false,"Paid to your coach week by week as your sessions were delivered. Weeks already paid out are final.");
       if(n(b.week_kept_cents)) h+=row("The week in progress",m(b.week_kept_cents),false,b.flagged
-        ?`You ended the goal with the reason "${escapeHtml(why)}", but every session you submitted was still inside your coach's review window (5 business days). So it counts as ending the goal yourself, and the week in progress stays with your coach. FormTrace reviews every case like this; if you think it is wrong, write to ${mail}.`
+        ?`You ended the goal with the reason "${escapeHtml(why)}", but every session you submitted was still inside your coach's review window (5 business days). So it counts as ending the goal yourself, and the week in progress stays with your coach. FormTrace reviews every case like this; if you think it is wrong, write to ${mailRef}.`
         :"You ended the goal during this week, so it stays with your coach. Whole unused weeks are refunded.");
       if(n(b.costs_kept_cents)) h+=row("Card and payout costs",m(b.costs_kept_cents),false,b.rule==="coach_ended"
         ?"Stripe keeps its card fee when a payment goes back to the card (keeping the amount as credit returns it in full), plus the costs of the weeks already paid to your coach."
         :"Stripe's costs for the weeks above. The share for the unused weeks has come back to you.");
     } else h+=`<div style="font-size:12.5px;color:var(--muted);margin-top:10px">This was a full refund of everything left.</div>`;
-    h+=`<div style="font-size:11.5px;color:var(--faint);margin-top:12px;line-height:1.45">Questions? ${mail}</div><button class="btn ghost" data-rx="ok" style="margin-top:10px">OK</button>`;
+    h+=`<div style="font-size:11.5px;color:var(--faint);margin-top:12px;line-height:1.5">${ref?`Refund reference: <b style="color:var(--ink);letter-spacing:.5px">${ref}</b><br>`:""}Questions? Write to ${mailRef}.</div><button class="btn ghost" data-rx="ok" style="margin-top:10px">OK</button>`;
     pwShow(h); document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>pwHide()));
   }catch(x){ toast(x.message||"Couldn't load the refund details",3600); }
 }
 document.addEventListener("click",ev=>{ const a=ev.target&&ev.target.closest?ev.target.closest("[data-rf-why]"):null; if(!a) return; ev.preventDefault(); openRefundExplain(a.getAttribute("data-rf-why")); });
+/* ---- Item FQ (owner, 2026-11-04): every credit movement and refund has a unique, random, hash-derived reference
+   (CR-xxxx-xxxx-xxxx-xxxx / RF-...); Profile lists the full history and every line opens its report. ---- */
+function openLedgerItem(key){
+  const L=window.__ftLedger||{credits:[],refunds:[],goals:{}}; const [k,id]=String(key||"").split(":");
+  if(k==="rf"){ const r=(L.refunds||[]).find(x=>x.id===id); if(r) openRefundExplain(r.engagement_id); return; }
+  const cr=(L.credits||[]).find(x=>x.id===id); if(!cr) return;
+  const mail=(typeof SUPPORT_EMAIL!=="undefined"&&SUPPORT_EMAIL)||"contact@formtrace.ie";
+  const v=Number(cr.amount_cents||0), eng=cr.source_engagement||cr.used_engagement, g=eng&&L.goals?L.goals[eng]:null;
+  const cap=t=>{ t=String(t||"Credit"); return t.charAt(0).toUpperCase()+t.slice(1); };
+  const what=v<0?(g?`Used for "${escapeHtml(g)}"`:"Used for a goal"):(cr.source_engagement?(g?`From "${escapeHtml(g)}"`:"From a goal that ended"):"Added to your account");
+  const when=new Date(cr.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  const row=(l,val)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px"><div style="color:var(--muted)">${l}</div><div style="font-weight:700;text-align:right">${val}</div></div>`;
+  const ref=escapeHtml(cr.ref||"");
+  pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:2px">Credit ${v<0?"used":"added"}</div><div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">${escapeHtml(cap(cr.note))}</div>
+    ${row("Amount",(v<0?"-":"+")+refundMoney(cr.currency,Math.abs(v)))}${row("Date",when)}${row("What",what)}${ref?row("Reference",`<span style="letter-spacing:.5px">${ref}</span>`):""}
+    ${cr.source_engagement?`<button class="btn" data-rf-why="${cr.source_engagement}" style="margin-top:12px">See the refund report</button>`:""}
+    <div style="font-size:11.5px;color:var(--faint);margin-top:12px;line-height:1.5">Questions? Write to <a href="mailto:${mail}?subject=${encodeURIComponent(cr.ref?"Credit "+cr.ref:"Credit question")}" style="color:var(--lime)">${mail}</a>${ref?` quoting <b>${ref}</b>`:""}.</div>
+    <button class="btn ghost" data-rx="ok" style="margin-top:10px">OK</button>`);
+  document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>pwHide()));
+}
+document.addEventListener("click",ev=>{ const t=ev.target&&ev.target.closest?ev.target:null; if(!t) return;
+  const led=t.closest("[data-led]"); if(led){ ev.preventDefault(); openLedgerItem(led.getAttribute("data-led")); return; }
+  const all=t.closest("#pf-led-all"); if(all){ ev.preventDefault(); document.querySelectorAll("#pf-credit [data-led]").forEach(x=>x.style.display="flex"); all.remove(); } });
 /* FP: Notifications card - each refund in the last 60 days that was not full, until the trainee taps OK */
 async function renderRefundNotes(){
   if(!ME||roleOf()!=="trainee") return;
@@ -3908,8 +3933,8 @@ async function renderRefundNotes(){
     let titles={}; try{ const { data:en }=await store._sb.from("engagements").select("id,goal_title").in("id",list.map(r=>r.engagement_id)); for(const x of (en||[])) titles[x.id]=x.goal_title; }catch(e){}
     el.innerHTML=list.map(r=>{ const b=r.breakdown, m=v=>refundMoney(b.currency,v), back=Number(b.card_back_cents||0)+Number(b.credit_back_cents||0);
       return `<div class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:6px">Refund</div><div style="font-weight:800;font-size:16px">${escapeHtml(titles[r.engagement_id]||"Your goal")}</div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5">${m(back)} back${Number(b.card_back_cents)&&Number(b.credit_back_cents)?` (${m(b.card_back_cents)} to your card, ${m(b.credit_back_cents)} as credit)`:Number(b.credit_back_cents)?" as credit":" to your card"}. <b style="color:var(--ink)">${m(b.kept_cents)} not refunded</b> - see why.</div>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm primary" data-rf-why="${r.engagement_id}" style="width:auto">See why</button><button class="btn sm ghost" data-rf-ok="${r.id}" style="width:auto">OK</button></div></div>`; }).join("");
+        <div style="font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5">${m(back)} back${Number(b.card_back_cents)&&Number(b.credit_back_cents)?` (${m(b.card_back_cents)} to your card, ${m(b.credit_back_cents)} as credit)`:Number(b.credit_back_cents)?" as credit":" to your card"}. <b style="color:var(--ink)">${m(b.kept_cents)} not refunded</b> - see why. It stays in Profile \u2192 Credit and refunds.</div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm primary" data-rf-why="${r.engagement_id}" style="width:auto">See why</button><button class="btn sm ghost" data-rf-ok="${r.id}" style="width:auto">Got it</button></div></div>`; }).join("");
     el.style.display="";
     el.querySelectorAll("[data-rf-ok]").forEach(btn=>btn.addEventListener("click",()=>{ try{ seen[btn.getAttribute("data-rf-ok")]=1; localStorage.setItem("ft-rf-seen",JSON.stringify(seen)); }catch(e){} renderRefundNotes().then(()=>refreshNotifDot()); }));
   }catch(e){ console.warn("refund notes (FP)",e&&e.message); }
@@ -12012,21 +12037,31 @@ async function renderProfile(){
           <div class="lr-main"><h3>Pause all trainees</h3><div class="sub">Away for a while? Puts every active goal on hold with one message.</div></div>
           <div class="arw">→</div></div></div>`;
   }
-  /* Item FM: the trainee's credit balance and its latest movements (trainee_credits ledger; RLS: own rows only) */
-  try{
-    const { data:crs }=await store._sb.from("trainee_credits").select("amount_cents,currency,note,created_at,source_engagement").eq("trainee_id",ME.id).order("created_at",{ascending:false});
-    if(crs&&crs.length){
-      const bal={}; crs.forEach(c=>{ bal[c.currency]=(bal[c.currency]||0)+Number(c.amount_cents||0); });
-      const sym=c=>c==="eur"?"\u20AC":c==="gbp"?"\u00A3":String(c||"").toUpperCase()+" ";
-      const fmt=(c,v)=>(v<0?"-":"")+sym(c)+(Math.abs(v)/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
-      const note=t=>{ t=String(t||"Credit"); return t.charAt(0).toUpperCase()+t.slice(1); };
-      html+=`<div class="section-h"><div class="eyebrow">Credit</div></div>
-        <div class="card" id="pf-credit"><div style="font-size:24px;font-weight:800">${Object.entries(bal).map(([c,v])=>fmt(c,v)).join(" \u00B7 ")}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Available credit. It comes off your next goal automatically at checkout.</div>
-          ${crs.slice(0,5).map(c=>{ const v=Number(c.amount_cents||0); return `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span style="color:var(--muted);min-width:0">${escapeHtml(note(c.note))} \u00B7 ${fmtDay(String(c.created_at).slice(0,10))}${(c.source_engagement&&/^goal ended early/i.test(String(c.note||"")))?` \u00B7 <a href="#" data-rf-why="${c.source_engagement}" style="color:var(--lime);font-weight:700">Why?</a>`:""}</span><b style="color:${v<0?"var(--muted)":"var(--ink)"};white-space:nowrap">${v<0?"":"+"}${fmt(c.currency,v)}</b></div>`; }).join("")}
-        </div>`;
-    }
-  }catch(e){ console.warn("credit card (FM)",e&&e.message); }
+  /* Item FM + FQ (owner, 2026-11-04): Credit and refunds - the balance and the FULL history (credit movements and refunds
+     to the card), each with its unique reference; tap any line for its report. Shown to every trainee. */
+  if(roleOf()==="trainee"){ try{
+    const [r1,r2]=await Promise.all([
+      store._sb.from("trainee_credits").select("id,ref,amount_cents,currency,note,created_at,source_engagement,used_engagement").eq("trainee_id",ME.id).order("created_at",{ascending:false}),
+      store._sb.from("engagements").select("id,goal_title").eq("trainee_id",ME.id)]);
+    const crs=r1.data||[], goals={}; for(const g of (r2.data||[])) goals[g.id]=g.goal_title;
+    let rfs=[]; const ids=Object.keys(goals);
+    if(ids.length){ try{ const { data }=await store._sb.from("payment_refunds").select("id,ref,engagement_id,amount_cents,currency,status,created_at").in("engagement_id",ids).neq("status","cancelled").gt("amount_cents",0); rfs=data||[]; }catch(e){} }
+    window.__ftLedger={ credits:crs, refunds:rfs, goals };
+    const bal={}; crs.forEach(x=>{ bal[x.currency]=(bal[x.currency]||0)+Number(x.amount_cents||0); });
+    const sym=x=>x==="eur"?"\u20AC":x==="gbp"?"\u00A3":String(x||"").toUpperCase()+" ";
+    const fmt=(x,v)=>(v<0?"-":"")+sym(x)+(Math.abs(v)/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const note=t=>{ t=String(t||"Credit"); return t.charAt(0).toUpperCase()+t.slice(1); };
+    const items=[...crs.map(x=>({k:"cr",id:x.id,at:x.created_at,ref:x.ref,cur:x.currency,v:Number(x.amount_cents||0),label:note(x.note)})),
+      ...rfs.map(x=>({k:"rf",id:x.id,at:x.created_at,ref:x.ref,cur:x.currency,v:Number(x.amount_cents||0),card:true,label:`Refund to your card${goals[x.engagement_id]?` - ${goals[x.engagement_id]}`:""}`}))]
+      .sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    const balTxt=Object.keys(bal).length?Object.entries(bal).map(([x,v])=>fmt(x,v)).join(" \u00B7 "):fmt("eur",0);
+    html+=`<div class="section-h"><div class="eyebrow">Credit and refunds</div></div>
+      <div class="card" id="pf-credit"><div style="font-size:24px;font-weight:800">${balTxt}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Available credit. It comes off your next goal automatically at checkout.${items.length?" Tap any line for its details.":""}</div>
+        ${items.length?items.map((it,i)=>`<button type="button" data-led="${it.k}:${it.id}" style="display:${i<5?"flex":"none"};width:100%;justify-content:space-between;align-items:flex-start;gap:10px;background:none;border:0;border-top:1px solid var(--line);margin-top:10px;padding:10px 0 0;color:inherit;font:inherit;text-align:left;cursor:pointer"><span style="min-width:0;font-size:12px;color:var(--muted);line-height:1.45">${escapeHtml(it.label)} \u00B7 ${fmtDay(String(it.at).slice(0,10))}${it.ref?`<br><span style="font-size:10.5px;color:var(--faint);letter-spacing:.5px">${escapeHtml(it.ref)}</span>`:""}</span><b style="font-size:12px;white-space:nowrap;color:${it.card||it.v<0?"var(--muted)":"var(--ink)"}">${it.card||it.v<0?"":"+"}${fmt(it.cur,it.v)}${it.card?" to card":""}</b></button>`).join(""):`<div style="font-size:12px;color:var(--faint);margin-top:10px">No credit or refunds yet.</div>`}
+        ${items.length>5?`<button type="button" class="btn sm ghost" id="pf-led-all" style="width:auto;margin-top:12px">Show all (${items.length})</button>`:""}
+      </div>`;
+  }catch(e){ console.warn("credit and refunds (FM/FQ)",e&&e.message); } }
   // completed goals (as coach or trainee) with on-time/late labels
   try{
     const [asT,asC]=await Promise.all([store.engagements.list({trainee_id:ME.id}),store.engagements.list({coach_id:ME.id})]);   // latency: independent, run in parallel

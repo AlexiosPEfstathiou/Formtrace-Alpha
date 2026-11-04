@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL given) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
+**HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL given) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
 **Product backlog (owner, 2026-10-30, unordered):** ~~**ES**~~ daily checklist built 2026-11-02 · **ET** macro-app connectivity · ~~**EU**~~ rest timer built 2026-11-02 (per-exercise rest field in the builder still to do) · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** domain / SEO / landing page (mail and domain done) · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
@@ -660,6 +660,21 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
+## FQ. Credit and refunds history with unique references - BUILT 2026-11-04 (SQL given)
+
+**Owner, 2026-11-04 (FP test feedback):** FP's panel was correct and the Notifications card arrived, but (1) the report tells
+people to write to contact@formtrace.ie without a reference to look up; (2) tapping OK on the card loses the report - the
+owner prefers the Profile credit history, in every trainee's profile, where every change opens its report; (3) every
+transaction needs an ID that is unique across all profiles, not sequential (cannot be guessed), and hashed.
+**Built:** `supabase/migrations_ledger_refs.sql` - `_new_ref(prefix)` = prefix + 16 hex characters of a SHA-256 of random
+input (built-in `sha256()`, no extension), grouped `CR-xxxx-xxxx-xxxx-xxxx` / `RF-...`; column `ref` on `trainee_credits`
+and `payment_refunds` (existing rows filled, default for new rows, NOT NULL, unique index). App: refund panel shows
+**Refund reference** and the support address opens an email with it in the subject; Profile **Credit and refunds** card for
+every trainee - balance, full history (credit added / used / returned and refunds to the card), each line with its reference,
+first 5 then Show all, **tap any line** for its report (credit line: amount, date, what, reference, "See the refund report"
+when it came from a goal that ended); the Notifications card says the report stays in Profile and its button reads Got it.
+**Push did not arrive** in the FP test (owner, 2026-11-04) - diagnosis query given (push_outbox result + subscriptions for
+the test trainee); push-send records muted / no subscription / delivery codes.
 ## FP. Every refund that is not full explains what was kept and why - HIGH PRIORITY (owner, 2026-11-04) - BUILT 2026-11-04 (SQL given)
 
 **Built 2026-11-04 (C):** `supabase/migrations_refund_explain.sql` adds `payment_refunds.breakdown` (jsonb: paid by card / by

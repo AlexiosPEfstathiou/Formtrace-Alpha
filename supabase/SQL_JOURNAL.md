@@ -90,5 +90,7 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-02 | FH | `migrations_coach_checklist_targets.sql` | run ✓ | has_weekly_calls true, has_targets true. |
 | 2026-11-04 | EJ | `migrations_disputes.sql` | run ✓ 2026-11-04 (1 | 7 | 2, as expected) | First run failed: 42601 "unexpected end of function definition" at line 159 - Claude's push-link edit put `);` inside a `--` comment; fixed in the file. Expect `table_ok 1 | functions 7 | triggers 2`. Then redeploy stripe-webhook and add the charge.dispute.* events in Stripe. |
 | 2026-11-04 | FO | `migrations_refund_credit_fees.sql` | run ✓ 2026-11-04 (fixed = 2) | Expect `fixed = 2`. queue_refund + queue_end_choice: full-credit goals return the payout-cost share as credit. |
-| 2026-11-04 | FO test | one-off: EUR 1,000 test credit to the owner's test trainee (insert into trainee_credits by email; email not recorded - public repo) | given | Expect 1 row inserted; balance shown. |
-| 2026-11-04 | FP | `migrations_refund_explain.sql` | given | Expect `column_ok 1 | functions 3`. |
+| 2026-11-04 | FO test | one-off: EUR 1,000 test credit to the owner's test trainee (insert into trainee_credits by email; email not recorded - public repo) | run ✓ 2026-11-04 (as expected) | Expect 1 row inserted; balance shown. |
+| 2026-11-04 | FP | `migrations_refund_explain.sql` | run ✓ 2026-11-04 (as expected) | Expect `column_ok 1 | functions 3`. |
+| 2026-11-04 | FQ | `migrations_ledger_refs.sql` | given | Expect `missing 0 | unique_indexes 2 | sample CR-xxxx-xxxx-xxxx-xxxx`. |
+| 2026-11-04 | FP push | diagnosis (read only): push_outbox rows + push_subscriptions for the test trainee | given | Look at result: muted / no subscription / codes / sent_at null. |
