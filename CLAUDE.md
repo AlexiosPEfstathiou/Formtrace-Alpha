@@ -10,7 +10,7 @@ other's chats or memory - **this repository is the shared memory.**
    **`docs/HANDOVER.md`** and **`supabase/SQL_JOURNAL.md`** before doing anything else.
 2. **Every 5 owner prompts** in a session: update `docs/HANDOVER.md` (state, plan,
    decisions, blockers) and this file (any new rule or convention), commit
-   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-04 23:25, personal account - FP push passed on phone, EJ dispute test guided, GA camera logged; see top of HANDOVER.)
+   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-04 23:56, personal account, session closed - EJ part 3 built and applied; see top of HANDOVER.)
 3. **Every SQL command handed to the owner** gets a row in `supabase/SQL_JOURNAL.md`
    (status `given`); when the owner confirms, mark it `run ✓` with the result. Never
    assume SQL was run - check the journal, or run its verification query.
@@ -77,7 +77,10 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 ## Design assets list (owner, 2026-11-02)
 Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page) **or a sound**, add or update its row in `docs/DESIGN_ASSETS.md`, with its tier (L1 / L2 / Later / Code) and spec. It is the brief for the openart theme (PRODUCT_LOG EW).
 
-## Last session (2026-11-04, work account)
+## Last session (2026-11-04 night, personal account)
+Read the top of docs/HANDOVER.md ("Session 2026-11-04 night"). Done: FU verified; FP refund push passed on the phone; EJ dispute tests 1-2 (hold + lost path pass); **EJ part 3 - a card dispute cancels the goal and its payouts on opening, both sides told; SQL applied via Supabase MCP (journal run ✓)**; GA camera logged. Pending SQL: FV follow-up (given). Next: EJ part 3 test with a fresh 0259 payment; FZ / openart brief / FX. Next item code: **GB**.
+
+## Session before (2026-11-04, work account)
 Read the top of docs/HANDOVER.md (session 2026-11-04 summary). Done: EJ disputes + 3D Secure, FO / FP / FQ refunds and credit history, EU part 2, EX landing page, FV Formtrace everywhere, design-assets list finalised. Pending SQL: FU clean-up and FV follow-up (given). Suggested next: FZ placeholder sounds, openart style brief + L1 prompts, FX email templates. Next item code: **GA**.
 
 ## Session before (2026-11-02 evening)
