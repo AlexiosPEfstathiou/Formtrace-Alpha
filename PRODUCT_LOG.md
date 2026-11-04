@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full (what was kept and why) · **FO** full-credit refund keeps payout costs - FIXED (SQL given).
+**HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL given) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **Standing decision (owner, 2026-11-02): no native app until there is a userbase** - web-reachable integrations first (ET, FK).
 **Product backlog (owner, 2026-10-30, unordered):** ~~**ES**~~ daily checklist built 2026-11-02 · **ET** macro-app connectivity · ~~**EU**~~ rest timer built 2026-11-02 (per-exercise rest field in the builder still to do) · **EV** onboarding walkthroughs · **EW** openart.ai exploration · **EX** domain / SEO / landing page (mail and domain done) · **EY** encouragement videos · **EZ** coach-experience refinement. - **FK** smartwatch steps and health metrics - **FL** points for Home tasks (owner 2026-11-02; ET and EW expanded the same day).
@@ -647,7 +647,7 @@ releases cancelled as in DZ. Build after EG. Not started.
 
 ---
 
-## FO. Refund of a goal paid entirely with credit kept the payout costs - FIXED 2026-11-04 (SQL given)
+## FO. Refund of a goal paid entirely with credit kept the payout costs - FIXED 2026-11-04 (SQL run ✓)
 
 **Owner bug, 2026-11-04.** A goal paid entirely with test credit took EUR 2,511 (EUR 2,500 price + EUR 11 payout costs, no
 card). The trainee ended it at once with "coach not responsive"; EUR 2,000 came back as credit. **EUR 500** = the week in
@@ -660,7 +660,19 @@ the payout costs count as part of the credit; the unused share returns as credit
 coach-ended full-credit goal -> the whole unused amount incl. payout costs). Card-paid and part-credit goals unchanged.
 Refunds already made are not changed (test money). Check `fixed = 2`.
 
-## FP. Every refund that is not full explains what was kept and why - HIGH PRIORITY (owner, 2026-11-04)
+## FP. Every refund that is not full explains what was kept and why - HIGH PRIORITY (owner, 2026-11-04) - BUILT 2026-11-04 (SQL given)
+
+**Built 2026-11-04 (C):** `supabase/migrations_refund_explain.sql` adds `payment_refunds.breakdown` (jsonb: paid by card / by
+credit, card and payout costs, weeks released and their amount, week in progress kept + rule + reason + flagged, costs kept,
+back to card, back as credit, kept total, full yes/no), filled by `queue_refund()` (trainee ended) and `_apply_end_choice()`
+(trainee chose a refund after the coach ended it), and kept by `_apply_dispute_state()` when a refund is re-issued after a
+dispute. A refund that is not full pushes the trainee at once ("EUR X back ...; EUR K not refunded - tap to see why", opens
+Notifications). App: panel **"Why not the full amount?"** (You paid / Coming back to you / NOT REFUNDED: weeks already delivered,
+the week in progress - with the evidence explanation when a coach-failure claim had none - and card and payout costs), opened
+from a new **Notifications card** (each partial refund of the last 60 days until OK), the **payment tracker** line, and the
+**Profile credit movement** ("Why?"). Also fixed on the way: the tracker read exactly one refund row - after a dispute re-issue
+there are two (it now takes the latest not cancelled); a fully credit-funded refund showed "No unused weeks left to refund" -
+now "EUR X returned to your credit". Not yet: the admin view of flagged refunds; refunds made before this have no breakdown.
 
 **Owner request:** any refund that is not a full refund must come with a **detailed explanation** of how much was not
 refunded and why. Covers trainee-ended goals (week in progress kept, weeks already delivered and released, a coach-failure

@@ -3727,6 +3727,7 @@ async function renderHome(){
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
       renderHomeCoachEnded(),   // Item FI: goals the coach ended
+      renderRefundNotes(),   // Item FP: refunds that were not full
       renderHomePayments($("#home-payments")),   // Item DL
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
@@ -3765,6 +3766,7 @@ async function renderHome(){
       renderHomeAdminQueue($("#home-adminq")),   // CN-4
       renderHomeGoalEnded($("#home-goalended")),   // CN-10
       renderHomeCoachEnded(),   // Item FI: goals the coach ended
+      renderRefundNotes(),   // Item FP: refunds that were not full
       renderHomePayments($("#home-payments")),   // Item DL
       renderHomeInTouch($("#home-intouch")),   // Item CM
       renderHomeHandleShares($("#home-handles")),   // Item CT
@@ -3853,6 +3855,64 @@ async function openGoalEndChoice(engId){
       try{ await renderHomeCoachEnded(); refreshNotifDot(); if(typeof refreshTabBadges==="function") refreshTabBadges(); }catch(e){}
     }));
   }catch(x){ toast(x.message||"Couldn't load the choice",3600); }
+}
+/* ---- Item FP (owner, 2026-11-04, high priority): every refund that is not full explains what was kept and why.
+   The database stores a breakdown with each refund (payment_refunds.breakdown: paid by card / credit, released weeks,
+   week in progress kept and its rule, costs kept, back to card / as credit). Shown in a panel, opened from the
+   Notifications card below, the payment tracker and the Profile credit movement. ---- */
+function refundMoney(cur,v){ cur=String(cur||"eur").toLowerCase(); return (cur==="eur"?"\u20AC":cur==="gbp"?"\u00A3":cur.toUpperCase()+" ")+(Number(v||0)/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+async function openRefundExplain(engId){
+  const mail=(typeof SUPPORT_EMAIL!=="undefined"&&SUPPORT_EMAIL)||"contact@formtrace.ie";
+  try{
+    const [r1,r2]=await Promise.all([
+      store._sb.from("payment_refunds").select("amount_cents,currency,status,rule,breakdown,created_at").eq("engagement_id",engId).neq("status","cancelled").order("created_at",{ascending:false}).limit(1).maybeSingle(),
+      store._sb.from("engagements").select("goal_title").eq("id",engId).maybeSingle()]);
+    if(r1.error) throw r1.error;
+    const b=r1.data&&r1.data.breakdown, title=escapeHtml((r2.data&&r2.data.goal_title)||"Your goal");
+    if(!b){ pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:6px">Refund details</div><div style="font-size:12.5px;color:var(--muted);line-height:1.5">${title}: the line-by-line details are not available for this refund (refunds made before 4 November 2026 have none). Questions: ${mail}</div><button class="btn ghost" data-rx="ok" style="margin-top:12px">OK</button>`); document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>pwHide())); return; }
+    const m=v=>refundMoney(b.currency,v), n=v=>Number(v||0);
+    const row=(l,v,strong,sub)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px"><div style="min-width:0"><div style="font-weight:${strong?800:600}">${l}</div>${sub?`<div style="font-size:11.5px;color:var(--faint);margin-top:2px;line-height:1.45">${sub}</div>`:""}</div><div style="white-space:nowrap;font-weight:${strong?800:600}">${v}</div></div>`;
+    const paidHow=[n(b.paid_card_cents)?`${m(b.paid_card_cents)} by card`:"",n(b.paid_credit_cents)?`${m(b.paid_credit_cents)} with credit`:""].filter(Boolean).join(" + ")+(n(b.costs_cents)?` \u00B7 incl. ${m(b.costs_cents)} card and payout costs`:"");
+    const back=n(b.card_back_cents)+n(b.credit_back_cents);
+    const backHow=[n(b.card_back_cents)?`${m(b.card_back_cents)} to your card - 5-10 business days`:"",n(b.credit_back_cents)?`${m(b.credit_back_cents)} as credit - it comes off your next goal automatically`:""].filter(Boolean).join("<br>")||"Nothing comes back";
+    const why=(Object.values(typeof END_REASONS!=="undefined"?END_REASONS:{}).flat().find(([x])=>x===b.reason)||[b.reason,String(b.reason||"").replace(/_/g," ")])[1];
+    let h=`<div style="font-weight:800;font-size:17px;margin-bottom:2px">${b.full?"Your refund":"Why not the full amount?"}</div><div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">${title}</div>`;
+    h+=row("You paid",m(b.paid_cents),true,paidHow);
+    h+=row("Coming back to you",m(back),true,backHow);
+    if(n(b.kept_cents)>0){
+      h+=`<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--faint);margin:16px 0 2px">NOT REFUNDED: ${m(b.kept_cents)}</div>`;
+      if(n(b.released_cents)) h+=row(`${n(b.released_weeks)} week${n(b.released_weeks)===1?"":"s"} already delivered`,m(b.released_cents),false,"Paid to your coach week by week as your sessions were delivered. Weeks already paid out are final.");
+      if(n(b.week_kept_cents)) h+=row("The week in progress",m(b.week_kept_cents),false,b.flagged
+        ?`You ended the goal with the reason "${escapeHtml(why)}", but every session you submitted was still inside your coach's review window (5 business days). So it counts as ending the goal yourself, and the week in progress stays with your coach. FormTrace reviews every case like this; if you think it is wrong, write to ${mail}.`
+        :"You ended the goal during this week, so it stays with your coach. Whole unused weeks are refunded.");
+      if(n(b.costs_kept_cents)) h+=row("Card and payout costs",m(b.costs_kept_cents),false,b.rule==="coach_ended"
+        ?"Stripe keeps its card fee when a payment goes back to the card (keeping the amount as credit returns it in full), plus the costs of the weeks already paid to your coach."
+        :"Stripe's costs for the weeks above. The share for the unused weeks has come back to you.");
+    } else h+=`<div style="font-size:12.5px;color:var(--muted);margin-top:10px">This was a full refund of everything left.</div>`;
+    h+=`<div style="font-size:11.5px;color:var(--faint);margin-top:12px;line-height:1.45">Questions? ${mail}</div><button class="btn ghost" data-rx="ok" style="margin-top:10px">OK</button>`;
+    pwShow(h); document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>pwHide()));
+  }catch(x){ toast(x.message||"Couldn't load the refund details",3600); }
+}
+document.addEventListener("click",ev=>{ const a=ev.target&&ev.target.closest?ev.target.closest("[data-rf-why]"):null; if(!a) return; ev.preventDefault(); openRefundExplain(a.getAttribute("data-rf-why")); });
+/* FP: Notifications card - each refund in the last 60 days that was not full, until the trainee taps OK */
+async function renderRefundNotes(){
+  if(!ME||roleOf()!=="trainee") return;
+  const host=$("#notif-body"); if(!host) return;
+  let el=$("#home-refundnotes"); if(!el){ el=document.createElement("div"); el.id="home-refundnotes"; const empty=$("#notif-empty"); if(empty&&empty.parentElement===host) host.insertBefore(el,empty); else host.appendChild(el); }
+  el.style.display="none"; el.innerHTML="";
+  try{
+    const since=new Date(Date.now()-60*86400000).toISOString();
+    const { data:rows, error }=await store._sb.from("payment_refunds").select("id,engagement_id,breakdown,created_at,status").gte("created_at",since).neq("status","cancelled").order("created_at",{ascending:false}).limit(10); if(error) throw error;
+    let seen={}; try{ seen=JSON.parse(localStorage.getItem("ft-rf-seen")||"{}")||{}; }catch(e){}
+    const list=(rows||[]).filter(r=>r.breakdown&&r.breakdown.full===false&&!seen[r.id]).slice(0,3); if(!list.length) return;
+    let titles={}; try{ const { data:en }=await store._sb.from("engagements").select("id,goal_title").in("id",list.map(r=>r.engagement_id)); for(const x of (en||[])) titles[x.id]=x.goal_title; }catch(e){}
+    el.innerHTML=list.map(r=>{ const b=r.breakdown, m=v=>refundMoney(b.currency,v), back=Number(b.card_back_cents||0)+Number(b.credit_back_cents||0);
+      return `<div class="card" style="margin:0 0 12px"><div class="eyebrow" style="margin-bottom:6px">Refund</div><div style="font-weight:800;font-size:16px">${escapeHtml(titles[r.engagement_id]||"Your goal")}</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5">${m(back)} back${Number(b.card_back_cents)&&Number(b.credit_back_cents)?` (${m(b.card_back_cents)} to your card, ${m(b.credit_back_cents)} as credit)`:Number(b.credit_back_cents)?" as credit":" to your card"}. <b style="color:var(--ink)">${m(b.kept_cents)} not refunded</b> - see why.</div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm primary" data-rf-why="${r.engagement_id}" style="width:auto">See why</button><button class="btn sm ghost" data-rf-ok="${r.id}" style="width:auto">OK</button></div></div>`; }).join("");
+    el.style.display="";
+    el.querySelectorAll("[data-rf-ok]").forEach(btn=>btn.addEventListener("click",()=>{ try{ seen[btn.getAttribute("data-rf-ok")]=1; localStorage.setItem("ft-rf-seen",JSON.stringify(seen)); }catch(e){} renderRefundNotes().then(()=>refreshNotifDot()); }));
+  }catch(e){ console.warn("refund notes (FP)",e&&e.message); }
 }
 async function renderHomeCoachEnded(){
   if(!ME||roleOf()!=="trainee") return;
@@ -4432,7 +4492,7 @@ async function paymentState(eng,offer){
   let releases=[]; if(e.deposit_at){ try{ const { data }=await store._sb.from("payment_releases").select("week_start,gross_cents,amount_cents,currency,status,sent_at").eq("engagement_id",e.id).order("week_start"); releases=data||[]; }catch(x){} }
   const releasedCents=releases.filter(r=>r.status==="sent"||r.status==="skipped").reduce((a,r)=>a+(r.gross_cents||0),0);
   /* DZ: the real refund for a Stripe deposit (replaces the manual estimate above) */
-  let refund=null; if(e.deposit_at&&ended){ try{ const { data }=await store._sb.from("payment_refunds").select("amount_cents,currency,status,rule,sent_at").eq("engagement_id",e.id).maybeSingle(); refund=data||null; }catch(x){} }
+  let refund=null; if(e.deposit_at&&ended){ try{ const { data }=await store._sb.from("payment_refunds").select("amount_cents,currency,status,rule,sent_at,breakdown").eq("engagement_id",e.id).neq("status","cancelled").order("created_at",{ascending:false}).limit(1).maybeSingle();   /* FP: + breakdown; EJ: a held refund re-issued after a dispute leaves a cancelled row */ refund=data||null; }catch(x){} }
   return {e,o,cur,weekly,weeks,total,money,weekNow,ended,refundDue,payout,releases,releasedCents,refund};
 }
 /* ---- Item DU: coach payouts via Stripe Connect (Express, hosted onboarding) ---- */
@@ -4535,9 +4595,10 @@ async function renderPaymentTracker(holder,eng,role,offer){
       const rf=s.refund, amt=rf?s.money(rf.amount_cents/(rf.currency==="jpy"?1:100)):null;
       if(!rf) now=`Ended early. Working out the refund of the unused weeks…`;
       else if(rf.status==="sent") now=`Ended early. Refund of <b style="color:var(--ink)">${amt}</b> returned to ${isCoach?"your trainee's":"your"} card ${day(rf.sent_at)}${rf.rule==="trainee_stopped"?" (the week in progress stays with the coach)":""}. Weeks already released are unaffected.`;
-      else if(rf.status==="skipped") now=`Ended early. ${rf.rule==="comp"?"Nothing to refund (free code).":"No unused weeks left to refund."}`;
+      else if(rf.status==="skipped") now=(rf.breakdown&&Number(rf.breakdown.credit_back_cents)>0)?`Ended early. <b style="color:var(--ink)">${s.money(Number(rf.breakdown.credit_back_cents)/100)}</b> returned to ${isCoach?"your trainee's":"your"} credit.`:`Ended early. ${rf.rule==="comp"?"Nothing to refund (free code).":"No unused weeks left to refund."}`;   /* FP: a credit-funded goal refunds as credit */
       else if(rf.status==="failed") now=`Ended early. The refund of ${amt} could not be sent automatically - FormTrace is looking into it.`;
       else now=`Ended early. Refund of ${amt} on its way to ${isCoach?"your trainee":"you"}.`;
+      if(!isCoach&&rf&&rf.breakdown&&rf.breakdown.full===false) now+=` <a href="#" data-rf-why="${e.id}" style="color:var(--lime);font-weight:700;white-space:nowrap">Why not the full amount?</a>`;   /* FP */
     } else if(s.refundDue>0){
       if(!e.refund_sent_at){ now=`Ended early. Under the pilot terms a refund of <b style="color:var(--ink)">${s.money(s.refundDue)}</b> is due for the unused weeks${isCoach?" - send it directly to your trainee.":" - your coach sends it directly to you."}`; if(isCoach) actions=`<button class="btn sm primary" data-pt="rsent" style="width:auto">Refund sent</button>`; }
       else if(!e.refund_received_at){ now=`Refund of ${s.money(s.refundDue)} sent ${day(e.refund_sent_at)}.${isCoach?" Waiting for your trainee to confirm.":" Confirm once it has arrived."}`; if(!isCoach) actions=`<button class="btn sm primary" data-pt="rrecv" style="width:auto">Refund received ✓</button>`; }
@@ -11953,7 +12014,7 @@ async function renderProfile(){
   }
   /* Item FM: the trainee's credit balance and its latest movements (trainee_credits ledger; RLS: own rows only) */
   try{
-    const { data:crs }=await store._sb.from("trainee_credits").select("amount_cents,currency,note,created_at").eq("trainee_id",ME.id).order("created_at",{ascending:false});
+    const { data:crs }=await store._sb.from("trainee_credits").select("amount_cents,currency,note,created_at,source_engagement").eq("trainee_id",ME.id).order("created_at",{ascending:false});
     if(crs&&crs.length){
       const bal={}; crs.forEach(c=>{ bal[c.currency]=(bal[c.currency]||0)+Number(c.amount_cents||0); });
       const sym=c=>c==="eur"?"\u20AC":c==="gbp"?"\u00A3":String(c||"").toUpperCase()+" ";
@@ -11962,7 +12023,7 @@ async function renderProfile(){
       html+=`<div class="section-h"><div class="eyebrow">Credit</div></div>
         <div class="card" id="pf-credit"><div style="font-size:24px;font-weight:800">${Object.entries(bal).map(([c,v])=>fmt(c,v)).join(" \u00B7 ")}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Available credit. It comes off your next goal automatically at checkout.</div>
-          ${crs.slice(0,5).map(c=>{ const v=Number(c.amount_cents||0); return `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span style="color:var(--muted);min-width:0">${escapeHtml(note(c.note))} \u00B7 ${fmtDay(String(c.created_at).slice(0,10))}</span><b style="color:${v<0?"var(--muted)":"var(--ink)"};white-space:nowrap">${v<0?"":"+"}${fmt(c.currency,v)}</b></div>`; }).join("")}
+          ${crs.slice(0,5).map(c=>{ const v=Number(c.amount_cents||0); return `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span style="color:var(--muted);min-width:0">${escapeHtml(note(c.note))} \u00B7 ${fmtDay(String(c.created_at).slice(0,10))}${(c.source_engagement&&/^goal ended early/i.test(String(c.note||"")))?` \u00B7 <a href="#" data-rf-why="${c.source_engagement}" style="color:var(--lime);font-weight:700">Why?</a>`:""}</span><b style="color:${v<0?"var(--muted)":"var(--ink)"};white-space:nowrap">${v<0?"":"+"}${fmt(c.currency,v)}</b></div>`; }).join("")}
         </div>`;
     }
   }catch(e){ console.warn("credit card (FM)",e&&e.message); }
