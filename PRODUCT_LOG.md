@@ -706,6 +706,31 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ---
 
+## GB. Weekly report by schedule - examine GitHub scheduled triggers (owner, 2026-11-04)
+
+**Owner request:** examine using **GitHub scheduled triggers** to receive a **weekly report** of: **new users**, **money traffic**,
+**fees collected**, and **users inactive for more than 3 days**.
+**Notes for the examination (C):**
+- **How it would work on GitHub:** a GitHub Actions workflow with `on: schedule: cron` (e.g. Mondays 07:00 UTC) runs a small
+  script that reads the numbers from Supabase and emails the report (Titan SMTP, contact@formtrace.ie) to the owner. Needs
+  GitHub Actions secrets for a Supabase key and the SMTP password. Private repositories get a monthly Actions allowance
+  (more on GitHub Pro, FT) - a weekly run of a minute or two is far inside it. Caveats: scheduled runs can start late at busy
+  times, and GitHub disables schedules in **public** repositories after 60 days without activity (another reason for FT).
+- **Alternative already in place - compare before choosing:** Supabase **pg_cron** (already used: the daily 04:23 job) can call an
+  Edge Function each week that builds the report and sends it with the same Titan SMTP. Everything stays in Supabase - no
+  second copy of the secrets on GitHub, no key with broad database access outside Supabase, and it runs on time.
+  Leaning: **pg_cron + Edge Function**, unless the owner wants the report kept in GitHub (e.g. as a weekly file or issue).
+- **Report contents (to define with the owner):**
+  - **New users:** sign-ups in the last 7 days by role (trainees, coaches; coach applications), with the week before for comparison.
+  - **Money traffic:** deposits (count, total, by card / credit), releases to coaches, refunds (card and credit), open disputes,
+    credit balance outstanding - live vs test kept apart.
+  - **Fees collected:** coach commission and trainee fee (both 0 in the pilot), processing line charged vs Stripe's actual card,
+    payout and Radar costs, net to Formtrace.
+  - **Inactive more than 3 days:** trainees with an active goal and no submitted session, sign-in or check-in for 3+ days (and
+    coaches with unreviewed sessions or unassigned trainees) - define "activity" precisely; useful for nudges (and FS quests).
+- **Privacy:** the report contains personal data (names, activity) - send only to the owner / admins, keep it short (counts plus
+  names where action is needed), and do not store copies outside Formtrace's systems.
+- Relates to: DP admin liability numbers (`admin_liability_stats`), FR admin panel (the same numbers on screen), FS / EV nudges.
 ## FZ. Sound effects (owner, 2026-11-04)
 
 **Owner:** add sound effects for button clicks, refreshes, timers during workouts, achievement unlocks and other events.

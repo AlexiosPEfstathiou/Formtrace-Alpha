@@ -9,7 +9,7 @@
 - **Session closed 23:56.** Owner to do / test next: (1) **EJ part 3 test** - new goal as Alex Stinson (`?stripetest=1`), pay with 4000 0000 0000 0259 -> goal ends by itself, coach + trainee pushes, notice on the goal; (2) close the still-open test dispute "Dispute test" (EUR 34) in Stripe when convenient (its goal already ended, so nothing else changes); (3) allow notifications on the coach test phone (Harvey Specter has no subscription); (4) FV follow-up SQL still not run (`platform_rates.note`).
 - **Open EJ findings:** ToS consent "-" in evidence (waits on DX, postponed); EUR 0 refunds hidden in Profile; unused weeks after a WON dispute stay with Formtrace (manual refund).
 - **Suggested next builds:** FZ placeholder sounds · openart style brief + L1 prompts · FX email templates · GA camera scoping.
-- **Next item code: GB.**
+- **GB logged after close (work account): weekly report by schedule (GitHub Actions vs pg_cron + Edge Function). Next item code: **GC**.**
 
 ## Session 2026-11-04 (work account) - summary
 **Built / done (all pushed):**
