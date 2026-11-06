@@ -516,7 +516,7 @@ A lapsed domain takes the app, email (EH) and Stripe / Terms URLs down with it.
 8. The time estimate = each exercise's **enforced rest x its sets** (default 2:30; a wildcard counts as 3 sets; interval exercises as
    before) - the owner's 2.5 minutes was the rest, and sets run at the trainee's pace - **BUILT**.
 9. "Target kg (L1)" now reads "Target kg (level 1)" - **BUILT**.
-**Tests queued (owner):** **EZ-T1** edit a workout, tap back / the phone back button / a tab: "Discard your changes?" (Keep editing
+**EZ-T1 back button: PASSED (owner, 2026-11-05).** **Tests queued (owner):** **EZ-T1** edit a workout, tap back / the phone back button / a tab: "Discard your changes?" (Keep editing
 stays; Discard leaves); an untouched workout leaves without asking. **EZ-T2** Delete asks; Keep it keeps. **EZ-T3** hold + on target kg:
 it climbs fast; tap the number, type 82.5 / 2:30 for rest; Enter or tapping away saves. **EZ-T4** Save twice quickly: one workout, not two.
 **EZ-T5** remove an exercise, tap Undo: it comes back in the same place with its settings. **EZ-T6** the header estimate changes when a
