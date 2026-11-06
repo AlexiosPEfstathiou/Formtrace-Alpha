@@ -26,6 +26,14 @@ Needs a trainee with **two or more reviewed sessions** of the same exercise.
 - [ ] **EZ6b-T3** **Edit → Delete** on a note: it asks, then the note is gone. That set's tags and voice-over are unchanged.
 - [ ] **EZ6b-T4** Notes written by another coach (if any) show **no** Edit.
 
+## Recording a set — the camera (GA)
+Front camera, filming yourself, on your Android phone. Then once with the back camera.
+- [ ] **GA-T1** The preview is **mirrored** (raise your right hand: it moves on the right of the screen, like a mirror). The **⇄ Mirror** button flips it; your choice is remembered next time.
+- [ ] **GA-T2** The **saved** video (Replay, and later the coach's review) is mirrored the same way you saw it.
+- [ ] **GA-T3** The preview shows the **whole** recorded frame (dark bars instead of a crop); the pose lines sit on the body; Replay shows the same framing.
+- [ ] **GA-T4** Turn the phone **sideways, top to the LEFT**: the countdown, timer and icons turn to face you; there is no Portrait/Landscape button any more. Record a set → it is saved **upright in landscape**. Then **top to the RIGHT** → also upright. **If one is upside down, note which side.**
+- [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
+- [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — the workout (EZ-6)
 - [ ] **EZ6-T2** Each exercise shows **"Your coach's notes (N)"**: all the comments from earlier reviews of that exercise, dated, newest first; 3 shown, then **Show all**. The note written in EZ6-T4 is at the top; an edited one shows "edited"; a deleted one is gone.
 - [ ] **EZ6-T3** **▶ Replay the latest voice-over (date)** plays the coach's voice-over with its drawings; **Close** stops it.

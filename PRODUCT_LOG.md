@@ -720,7 +720,25 @@ styles, one column, the gold button), dark-mode safe, plain-text fallback. Sende
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
 
-## GA. Camera - refine / restart in general (owner, 2026-11-04)
+## GA. Camera - refine / restart in general (owner, 2026-11-04) - FIRST PASS BUILT 2026-11-05
+
+**Owner 2026-11-05 (work account):** "The lines work great. The landscape toggle is not good, and the camera preview is not mirrored."
+Device: **Android phone, front camera, filming himself**. The toggle: it should **turn by itself** when the phone rotates, it **turned
+the wrong way / felt confusing**, and **the preview shape did not match the recording**. Decision: the **saved video is mirrored**, as seen.
+**Built (C, app only):**
+- **Orientation follows the phone** (motion sensor - the installed app is locked to portrait, so the page never rotates). Turn the
+  phone sideways: the countdown, timer, status message and side-button icons turn to face you; the camera picture stays as the phone
+  shows it; the recording is saved upright in landscape. Fixed while recording or counting down. The whole-recorder rotation is gone.
+  The Portrait / Landscape button only appears if the phone gives no motion sensor (fallback: "top to the left"). iPhone: motion
+  permission asked when the recorder opens (CX - untested).
+- **Preview = recording:** the preview and the pose lines show the whole recorded frame (bars rather than a crop) - also the
+  desktop-webcam case logged here.
+- **Mirroring:** one decision drives the preview, the lines and the saved video - mirrored for the front camera, judged from the
+  camera the phone actually opened; a **Mirror** button in the recorder tools (front camera only) flips it and is remembered.
+**Uncertain until tested:** which way each sideways direction must be turned (sensor conventions differ). Rule in the code: top to the
+left -> -90 deg, top to the right -> +90 deg; if one comes out upside down, swap the two values in `startRec` (one line).
+**Tests queued:** GA-T1..T6 in `docs/TEST_QUEUE.md`. Still open from the original scope: camera choice / resolution limits, switching
+apps mid-recording, iPhone (CX), trim (BC) and pose reliability (AH) on landscape files.
 
 Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / restarted in general."** Finding that prompted it: **on desktop the camera preview is drawn like a phone camera (portrait frame) but the recording comes out landscape** - what the user frames is not what is saved. To scope before building: (1) the orientation and aspect contract - preview, recording and pose overlay must use the same frame on phone portrait, phone landscape and desktop webcams (most are 16:9 landscape only); (2) camera choice (front / back / external), resolution and frame-rate constraints, and what happens when the device cannot meet them; (3) permission and restart behaviour (CU), switching apps mid-recording, iOS Safari specifics (CX - no iPhone to test); (4) the pose overlay reliability (AH) and trim (BC) on the new pipeline; (5) a short test matrix (Android Chrome, desktop Chrome, iPhone when available). Related history: CS check-in photo, CU permission denied, CW portrait mode scrapped, AH pose overlay. Not started.
 

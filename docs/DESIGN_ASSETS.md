@@ -107,7 +107,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Asset | Where | Tier | Notes |
 |---|---|---|---|
 | Pose overlay skeleton (joints, lines) | recorder | Code | Colours and line style follow the theme (lime joints, gold traces as on the landing page) |
-| Record button, countdown, take review | recorder (`#rec`) | Code | |
+| Record button, countdown, take review; Mirror button; sideways turn of countdown / timer / icons (GA) | recorder (`#rec`) | Code | |
 
 ## 8. Outside the app
 | Asset | Where | Tier | Status | Deliverable spec |

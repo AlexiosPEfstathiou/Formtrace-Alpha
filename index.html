@@ -193,6 +193,11 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 #wo-undo span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #wo-undo button{background:none;border:0;color:#F0D231;font:inherit;font-weight:800;padding:4px 6px;cursor:pointer}
 .mini-stepper button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* GA: phone held sideways - the countdown, timer, message and side-button icons turn to face the user; the picture does not */
+#countdown,#rtimer,#r-statmsg,#r-deck .rside .i{transition:transform .25s}
+body.rec-ui-90 #countdown,body.rec-ui-90 #rtimer,body.rec-ui-90 #r-statmsg,body.rec-ui-90 #r-deck .rside .i{transform:rotate(90deg)}
+body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,body.rec-ui-270 #r-deck .rside .i{transform:rotate(-90deg)}
+#r-mirror.on{border-color:#F0D231;color:#F0D231}
 /* EZ-6: cumulative coach notes */
 .exn .exn-row{display:flex;gap:10px;margin-top:7px;font-size:13px;line-height:1.45}
 .exn .exn-d{flex:0 0 auto;min-width:54px;color:var(--faint);font-size:11.5px;padding-top:1px;line-height:1.35}
@@ -565,8 +570,8 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
   #rec.on{display:flex;}
   #rec .stage{position:relative;flex:1;overflow:hidden;background:#000;}
   #rvideo,#roverlay,#rplay{position:absolute;inset:0;width:100%;height:100%;}
-  #rvideo{object-fit:cover;transform:scaleX(-1);}
-  #roverlay{object-fit:cover;pointer-events:none;}
+  #rvideo{object-fit:contain;}   /* GA: the preview shows exactly the recorded frame (bars rather than a crop); mirroring is set in JS */
+  #roverlay{object-fit:contain;pointer-events:none;}
   #rplay{object-fit:contain;display:none;background:#000;}
   #rec .rtop{position:absolute;top:0;left:0;right:0;z-index:3;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#000A,#0000);}
   #rec .rtop .ttl{font-size:14px;font-weight:700;text-align:center;}
@@ -1914,6 +1919,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
     <div class="captools" id="r-tools">
       <button class="captool" id="r-timer">⏱ 3s timer</button>
       <button class="captool" id="r-orient">▯ Portrait</button>
+      <button class="captool" id="r-mirror">&#8644; Mirror</button>
       <button class="captool" id="r-hand">✋ Touchless</button>
     </div>
     <div id="rreview">
@@ -13318,6 +13324,34 @@ const rDims=$("#r-dims");
 /* Declared recording orientation. Persisted because someone who films
    landscape once usually always does. */
 let recOrient=(function(){ try{ return localStorage.getItem("ft-orient")||"portrait"; }catch(e){ return "portrait"; } })();
+/* ---- Item GA (owner, 2026-11-05): the recorder follows the phone. The app is locked to portrait when installed, so the page
+   never rotates; the motion sensor tells which way the phone is held. rDevTurn: 0 upright, 90 top to the left, 270 top to the
+   right. Fixed while recording or counting down. Rotation rule for the saved landscape file (canvas, mirror applied first):
+   top to the left -> -90 deg, top to the right -> +90 deg, i.e. the picture as shown is turned so the edge that points up is
+   up. If a phone comes out upside down, swap the two values in startRec (one line). ---- */
+let rDevTurn=0, rGravSign=0, rMotionSeen=false, rMotionN=0;
+let rMirror=true, rMirrorFix=(function(){ try{ return localStorage.getItem("ft-mirror-fix")==="1"; }catch(e){ return false; } })();
+function rFront(){ try{ const t=rStream&&rStream.getVideoTracks()[0]; const s=t&&t.getSettings?t.getSettings():null; if(s&&s.facingMode) return s.facingMode==="user"; }catch(e){} return rFacing==="user"; }
+function rApplyMirror(){ const front=rFront(); rMirror=front!==rMirrorFix; rvideo.style.transform=rMirror?"scaleX(-1)":"none";
+  const b=$("#r-mirror"); if(b){ b.style.display=front?"":"none"; b.classList.toggle("on",rMirror); } }
+function rUiTurn(){ const pa=(screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:(typeof window.orientation==="number"?window.orientation:0);
+  const ui=(Math.abs(pa)%180!==0)?0:rDevTurn;   // a browser tab that rotated by itself needs no turning
+  document.body.classList.toggle("rec-ui-90",ui===90); document.body.classList.toggle("rec-ui-270",ui===270);
+  const ob=$("#r-orient"); if(ob) ob.style.display=rMotionSeen?"none":""; }
+window.addEventListener("devicemotion",e=>{
+  const rec=document.getElementById("rec"); if(!rec||rec.offsetWidth===0) return;
+  if((rMotionN=(rMotionN+1)%4)!==0) return;
+  const g=e.accelerationIncludingGravity; if(!g||g.x==null||g.y==null) return;
+  const x=g.x, y=g.y; if(!rMotionSeen){ rMotionSeen=true; rUiTurn(); }
+  if(Math.abs(y)>7&&Math.abs(x)<3) rGravSign=Math.sign(y)||rGravSign;                 // learn the sign convention while upright
+  const s=rGravSign||(/iPhone|iPad|iPod/.test(navigator.userAgent)?-1:1);
+  let turn=rDevTurn;
+  if(Math.abs(x)>7&&Math.abs(y)<4) turn=(x*s>0)?90:270; else if(Math.abs(y)>7&&Math.abs(x)<4) turn=0;   // clear positions only (hysteresis)
+  if(turn===rDevTurn||rRecording||(typeof countingDown==="function"&&countingDown())) return;
+  rDevTurn=turn; recOrient=turn?"landscape":"portrait"; rUiTurn(); try{ if(navigator.vibrate) navigator.vibrate(8); }catch(_){}
+},{passive:true});
+document.addEventListener("click",e=>{ const b=e.target&&e.target.closest?e.target.closest("#r-mirror"):null; if(!b||rRecording) return;
+  rMirrorFix=!rMirrorFix; try{ localStorage.setItem("ft-mirror-fix",rMirrorFix?"1":"0"); }catch(_){} rApplyMirror(); toast(rMirror?"Mirrored":"Not mirrored",1500); });
 function syncOrientBtn(){
   const b=$("#r-orient"); if(!b)return;
   const land=recOrient==="landscape";
@@ -13336,37 +13370,15 @@ $("#r-orient")?.addEventListener("click",()=>{
    the user lifts; the hint marks that edge rather than describing it in
    words, which is easy to get backwards. */
 function applyRecOrientation(announce){
-  const rec=$("#rec"); if(!rec)return;
-  const land=recOrient==="landscape";
-  const p=rec.parentElement;
-  if(land&&p){
-    const w=p.clientWidth||0, h=p.clientHeight||0;
-    if(w&&h){
-      rec.style.width=h+"px"; rec.style.height=w+"px";
-      rec.style.top="50%"; rec.style.left="50%"; rec.style.right="auto"; rec.style.bottom="auto";
-      rec.style.transform="translate(-50%,-50%) rotate(90deg)";
-    }
-  }else{
-    rec.style.width=""; rec.style.height="";
-    rec.style.top=""; rec.style.left=""; rec.style.right=""; rec.style.bottom="";
-    rec.style.transform="";
-  }
-  if(!announce)return;
-  const t=$("#r-turn"); if(!t)return;
-  const arrow=$("#rt-arrow"), tx=$("#rt-tx");
-  t.classList.remove("edge-left","edge-right");
-  if(land){
-    t.classList.add("edge-right");
-    if(arrow) arrow.textContent="⟳";
-    if(tx) tx.innerHTML="Turn the phone so the<br><b>marked edge is at the top</b>";
-  }else{
-    t.classList.add("edge-left");
-    if(arrow) arrow.textContent="⟲";
-    if(tx) tx.innerHTML="Back to upright —<br><b>hold the phone normally</b>";
-  }
-  t.classList.add("on");
-  clearTimeout(applyRecOrientation._t);
-  applyRecOrientation._t=setTimeout(()=>t.classList.remove("on"),2800);
+  /* GA (owner, 2026-11-05): the recorder no longer turns as a whole (it was confusing and read backwards). The camera picture
+     stays as the phone shows it - upright to someone holding the phone sideways - and only the countdown, timer, message and
+     side-button icons turn to face them. With a motion sensor this follows the phone by itself; without one, the
+     Portrait / Landscape button stays as a fallback ("top to the left"). */
+  const rec=$("#rec"); if(!rec) return;
+  rec.style.width=""; rec.style.height=""; rec.style.top=""; rec.style.left=""; rec.style.right=""; rec.style.bottom=""; rec.style.transform="";
+  if(!rMotionSeen) rDevTurn=recOrient==="landscape"?(rDevTurn||90):0;
+  rUiTurn();
+  if(announce&&!rMotionSeen) toast(recOrient==="landscape"?"Landscape - hold the phone sideways, top to the left":"Portrait - hold the phone upright",2600);
 }
 addEventListener("resize",()=>{ if(recOrient==="landscape") applyRecOrientation(false); });
 function debugOn(){ try{ return localStorage.getItem("ft-debug")==="1"; }catch(e){ return false; } }
@@ -13378,7 +13390,7 @@ function updateDims(){
   rDims.textContent=`cam ${vw}x${vh} · ${vw>vh?"LANDSCAPE":vh>vw?"portrait":"square"}`;
 }
 let lastRecorderOpts=null;
-async function openRecorder(opts){ lastRecorderOpts=opts;
+async function openRecorder(opts){ lastRecorderOpts=opts; try{ if(typeof DeviceMotionEvent!=="undefined"&&typeof DeviceMotionEvent.requestPermission==="function") DeviceMotionEvent.requestPermission().catch(()=>{}); }catch(e){}   /* GA: iPhone motion permission */
   recOpts=opts||{};
   $("#rec").classList.add("on"); document.body.classList.add("rec-open");   // CQ-4: the persistent header must not cover the recorder's controls
   rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";
@@ -13397,7 +13409,7 @@ async function openRecorder(opts){ lastRecorderOpts=opts;
     const rc=$("#rec");
     rc.style.width="";rc.style.height="";rc.style.top="";rc.style.left="";
     rc.style.right="";rc.style.bottom="";rc.style.transform="";
-    $("#r-turn")?.classList.remove("on");
+    $("#r-turn")?.classList.remove("on"); document.body.classList.remove("rec-ui-90","rec-ui-270");
   }else{
     applyRecOrientation(false);
   }
@@ -13441,7 +13453,7 @@ function closeRecorder(){document.body.classList.remove("rec-open");cancelCountd
   const rc=$("#rec");
   rc.style.width="";rc.style.height="";rc.style.top="";rc.style.left="";
   rc.style.right="";rc.style.bottom="";rc.style.transform="";
-  $("#r-turn")?.classList.remove("on");
+  $("#r-turn")?.classList.remove("on"); document.body.classList.remove("rec-ui-90","rec-ui-270");
 }
 async function startCam(){
   if(rStream)rStream.getTracks().forEach(t=>t.stop());
@@ -13461,7 +13473,7 @@ async function startCam(){
     rStream=await navigator.mediaDevices.getUserMedia({video:vc,audio:false});
     toast("No microphone access — recording without sound",4200);
   }
-  rvideo.srcObject=rStream;rvideo.style.transform=rFacing==="user"?"scaleX(-1)":"none";
+  rvideo.srcObject=rStream; rApplyMirror();   /* GA: mirrored from the camera actually opened */
   await rvideo.play();await new Promise(r=>{if(rvideo.readyState>=2)return r();rvideo.onloadeddata=()=>r();});sizeCanvas();
 }
 function rLoop(){
@@ -13490,7 +13502,7 @@ function rLoop(){
         }
         if(res){
           rctx.save();rctx.clearRect(0,0,roverlay.width,roverlay.height);
-          const mirror=rFacing==="user"; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}
+          const mirror=rMirror; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}   /* GA: same decision as the preview */
           if(rShow&&res.landmarks){for(const lm of res.landmarks)drawFigure(rctx,lm,roverlay.width,roverlay.height);}
           rctx.restore();
           if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
@@ -13527,10 +13539,10 @@ function startRec(){
   const w = doRotate ? Math.round(sh*scale) : Math.round(sw*scale);
   const h = doRotate ? Math.round(sw*scale) : Math.round(sh*scale);
   // which way they turned it; 270 means the other way, so rotate the other way
-  const ang = (screen.orientation&&typeof screen.orientation.angle==="number")?screen.orientation.angle:90;
+  const ang = rDevTurn===270?90:270;   /* GA: from the motion sensor. The formula below turns 270 into -90 deg and anything else into +90 deg, so: top to the left -> -90 deg, top to the right -> +90 deg (rule above syncOrientBtn) */
   const rot = doRotate ? ((ang===270||ang===-90) ? -Math.PI/2 : Math.PI/2) : 0;
   recCanvas=document.createElement("canvas");recCanvas.width=w;recCanvas.height=h;recCtx=recCanvas.getContext("2d");
-  const mirror=rFacing==="user";
+  const mirror=rMirror;   /* GA: the saved video is mirrored as it was seen (owner, 2026-11-05) */
   /* The canvas size is fixed for the whole recording — MediaRecorder cannot
      take a resize mid-stream. Draw aspect-preserving into it so a track that
      re-negotiates mid-take letterboxes rather than squashing the athlete. */
