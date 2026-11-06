@@ -21,7 +21,7 @@ the list below are done, superseded, or parked (bottom).
 
 **B. Build the rest of escrow (C)**
 8. **EA** Processing line - BUILT and DEPLOYED 2026-10-30 (migration run); rates to confirm on Stripe IE pricing (O).
-9. **ED** Zero-amount promo code - webhook DEPLOYED 2026-10-30; owner creates the coupon + code (O).
+9. **ED** Zero-amount promo code - **DONE 2026-11-05**: owner created the 100%-off coupon + promotion code in Stripe (code name kept out of the repo while it is public - FT; owner to make sure it has a redemption limit and an expiry).
 10. **DY** Weekly releases - BUILT 2026-10-30 (owner setup done).  11. **DZ** Refunds - BUILT 2026-10-30 (owner: migration, deploy `refund-send`, webhook).
 12. **DP** Admin card - BUILT 2026-11-02 (migration run); **thresholds CONFIRMED by the owner 2026-11-03**; disputes/losses wait for EJ.
 
