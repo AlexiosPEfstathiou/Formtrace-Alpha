@@ -185,6 +185,14 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 #ptr.spin svg{animation:ptrspin .8s linear infinite}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){#ptr.spin svg{animation-duration:2s}}
+/* EZ-5: the Undo bar above the builder's Save button */
+#wo-undo{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 158px);transform:translateX(-50%) translateY(8px);z-index:60;display:flex;align-items:center;gap:14px;
+  background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:10px 12px 10px 16px;font-size:13px;color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.35);
+  opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;max-width:calc(100vw - 32px)}
+#wo-undo.on{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+#wo-undo span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#wo-undo button{background:none;border:0;color:#F0D231;font:inherit;font-weight:800;padding:4px 6px;cursor:pointer}
+.mini-stepper button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   .body::-webkit-scrollbar{width:0;}
 
   .top{padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;display:flex;align-items:center;gap:12px;}
@@ -1518,7 +1526,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
       <div class="section-h"><div class="eyebrow">Workout</div><div class="eyebrow" id="wo-item-count"></div></div>
       <div id="wo-items"></div>
       <div id="wo-items-empty" class="empty hidden" style="padding:34px 20px;"><div class="ic">▦</div><p>No exercises added.<br>Pull movements from your library.</p></div>
-      <button class="btn sm" id="wo-add-ex" style="margin-top:6px">+ Add from library</button>
+      <button class="btn sm" id="wo-add-ex" style="margin-top:6px">+ Add several&hellip;</button>
       <button class="btn sm" id="wo-add-wild" style="margin-top:8px">★ Add wildcard slot</button>
     </div>
     <div class="fab-row">
@@ -3451,6 +3459,7 @@ document.addEventListener("touchend",()=>{
 },{passive:true});
 document.addEventListener("touchcancel",()=>{ if(!ptrBusy) ptrReset(); },{passive:true});
 function go(name){
+  if(name!=="wo-build"&&woLeaveBlocked()){ woConfirmLeave(()=>go(name)); return; }   /* EZ-1: unsaved workout changes */
   // the timelapse is shown outside go(), so stop its playback on any navigation
   if(tlTimer){ clearInterval(tlTimer); tlTimer=null; }
   if(name==="ex-edit-new"){ openExEditor(null); name="ex-edit"; }
@@ -3679,6 +3688,7 @@ function closeTopOverlay(){
 window.addEventListener("popstate",()=>{
   // First: if an overlay is open, a back press just closes it and we stay put.
   if(closeTopOverlay()){ history.pushState({ftScreen:navStack[navStack.length-1]||"home",depth:navStack.length},""); return; }
+  if(woLeaveBlocked()){ history.pushState({ftScreen:navStack[navStack.length-1]||"home",depth:navStack.length},""); woConfirmLeave(()=>{ history.back(); }); return; }   /* EZ-1: the phone back button, unsaved workout */
   // Otherwise step back one screen in the app.
   if(navStack.length>1){
     navStack.pop();
@@ -6138,6 +6148,48 @@ let builder=null, libCache=[];
 let builderLevelScale={reps_step:2,weight_step:2.5,max:5};   // Item CG
 function paintLevelScale(){ const a=$("#ls-reps"), b=$("#ls-weight"); if(a) a.textContent=builderLevelScale.reps_step; if(b) b.textContent=builderLevelScale.weight_step; }
 $$("#wo-levels [data-ls]").forEach(btn=>btn.addEventListener("click",()=>{ const f=btn.getAttribute("data-ls"), d=+btn.getAttribute("data-d"); if(f==="reps_step") builderLevelScale.reps_step=Math.max(0,Math.min(10,builderLevelScale.reps_step+d)); else builderLevelScale.weight_step=Math.max(0,Math.min(20,Math.round((builderLevelScale.weight_step+d*0.5)*10)/10)); paintLevelScale(); }));
+/* ---- Item EZ (owner, 2026-11-05): building workouts - fixes 1-5, 7-9 from the code review.
+   1 leaving with unsaved changes asks first (app navigation, the phone's back button, closing the page)
+   2 Delete asks first   3 hold +/- to repeat; tap a number to type it   4 Save shows Saving..., cannot double-save, reports errors
+   5 removing an exercise offers Undo for 5 s   7 "+ Add several..."   8 the time estimate counts each exercise's rest x sets
+   9 "Target kg (level 1)". ---- */
+var builderClean=null, woUndo=null;   // var: safe if go() runs before this line during start-up
+function woSnapshot(){ try{ return JSON.stringify({ n:(($("#in-wo-name")||{}).value||"").trim(), i:builder?builder.items:[], l:typeof builderLevelScale!=="undefined"?builderLevelScale:null }); }catch(e){ return ""; } }
+function woLeaveBlocked(){ const s=document.getElementById("s-wo-build"); if(!s||!s.classList.contains("active")||builderClean==null) return false; return woSnapshot()!==builderClean; }
+function woConfirmLeave(then){
+  openConfirm({title:"Discard your changes?",body:"You have changed this workout since it was last saved. Leaving now discards those changes.",confirmLabel:"Discard",cancelLabel:"Keep editing",danger:true})
+    .then(ok=>{ if(!ok) return; builderClean=woSnapshot(); const bar=document.getElementById("wo-undo"); if(bar) bar.classList.remove("on"); woUndo=null; then(); });
+}
+window.addEventListener("beforeunload",e=>{ if(woLeaveBlocked()){ e.preventDefault(); e.returnValue=""; } });
+function woTypeValue(sp,field,i){
+  if(sp.querySelector("input")) return; const it=builder&&builder.items[i]; if(!it) return;
+  const cur=field==="rest_seconds"?fmtRest(it.rest_seconds):(it[field]==null?"":String(it[field]));
+  const inp=document.createElement("input"); inp.value=cur; inp.setAttribute("aria-label","Type a value");
+  inp.inputMode=field==="weight_kg"?"decimal":(field==="rest_seconds"?"text":"numeric");
+  inp.style.cssText="width:58px;text-align:center;font:inherit;padding:2px 4px;border-radius:6px;border:1px solid #F0D231;background:var(--panel);color:var(--ink)";
+  sp.textContent=""; sp.appendChild(inp); inp.focus(); try{ inp.select(); }catch(e){}
+  let done=false;
+  const commit=save=>{ if(done) return; done=true;
+    if(save){ const v=String(inp.value).trim().replace(",",".");
+      if(field==="sets"||field==="reps"){ const n=parseInt(v,10), mn=1, mx=field==="sets"?20:100; if(Number.isFinite(n)) it[field]=Math.max(mn,Math.min(mx,n)); }
+      else if(field==="weight_kg"){ if(v===""||v==="-"||v==="\u2014") it.weight_kg=null; else { const n=parseFloat(v); if(Number.isFinite(n)) it.weight_kg=n<=0?null:Math.min(500,Math.round(n*10)/10); } }
+      else if(field==="rest_seconds"){ let s=null; const mm=v.match(/^(\d+):(\d{1,2})$/); if(mm) s=(+mm[1])*60+(+mm[2]); else if(/^\d+(\.\d+)?$/.test(v)){ const n=parseFloat(v); s=n<=10?Math.round(n*60):Math.round(n); }
+        if(s!=null){ s=Math.max(30,Math.min(600,Math.round(s/5)*5)); it.rest_seconds=(s===REST_DEFAULT_SECONDS?null:s); } } }
+    renderBuilderItems(); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); commit(true); } else if(e.key==="Escape"){ commit(false); } });
+  inp.addEventListener("blur",()=>commit(true));
+}
+function woRemoveItem(i){
+  const it=builder&&builder.items[i]; if(!it) return; builder.items.splice(i,1); renderBuilderItems();
+  const ex=it.exercise_id&&libCache?libCache.find(x=>x.id===it.exercise_id):null;
+  const label=it.wildcard_mg?("Wildcard "+(mgLabel(it.wildcard_mg)||"")):(ex?ex.name:"exercise");
+  let bar=document.getElementById("wo-undo"); if(!bar){ bar=document.createElement("div"); bar.id="wo-undo"; bar.setAttribute("role","status"); document.body.appendChild(bar); }
+  bar.innerHTML=`<span>Removed ${escapeHtml(label)}</span><button type="button">Undo</button>`; bar.classList.add("on");
+  if(woUndo) clearTimeout(woUndo.t);
+  woUndo={it,i,t:setTimeout(()=>{ bar.classList.remove("on"); woUndo=null; },5000)};
+  bar.querySelector("button").onclick=()=>{ if(!woUndo||!builder) return; const s=document.getElementById("s-wo-build"); if(!s||!s.classList.contains("active")) return;
+    builder.items.splice(Math.min(woUndo.i,builder.items.length),0,woUndo.it); clearTimeout(woUndo.t); woUndo=null; bar.classList.remove("on"); renderBuilderItems(); };
+}
 async function openBuilder(id){
   /* Latency: screen used to appear only after both fetches below finished, in
      series. Now it switches immediately with a placeholder, and the two
@@ -6150,7 +6202,7 @@ async function openBuilder(id){
            :{id:null,name:"",items:[],isNew:true};
   $("#wo-edit-title").textContent=w?"Edit workout":"New workout";
   $("#in-wo-name").value=builder.name;
-  builderLevelScale=Object.assign({reps_step:2,weight_step:2.5,max:5},(w&&w.level_scale)||{}); paintLevelScale();   // Item CG
+  builderLevelScale=Object.assign({reps_step:2,weight_step:2.5,max:5},(w&&w.level_scale)||{}); paintLevelScale(); builderClean=woSnapshot();   /* EZ-1: what "unchanged" looks like */   // Item CG
   $("#wo-delete").style.display=w?"flex":"none";
   woTemplates=[]; store.workouts.list({coach_id:ME.id}).then(ws=>{ woTemplates=(ws||[]).filter(x=>x.id!==builder.id&&(x.items||[]).length); renderBuilderLibrary(); }).catch(()=>{});   // Item DB: templates
   woLibTab="all"; woLibQ=""; woLibMode="ex"; const qi=$("#wo-lib-q"); if(qi){ qi.value=""; qi.oninput=()=>{ woLibQ=qi.value; renderBuilderLibrary(); }; } const tg=$("#wo-lib-toggle"); if(tg){ tg.onclick=()=>{ const b=$("#wo-lib-body"); const hid=b.style.display==="none"; b.style.display=hid?"":"none"; tg.textContent=hid?"▾":"▸"; }; }   // Item DB
@@ -6247,7 +6299,7 @@ function woDragDrop(){
   const d=woDrag; woDrag=null; if(!d) return;
   d.ghost.remove(); document.body.classList.remove("wo-dragging"); $("#wo-items").classList.remove("drop-target");
   $("#wo-items").querySelectorAll(".wo-item").forEach(r=>r.classList.remove("drag-over-top","drag-over-bottom"));
-  if(d.outside){ if(d.payload.kind==="item"){ builder.items.splice(d.payload.index,1); renderBuilderItems(); toast("Removed",1200); } return; }
+  if(d.outside){ if(d.payload.kind==="item"){ woRemoveItem(d.payload.index); } return; }   /* EZ-5: dragged out = removed, with Undo */
   let insertAt=d.over==null?builder.items.length:(d.pos==="top"?d.over:d.over+1);
   if(d.payload.kind==="wo"){ addTemplateToBuilder(d.payload.id,insertAt); try{ navigator.vibrate&&navigator.vibrate(20); }catch(e){} return; }
   if(d.payload.kind==="lib"){
@@ -6313,7 +6365,7 @@ function renderBuilderItems(){
           <div class="mini-stepper"><button data-b="sets" data-d="-1" data-i="${idx}">−</button><span id="fv-sets-${idx}">${it.sets}</span><button data-b="sets" data-d="1" data-i="${idx}">+</button></div></div>
         <div class="blk"><div class="l">Reps / set</div>
           <div class="mini-stepper"><button data-b="reps" data-d="-1" data-i="${idx}">−</button><span id="fv-reps-${idx}">${it.reps}</span><button data-b="reps" data-d="1" data-i="${idx}">+</button></div></div>
-          <div class="blk"><div class="l">Target kg <span style="color:var(--faint);font-weight:400">(L1)</span></div>
+          <div class="blk"><div class="l">Target kg <span style="color:var(--faint);font-weight:400">(level 1)</span></div>
           <div class="mini-stepper"><button data-b="weight_kg" data-d="-1" data-i="${idx}">−</button><span id="fv-weight_kg-${idx}">${it.weight_kg!=null?it.weight_kg:"—"}</span><button data-b="weight_kg" data-d="1" data-i="${idx}">+</button></div></div>
       </div>
       <div class="sr" style="margin-top:8px">
@@ -6322,10 +6374,10 @@ function renderBuilderItems(){
       </div>`;
     wrap.appendChild(row);
   });
-  wrap.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{builder.items.splice(+b.getAttribute("data-rm"),1);renderBuilderItems();}));
+  wrap.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>woRemoveItem(+b.getAttribute("data-rm"))));   /* EZ-5: with Undo */
   /* Item DB: handle to reorder, running total, library card states */
   wrap.querySelectorAll(".wo-item").forEach((row,idx)=>{ const hd=row.querySelector(".hd"); if(hd&&!hd.querySelector(".grab")){ const g=document.createElement("span"); g.className="grab"; g.textContent="☰"; g.title="Drag to reorder"; hd.insertBefore(g,hd.firstChild); wireDragSource(g,{kind:"item",index:idx}); } });
-  { const n=builder.items.length; const sets=builder.items.reduce((s,i)=>s+(i.sets||0),0); const mins=builder.items.reduce((s,i)=>s+(i.kind==="interval"?Math.round(((i.segments||[]).reduce((t,g)=>t+(g.seconds||0),0)*(i.rounds||1))/60):(i.sets||0)*2.5),0); $("#wo-item-count").textContent=n?`${n} exercise${n===1?"":"s"} · ${sets} set${sets===1?"":"s"} · ~${Math.round(mins)} min`:""; }
+  { const n=builder.items.length; const sets=builder.items.reduce((s,i)=>s+(i.sets||0),0); const mins=builder.items.reduce((s,i)=>s+(i.kind==="interval"?Math.round(((i.segments||[]).reduce((t,g)=>t+(g.seconds||0),0)*(i.rounds||1))/60):(i.wildcard_mg?3:(i.sets||0))*((i.rest_seconds!=null?i.rest_seconds:REST_DEFAULT_SECONDS)/60)),0);   /* EZ-8: the enforced rest x sets (a wildcard counts as 3 sets); sets themselves are at the trainee's pace */ $("#wo-item-count").textContent=n?`${n} exercise${n===1?"":"s"} · ${sets} set${sets===1?"":"s"} · ~${Math.round(mins)} min`:""; }
   renderBuilderLibrary();
   /* Uniform stepper wiring across all five possible fields (sets, reps,
      walk_seconds, run_seconds, rounds) — each with its own sane bounds,
@@ -6339,6 +6391,12 @@ function renderBuilderItems(){
     builder.items[i][field]=Math.max(min,Math.min(max,builder.items[i][field]+d));
     $("#fv-"+field+"-"+i).textContent=builder.items[i][field];
   }));
+  /* EZ-3: hold + / - to repeat (after 0.4 s, about 11 steps a second); tap a number to type it */
+  wrap.querySelectorAll("[data-b]").forEach(b=>{ let t0=null,t1=null; const stop=()=>{ clearTimeout(t0); clearInterval(t1); t0=t1=null; };
+    b.addEventListener("pointerdown",()=>{ stop(); t0=setTimeout(()=>{ t1=setInterval(()=>b.click(),90); },420); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop)); b.addEventListener("contextmenu",e=>e.preventDefault()); });
+  wrap.querySelectorAll("[id^='fv-']").forEach(sp=>{ const m=sp.id.match(/^fv-(sets|reps|weight_kg|rest_seconds)-(\d+)$/); if(!m) return; sp.style.cursor="text"; sp.title="Tap to type";
+    sp.addEventListener("click",()=>woTypeValue(sp,m[1],+m[2])); });
   wrap.querySelectorAll("[data-iv-edit]").forEach(b=>b.addEventListener("click",()=>{
     openIntervalEditor(+b.getAttribute("data-iv-edit"));
   }));
@@ -6566,6 +6624,7 @@ $("#wo-add-wild")?.addEventListener("click",()=>{
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 });
 $("#wo-save").addEventListener("click",async()=>{
+  if($("#wo-save").disabled) return;   /* EZ-4: no double save */
   const name=$("#in-wo-name").value.trim()||"Untitled workout";
   if(!builder.items.length){toast("Add at least one exercise");return;}
   /* Real bug caught while adding interval items: this used to rebuild each
@@ -6577,11 +6636,20 @@ $("#wo-save").addEventListener("click",async()=>{
      shape it actually has, rather than hardcoding one shape for all three
      item kinds this builder now needs to support. */
   const items=builder.items.map(i=>({...i,exercise_id:i.exercise_id||null,wildcard_mg:i.wildcard_mg||null}));
-  if(builder.isNew) await store.workouts.add({coach_id:ME.id,name,items,level_scale:builderLevelScale});
-  else await store.workouts.update(builder.id,{name,items,level_scale:builderLevelScale});
-  toast("Workout saved"); go("coach");
+  const btn=$("#wo-save"), label=btn.textContent; btn.disabled=true; btn.textContent="Saving\u2026";   /* EZ-4 */
+  try{
+    if(builder.isNew){ const r=await store.workouts.add({coach_id:ME.id,name,items,level_scale:builderLevelScale}); if(r&&r.id){ builder.id=r.id; builder.isNew=false; } }
+    else await store.workouts.update(builder.id,{name,items,level_scale:builderLevelScale});
+    builderClean=woSnapshot(); toast("Workout saved \u2713"); go("coach");
+  }catch(err){ console.error("save workout",err); toast("Couldn't save the workout - check your connection and try again",4500); }
+  finally{ btn.disabled=false; btn.textContent=label; }
 });
-$("#wo-delete").addEventListener("click",async()=>{ if(!builder||builder.isNew)return; await store.workouts.remove(builder.id); toast("Workout removed"); go("coach"); });
+$("#wo-delete").addEventListener("click",async()=>{ if(!builder||builder.isNew)return;   /* EZ-2: ask first */
+  const nm=$("#in-wo-name").value.trim()||builder.name||"this workout";
+  const ok=await openConfirm({title:`Delete "${escapeHtml(nm)}"?`,body:"It is removed from your library for good. Workouts you have already assigned keep their own copy.",confirmLabel:"Delete",cancelLabel:"Keep it",danger:true});
+  if(!ok) return;
+  try{ await store.workouts.remove(builder.id); builderClean=woSnapshot(); toast("Workout deleted"); go("coach"); }
+  catch(err){ console.error("delete workout",err); toast("Couldn't delete the workout - try again",4000); } });
 
 let sheetSel=new Set();
 let sheetFilterMG="";

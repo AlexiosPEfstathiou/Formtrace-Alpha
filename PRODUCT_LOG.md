@@ -502,6 +502,25 @@ A lapsed domain takes the app, email (EH) and Stripe / Terms URLs down with it.
 
 ---
 ## EZ. Refine the coach's experience: building workouts, recording exercises, reviewing
+**2026-11-05 - building workouts, first pass (owner chose this flow first; C code review, owner decided each point):**
+1. Unsaved changes asked about before leaving (app navigation, tab bar, the phone's back button, closing / reloading the page) - **BUILT**.
+2. Delete asks first ("Workouts you have already assigned keep their own copy") - **BUILT**.
+3. Hold +/- to repeat; tap a number to type it (weight like 82.5, empty = no target; rest as 2:30, 150 or 2.5) - **BUILT**.
+4. Save shows "Saving...", cannot save twice, reports a failure - **BUILT**.
+5. Removing an exercise (the x or dragging it out) shows "Removed ... Undo" for 5 s - **BUILT**.
+6. **Notes for the trainee - owner spec (to build next):** the notes on each exercise are the **coach's comments from the reviews
+   of that same exercise**, plus the trainee's ability to **replay the voice-over feedback video of the last review**. Text notes
+   are **cumulative and dated** - e.g. the exercise performed 3 times with one new improvement each time shows all 3, each with
+   its date - and the coach can **add to the previous notes** (sees them while reviewing).
+7. "+ Add from library" renamed "+ Add several..." (the sheet that picks several at once) - **BUILT**.
+8. The time estimate = each exercise's **enforced rest x its sets** (default 2:30; a wildcard counts as 3 sets; interval exercises as
+   before) - the owner's 2.5 minutes was the rest, and sets run at the trainee's pace - **BUILT**.
+9. "Target kg (L1)" now reads "Target kg (level 1)" - **BUILT**.
+**Tests queued (owner):** **EZ-T1** edit a workout, tap back / the phone back button / a tab: "Discard your changes?" (Keep editing
+stays; Discard leaves); an untouched workout leaves without asking. **EZ-T2** Delete asks; Keep it keeps. **EZ-T3** hold + on target kg:
+it climbs fast; tap the number, type 82.5 / 2:30 for rest; Enter or tapping away saves. **EZ-T4** Save twice quickly: one workout, not two.
+**EZ-T5** remove an exercise, tap Undo: it comes back in the same place with its settings. **EZ-T6** the header estimate changes when a
+rest or a set count changes.
 
 Owner, 2026-10-30. A pass over the three core coach flows - workout builder (library, exercise picker, sets/reps/notes), recording reference exercises (camera UX, retakes, audio), and the review flow (queue, player, tags/voice-over/drawing) - for speed and fewer taps. Gather the coaches' pain points first (CN-style test day with the pilot coaches), then fix in priority order. Not started.
 
