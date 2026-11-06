@@ -1,5 +1,8 @@
 # Formtrace Coach — Handover (as of 2026-10-29)
 
+## Update 2026-11-05 (work account)
+- Owner: the **EJ part 3 test** will be done from the **personal account**. The open test dispute ("Dispute test", EUR 34) was **accepted** in Stripe (closed as lost; its goal had already ended). **Harvey Specter (coach test account) now has notifications on.** FV follow-up SQL given again (settings note).
+
 ## Session 2026-11-04 night (personal account) - summary
 - SQL journal: **FU** clean-up verified (old_left 0, via Supabase MCP). **FV follow-up still NOT run** (`platform_rates.note` still says FormTrace; unsent pushes 0).
 - **FP refund push test PASSED** on the phone (Chrome) - test `push_outbox` row 61 sent 23:16:07, no error.
