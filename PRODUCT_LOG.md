@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**Tests queued (owner, 2026-11-05):** **FZ-T1..T5** sounds and switches · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
+**Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
@@ -750,7 +750,7 @@ pulls that start inside a list that is itself scrolled are ignored. Touch only (
 - Relates to: DP admin liability numbers (`admin_liability_stats`), FR admin panel (the same numbers on screen), FS / EV nudges.
 ## FZ. Sound effects (owner, 2026-11-04) - PLACEHOLDERS BUILT 2026-11-05
 
-**Tests queued (owner, 2026-11-05 - not yet done; the Sounds switches had not appeared yet, likely the 10-minute page cache):**
+**Owner 2026-11-05: "The sounds work" - FZ tests passed** (switches appeared once the cache cleared). Steps kept for reference:
 - **FZ-T1** Settings -> Appearance shows **Sounds** and **Workout sounds** below Colorblind-safe colors; turning each on plays a sample.
 - **FZ-T2** a button tap clicks softly; a confirmation with a check mark plays the two-note sound; an error (e.g. tapping a set during a rest) plays the thud.
 - **FZ-T3** hands-free start: 3-2-1 ticks and "go"; the recorded set's video has **no** app sounds in it; stop plays the falling chirp after recording.
