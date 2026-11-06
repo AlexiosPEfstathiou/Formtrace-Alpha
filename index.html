@@ -193,6 +193,11 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 #wo-undo span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #wo-undo button{background:none;border:0;color:#F0D231;font:inherit;font-weight:800;padding:4px 6px;cursor:pointer}
 .mini-stepper button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* EZ-6: cumulative coach notes */
+.exn .exn-row{display:flex;gap:10px;margin-top:7px;font-size:13px;line-height:1.45}
+.exn .exn-d{flex:0 0 auto;min-width:54px;color:var(--faint);font-size:11.5px;padding-top:1px;line-height:1.35}
+.exn .exn-t{flex:1;min-width:0;overflow-wrap:anywhere}
+.exn .exn-all{background:none;border:0;color:#F0D231;font:inherit;font-size:12.5px;font-weight:700;padding:8px 0 0;cursor:pointer}
   .body::-webkit-scrollbar{width:0;}
 
   .top{padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;display:flex;align-items:center;gap:12px;}
@@ -9774,7 +9779,7 @@ async function openAssigned(id){
       }
     }
   }catch(e){ console.error("restore results",e); }
-  await loadPrevSeries(currentAssigned);
+  await loadPrevSeries(currentAssigned); await loadExerciseNotes(ME.id,(currentAssigned&&currentAssigned.snapshot&&currentAssigned.snapshot.items)||[]);   /* EZ-6 */
   await loadMyPBs();
   /* CN-8: a reviewed workout opens here as a summary - make the coach's feedback one obvious tap away. */
   try{ const fb=$("#tw-feedback"); if(fb){ fb.style.display="none"; if(currentAssigned.status==="reviewed"){ fb.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:24px">📝</div><div style="flex:1"><div style="font-weight:800">Your coach reviewed this workout</div><div style="font-size:12.5px;color:var(--muted)">Tags, notes, voice-over and drawings on your sets</div></div><button class="btn primary sm" id="tw-feedback-open" style="width:auto">See feedback</button></div>`; fb.style.display=""; $("#tw-feedback-open").addEventListener("click",()=>openReview(currentAssigned.id,true)); } } }catch(e){}
@@ -9800,6 +9805,46 @@ function reshapeResults(src,items){
    Keyed on workout_id so renaming the plan doesn't restart the count.
    Holds the ordinal ("2nd Abs workout"), the coach's note per exercise from
    last time, and last time's rep counts keyed by exercise+set index. */
+/* ---- Item EZ-6 (owner, 2026-11-05): cumulative coach notes per exercise. Every review comment on this exercise, newest
+   first and dated (exercise_notes RPC: by exercise id, falling back to the name for older reviews), plus a replay of the
+   latest voice-over. The trainee sees them in the workout player; the coach sees them while reviewing and adds the next
+   note in the set's comment box as before - it joins the history. Falls back to the single previous note if loading fails. ---- */
+let exNotes=null;
+async function loadExerciseNotes(traineeId,items){
+  exNotes=null;
+  try{
+    if(!traineeId||!Array.isArray(items)||!items.length){ exNotes=[]; return; }
+    const ids=[...new Set(items.map(x=>x&&x.exercise_id).filter(Boolean))], names=[...new Set(items.map(x=>x&&x.name).filter(Boolean))];
+    const { data, error }=await store._sb.rpc("exercise_notes",{p_trainee:traineeId,p_exercise_ids:ids,p_names:names}); if(error) throw error;
+    exNotes=Array.isArray(data)?data:[];
+  }catch(e){ console.warn("exercise notes (EZ-6)",e&&e.message); exNotes=null; }
+}
+function exNotesFor(it){
+  if(!Array.isArray(exNotes)||!it) return []; if(it.wildcard_mg&&!it.exercise_id) return [];
+  return exNotes.filter(r=>(it.exercise_id&&r.exercise_id===it.exercise_id)||(!r.exercise_id&&r.exercise_name===it.name)||(!it.exercise_id&&r.exercise_name===it.name));
+}
+function exNotesHtml(notes,key,who){
+  window.__exnVo=window.__exnVo||{};
+  const txt=notes.filter(n=>n.comment), vo=notes.find(n=>n.voiceover_path&&n.video_path);
+  if(vo) window.__exnVo[key]=vo;
+  const sets=id=>txt.filter(x=>x.review_id===id).length;
+  const li=n=>`<div class="exn-row"><span class="exn-d">${escapeHtml(fmtDay(String(n.noted_at).slice(0,10)))}${n.set_no&&sets(n.review_id)>1?`<br>set ${n.set_no}`:""}</span><span class="exn-t">${escapeHtml(n.comment)}</span></div>`;
+  const show=txt.slice(0,3), rest=txt.slice(3);
+  return `<div class="prev-note exn"><div class="pn-h">${who==="coach"?"Your notes on this exercise":"Your coach's notes"}${txt.length?` (${txt.length})`:""}</div>
+    ${show.map(li).join("")}
+    ${rest.length?`<div class="exn-more" hidden>${rest.map(li).join("")}</div><button type="button" class="exn-all" data-exn-all>Show all ${txt.length}</button>`:""}
+    ${vo?`<button type="button" class="btn sm ghost" data-exn-vo="${key}" style="width:auto;margin:10px 0 0">\u25B6 Replay the latest voice-over (${escapeHtml(fmtDay(String(vo.noted_at).slice(0,10)))})</button>`:""}
+  </div>`;
+}
+document.addEventListener("click",ev=>{
+  const t=ev.target&&ev.target.closest?ev.target:null; if(!t) return;
+  const all=t.closest("[data-exn-all]"); if(all){ ev.preventDefault(); ev.stopPropagation(); const box=all.closest(".exn"), more=box&&box.querySelector(".exn-more"); if(more){ more.hidden=false; all.remove(); } return; }
+  const vb=t.closest("[data-exn-vo]"); if(!vb) return; ev.preventDefault(); ev.stopPropagation();
+  const vo=(window.__exnVo||{})[vb.getAttribute("data-exn-vo")]; if(!vo) return;
+  pwShow(`<div style="font-weight:800;font-size:17px;margin-bottom:2px">Coach's voice-over</div><div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">${escapeHtml(fmtDay(String(vo.noted_at).slice(0,10)))}${vo.coach_name?` \u00B7 ${escapeHtml(vo.coach_name)}`:""}</div><div id="exn-vo-host"></div><button class="btn ghost" data-rx="ok" style="margin-top:12px">Close</button>`);
+  try{ document.getElementById("exn-vo-host").appendChild(renderVoiceoverPlayer(vo.video_path,vo.voiceover_path,vo.telestration||null)); hydrateVideos(document.getElementById("pw-card")); }catch(e){ console.warn("voice-over replay (EZ-6)",e); }
+  document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>{ document.querySelectorAll("#pw-card video,#pw-card audio").forEach(m=>{ try{ m.pause(); }catch(_){} }); pwHide(); }));
+},true);
 let prevSeries=null;
 async function loadPrevSeries(a){
   prevSeries=null;
@@ -9935,8 +9980,8 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
           <div class="ex-meta"><div><b>${it.sets}</b> sets</div><div><b>${it.reps}</b> reps</div><div><b>${doneCount}</b> done</div></div></div></div>`;
     // Coach's note from the previous run of this workout, BEFORE any set, so
     // it can still be acted on. Neutral heading: the note may be praise.
-    const prevNote=prevSeries&&prevSeries.notes[it.name];
-    if(prevNote){
+    const prevNote=prevSeries&&prevSeries.notes[it.name]; const exn=exNotesFor(it); if(exn.length) inner+=exNotesHtml(exn,"p"+i,"trainee");   /* EZ-6: all of them, dated */
+    if(prevNote&&!exn.length){
       inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(prevSeries.prevName||snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
     }
     // Personal best (item R): shown before the set, same placement as the
@@ -10915,6 +10960,7 @@ async function _openReview(assignedId,readonly=false){
      by exercise name — same data source the trainee sees before a set, so
      the two can never show different wording for the same past comment. */
   try{ await loadPrevSeries(assignedRow); }catch(e){ console.error("prev series (review)",e); prevSeries=null; }
+  try{ await loadExerciseNotes(((typeof currentSubmission!=="undefined"&&currentSubmission&&currentSubmission.trainee_id)||(assignedRow&&assignedRow.trainee_id)),(typeof currentSubmission!=="undefined"&&currentSubmission&&currentSubmission.report&&currentSubmission.report.items)||(assignedRow&&assignedRow.snapshot&&assignedRow.snapshot.items)||[]); }catch(e){ exNotes=null; }   /* EZ-6 */
   /* Once a workout is 'reviewed', `opened` means "the trainee has seen the
      review" (it was set true earlier when they opened it to record). The coach
      resets it to false on submit, so viewing here is what clears the badge. */
@@ -10984,8 +11030,8 @@ async function _openReview(assignedId,readonly=false){
          here under "Your note" would misattribute it to them. */
       if(!notedItems.has(ii) && roleOf()==="coach"){
         notedItems.add(ii);
-        const prevNote=prevSeries&&prevSeries.notes[item.name];
-        if(prevNote){
+        const prevNote=prevSeries&&prevSeries.notes[item.name]; const exn=exNotesFor(item); if(exn.length){ const w=document.createElement("div"); w.innerHTML=exNotesHtml(exn,"r"+ii,"coach"); body.appendChild(w.firstElementChild); }   /* EZ-6 */
+        if(prevNote&&!exn.length){
           const note=document.createElement("div");note.className="prev-note";
           note.innerHTML=`<div class="pn-h">Your note, ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last time"}</div><div class="pn-b">${escapeHtml(prevNote)}</div>`;
           body.appendChild(note);
