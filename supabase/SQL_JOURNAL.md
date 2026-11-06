@@ -100,4 +100,5 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-04 | FV | follow-up: platform_rates.note + unsent push_outbox rows -> Formtrace | run ✓ 2026-11-05 (notes_left 0, unsent_left 0) | Expect `notes_left 0 | unsent_left 0`. |
 | 2026-11-04 | FP push | test: one refund-style push_outbox row to blisscrank@gmail.com (copy of the FP push) | run ✓ 2026-11-04 23:16 (row 61 sent 23:16:07, error null; owner saw it in Chrome on the phone) | Expect a buzz on the phone; check query shows `sent_at` filled and `error` empty. |
 | 2026-11-04 | EJ part 3 | `migrations_dispute_cancels_goal.sql` (applied by Claude via Supabase MCP, migration `dispute_cancels_goal`) | run ✓ 2026-11-04 23:5x (end_kind_ok 1, evidence_fixed 1, open_disputes_on_active_goals 0; rolled-back test: a payout queued for the lost-dispute goal 3wg comes out `cancelled` / "dispute lost - the cardholder got the money back") | Expect `1 | 1 | 0`. |
-| 2026-11-05 | EZ-6 | `migrations_exercise_notes.sql` | given | Expect `function_ok = 1` (returns no rows in the SQL editor - no signed-in user). |
+| 2026-11-05 | EZ-6 | `migrations_exercise_notes.sql` | run ✓ 2026-11-05 (function_ok 1) | Expect `function_ok = 1` (returns no rows in the SQL editor - no signed-in user). |
+| 2026-11-05 | EZ-6b | `migrations_exercise_notes_edit.sql` | given | Expect `functions_ok = 2`. |

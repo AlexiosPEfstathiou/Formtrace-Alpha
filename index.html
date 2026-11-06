@@ -198,6 +198,12 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 .exn .exn-d{flex:0 0 auto;min-width:54px;color:var(--faint);font-size:11.5px;padding-top:1px;line-height:1.35}
 .exn .exn-t{flex:1;min-width:0;overflow-wrap:anywhere}
 .exn .exn-all{background:none;border:0;color:#F0D231;font:inherit;font-size:12.5px;font-weight:700;padding:8px 0 0;cursor:pointer}
+.exn .exn-d i{font-style:normal;color:var(--faint);opacity:.85}
+.exn .exn-ed{flex:0 0 auto;align-self:flex-start;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;font-weight:700;padding:0 0 0 6px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.exn .exn-edit{flex:1;min-width:0}
+.exn .exn-edit textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13px;line-height:1.45;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--ink);resize:vertical}
+.exn .exn-ebtns{display:flex;gap:8px;margin-top:8px}
+.exn .exn-ebtns .btn{width:auto;margin:0}
   .body::-webkit-scrollbar{width:0;}
 
   .top{padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;display:flex;align-items:center;gap:12px;}
@@ -9823,14 +9829,15 @@ function exNotesFor(it){
   if(!Array.isArray(exNotes)||!it) return []; if(it.wildcard_mg&&!it.exercise_id) return [];
   return exNotes.filter(r=>(it.exercise_id&&r.exercise_id===it.exercise_id)||(!r.exercise_id&&r.exercise_name===it.name)||(!it.exercise_id&&r.exercise_name===it.name));
 }
-function exNotesHtml(notes,key,who){
-  window.__exnVo=window.__exnVo||{};
+function exNotesHtml(notes,key,who,it){
+  window.__exnVo=window.__exnVo||{}; window.__exnCtx=window.__exnCtx||{}; if(it) window.__exnCtx[key]={it,who};   /* EZ-6b: to re-draw after an edit */
   const txt=notes.filter(n=>n.comment), vo=notes.find(n=>n.voiceover_path&&n.video_path);
   if(vo) window.__exnVo[key]=vo;
   const sets=id=>txt.filter(x=>x.review_id===id).length;
-  const li=n=>`<div class="exn-row"><span class="exn-d">${escapeHtml(fmtDay(String(n.noted_at).slice(0,10)))}${n.set_no&&sets(n.review_id)>1?`<br>set ${n.set_no}`:""}</span><span class="exn-t">${escapeHtml(n.comment)}</span></div>`;
+  const mine=n=>who==="coach"&&ME&&n.coach_id===ME.id&&n.entry_no!=null;
+  const li=n=>`<div class="exn-row"><span class="exn-d">${escapeHtml(fmtDay(String(n.noted_at).slice(0,10)))}${n.set_no&&sets(n.review_id)>1?`<br>set ${n.set_no}`:""}${n.edited_at?`<br><i>edited</i>`:""}</span><span class="exn-t">${escapeHtml(n.comment)}</span>${mine(n)?`<button type="button" class="exn-ed" data-exn-edit="${n.review_id}:${n.entry_no}" title="Edit or delete this note">Edit</button>`:""}</div>`;   /* EZ-6b */
   const show=txt.slice(0,3), rest=txt.slice(3);
-  return `<div class="prev-note exn"><div class="pn-h">${who==="coach"?"Your notes on this exercise":"Your coach's notes"}${txt.length?` (${txt.length})`:""}</div>
+  return `<div class="prev-note exn" data-exn-key="${key}"><div class="pn-h">${who==="coach"?"Your notes on this exercise":"Your coach's notes"}${txt.length?` (${txt.length})`:""}</div>
     ${show.map(li).join("")}
     ${rest.length?`<div class="exn-more" hidden>${rest.map(li).join("")}</div><button type="button" class="exn-all" data-exn-all>Show all ${txt.length}</button>`:""}
     ${vo?`<button type="button" class="btn sm ghost" data-exn-vo="${key}" style="width:auto;margin:10px 0 0">\u25B6 Replay the latest voice-over (${escapeHtml(fmtDay(String(vo.noted_at).slice(0,10)))})</button>`:""}
@@ -9838,6 +9845,7 @@ function exNotesHtml(notes,key,who){
 }
 document.addEventListener("click",ev=>{
   const t=ev.target&&ev.target.closest?ev.target:null; if(!t) return;
+  const ed=t.closest("[data-exn-edit]"); if(ed){ ev.preventDefault(); ev.stopPropagation(); exnStartEdit(ed); return; }   /* EZ-6b */
   const all=t.closest("[data-exn-all]"); if(all){ ev.preventDefault(); ev.stopPropagation(); const box=all.closest(".exn"), more=box&&box.querySelector(".exn-more"); if(more){ more.hidden=false; all.remove(); } return; }
   const vb=t.closest("[data-exn-vo]"); if(!vb) return; ev.preventDefault(); ev.stopPropagation();
   const vo=(window.__exnVo||{})[vb.getAttribute("data-exn-vo")]; if(!vo) return;
@@ -9845,6 +9853,27 @@ document.addEventListener("click",ev=>{
   try{ document.getElementById("exn-vo-host").appendChild(renderVoiceoverPlayer(vo.video_path,vo.voiceover_path,vo.telestration||null)); hydrateVideos(document.getElementById("pw-card")); }catch(e){ console.warn("voice-over replay (EZ-6)",e); }
   document.querySelectorAll("[data-rx]").forEach(x=>x.addEventListener("click",()=>{ document.querySelectorAll("#pw-card video,#pw-card audio").forEach(m=>{ try{ m.pause(); }catch(_){} }); pwHide(); }));
 },true);
+/* EZ-6b (owner, 2026-11-05): the coach edits or deletes one of their own accumulated notes, in place. */
+function exnRedraw(box){ if(!box) return; const key=box.getAttribute("data-exn-key"), ctx=(window.__exnCtx||{})[key]; if(!ctx) return;
+  const notes=exNotesFor(ctx.it); const w=document.createElement("div"); w.innerHTML=notes.length?exNotesHtml(notes,key,ctx.who,ctx.it):""; const nb=w.firstElementChild;
+  if(nb){ const more=box.querySelector(".exn-more"); box.replaceWith(nb); if(more&&!more.hidden){ const m2=nb.querySelector(".exn-more"), b2=nb.querySelector("[data-exn-all]"); if(m2){ m2.hidden=false; if(b2) b2.remove(); } } } else box.remove(); }
+function exnStartEdit(btn){
+  const [rid,no]=String(btn.getAttribute("data-exn-edit")).split(":"); const n=(exNotes||[]).find(x=>x.review_id===rid&&String(x.entry_no)===no); if(!n) return;
+  const row=btn.closest(".exn-row"), box=btn.closest(".exn"); if(!row) return;
+  row.innerHTML=`<div class="exn-edit"><textarea rows="3" maxlength="2000" aria-label="Edit this note">${escapeHtml(n.comment||"")}</textarea>
+    <div class="exn-ebtns"><button type="button" class="btn sm primary" data-x="save">Save</button><button type="button" class="btn sm ghost" data-x="del">Delete</button><button type="button" class="btn sm ghost" data-x="cancel">Cancel</button></div></div>`;
+  const ta=row.querySelector("textarea"); ta.focus(); try{ ta.setSelectionRange(ta.value.length,ta.value.length); }catch(e){}
+  const run=async(text,label)=>{ row.querySelectorAll("button").forEach(b=>b.disabled=true);
+    try{ const { error }=await store._sb.rpc("edit_exercise_note",{p_review:rid,p_entry:+no,p_comment:text}); if(error) throw error;
+      const t2=String(text||"").trim(); if(t2){ n.comment=t2; n.edited_at=new Date().toISOString(); } else { n.comment=null; }
+      exNotes=(exNotes||[]).filter(x=>x.comment||x.voiceover_path); toast(label,2200); exnRedraw(box); }
+    catch(err){ toast((err&&err.message)||"Couldn't save the note - try again",4200); row.querySelectorAll("button").forEach(b=>b.disabled=false); } };
+  row.querySelector('[data-x="save"]').addEventListener("click",ev=>{ ev.stopPropagation(); const v=ta.value.trim(); if(!v){ row.querySelector('[data-x="del"]').click(); return; } if(v===(n.comment||"").trim()){ exnRedraw(box); return; } run(v,"Note updated \u2713"); });
+  row.querySelector('[data-x="del"]').addEventListener("click",async ev=>{ ev.stopPropagation();
+    const ok=await openConfirm({title:"Delete this note?",body:"Your trainee will no longer see it. The set's tags and voice-over stay.",confirmLabel:"Delete",cancelLabel:"Keep it",danger:true});
+    if(ok) run("","Note deleted \u2713"); });
+  row.querySelector('[data-x="cancel"]').addEventListener("click",ev=>{ ev.stopPropagation(); exnRedraw(box); });
+}
 let prevSeries=null;
 async function loadPrevSeries(a){
   prevSeries=null;
@@ -9980,7 +10009,7 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
           <div class="ex-meta"><div><b>${it.sets}</b> sets</div><div><b>${it.reps}</b> reps</div><div><b>${doneCount}</b> done</div></div></div></div>`;
     // Coach's note from the previous run of this workout, BEFORE any set, so
     // it can still be acted on. Neutral heading: the note may be praise.
-    const prevNote=prevSeries&&prevSeries.notes[it.name]; const exn=exNotesFor(it); if(exn.length) inner+=exNotesHtml(exn,"p"+i,"trainee");   /* EZ-6: all of them, dated */
+    const prevNote=prevSeries&&prevSeries.notes[it.name]; const exn=exNotesFor(it); if(exn.length) inner+=exNotesHtml(exn,"p"+i,"trainee",it);   /* EZ-6: all of them, dated */
     if(prevNote&&!exn.length){
       inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(prevSeries.prevName||snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
     }
@@ -11030,7 +11059,7 @@ async function _openReview(assignedId,readonly=false){
          here under "Your note" would misattribute it to them. */
       if(!notedItems.has(ii) && roleOf()==="coach"){
         notedItems.add(ii);
-        const prevNote=prevSeries&&prevSeries.notes[item.name]; const exn=exNotesFor(item); if(exn.length){ const w=document.createElement("div"); w.innerHTML=exNotesHtml(exn,"r"+ii,"coach"); body.appendChild(w.firstElementChild); }   /* EZ-6 */
+        const prevNote=prevSeries&&prevSeries.notes[item.name]; const exn=exNotesFor(item); if(exn.length){ const w=document.createElement("div"); w.innerHTML=exNotesHtml(exn,"r"+ii,"coach",item); body.appendChild(w.firstElementChild); }   /* EZ-6 */
         if(prevNote&&!exn.length){
           const note=document.createElement("div");note.className="prev-note";
           note.innerHTML=`<div class="pn-h">Your note, ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last time"}</div><div class="pn-b">${escapeHtml(prevNote)}</div>`;
