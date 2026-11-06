@@ -40,7 +40,7 @@ landing page look · tab and header icon family (13) · the core workout sounds 
 | Colour palette and type | CSS variables in `index.html` | L1 | current | The theme may refine, not replace, the gold; name the display and text faces |
 
 ## 2. Navigation and header icons (today: Unicode symbols / emoji)
-One family, 24 px grid, same stroke weight, **SVG**, an outline and a filled (active tab) state. **Tier L1** for all.
+One family, 24 px grid, same stroke weight, **SVG**, an outline and a filled (active tab) state. **Tier L1** for all. **Source (recommended 2026-11-05):** an open-source family - **Lucide** or **Phosphor** (MIT licence, commercial use) - styled in the theme colours, rather than generated (consistent at 24 px, no credits). Prompts for everything else: `docs/OPENART_BRIEF.md`.
 | Icon | Today | Who |
 |---|---|---|
 | Home | ⌂ | both |
