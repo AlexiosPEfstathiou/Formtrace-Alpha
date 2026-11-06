@@ -81,6 +81,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Analysis progress ring | after a set (`#analyze`) | |
 | Glisten / guide pulse effects | calendar, cards, call walkthrough | |
 | Loading spinner / app loading | everywhere | Could use the logo mark (L2) |
+| Pull-to-refresh indicator (round, gold arrow, flips, spins) | top of the main screens (GC, 2026-11-05) | Theme colours; the arrow could become the logo mark (L2) |
 
 ## 5. Shareable images (drawn by the app)
 | Asset | Where | Tier | Status | Deliverable spec |
@@ -144,7 +145,7 @@ use) or CC0 libraries (e.g. Kenney UI Audio, Freesound CC0). Until then the app 
 | Interval change (walk ↔ run) | interval exercises | **L1** (with the spoken cue) |
 | Workout complete | last set submitted | **L1** |
 | Achievement unlock (rising sparkle, matches drop-squash) | `playUnlock` | **L1** |
-| Refresh | pull-to-refresh / list refreshed | L2 |
+| Refresh | pull-to-refresh (GC) - placeholder built 2026-11-05 | L2 |
 | Sheet open / close (very soft) | bottom sheets and panels | L2 |
 | Tab switch (very soft, optional) | tab bar | L2 |
 | In-app notification arrived | card appears while the app is open | L2 |

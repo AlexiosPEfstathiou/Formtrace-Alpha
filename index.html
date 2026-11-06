@@ -176,6 +176,15 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
   .screen.active{opacity:1;pointer-events:auto;transform:none;z-index:2;}
 
   .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 18px 120px;}
+/* GC (owner, 2026-11-05): pull-to-refresh indicator - a round gold arrow that follows the pull, flips past the threshold, spins while refreshing */
+#ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:70;width:40px;height:40px;margin-left:-20px;border-radius:50%;
+  background:var(--panel2);border:1px solid var(--line2);box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:translateY(-56px);pointer-events:none;transition:opacity .15s}
+#ptr svg{width:20px;height:20px;transition:transform .18s}
+#ptr.ready svg{transform:rotate(180deg)}
+#ptr.spin svg{animation:ptrspin .8s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#ptr.spin svg{animation-duration:2s}}
   .body::-webkit-scrollbar{width:0;}
 
   .top{padding:calc(env(safe-area-inset-top) + 16px) 18px 12px;display:flex;align-items:center;gap:12px;}
@@ -2114,6 +2123,7 @@ function sfx(kind){
       case "interval": T(0,520,0.14,{gain:0.13}); T(0.15,780,0.18,{gain:0.13}); break;
       case "complete": [523,659,784,1047].forEach((f,i)=>T(i*0.11,f,i===3?0.5:0.16,{gain:0.12})); break;
       case "unlock":   [1047,1319,1568,2093].forEach((f,i)=>T(i*0.07,f,0.22,{gain:0.09})); T(0.3,3136,0.45,{gain:0.04}); break;
+      case "refresh":  T(0,520,0.09,{gain:0.07,to:780}); T(0.07,880,0.12,{gain:0.06}); break;   /* GC: pull-to-refresh */
     }
   }catch(e){}
 }
@@ -3393,6 +3403,53 @@ function isAdmin(){ return !!(ME && ME.is_admin); }
 let navStack=[];        // in-app screen history for the device back button
 let _navSuppress=false;  // true when go() is triggered by a popstate (don't re-push)
 let tlTimer=null;        // timelapse playback interval (declared early: go() clears it)
+/* ---- Item GC (owner, 2026-11-05): pull-to-refresh on phones. At the top of a screen, pull down past the threshold and
+   release: the screen re-draws its data (the same as opening it again, without a new back-button step) and the tab badges
+   update. Only on screens that just show data - never in editors, the builder, the workout player, the recorder, Settings
+   or the landing page, never with a panel / sheet open, a countdown running or a field in focus. The app's own scroll area
+   is the screen's .body (the page itself never scrolls; Chrome's own pull-to-refresh is off via overscroll-behavior). ---- */
+const PTR_SCREENS=new Set(["home","notifications","intouch","coach","market","trainee-home","listings","profile","admin"]);
+const PTR_TRIGGER=70, PTR_MAX=110;
+let ptrSt=null, ptrBusy=false;
+function ptrEl(){ let el=document.getElementById("ptr"); if(!el){ el=document.createElement("div"); el.id="ptr"; el.setAttribute("aria-hidden","true");
+  el.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#F0D231" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/><path d="M6 12l6 6 6-6"/></svg>'; document.body.appendChild(el); } return el; }
+function ptrScreen(){ const s=document.querySelector(".screen.active"); return s&&s.id?s.id.replace(/^s-/,""):""; }
+function ptrBlocked(){
+  if(!document.documentElement.classList.contains("lp-off")) return true;                          // landing page showing
+  if(!PTR_SCREENS.has(ptrScreen())) return true;
+  const ov=document.getElementById("pw-overlay"); if(ov&&ov.style.display==="flex") return true;   // a panel is open
+  if(document.querySelector(".sheet.on,.sheet.open,.sheet.show")) return true;
+  if(typeof countingDown==="function"&&countingDown()) return true;
+  if(typeof rRecording!=="undefined"&&rRecording) return true;
+  const a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+  return false;
+}
+function ptrReset(){ const el=document.getElementById("ptr"); if(el){ el.classList.remove("ready","spin"); el.style.opacity="0"; el.style.transform="translateY(-56px)"; } ptrSt=null; }
+document.addEventListener("touchstart",e=>{
+  if(ptrBusy||e.touches.length!==1||ptrBlocked()){ ptrSt=null; return; }
+  const scr=document.querySelector(".screen.active .body"); if(!scr||scr.scrollTop>0||!scr.contains(e.target)){ ptrSt=null; return; }
+  for(let n=e.target; n&&n!==scr; n=n.parentElement){ if(n.scrollTop>0){ ptrSt=null; return; } }       // inside a list that is itself scrolled
+  ptrSt={ x:e.touches[0].clientX, y:e.touches[0].clientY, pull:0, scr, armed:false };
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(!ptrSt) return; const t=e.touches[0], dy=t.clientY-ptrSt.y, dx=t.clientX-ptrSt.x;
+  if(ptrSt.pull===0&&Math.abs(dx)>Math.abs(dy)){ ptrSt=null; return; }                              // a sideways swipe
+  if(dy<=0||ptrSt.scr.scrollTop>0){ ptrReset(); return; }
+  const pull=Math.min(PTR_MAX,dy*0.5); ptrSt.pull=pull; const el=ptrEl();
+  el.style.opacity=String(Math.min(1,pull/40)); el.style.transform="translateY("+(pull-50)+"px)";
+  const ready=pull>=PTR_TRIGGER; el.classList.toggle("ready",ready);
+  if(ready&&!ptrSt.armed){ ptrSt.armed=true; try{ if(navigator.vibrate) navigator.vibrate(10); }catch(_){} } else if(!ready) ptrSt.armed=false;
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(!ptrSt) return; const go2=ptrSt.pull>=PTR_TRIGGER, name=ptrScreen();
+  if(!go2){ ptrReset(); return; }
+  const el=ptrEl(); ptrSt=null; ptrBusy=true; el.classList.remove("ready"); el.classList.add("spin"); el.style.opacity="1"; el.style.transform="translateY(14px)";
+  try{ sfx("refresh"); }catch(_){}
+  try{ tabBadgeCache=null; refreshTabBadges(); }catch(_){}
+  const prev=_navSuppress; _navSuppress=true; try{ go(name); }catch(err){ console.warn("pull-to-refresh",err); } finally{ _navSuppress=prev; }
+  setTimeout(()=>{ ptrBusy=false; ptrReset(); },750);
+},{passive:true});
+document.addEventListener("touchcancel",()=>{ if(!ptrBusy) ptrReset(); },{passive:true});
 function go(name){
   // the timelapse is shown outside go(), so stop its playback on any navigation
   if(tlTimer){ clearInterval(tlTimer); tlTimer=null; }

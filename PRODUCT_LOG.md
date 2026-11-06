@@ -706,6 +706,16 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ---
 
+## GC. Pull-to-refresh on phones - BUILT 2026-11-05 (owner request)
+
+**Owner:** refresh the app / page on phones by pulling down when the screen is scrolled to the very top. Chrome's own
+pull-to-refresh was already off for the app (`overscroll-behavior: none`) and the installed app never had one. **Built (C, app
+only):** at the top of a screen, pull down - a round gold arrow follows the finger, flips past the threshold (tiny buzz), and on
+release spins while the screen re-draws its data (the same as opening it again, without a new back-button step), the tab badges
+update, and the placeholder **refresh** sound plays (FZ). **Where:** Home, Notifications, Social, Library, Open goals, Training,
+Trainees, Goal, Profile, Review. **Never:** editors and the workout builder (unsaved edits), the workout player, the recorder,
+Settings, the landing page; with a panel / sheet open, a countdown running, a recording on, or a field in focus; sideways swipes and
+pulls that start inside a list that is itself scrolled are ignored. Touch only (no mouse).
 ## GB. Weekly report by schedule - examine GitHub scheduled triggers (owner, 2026-11-04)
 
 **Owner request:** examine using **GitHub scheduled triggers** to receive a **weekly report** of: **new users**, **money traffic**,
