@@ -91,3 +91,6 @@ Write **Formtrace** (not FormTrace) in all new text. Older text is swept under P
 
 ## Expense log (owner, 2026-11-04)
 Whenever a cost starts, changes or stops (a subscription, a plan change, a domain, a fee), add or update its row in `docs/EXPENSES.md` (PRODUCT_LOG FW).
+
+## Test queue (owner, 2026-11-05)
+Every owner test that is built and waiting goes into `docs/TEST_QUEUE.md` (grouped by where the owner will be in the app). Tick or remove lines when the owner reports results, and mirror the result in PRODUCT_LOG.

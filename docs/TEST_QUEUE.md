@@ -1,0 +1,35 @@
+# Formtrace — test queue for the next workout (owner)
+
+Everything built and waiting for the owner's check. Tick each line; tell Claude the results (or "all pass") and it
+updates PRODUCT_LOG. Grouped by where you will be in the app. Created 2026-11-05.
+Tip: allow ~10 minutes after a change for the phone to pick up the new version (close and reopen the app).
+
+## Anywhere — pull-to-refresh (GC)
+- [ ] **GC-T1** On **Goal** or **Notifications**, at the top, pull down: the gold arrow follows your finger, flips past the threshold with a tiny buzz, and spins on release; the list updates; the refresh sound plays (Sounds on).
+- [ ] **GC-T2** Release before the arrow flips: it slides away, nothing refreshes.
+- [ ] **GC-T3** In the workout builder, the workout player, Settings, or with a panel open: pulling down does nothing.
+- [ ] **GC-T4** A sideways swipe, or a pull inside a list that is itself scrolled down, does not refresh. After a refresh, the back button still works as before.
+
+## As the coach — building a workout (EZ, Library → a workout)
+- [x] **EZ-T1** Unsaved changes + back button → "Discard your changes?" — **passed 2026-11-05**. Still worth a quick look: the back arrow at the top and a tab tap ask the same; an untouched workout leaves without asking.
+- [ ] **EZ-T2** 🗑 Delete asks first; **Keep it** keeps the workout.
+- [ ] **EZ-T3** Hold **+** on Target kg: it climbs quickly. Tap a number and type it — e.g. **82.5** for weight, **2:30** (or 150, or 2.5) for rest; Enter or tapping away saves it; an emptied weight shows "—".
+- [ ] **EZ-T4** Tap **Save** twice quickly: only one workout is created; the button shows "Saving…".
+- [ ] **EZ-T5** Remove an exercise (✕ or drag it out): "Removed … Undo" appears; **Undo** puts it back in the same place with its sets, reps, weight and rest.
+- [ ] **EZ-T6** The estimate in the header ("~N min") changes when you change a rest or a number of sets.
+- [ ] Also check: the second button reads **"+ Add several…"**; the label reads **"Target kg (level 1)"**.
+
+## As the coach — reviewing a session (EZ-6 / EZ-6b)
+Needs a trainee with **two or more reviewed sessions** of the same exercise.
+- [ ] **EZ6-T4** While reviewing that exercise, **"Your notes on this exercise (N)"** shows every earlier note, dated, newest first, above the sets. Write a new comment in a set's box and send the review.
+- [ ] **EZ6b-T2** Tap **Edit** on one of your notes, change it, **Save**: it shows "edited" under its date.
+- [ ] **EZ6b-T3** **Edit → Delete** on a note: it asks, then the note is gone. That set's tags and voice-over are unchanged.
+- [ ] **EZ6b-T4** Notes written by another coach (if any) show **no** Edit.
+
+## As the trainee — the workout (EZ-6)
+- [ ] **EZ6-T2** Each exercise shows **"Your coach's notes (N)"**: all the comments from earlier reviews of that exercise, dated, newest first; 3 shown, then **Show all**. The note written in EZ6-T4 is at the top; an edited one shows "edited"; a deleted one is gone.
+- [ ] **EZ6-T3** **▶ Replay the latest voice-over (date)** plays the coach's voice-over with its drawings; **Close** stops it.
+
+## Done already (for reference)
+- FZ sounds and their Settings switches — **pass** ("the sounds work", 2026-11-05).
+- EJ part 3 (a card dispute cancels the goal) — being tested from the **personal account**.
