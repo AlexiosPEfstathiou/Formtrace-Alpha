@@ -94,3 +94,4 @@ Whenever a cost starts, changes or stops (a subscription, a plan change, a domai
 
 ## Test queue (owner, 2026-11-05)
 Every owner test that is built and waiting goes into `docs/TEST_QUEUE.md` (grouped by where the owner will be in the app). Tick or remove lines when the owner reports results, and mirror the result in PRODUCT_LOG.
+**Test interview (owner, 2026-11-05):** when the owner says he has tested the app (e.g. after a workout), **interview him through every pending line of `docs/TEST_QUEUE.md`**, one group at a time in the file's order - ask what he saw for each test (pass / fail / not tried), ask a follow-up on any failure (device, screen, what happened, which side for GA-T4), then tick passes, log failures as findings in PRODUCT_LOG, and keep "not tried" lines in the queue.

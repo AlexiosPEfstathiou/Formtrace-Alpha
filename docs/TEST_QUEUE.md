@@ -2,6 +2,7 @@
 
 Everything built and waiting for the owner's check. Tick each line; tell Claude the results (or "all pass") and it
 updates PRODUCT_LOG. Grouped by where you will be in the app. Created 2026-11-05.
+**How results are collected:** after the workout, tell Claude "I tested" - Claude interviews you through every pending line, group by group (pass / fail / not tried), with follow-up questions on anything that failed.
 Tip: allow ~10 minutes after a change for the phone to pick up the new version (close and reopen the app).
 
 ## Anywhere — pull-to-refresh (GC)
