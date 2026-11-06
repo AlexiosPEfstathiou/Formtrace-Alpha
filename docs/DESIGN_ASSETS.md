@@ -122,7 +122,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | App-store screenshots and listing art | native app (deferred) | Later | future | |
 
 ## 9. Sounds (SFX) — owner, 2026-11-04 (PRODUCT_LOG FZ)
-The app has **no sound effects today**: cues are vibration patterns and spoken interval announcements.
+**Placeholders built 2026-11-05 (FZ):** every **L1** sound already plays as a synthesised tone (no files yet); designed files replace them one by one, same names. Before that the app had no sounds (vibration and spoken interval announcements only, both kept).
 **Behaviour rules (build, FZ):** a **Sounds** switch in Settings (on by default) plus **Workout sounds** (on by default) so
 people can keep the timers and silence the rest; **never play while a video is recording** (it would end up in the coach's
 review video) — the countdown before recording is the exception; quiet by default; vibration stays as well; sounds

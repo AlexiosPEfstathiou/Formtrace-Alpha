@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects (logged; placeholder sounds can be built now) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
+**Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
 **Before go-live (owner):** **EI** business bank account - **POSTPONED (owner, 2026-11-03)** · **EJ** chargeback risk management - **disputes BUILT 2026-11-04** (SQL + webhook + admin card); Radar rules next.
 **North star (owner, 2026-11-04):** people use FormTrace to increase their fitness and their social life; FormTrace becomes a community brand that brings people together - quests, points, shop and Events serve it (**FS**).
@@ -731,7 +731,18 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 - **Privacy:** the report contains personal data (names, activity) - send only to the owner / admins, keep it short (counts plus
   names where action is needed), and do not store copies outside Formtrace's systems.
 - Relates to: DP admin liability numbers (`admin_liability_stats`), FR admin panel (the same numbers on screen), FS / EV nudges.
-## FZ. Sound effects (owner, 2026-11-04)
+## FZ. Sound effects (owner, 2026-11-04) - PLACEHOLDERS BUILT 2026-11-05
+
+**Built 2026-11-05 (C, app only):** one small sound engine (Web Audio, synthesised tones - no files yet, so nothing to load;
+each kind is one short recipe that a designed file replaces later). **Settings -> Appearance:** two switches, **Sounds**
+(taps, confirmations, errors, achievement unlocks) and **Workout sounds** (countdown, recording start / stop, rest timer,
+interval changes, workout complete), both on by default, kept on the phone. **Never while a video is recording** (the engine
+checks `rRecording` first; the Stop tap is silent too). Hooks: every button tap; success / error from the app's own messages
+(a check mark = success; "couldn't", "failed", "take a break"... = error); the 3-2-1 countdown ticks + "go" (the agreed
+exception, before recording starts); recording start (skipped right after a countdown's "go") and stop (after it has stopped);
+the rest timer's last 3 seconds and its end; interval changes (with the spoken cue); workout complete (instead of the plain
+success sound); achievement unlock. Vibration unchanged. **Not yet (L2):** refresh, sheets, tab switch, in-app notification,
+day complete, streak / tier up, goal complete, personal best, offer accepted, coin, social.
 
 **Owner:** add sound effects for button clicks, refreshes, timers during workouts, achievement unlocks and other events.
 The app has **none today** (cues are vibration and the spoken interval announcements). Full list, tiers and file spec in

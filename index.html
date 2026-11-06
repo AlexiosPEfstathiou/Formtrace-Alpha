@@ -2078,7 +2078,49 @@ import { PoseLandmarker, GestureRecognizer, FilesetResolver } from "https://cdn.
    ========================================================================= */
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
-function toast(msg,ms=2600){const t=$("#toast");t.innerHTML=msg;t.classList.add("show");clearTimeout(toast._t);if(ms)toast._t=setTimeout(()=>t.classList.remove("show"),ms);}
+/* ---- Item FZ (owner, 2026-11-04): sound effects. Placeholder sounds are synthesised with Web Audio until the designed
+   files exist (docs/DESIGN_ASSETS.md section 9) - each kind below is one short recipe, replaced later by a file.
+   Settings has two switches: Sounds (taps, confirmations, errors, achievement unlocks) and Workout sounds (countdown,
+   recording start / stop, rest timer, interval changes, workout complete). Never while a video is recording (it would be in
+   the coach's review video); the pre-recording countdown is the exception. Vibration stays as it was. ---- */
+const SFX_WORKOUT=new Set(["tick","go","recStart","recStop","restTick","restOver","interval","complete"]);
+let sfxCtx=null, sfxQuietUntil=0;
+function sfxPrefs(){ try{ const p=JSON.parse(localStorage.getItem("ft-sfx")||"{}")||{}; return { ui:p.ui!==false, workout:p.workout!==false }; }catch(e){ return { ui:true, workout:true }; } }
+function sfxSetPref(k,v){ try{ const p=sfxPrefs(); p[k]=!!v; localStorage.setItem("ft-sfx",JSON.stringify(p)); }catch(e){} }
+function sfxUnlock(){ try{ if(!sfxCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; sfxCtx=new AC(); } if(sfxCtx.state==="suspended") sfxCtx.resume(); }catch(e){} }
+function sfxTone(t0,freq,dur,o){ o=o||{}; const c=sfxCtx, osc=c.createOscillator(), g=c.createGain(), gain=o.gain||0.15, att=o.attack||0.004;
+  osc.type=o.type||"sine"; osc.frequency.setValueAtTime(freq,t0); if(o.to) osc.frequency.exponentialRampToValueAtTime(o.to,t0+dur);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(gain,t0+att); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  osc.connect(g); g.connect(c.__out); osc.start(t0); osc.stop(t0+dur+0.03); }
+function sfx(kind){
+  try{
+    if(typeof rRecording!=="undefined"&&rRecording) return;                      // never into a recording
+    const pr=sfxPrefs(); if(SFX_WORKOUT.has(kind)?!pr.workout:!pr.ui) return;
+    if((kind==="success"||kind==="error")&&Date.now()<sfxQuietUntil) return;
+    if(!sfxCtx) sfxUnlock(); const c=sfxCtx; if(!c||c.state!=="running") return;
+    if(!c.__out){ c.__out=c.createGain(); c.__out.gain.value=0.55; c.__out.connect(c.destination); }
+    const t=c.currentTime+0.005, T=(dt,f,dur,o)=>sfxTone(t+dt,f,dur,o);
+    if(kind==="go") window.__sfxGoAt=Date.now();
+    switch(kind){
+      case "tap":      T(0,1650,0.035,{type:"triangle",gain:0.06,to:1100}); break;
+      case "success":  T(0,660,0.09,{gain:0.11}); T(0.08,990,0.15,{gain:0.11}); break;
+      case "error":    T(0,240,0.17,{type:"triangle",gain:0.13,to:170}); break;
+      case "tick":     T(0,880,0.08,{gain:0.15}); break;
+      case "go":       T(0,1320,0.24,{gain:0.17}); break;
+      case "recStart": T(0,600,0.12,{gain:0.11,to:1200}); break;
+      case "recStop":  T(0,1200,0.13,{gain:0.11,to:600}); break;
+      case "restTick": T(0,1000,0.05,{type:"square",gain:0.045}); break;
+      case "restOver": [880,1320,1760].forEach((f,i)=>T(0,f,1.2-i*0.3,{gain:0.12/(i+1),attack:0.006})); break;
+      case "interval": T(0,520,0.14,{gain:0.13}); T(0.15,780,0.18,{gain:0.13}); break;
+      case "complete": [523,659,784,1047].forEach((f,i)=>T(i*0.11,f,i===3?0.5:0.16,{gain:0.12})); break;
+      case "unlock":   [1047,1319,1568,2093].forEach((f,i)=>T(i*0.07,f,0.22,{gain:0.09})); T(0.3,3136,0.45,{gain:0.04}); break;
+    }
+  }catch(e){}
+}
+document.addEventListener("pointerdown",ev=>{ sfxUnlock(); const b=ev.target&&ev.target.closest?ev.target.closest("button,.btn,[role=button],.tab"):null; if(b&&!b.disabled&&!b.hasAttribute("data-nosfx")) sfx("tap"); },{capture:true,passive:true});
+document.addEventListener("change",ev=>{ const t=ev.target; if(!t||!t.id) return; if(t.id==="sfx-ui"){ sfxSetPref("ui",t.checked); if(t.checked) sfx("success"); } else if(t.id==="sfx-workout"){ sfxSetPref("workout",t.checked); if(t.checked) sfx("tick"); } });
+function toast(msg,ms=2600){ try{ const s=String(msg||""); if(/\u2713/.test(s)) sfx("success"); else if(/couldn.?t|could not|failed|error|not allowed|take a break|try again|invalid/i.test(s)) sfx("error"); }catch(e){}   /* FZ */
+const t=$("#toast");t.innerHTML=msg;t.classList.add("show");clearTimeout(toast._t);if(ms)toast._t=setTimeout(()=>t.classList.remove("show"),ms);}
 
 /* =========================================================================
    1b. Error reporting
@@ -3068,13 +3110,13 @@ function startCountdown(n,onFire,hint){
   let k=n;
   sub.textContent=hint||"";
   num.textContent=k;
-  el.classList.add("on");
+  el.classList.add("on"); sfx("tick");   /* FZ */
   const bump=()=>{ num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop"); };
   bump();
   cdTimer=setInterval(()=>{
     k--;
-    if(k<=0){ cancelCountdown(); try{ onFire(); }catch(e){ console.error("countdown fire",e); } return; }
-    num.textContent=k; bump();
+    if(k<=0){ sfx("go"); cancelCountdown(); try{ onFire(); }catch(e){ console.error("countdown fire",e); } return; }
+    num.textContent=k; bump(); sfx("tick");
   },1000);
 }
 function cancelCountdown(){
@@ -4918,7 +4960,7 @@ async function renderHomeAchievements(el){
 /* Item DA: the unlock. Queued when several land at once; tap skips; reduced-motion is a static card. */
 const FAMILY_VAR={Start:"--fam-start",Discipline:"--fam-discipline",Effort:"--fam-effort",Body:"--fam-body",Journey:"--fam-journey",Social:"--fam-social"};
 let achQueue=[], achPlaying=false;
-function playUnlock(a){ if(!a) return; achQueue.push(a); if(!achPlaying) _achNext(); }
+function playUnlock(a){ if(!a) return; sfx("unlock");   /* FZ */ achQueue.push(a); if(!achPlaying) _achNext(); }
 function _achNext(){
   const a=achQueue.shift(); const ov=$("#ach-overlay"); if(!a||!ov){ achPlaying=false; return; }
   achPlaying=true;
@@ -10127,13 +10169,14 @@ function ensureRestTimer(){
   }
   const paint=()=>{
     const r2=restGet(); const e2=document.getElementById("rest-timer"); if(!e2) return;
-    if(!r2){ e2.remove(); clearInterval(restTick); restTick=null; try{ if(navigator.vibrate) navigator.vibrate([180,90,180]); }catch(e){} toast("Rest's over - on to your next set",2600); return; }
+    if(!r2){ e2.remove(); clearInterval(restTick); restTick=null; try{ if(navigator.vibrate) navigator.vibrate([180,90,180]); }catch(e){} sfx("restOver"); toast("Rest's over - on to your next set",2600); return; }
     const onScreen=$("#s-trainee-workout")&&$("#s-trainee-workout").classList.contains("active"); e2.style.display=onScreen?"":"none";
     const left=Math.max(0,(r2.until-Date.now())/1000), frac=Math.min(1,left/r2.total), C=e2.__C;
     const ring=e2.querySelector("#rt-ring"); const col=`hsl(${Math.round(115*frac)},100%,${50+Math.round(5*frac)}%)`;   /* neon green -> red */
     ring.style.strokeDashoffset=String(-(C*(1-frac)));   /* the empty part grows clockwise from the top */
     ring.style.stroke=col; ring.style.filter=`drop-shadow(0 0 5px ${col})`; ring.style.opacity=frac>0.002?"1":"0";
-    const s=Math.ceil(left); e2.querySelector("#rt-time").textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+    const s=Math.ceil(left); if(s>=1&&s<=3&&e2.__lt!==s){ e2.__lt=s; sfx("restTick"); }   /* FZ: the last 3 seconds */
+    e2.querySelector("#rt-time").textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   };
   paint(); if(!restTick) restTick=setInterval(paint,250);
 }
@@ -10229,7 +10272,7 @@ function advanceToNextSegment(){
    devices/situations won't have speech synthesis available or audible
    (silent mode, no speaker, unsupported browser), and vibration already
    worked reliably on its own before this. */
-function announceSegment(text){
+function announceSegment(text){ sfx("interval");   /* FZ: a two-tone cue with the spoken announcement */
   if(!window.speechSynthesis)return;   // graceful no-op where unsupported — vibration still covers the cue
   try{
     speechSynthesis.cancel();   // don't let a still-speaking prior announcement queue up behind a fast transition
@@ -10593,6 +10636,7 @@ async function submitToCoach(save=false){
     const { error:msErr }=await store._sb.rpc("mark_submitted",{p_assigned:currentAssigned.id});
     if(msErr) throw msErr;
     try{ await store.assignedWorkouts.update(currentAssigned.id,{draft:null}); }catch(_){/* optional column */}
+    sfxQuietUntil=Date.now()+400; sfx("complete");   /* FZ: workout complete (instead of the plain success sound) */
     toast(save?"Saved to device & sent to coach ✓":"Sent to your coach ✓",3200);
     go("trainee-home");
   }catch(err){console.error(err);toast(err.message||"Couldn't submit",4000);}
@@ -12148,6 +12192,16 @@ async function renderProfile(){
           <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">High-contrast palette that stays distinct for red-green and blue-yellow color vision.</div></div>
         <span class="switch"><input type="checkbox" id="cb-switch" ${curCb?"checked":""}><span class="track"></span></span>
       </label>
+      <label class="cb-toggle" for="sfx-ui" style="margin-top:10px">
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Sounds</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">Taps, confirmations, errors and achievement unlocks.</div></div>
+        <span class="switch"><input type="checkbox" id="sfx-ui" ${sfxPrefs().ui?"checked":""}><span class="track"></span></span>
+      </label>
+      <label class="cb-toggle" for="sfx-workout" style="margin-top:10px">
+        <div style="flex:1"><div style="font-size:13px;font-weight:700">Workout sounds</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">Countdown, rest timer, interval changes and workout complete. Never while a video is recording.</div></div>
+        <span class="switch"><input type="checkbox" id="sfx-workout" ${sfxPrefs().workout?"checked":""}><span class="track"></span></span>
+      </label>
     </div>`;
   /* Explicit install control — Chrome's own menu turned out to be a real
      discoverability problem (it only offers a real install once ITS OWN
@@ -13258,6 +13312,7 @@ function rLoop(){
 }
 function pickMime(){const c=["video/mp4;codecs=h264","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];return c.find(t=>MediaRecorder.isTypeSupported(t))||"";}
 function startRec(){
+  if(Date.now()-(window.__sfxGoAt||0)>900) sfx("recStart");   /* FZ: plays just before the recording begins (not after a countdown, whose "go" is the cue) */
   const sw=rvideo.videoWidth,sh=rvideo.videoHeight;
   const MAXDIM=720;
   const scale=Math.min(1, MAXDIM/Math.max(sw,sh));
@@ -13351,7 +13406,8 @@ function persistTrim(path,cap){
 function stopRec(silent){
   if(!rRecorder||rRecorder.state==="inactive")return;
   rRecorder._silent=silent;rRecorder.stop();cancelAnimationFrame(recPaintRAF);
-  rRecording=false;$("#rbtn").classList.remove("rec");clearInterval(rTimerInt);$("#rtimer").classList.remove("on");
+  rRecording=false; if(!silent) sfx("recStop");   /* FZ: after the recording has stopped */
+  $("#rbtn").classList.remove("rec");clearInterval(rTimerInt);$("#rtimer").classList.remove("on");
   $("#r-flip").style.visibility="visible";$("#r-ghost").style.visibility="visible";
 }
 function onRecStop(){
