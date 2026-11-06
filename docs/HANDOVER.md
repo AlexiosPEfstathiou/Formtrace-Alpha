@@ -1,6 +1,7 @@
 # Formtrace Coach — Handover (as of 2026-10-29)
 
 ## Update 2026-11-05 (work account)
+- **Built today:** FZ placeholder sounds + Settings switches (Sounds / Workout sounds), GC pull-to-refresh. **Tests queued for the owner:** FZ-T1..T5 and GC-T1..T4 (steps in PRODUCT_LOG FZ / GC). ED done (code name kept out of the repo). FV closed. Next code **GD**.
 - Owner: the **EJ part 3 test** will be done from the **personal account**. The open test dispute ("Dispute test", EUR 34) was **accepted** in Stripe (closed as lost; its goal had already ended). **Harvey Specter (coach test account) now has notifications on.** **FV follow-up SQL run ✓ (notes_left 0, unsent_left 0) - FV fully closed; no SQL pending.**
 
 ## Session 2026-11-04 night (personal account) - summary
