@@ -709,6 +709,12 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ## GC. Pull-to-refresh on phones - BUILT 2026-11-05 (owner request)
 
+**Tests queued (owner, 2026-11-05 - not yet done):**
+- **GC-T1** on Goal or Notifications, at the top, pull down: the gold arrow follows, flips past the threshold with a tiny buzz, spins on release; the list updates; the refresh sound plays (if Sounds is on).
+- **GC-T2** release before the arrow flips: it slides away, no refresh.
+- **GC-T3** in the workout builder, the workout player, Settings, or with a panel open: pulling down does nothing.
+- **GC-T4** a sideways swipe, or a pull inside a list that is itself scrolled down, does not refresh; the back button behaves as before after a refresh.
+
 **Owner:** refresh the app / page on phones by pulling down when the screen is scrolled to the very top. Chrome's own
 pull-to-refresh was already off for the app (`overscroll-behavior: none`) and the installed app never had one. **Built (C, app
 only):** at the top of a screen, pull down - a round gold arrow follows the finger, flips past the threshold (tiny buzz), and on
@@ -743,6 +749,13 @@ pulls that start inside a list that is itself scrolled are ignored. Touch only (
   names where action is needed), and do not store copies outside Formtrace's systems.
 - Relates to: DP admin liability numbers (`admin_liability_stats`), FR admin panel (the same numbers on screen), FS / EV nudges.
 ## FZ. Sound effects (owner, 2026-11-04) - PLACEHOLDERS BUILT 2026-11-05
+
+**Tests queued (owner, 2026-11-05 - not yet done; the Sounds switches had not appeared yet, likely the 10-minute page cache):**
+- **FZ-T1** Settings -> Appearance shows **Sounds** and **Workout sounds** below Colorblind-safe colors; turning each on plays a sample.
+- **FZ-T2** a button tap clicks softly; a confirmation with a check mark plays the two-note sound; an error (e.g. tapping a set during a rest) plays the thud.
+- **FZ-T3** hands-free start: 3-2-1 ticks and "go"; the recorded set's video has **no** app sounds in it; stop plays the falling chirp after recording.
+- **FZ-T4** rest timer: three quiet ticks in the last 3 seconds, a bell at the end; interval exercise: a two-tone cue at each change, before the spoken announcement; submitting the workout plays the fanfare; an achievement unlock plays the sparkle.
+- **FZ-T5** with each switch off, its sounds stop (Sounds off: taps / confirmations / unlocks silent; Workout sounds off: countdown / rest / intervals / complete silent). Note how the phone's silent mode behaves.
 
 **Built 2026-11-05 (C, app only):** one small sound engine (Web Audio, synthesised tones - no files yet, so nothing to load;
 each kind is one short recipe that a designed file replaces later). **Settings -> Appearance:** two switches, **Sounds**
