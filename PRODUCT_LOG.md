@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> ~~GF user text as text~~ (built + SQL run 2026-11-10; tests GF-T2..T4 pending) -> GG offers / goals write lock (SQL written 2026-11-10, given); then GH credit in one step, GI hardening, GJ code health.**
+**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> ~~GF user text as text~~ (built + SQL run 2026-11-10; tests GF-T2..T4 pending) -> ~~GG offers / goals write lock~~ (SQL run 2026-11-10; flow tests GG-T1..T6 pending); then GH credit in one step, GI hardening, GJ code health.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
@@ -811,7 +811,7 @@ a database rule limits what a handle may contain; unexpected server errors show 
 Also fix the workout-delete confirmation (EZ-2), which escapes a name the dialog already shows as text.
 **Test:** a display name, an exercise name and a handle containing `<b>` and quotes appear literally everywhere.
 
-## GG. Offers and goals: only the app's own fields can be changed - HIGH (confirmed in the migrations) - SQL WRITTEN 2026-11-10 (given)
+## GG. Offers and goals: only the app's own fields can be changed - HIGH - SQL RUN 2026-11-10 (17 | 3 | 7 | 5 | 0 | 2 | missing empty; owner flow tests GG-T1..T6 left)
 
 **Written 2026-11-10 (C): `supabase/migrations_offers_goals_write_lock.sql`.** Inventory first (every write the app makes, the
 store helper, every database function touching the two tables): the app inserts an offer with 17 fields and updates only
