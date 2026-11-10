@@ -11,3 +11,5 @@ node_modules/
 _smoke.mjs
 _check.mjs
 check.ps1.txt
+# private notes that must not reach the public repo (security review detail)
+docs/private/

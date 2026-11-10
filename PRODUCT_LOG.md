@@ -45,6 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
+**SECURITY (review 2026-11-10) - before live keys (DW): GD lock internal functions (confirmed live) -> GE notifications only from Formtrace -> GF user text as text -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
@@ -744,6 +745,87 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ---
 
+## Security review 2026-11-10 (work account) - items GD to GJ
+
+Whole-repo code review (app, store, service worker, 6 Edge Functions, 118 migrations). **The detailed findings are kept out of
+this public repo** - they are in `docs/private/CODE_REVIEW_2026-11-10.md` on the work laptop (git-ignored). The items below say
+what to fix. **GD, GE, GF and GG must be done before live keys (DW).** Order: GD -> GE -> GF -> GG -> GH -> GI -> GJ.
+**What the review found solid:** row-level security on all 53 tables; payouts, refunds, disputes, credits and end choices are
+read-only for users; profile updates limited to named harmless columns; every security-definer function sets search_path; Stripe
+webhook signature checked, transfers and refunds idempotent, deposit columns frozen, 3D Secure on every payment; private video
+bucket; no secrets in the history.
+
+## GD. Lock the internal database functions - CRITICAL (confirmed on the live database 2026-11-10)
+
+**Finding:** most `revoke execute ... on function` statements in the migrations name only `public`. On Supabase the `anon` and
+`authenticated` roles hold their own grants, so internal functions (money, notifications, digests, streak and cycle maintenance)
+stay callable from outside. The owner's live check confirmed it.
+**Fix (C, one migration + owner runs it):**
+1. For every security-definer function in `public`: `revoke execute ... from public, anon, authenticated`.
+2. `grant execute ... to authenticated` only for the functions the app calls through `rpc()` (list taken from
+   `store.supabase.js` and `index.html`); nothing to `anon` unless the landing page needs it.
+3. `alter default privileges in schema public revoke execute on functions from public, anon, authenticated` so new functions
+   start locked; from now on every migration grants explicitly.
+4. Defence in depth: the refund queue also checks the goal's state itself.
+**Check:** the read-only query from the review (security definer, no caller check, executable by anon / authenticated) returns no
+row that is not deliberately public. **Test:** every screen still loads (the gate's store check + a click-through), cron jobs still run.
+**Rule for both accounts from now on:** write `from public, anon, authenticated` in every revoke.
+
+## GE. Notifications can only come from Formtrace - CRITICAL / HIGH
+
+**Finding:** the three webhook-driven Edge Functions (push-send, release-send, refund-send) run with sign-in checking off and do
+not verify who is calling; the service worker opens a notification's link as given.
+**Fix:** (1) a shared secret - an Edge Function secret, sent as a header by the three Database Webhooks, required by the functions
+(owner: add the secret + the header in the dashboard; C: the code); (2) push-send re-reads the row from the outbox instead of trusting
+the request; (3) `sw.js` opens only links inside the app, otherwise the app's home. The database side is covered by GD.
+**Test:** a real notification still arrives and opens the right tab; a call without the secret is refused.
+
+## GF. User-written text is always shown as text - HIGH
+
+**Finding:** the message bubble (`toast`) inserts HTML, and some messages contain names written by other users or raw server text;
+social handles are placed in links without encoding and are not validated in the database.
+**Fix (C, app + a small migration):** `toast` shows plain text (no message needs HTML); handle links are encoded and escaped;
+a database rule limits what a handle may contain; unexpected server errors show a fixed sentence and log the detail to `error_log`.
+Also fix the workout-delete confirmation (EZ-2), which escapes a name the dialog already shows as text.
+**Test:** a display name, an exercise name and a handle containing `<b>` and quotes appear literally everywhere.
+
+## GG. Offers and goals: only the app's own fields can be changed - HIGH (confirmed in the migrations)
+
+**Finding:** either party can update any column of an offer, and insert, update or delete a goal on every column; only the deposit
+columns are guarded. The price charged at checkout and the weekly payouts are read from those rows.
+**Fix (C, migration - same pattern as `profiles`):** revoke update on `offers` and `engagements` from signed-in users and grant
+it back only for the columns the app writes (offers: status, viewed_at, coach_seen_at; goals: status, outcome, completed_at,
+billing_active, level); no deletes on goals; a check on insert that a new goal matches an accepted offer (same coach and trainee,
+one goal per offer). Price and length change only through the counter-offer functions. Review who may set which status.
+**Test:** every offer and goal flow end to end - post, offer, counter, accept, pay, level change, pause, complete, end early, renew.
+
+## GH. Credit is reserved in one step - HIGH
+
+**Finding:** checkout reads the credit balance and spends it in separate steps, so two payments at the same moment could both use it.
+**Fix (C):** one database function that locks the trainee's credit, re-checks the balance, writes the ledger line and stamps the
+goal in a single transaction; `checkout-create` calls it; an abandoned part-credit checkout releases the reservation
+(`checkout.session.expired` added to the webhook). **Test:** two checkouts started together - only one gets the credit.
+
+## GI. Security hardening - MEDIUM (bundle)
+
+- **Policies:** a review can only be written for a submission from one of the coach's own goals; a rating only by a party of that
+  goal, about the other party; a submission only for the trainee's own assigned workout; review which columns of an assigned workout
+  a trainee may change; `streak_count` leaves the user-editable profile columns; fee overrides readable only by the coach concerned
+  and admins.
+- **Supply chain:** pin the Supabase library to an exact version with an integrity hash (or host it with the app); add a
+  Content-Security-Policy.
+- **Stripe events:** handle a refund that fails after being sent, a reversed transfer, and an expired checkout; alert the admin on a
+  failed release (no silent `failed` rows).
+- **Edge Functions:** return a fixed error sentence (detail to the logs); allow only the app's origin.
+
+## GJ. Code health - LOW (when convenient)
+
+- `supabase/schema.sql` describes 12 of 53 tables and the 118 migrations have no order outside `SQL_JOURNAL.md`: number them or
+  generate a current schema, so the database can be rebuilt from the repo.
+- The gate proves nothing throws; add tests for the **money rules** (refund amounts, weekly releases, credit) and run the GD query
+  as a standing check (fits the weekly report, GB).
+- 176 empty `catch` blocks: log the ones next to payments. 14 tappable elements without a button role; few accessibility labels.
+- Tidy the root: a duplicate migration file, `smoke-test.html`, `check.ps1.txt`; 6 duplicate element ids in templates.
 ## GC. Pull-to-refresh on phones - BUILT 2026-11-05 (owner request)
 
 **Tests queued (owner, 2026-11-05 - not yet done):**

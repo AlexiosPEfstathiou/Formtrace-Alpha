@@ -1,5 +1,9 @@
 # Formtrace Coach — Handover (as of 2026-10-29)
 
+## Update 2026-11-10 (work account) - security review
+- Whole-repo code review done. **Seven items logged: GD-GJ** (PRODUCT_LOG, "Security review 2026-11-10"). **GD is confirmed on the live database** (internal functions callable from outside because revokes name only `public`) and, with GE / GF / GG, must be fixed **before live keys (DW)**. The detailed report is deliberately NOT in the repo (public until FT): `docs/private/CODE_REVIEW_2026-11-10.md` on the work laptop. Nothing was changed in the app or the database by the review. New rules in CLAUDE.md ("Security rules"). Next code **GK**.
+- Also since 2026-11-05: EZ building workouts (fixes 1-9), EZ-6 / 6b cumulative review notes + editing, GA camera first pass, `docs/TEST_QUEUE.md` + the test-interview rule.
+
 ## Update 2026-11-05 (work account)
 - **All pending owner tests in one checklist: `docs/TEST_QUEUE.md`** (GC pull-to-refresh, EZ builder, EZ-6 / 6b notes). Update it when tests pass or new ones are queued.
 - **Built today:** FZ placeholder sounds + Settings switches (Sounds / Workout sounds), GC pull-to-refresh. **Tests queued for the owner:** FZ-T1..T5 and GC-T1..T4 (steps in PRODUCT_LOG FZ / GC). ED done (code name kept out of the repo). FV closed. Next code **GD**.

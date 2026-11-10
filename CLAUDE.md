@@ -78,7 +78,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page) **or a sound**, add or update its row in `docs/DESIGN_ASSETS.md`, with its tier (L1 / L2 / Later / Code) and spec. It is the brief for the openart theme (PRODUCT_LOG EW).
 
 ## Last session (2026-11-04 night, personal account)
-Read the top of docs/HANDOVER.md ("Session 2026-11-04 night"). Done: FU verified; FP refund push passed on the phone; EJ dispute tests 1-2 (hold + lost path pass); **EJ part 3 - a card dispute cancels the goal and its payouts on opening, both sides told; SQL applied via Supabase MCP (journal run ✓)**; GA camera logged. Pending SQL: FV follow-up (given). Next: EJ part 3 test with a fresh 0259 payment; FZ / openart brief / FX. GB logged (weekly report by schedule, work account). **2026-11-05 (work account):** FV closed (no SQL pending), ED done, FZ placeholder sounds + Settings switches, GC pull-to-refresh. Next item code: **GD**.
+Read the top of docs/HANDOVER.md ("Session 2026-11-04 night"). Done: FU verified; FP refund push passed on the phone; EJ dispute tests 1-2 (hold + lost path pass); **EJ part 3 - a card dispute cancels the goal and its payouts on opening, both sides told; SQL applied via Supabase MCP (journal run ✓)**; GA camera logged. Pending SQL: FV follow-up (given). Next: EJ part 3 test with a fresh 0259 payment; FZ / openart brief / FX. GB logged (weekly report by schedule, work account). **2026-11-05 (work account):** FV closed (no SQL pending), ED done, FZ placeholder sounds + Settings switches, GC pull-to-refresh. **2026-11-10 (work account): whole-repo security review - items GD-GJ logged (GD-GG before live keys); details in the git-ignored `docs/private/` on the work laptop.** Next item code: **GK**.
 
 ## Session before (2026-11-04, work account)
 Read the top of docs/HANDOVER.md (session 2026-11-04 summary). Done: EJ disputes + 3D Secure, FO / FP / FQ refunds and credit history, EU part 2, EX landing page, FV Formtrace everywhere, design-assets list finalised. Pending SQL: FU clean-up and FV follow-up (given). Suggested next: FZ placeholder sounds, openart style brief + L1 prompts, FX email templates. Next item code: **GA**.
@@ -95,3 +95,9 @@ Whenever a cost starts, changes or stops (a subscription, a plan change, a domai
 ## Test queue (owner, 2026-11-05)
 Every owner test that is built and waiting goes into `docs/TEST_QUEUE.md` (grouped by where the owner will be in the app). Tick or remove lines when the owner reports results, and mirror the result in PRODUCT_LOG.
 **Test interview (owner, 2026-11-05):** when the owner says he has tested the app (e.g. after a workout), **interview him through every pending line of `docs/TEST_QUEUE.md`**, one group at a time in the file's order - ask what he saw for each test (pass / fail / not tried), ask a follow-up on any failure (device, screen, what happened, which side for GA-T4), then tick passes, log failures as findings in PRODUCT_LOG, and keep "not tried" lines in the queue.
+
+## Security rules (review 2026-11-10)
+- **Every `revoke execute on function` names `public, anon, authenticated`** - on Supabase `from public` alone locks nothing. Internal functions get no grant; functions the app calls get `grant execute ... to authenticated`.
+- User-written text is inserted with `escapeHtml` / `textContent`, never raw; URLs built from user text use `encodeURIComponent`.
+- New tables: row-level security on, and write access by column (like `profiles`), not `for all`.
+- **While the repo is public, exploit detail goes in `docs/private/` (git-ignored), not in committed files.**
