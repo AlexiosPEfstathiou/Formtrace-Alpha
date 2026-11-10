@@ -28,6 +28,7 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] **GH-T4** Full credit: a goal that costs no more than your credit is paid at once ("paid with your credit"); the ledger shows one line for it.
 - [ ] **GH-T5** With credit that covers only one goal: start the checkout for goal A (do not pay), then accept goal B. Goal B must **not** get the same credit (card for the full price, or only what is left).
 ## As the trainee - the Training tab as a control panel (GK, 2026-11-10)
+- [ ] **GL-T1** (fix 2026-11-10 evening) On the phone: open **Calendar**, then **Weight** - the tab bar stays at the bottom and nothing slides up. Then **Start a session** -> pick one -> the session screen opens normally (a double tap starts it once).
 - [ ] **GK-T1** The tab opens with a large **Start a session** button at the top and this week's progress under it; below, a grid of buttons; nothing else is open. No long scroll.
 - [ ] **GK-T2** **Start a session** opens this week's sessions as before. With nothing assigned it reads "No session to start yet".
 - [ ] **GK-T3** Each button opens its section under the grid and is highlighted; tapping it again closes it; opening another closes the first: Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls.

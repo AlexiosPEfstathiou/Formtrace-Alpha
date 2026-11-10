@@ -65,7 +65,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **GA**; next **GB**) - **always check the log for the highest code before allocating: both accounts write items**,
+- New product items take the next two-letter code (last used: **GL**; next **GM**) - **always check the log for the highest code before allocating: both accounts write items**,
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").
@@ -82,7 +82,7 @@ Read the top of docs/HANDOVER.md ("Session 2026-11-05 to 2026-11-10"). **Whole-r
 GH built and all their SQL run** (details in the git-ignored `docs/private/` on the work laptop). **Open: `refund-send` is not
 deployed under that name (404)**; owner tests in `docs/TEST_QUEUE.md` (security ones first); GD step 4; GI; GJ. Product: **GK
 trainee Training tab as a control panel**, GA camera first pass, EZ builder fixes + EZ-6 / 6b cumulative notes, FZ sounds (passed),
-GC pull-to-refresh, EW openart brief. No SQL pending. Next item code: **GL**.
+GC pull-to-refresh, EW openart brief. No SQL pending. Next item code: **GL** (then used for the scroll fix - next **GM**).
 
 ## Session before (2026-11-04 night, personal account)
 FU verified; FP refund push passed on the phone; EJ dispute tests 1-2; EJ part 3 (a card dispute cancels the goal and its payouts);

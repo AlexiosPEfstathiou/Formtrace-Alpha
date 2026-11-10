@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status at session end:** ~~GD~~ ~~GE~~ ~~GF~~ ~~GG~~ ~~GH~~ built and SQL run. **Still open before live keys (DW): (1) `refund-send` is not deployed under that name (404) - find it or deploy it; (2) owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5; (3) GD step 4 (state check inside the refund queue).** Then GI hardening, GJ code health.
+**GL (2026-11-10 evening, personal account): GK on the phone - whole screen slid up and Start a session seemed dead - FIXED (owner to re-test GL-T1).**
 **GK (2026-11-10): trainee Training tab as a control panel - built; owner to look at it on the phone (GK-T1..T5); next: a live value on each button, the same panel for a trainee without a coach.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
@@ -743,6 +744,13 @@ left -> -90 deg, top to the right -> +90 deg; if one comes out upside down, swap
 apps mid-recording, iPhone (CX), trim (BC) and pose reliability (AH) on landscape files.
 
 Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / restarted in general."** Finding that prompted it: **on desktop the camera preview is drawn like a phone camera (portrait frame) but the recording comes out landscape** - what the user frames is not what is saved. To scope before building: (1) the orientation and aspect contract - preview, recording and pose overlay must use the same frame on phone portrait, phone landscape and desktop webcams (most are 16:9 landscape only); (2) camera choice (front / back / external), resolution and frame-rate constraints, and what happens when the device cannot meet them; (3) permission and restart behaviour (CU), switching apps mid-recording, iOS Safari specifics (CX - no iPhone to test); (4) the pose overlay reliability (AH) and trim (BC) on the new pipeline; (5) a short test matrix (Android Chrome, desktop Chrome, iPhone when available). Related history: CS check-in photo, CU permission denied, CW portrait mode scrapped, AH pose overlay. Not started.
+
+---
+
+## GL. Training tab on the phone: the whole screen slid up; "Start a session" seemed dead - FIXED 2026-11-10 (personal account)
+
+**Owner report 20:38, Android phone (screenshot):** after opening a Training section the whole app had moved up - the tab bar sat in the middle of the screen with black below it - and after **Start a session** the session never appeared. **Finding:** `trainingControlPanel` (GK) scrolls the tile grid into view with `element.scrollIntoView()`, which scrolls **every** scrollable ancestor - including `#phone` (`overflow:hidden`, but still scrollable by script). The app frame was left shifted, so the tab bar moved up and anything at the bottom (the session sheet, the session screen) opened below the visible area. Database / logs: `start_session` answered 200 **about 30 times in three minutes** (ten in one second at 20:37:19) - the taps reached the server; one client error "Failed to fetch" was a duplicate request cut off. Same pattern existed in two older places (`goToCalendarWeek`, the weekly-call walkthrough's calendar cell).
+**Fix (index.html):** `scrollInto(el, block)` scrolls only the nearest real scroll area (`overflow-y: auto/scroll`); all three `scrollIntoView` calls replaced; a capture-phase scroll guard puts `#phone` / `#frame` / the page back to 0 if anything else ever scrolls them; `startSession` ignores repeat taps while one start is running. No SQL. **Not verified on a phone yet** - GL-T1 in the test queue. Mistake: GK was pushed without a phone check of the scroll (the gate cannot see layout).
 
 ---
 

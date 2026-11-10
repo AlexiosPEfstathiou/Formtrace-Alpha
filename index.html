@@ -4129,7 +4129,7 @@ async function renderHomeNewGoals(p){
    Completed workouts never appear as "today's program"; that block is retired. */
 async function goToCalendarWeek(monISO){
   go("trainee-home");
-  for(let i=0;i<12;i++){ const el=document.querySelector(`.cal-week[data-week="${monISO}"]`); if(el){ el.scrollIntoView({behavior:"smooth",block:"start"}); return; } await new Promise(r=>setTimeout(r,250)); }
+  for(let i=0;i<12;i++){ const el=document.querySelector(`.cal-week[data-week="${monISO}"]`); if(el){ scrollInto(el,"start"); return; }   /* GL */ await new Promise(r=>setTimeout(r,250)); }
 }
 /* ---- Item ES: the daily checklist on Home. Auto-ticks what the app can see (weigh-in, yesterday's macros, today's
    sessions); the rest is self-reported and kept on this phone for the day. All done -> "Day complete" once a day. ---- */
@@ -8051,7 +8051,12 @@ function weekHeaderEl(monISO, iAmCoach){
 }
 /* Trainee starts a session: stamp today as the day it was done (that is what
    places it on the calendar), then hand off to the one workout-opening path. */
+let startSessionBusy=false;   /* GL: the owner's taps reached start_session ten times in one second */
 async function startSession(a){
+  if(startSessionBusy) return; startSessionBusy=true;
+  try{ await startSessionInner(a); } finally { startSessionBusy=false; }
+}
+async function startSessionInner(a){
   /* Direct updates on assigned_workouts are column-restricted (status, draft,
      opened) and set_due_date() is coach-only - the trainee needs their own
      scoped function to record the day. start_session() stamps today. */
@@ -8095,6 +8100,28 @@ async function openWeekPool(pool){
    Trainee view only - the coach's view of a trainee is unchanged. The screen is drawn exactly as before and this step
    then moves each part into its section, so nothing inside the sections changed; if this step fails the old layout stays. ---- */
 let trPanelOpen=null;
+/* GL (2026-11-10, owner on a phone): element.scrollIntoView() also scrolls #phone and #frame - overflow:hidden, but still
+   scrollable by script - so opening a Training section slid the whole app up: the tab bar ended mid-screen and the session
+   screen opened below the visible area. scrollInto() scrolls only the nearest real scroll area; the guard below puts the
+   frame back if anything else ever scrolls it. */
+function scrollInto(el,block){
+  try{
+    if(!el) return;
+    let sc=el.parentElement;
+    while(sc&&sc!==document.body){ const oy=getComputedStyle(sc).overflowY; if((oy==="auto"||oy==="scroll")&&sc.scrollHeight>sc.clientHeight) break; sc=sc.parentElement; }
+    if(!sc||sc===document.body) return;
+    const r=el.getBoundingClientRect(), s=sc.getBoundingClientRect();
+    let top=sc.scrollTop+(r.top-s.top); if(block==="center") top-=(sc.clientHeight-r.height)/2;
+    sc.scrollTo({top:Math.max(0,top),behavior:"smooth"});
+  }catch(e){}
+}
+try{
+  document.addEventListener("scroll",ev=>{
+    const t=ev.target;
+    if(t===document||t===document.documentElement||t===document.body){ if(window.scrollY||window.scrollX) window.scrollTo(0,0); return; }
+    if(t&&(t.id==="phone"||t.id==="frame")&&(t.scrollTop||t.scrollLeft)){ t.scrollTop=0; t.scrollLeft=0; }
+  },true);
+}catch(e){}
 const TR_TILES=[["calendar","\uD83D\uDCC5","Calendar"],["weight","\u2696\uFE0F","Weight"],["macros","\uD83C\uDF7D\uFE0F","Macros"],["checkins","\uD83D\uDCF8","Check-ins"],["pbs","\uD83C\uDFC6","Personal bests"],["measures","\uD83D\uDCCF","Measurements"],["progress","\uD83D\uDCC8","Progress"],["calls","\uD83D\uDCDE","Calls"]];
 function trainingControlPanel(body){
   try{
@@ -8120,7 +8147,7 @@ function trainingControlPanel(body){
       tiles.querySelectorAll("[data-tile]").forEach(b=>{ const on=b.dataset.tile===trPanelOpen; b.classList.toggle("on",on); b.setAttribute("aria-expanded",on?"true":"false"); });
       Object.keys(boxes).forEach(k=>boxes[k].classList.toggle("open",k===trPanelOpen));
       if(dashHead&&(trPanelOpen==="macros"||trPanelOpen==="weight")) boxes[trPanelOpen].insertBefore(dashHead,boxes[trPanelOpen].firstChild);   // the Goal / Week / Day switch goes with the charts
-      if(scroll&&trPanelOpen) setTimeout(()=>{ try{ tiles.scrollIntoView({behavior:"smooth",block:"start"}); }catch(e){} },40);
+      if(scroll&&trPanelOpen) setTimeout(()=>scrollInto(tiles,"start"),40);   /* GL: not scrollIntoView */
     };
     defs.forEach(([k,ic,label])=>{
       const box=document.createElement("div"); box.className="tr-sec"; box.dataset.sec=k; secs[k].forEach(n=>box.appendChild(n)); host.appendChild(box); boxes[k]=box;
@@ -8404,7 +8431,7 @@ async function renderEngagement(skipFetch){
     if(iAmCoach){
       cell.className="cal-day cal-tap "+cls+(iso===today?" cal-today":"")+(glisten?" cal-glisten":"");
       cell.innerHTML=`<div class="dn">${d}</div>${badge?`<div class="cal-badge">${badge}</div>`:(wl.length&&cls==="cal-workout"?'<div class="dot" style="background:var(--lime-ink)"></div>':(iAmCoach&&!wl.length?'<div class="cal-add-plus">+</div>':""))}${wl.length>1?`<div class="cal-multi">${wl.length}</div>`:""}`;
-      if(callGuideDay(iso)){ cell.classList.add("cal-glisten"); if(!window.__ftCallGuideScrolled){ window.__ftCallGuideScrolled=true; setTimeout(()=>{ try{ cell.scrollIntoView({behavior:"smooth",block:"center"}); }catch(e){} },350); } }   /* weekly-call walkthrough */
+      if(callGuideDay(iso)){ cell.classList.add("cal-glisten"); if(!window.__ftCallGuideScrolled){ window.__ftCallGuideScrolled=true; setTimeout(()=>scrollInto(cell,"center"),350);   /* GL */ } }   /* weekly-call walkthrough */
       cell.addEventListener("click",()=>openEngDay(iso));
     }else{
       // TRAINEE: split diagonally — top triangle = macros logged, bottom triangle = workout state
