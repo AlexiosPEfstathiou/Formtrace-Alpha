@@ -764,10 +764,9 @@ stay callable from outside. The owner's live check confirmed it.
 1. For every security-definer function in `public`: `revoke execute ... from public, anon, authenticated`.
 2. `grant execute ... to authenticated` only for the functions the app calls through `rpc()` (list taken from
    `store.supabase.js` and `index.html`); nothing to `anon` unless the landing page needs it.
-3. `alter default privileges in schema public revoke execute on functions from public, anon, authenticated` so new functions
-   start locked; from now on every migration grants explicitly.
+3. ~~Change the default privileges so new functions start locked~~ **dropped 2026-11-10:** that default can only be changed for the whole database role, and it would also strip functions created later by extensions. Instead: the CLAUDE.md rule (every revoke names all three roles), and this migration is **safe to re-run** as a safety net with its check query.
 4. Defence in depth: the refund queue also checks the goal's state itself.
-**Check:** the read-only query from the review (security definer, no caller check, executable by anon / authenticated) returns no
+**SQL written 2026-11-10: `supabase/migrations_lock_internal_functions.sql`** (given) - loops over every security-definer function in `public`, revokes from public / anon / authenticated, grants back to `authenticated` for the 82 functions the app calls or policies use (list built by script from `index.html`, `store.supabase.js` and the policies, including the six called through the `rpc()` helper), keeps `service_role`. Non-definer functions untouched. Expect `anon_callable 0 | internal_still_open 0 | app_functions_locked 0`. Step 4 (state check inside the refund queue) still to do. **Check:** the read-only query from the review (security definer, no caller check, executable by anon / authenticated) returns no
 row that is not deliberately public. **Test:** every screen still loads (the gate's store check + a click-through), cron jobs still run.
 **Rule for both accounts from now on:** write `from public, anon, authenticated` in every revoke.
 
