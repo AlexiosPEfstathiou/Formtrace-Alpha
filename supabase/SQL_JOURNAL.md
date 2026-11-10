@@ -103,3 +103,4 @@ if their table is missing - run the earlier rows first in that case.
 | 2026-11-05 | EZ-6 | `migrations_exercise_notes.sql` | run ✓ 2026-11-05 (function_ok 1) | Expect `function_ok = 1` (returns no rows in the SQL editor - no signed-in user). |
 | 2026-11-05 | EZ-6b | `migrations_exercise_notes_edit.sql` | run ✓ 2026-11-05 (functions_ok 2) | Expect `functions_ok = 2`. |
 | 2026-11-10 | GD | `migrations_lock_internal_functions.sql` | run ✓ 2026-11-10 (anon_callable 0, internal_still_open 0, app_functions_locked 0) | Expect `anon_callable 0`, `internal_still_open 0`, `app_functions_locked 0`. Then click through the app (both roles). |
+| 2026-11-10 | GE | refund status check (GE): `select status, count(*), min(created_at), max(created_at) from public.payment_refunds group by status` | given (read-only) | To tell whether `refund-send` ever ran: rows stuck at `queued` = never sent. |

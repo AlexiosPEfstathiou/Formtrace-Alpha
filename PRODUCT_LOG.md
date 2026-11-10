@@ -780,7 +780,7 @@ home). The database side (the internal notification writer) was closed by GD.
 **Owner steps, in this order:** (1) redeploy the three functions (Verify JWT stays OFF); (2) Database -> Webhooks: on each of the three
 webhooks add the HTTP header `x-webhook-secret` with a long random value; (3) Edge Functions -> Secrets: add `WEBHOOK_SECRET` with
 the same value - this switches the check on. Steps also in `docs/PUSH_SETUP.md`.
-**Tests:** GE-T1 a real notification still arrives and opens the right tab; GE-T2 a call without the header is refused (C can check
+**Owner 2026-11-10: redeployed, header added, secret set. GE-T2 checked from the laptop: `push-send` and `release-send` answer 401 with no header and with a wrong one - PASS. `refund-send` answers 404 "function not found": no function is deployed under that name - owner to check the Edge Functions list and the `payment_refunds` webhook target (another name = still the old code; not deployed = queued refunds were never sent; SQL journal has the status query).** **Tests:** GE-T1 a real notification still arrives and opens the right tab; ~~GE-T2~~ a call without the header is refused (C can check
 from the laptop once the secret is set); GE-T3 a weekly release / a refund still goes out (next real one, or the sandbox).
 
 **Finding:** the three webhook-driven Edge Functions (push-send, release-send, refund-send) run with sign-in checking off and do
