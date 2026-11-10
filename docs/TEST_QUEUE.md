@@ -22,6 +22,11 @@ Tip: allow ~10 minutes after a change for the phone to pick up the new version (
 - [ ] **GG-T5** On the active goal: the coach changes the **level**; **mark complete**, then **reopen**; the trainee **cancels** a goal. Each works without an error message.
 - [ ] **GG-T6** A **renewal**: the coach sends a direct offer to an existing trainee, the trainee accepts - a new goal starts.
 If anything says "permission denied for table / column ..." or one of the new guard sentences ("Only the trainee can accept an offer", "A goal starts from an accepted offer"...), note what you were doing.
+## Credit at checkout (GH, 2026-11-10) - sandbox (?stripetest=1), a trainee who has credit
+- [ ] **GH-T2** Part credit: accept a goal that costs more than your credit. Before paying, Profile -> Credit shows "credit reserved while you pay for this goal". Pay with a test card -> the line reads "credit used for this goal" and the balance is right.
+- [ ] **GH-T3** Start a part-credit checkout and **close it without paying**. After about 40-50 minutes the reservation line is gone and the credit is back.
+- [ ] **GH-T4** Full credit: a goal that costs no more than your credit is paid at once ("paid with your credit"); the ledger shows one line for it.
+- [ ] **GH-T5** With credit that covers only one goal: start the checkout for goal A (do not pay), then accept goal B. Goal B must **not** get the same credit (card for the full price, or only what is left).
 ## Anywhere — pull-to-refresh (GC)
 - [ ] **GC-T1** On **Goal** or **Notifications**, at the top, pull down: the gold arrow follows your finger, flips past the threshold with a tiny buzz, and spins on release; the list updates; the refresh sound plays (Sounds on).
 - [ ] **GC-T2** Release before the arrow flips: it slides away, nothing refreshes.

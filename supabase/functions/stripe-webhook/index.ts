@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
           .select("id,coach_id,trainee_id,goal_title").maybeSingle();
         if (updErr) throw updErr;                        // DB failure -> 500 below, so Stripe retries
         if (e && credit > 0) {                            // FC: take the credit off the balance now that the deposit landed (once: only the first update matches)
-          const { error: crErr } = await sb.from("trainee_credits").insert({ trainee_id: e.trainee_id, amount_cents: -credit, currency: s.currency, used_engagement: e.id, note: "credit used for this goal" });
+          const { error: crErr } = await sb.rpc("confirm_credit", { p_engagement: e.id, p_cents: credit, p_currency: s.currency });   // GH: the reservation made at checkout becomes final (or, for an older checkout, the use is recorded now)
           if (crErr) console.error("stripe-webhook credit ledger", crErr);
         }
         if (e) {

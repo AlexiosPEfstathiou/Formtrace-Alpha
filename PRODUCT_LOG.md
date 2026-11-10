@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> ~~GF user text as text~~ (built + SQL run 2026-11-10; tests GF-T2..T4 pending) -> ~~GG offers / goals write lock~~ (SQL run 2026-11-10; flow tests GG-T1..T6 pending); then GH credit in one step, GI hardening, GJ code health.**
+**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> ~~GF user text as text~~ (built + SQL run 2026-11-10; tests GF-T2..T4 pending) -> ~~GG offers / goals write lock~~ (SQL run 2026-11-10; flow tests GG-T1..T6 pending); then GH credit in one step (built 2026-11-10; SQL given, two functions to redeploy), GI hardening, GJ code health.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
@@ -837,7 +837,24 @@ billing_active, level); no deletes on goals; a check on insert that a new goal m
 one goal per offer). Price and length change only through the counter-offer functions. Review who may set which status.
 **Test:** every offer and goal flow end to end - post, offer, counter, accept, pay, level change, pause, complete, end early, renew.
 
-## GH. Credit is reserved in one step - HIGH
+## GH. Credit is reserved in one step - HIGH - BUILT 2026-11-10 (SQL given; owner redeploys checkout-create + stripe-webhook)
+
+**Built 2026-11-10 (C):** `supabase/migrations_credit_reservation.sql` + `checkout-create` + `stripe-webhook`.
+- **Full credit:** `pay_goal_with_credit()` - one transaction locks the trainee's credit (advisory lock per trainee), re-checks the
+  balance, marks the goal paid and writes the ledger line, or changes nothing ("insufficient" -> the card pays the rest).
+- **Part credit:** `reserve_credit()` when the Checkout starts - a ledger line with `reserved_until` (new column), so a second
+  checkout sees the reduced balance at once; it returns what was actually set aside. `confirm_credit()` (webhook) makes it final
+  when the payment lands; a checkout started before this change is still recorded as before.
+- **Abandoned checkout:** the credit comes back - at once if Stripe refuses the session, otherwise when the reservation expires
+  (credit checkouts now expire after 31 minutes - Stripe's minimum is 30; reservations after 40; a job every 10 minutes sweeps them).
+  A retried checkout for the same goal replaces its own reservation.
+- All five functions are internal (service role only; revoked from public, anon, authenticated - the GD rule).
+**In the app:** while a credit checkout is open, Profile -> Credit shows a line "credit reserved while you pay for this goal".
+**Order:** run the SQL first, then redeploy `checkout-create` and `stripe-webhook` (the new code calls the new functions).
+**Tests (sandbox, ?stripetest=1):** GH-T1 SQL (column_ok 1 | functions 6 | open_to_users 0 | cron_job 1); GH-T2 part-credit checkout:
+the reservation line appears, pay -> it becomes "credit used for this goal", balance correct; GH-T3 start a part-credit checkout
+and abandon it -> the credit is back within ~40-50 minutes; GH-T4 full-credit goal -> paid at once, ledger line written once;
+GH-T5 (the point of GH) with credit for one goal only, start checkouts for two goals -> only one gets the credit.
 
 **Finding:** checkout reads the credit balance and spends it in separate steps, so two payments at the same moment could both use it.
 **Fix (C):** one database function that locks the trainee's credit, re-checks the balance, writes the ledger line and stamps the

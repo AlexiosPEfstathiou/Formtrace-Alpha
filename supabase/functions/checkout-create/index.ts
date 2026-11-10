@@ -7,6 +7,10 @@
 // price. Credit covering price + payout costs = no card payment at all (paid here, at once);
 // otherwise the card pays the rest (never below Stripe's 0.50 minimum). The credit is taken off
 // the balance when the deposit lands (stripe-webhook), so an abandoned Checkout keeps it.
+// GH (security review 2026-11-10): credit is now spent in one locked database step. Full credit = pay_goal_with_credit()
+// (locks, re-checks the balance, marks the goal paid and writes the ledger line together). Part credit = reserve_credit()
+// when the Checkout starts (a ledger line with an expiry, so a second checkout cannot use the same credit); the webhook
+// confirms it; an abandoned Checkout gives it back (the session expires after 31 minutes, the reservation after 40).
 // Secrets: STRIPE_SECRET_KEY (sk_test_… while testing). Optional: APP_URL.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe";
@@ -62,31 +66,34 @@ Deno.serve(async (req) => {
     const connectCents = payoutCents + accountCents;
 
     // FC: the trainee's credit in this currency
-    const { data: cr } = await sb.from("trainee_credits").select("amount_cents").eq("trainee_id", e.trainee_id).eq("currency", currency);
-    const creditBal = Math.max(0, (cr || []).reduce((t: number, x: any) => t + Number(x.amount_cents || 0), 0));
+    const { data: cr } = await sb.from("trainee_credits").select("amount_cents,used_engagement,reserved_until").eq("trainee_id", e.trainee_id).eq("currency", currency);
+    // GH: an estimate for choosing the path - this goal's own open reservation (an earlier attempt) is not counted against it; the database functions decide
+    const creditBal = Math.max(0, (cr || []).reduce((t: number, x: any) => t + ((x.reserved_until && x.used_engagement === e.id) ? 0 : Number(x.amount_cents || 0)), 0));
     const connectRounded = connectCents > 0 ? Math.ceil(connectCents / 100) * 100 : 0;
     const fullNeed = baseCents + connectRounded;
     const meta: Record<string, string> = { engagement_id: e.id, trainee_id: e.trainee_id, coach_id: e.coach_id };
 
     // FC: credit covers everything - no card payment; the goal is paid here
     if (creditBal > 0 && creditBal >= fullNeed) {
-      const now = new Date().toISOString();
-      const { data: paid, error: updErr } = await sb.from("engagements").update({
-        deposit_at: now, deposit_amount: 0, deposit_processing: connectRounded, deposit_credit_cents: fullNeed,
-        deposit_currency: currency, deposit_livemode: LIVE,
-      }).eq("id", e.id).is("deposit_at", null).select("id").maybeSingle();
-      if (updErr) throw updErr;
-      if (!paid) return json({ error: "This goal is already paid" }, 400);
-      await sb.from("trainee_credits").insert({ trainee_id: e.trainee_id, amount_cents: -fullNeed, currency, used_engagement: e.id, note: "credit used for this goal (paid in full)" });
+      // GH: one transaction - lock the trainee's credit, re-check the balance, mark the goal paid, write the ledger line
+      const { data: outcome, error: payErr } = await sb.rpc("pay_goal_with_credit", { p_engagement: e.id, p_need: fullNeed, p_processing: connectRounded, p_currency: currency, p_livemode: LIVE });
+      if (payErr) throw payErr;
+      if (outcome === "already_paid") return json({ error: "This goal is already paid" }, 400);
+      if (outcome === "paid") {
       try {
         const { data: p } = await sb.from("profiles").select("display_name").eq("id", e.trainee_id).maybeSingle();
         await sb.from("push_outbox").insert({ to_user: e.coach_id, kind: "offer", title: `💶 ${(p && p.display_name) || "Your trainee"} paid the deposit with credit${LIVE ? "" : " (test)"}`, body: `${e.goal_title || "Goal"} · held by Formtrace, released to you week by week`, url: "/#coach" });
       } catch (pushErr) { console.error("checkout-create push", pushErr); }
       return json({ paid_with_credit: true, credit_cents: fullNeed });
+      }
+      // GH: "insufficient" - the credit was used for another goal a moment ago: carry on, the card pays the rest
     }
 
     // FC: part credit - the card pays the rest (at least Stripe's minimum)
-    const creditUsed = creditBal > 0 ? Math.max(0, Math.min(creditBal, baseCents - MIN_CHARGE_CENTS)) : 0;
+    // GH: reserve the credit now (locked in the database; returns what was actually set aside - 0 clears an earlier attempt)
+    const { data: reserved, error: rsvErr } = await sb.rpc("reserve_credit", { p_engagement: e.id, p_max_cents: Math.max(0, baseCents - MIN_CHARGE_CENTS), p_currency: currency });
+    if (rsvErr) throw rsvErr;
+    const creditUsed = Math.max(0, Number(reserved) || 0);
     const chargedBase = baseCents - creditUsed;
     const goalLine = Math.max(0, priceCents - creditUsed);
     const feeLine = feeCents - Math.max(0, creditUsed - priceCents);
@@ -116,7 +123,8 @@ Deno.serve(async (req) => {
     const threeDsMin = Number.isFinite(r.three_ds_min_cents) ? r.three_ds_min_cents : 0;
     const want3ds = threeDsMin >= 0 && (chargedBase + processingCents) >= threeDsMin;
     meta.three_ds = want3ds ? "any" : "automatic";
-    const session = await stripe.checkout.sessions.create({
+    let session: any;
+    try { session = await stripe.checkout.sessions.create({
       // Checkout Studio configuration (exact):
       ui_mode: "hosted_page",
       billing_address_collection: "auto",
@@ -129,6 +137,7 @@ Deno.serve(async (req) => {
       origin_context: "mobile_app",
       // Formtrace values:
       mode: "payment",
+      ...(creditUsed > 0 ? { expires_at: Math.floor(Date.now() / 1000) + 31 * 60 } : {}),   // GH: a credit checkout holds a reservation - keep it short (Stripe's minimum is 30 minutes)
       line_items,
       success_url: `${APP_URL}?checkout=success&session_id={CHECKOUT_SESSION_ID}#listings`,
       cancel_url: `${APP_URL}?checkout=cancel#listings`,
@@ -137,7 +146,7 @@ Deno.serve(async (req) => {
       metadata: meta,
       payment_method_options: { card: { request_three_d_secure: want3ds ? "any" : "automatic" } },   // EJ
       payment_intent_data: { transfer_group: `eng_${e.id}`, metadata: meta },
-    } as any);
+    } as any); } catch (se) { if (creditUsed > 0) await sb.rpc("release_credit_reservation", { p_engagement: e.id }); throw se; }   // GH
 
     await sb.from("engagements").update({ stripe_checkout_session: session.id }).eq("id", e.id);
     return json({ url: session.url, credit_cents: creditUsed });
