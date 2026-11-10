@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - before live keys (DW): GD lock internal functions (confirmed live) -> GE notifications only from Formtrace -> GF user text as text -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
+**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace -> GF user text as text -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
@@ -755,7 +755,7 @@ read-only for users; profile updates limited to named harmless columns; every se
 webhook signature checked, transfers and refunds idempotent, deposit columns frozen, 3D Secure on every payment; private video
 bucket; no secrets in the history.
 
-## GD. Lock the internal database functions - CRITICAL (confirmed on the live database 2026-11-10)
+## GD. Lock the internal database functions - CRITICAL - SQL RUN 2026-11-10 (hole closed; click-through + step 4 left)
 
 **Finding:** most `revoke execute ... on function` statements in the migrations name only `public`. On Supabase the `anon` and
 `authenticated` roles hold their own grants, so internal functions (money, notifications, digests, streak and cycle maintenance)
@@ -766,7 +766,7 @@ stay callable from outside. The owner's live check confirmed it.
    `store.supabase.js` and `index.html`); nothing to `anon` unless the landing page needs it.
 3. ~~Change the default privileges so new functions start locked~~ **dropped 2026-11-10:** that default can only be changed for the whole database role, and it would also strip functions created later by extensions. Instead: the CLAUDE.md rule (every revoke names all three roles), and this migration is **safe to re-run** as a safety net with its check query.
 4. Defence in depth: the refund queue also checks the goal's state itself.
-**SQL written 2026-11-10: `supabase/migrations_lock_internal_functions.sql`** (given) - loops over every security-definer function in `public`, revokes from public / anon / authenticated, grants back to `authenticated` for the 82 functions the app calls or policies use (list built by script from `index.html`, `store.supabase.js` and the policies, including the six called through the `rpc()` helper), keeps `service_role`. Non-definer functions untouched. Expect `anon_callable 0 | internal_still_open 0 | app_functions_locked 0`. Step 4 (state check inside the refund queue) still to do. **Check:** the read-only query from the review (security definer, no caller check, executable by anon / authenticated) returns no
+**SQL written and RUN ✓ 2026-11-10: `supabase/migrations_lock_internal_functions.sql`** (anon_callable 0 | internal_still_open 0 | app_functions_locked 0 - the internal functions are no longer callable from outside; owner still to click through the app as trainee and coach: GD-T1 in `docs/TEST_QUEUE.md`) - loops over every security-definer function in `public`, revokes from public / anon / authenticated, grants back to `authenticated` for the 82 functions the app calls or policies use (list built by script from `index.html`, `store.supabase.js` and the policies, including the six called through the `rpc()` helper), keeps `service_role`. Non-definer functions untouched. Expect `anon_callable 0 | internal_still_open 0 | app_functions_locked 0`. Step 4 (state check inside the refund queue) still to do. **Check:** the read-only query from the review (security definer, no caller check, executable by anon / authenticated) returns no
 row that is not deliberately public. **Test:** every screen still loads (the gate's store check + a click-through), cron jobs still run.
 **Rule for both accounts from now on:** write `from public, anon, authenticated` in every revoke.
 

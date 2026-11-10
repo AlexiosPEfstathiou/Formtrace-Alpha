@@ -5,6 +5,9 @@ updates PRODUCT_LOG. Grouped by where you will be in the app. Created 2026-11-05
 **How results are collected:** after the workout, tell Claude "I tested" - Claude interviews you through every pending line, group by group (pass / fail / not tried), with follow-up questions on anything that failed.
 Tip: allow ~10 minutes after a change for the phone to pick up the new version (close and reopen the app).
 
+## First — after the security lock (GD, 2026-11-10)
+- [ ] **GD-T1** Everything still works after the internal functions were locked. As a **trainee** and as a **coach**: sign out and in; open every tab (Home, Goal / Trainees, Training / Library, Social, Profile, Notifications; Review as admin); open a workout and mark a set; submit; as the coach open a review; open the payment tracker on a goal; pause / end pause; Social: congratulate. **If any screen says "permission denied for function …", note the function name** - it is a one-line fix.
+
 ## Anywhere — pull-to-refresh (GC)
 - [ ] **GC-T1** On **Goal** or **Notifications**, at the top, pull down: the gold arrow follows your finger, flips past the threshold with a tiny buzz, and spins on release; the list updates; the refresh sound plays (Sounds on).
 - [ ] **GC-T2** Release before the arrow flips: it slides away, nothing refreshes.
