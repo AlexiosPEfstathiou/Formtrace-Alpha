@@ -55,3 +55,14 @@ or an HTTP status from the push service).
   automatically; others count failures in `fail_count`.
 - Quiet hours and call reminders ("in 10 minutes") are follow-ups: reminders
   need a scheduled job (pg_cron → outbox), not a trigger.
+
+## Webhook secret (GE, 2026-11-10) - required for push-send, release-send and refund-send
+These three functions run with **Verify JWT off** (they are called by Database Webhooks, not by users), so they check a shared
+secret instead. Until the secret exists the check is off; set things up in this order so nothing is interrupted:
+1. **Deploy** the three functions from `supabase/functions/` (Verify JWT stays off).
+2. **Database -> Webhooks**: open each of the three webhooks (`push_outbox` -> push-send, `payment_releases` -> release-send,
+   `payment_refunds` -> refund-send) and add an **HTTP header**: name `x-webhook-secret`, value = a long random string
+   (PowerShell: `[guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')`). The same value on all three.
+3. **Edge Functions -> Secrets**: add `WEBHOOK_SECRET` with that same value. From this moment a call without the header gets 401.
+To rotate it: change the header on the three webhooks and the secret together (a few seconds of refused calls at most; releases
+are re-tried by the daily job, a notification sent in that gap is lost).

@@ -20,7 +20,15 @@ async function push(to_user: string, kind: string, title: string, body: string, 
   catch (e) { console.error("release-send push", e); }                       // a missed notification never fails a release
 }
 
+// GE (security review 2026-11-10): only the Database Webhook may call this function. The webhook sends the header
+// x-webhook-secret; it must equal the WEBHOOK_SECRET secret. While WEBHOOK_SECRET is not set the check is off (so the
+// function can be deployed first, the header added to the webhook second, and the secret set last).
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
+function sameSecret(a: string, b: string) { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; }
+const authorized = (req: Request) => !WEBHOOK_SECRET || sameSecret(req.headers.get("x-webhook-secret") ?? "", WEBHOOK_SECRET);
+
 Deno.serve(async (req) => {
+  if (!authorized(req)) return new Response("unauthorized", { status: 401 });
   let payload: any;
   try { payload = await req.json(); } catch { return new Response("bad json", { status: 400 }); }
   const rec = payload?.record ?? payload;

@@ -36,7 +36,9 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   /* EP: push urls are written as "/#tab"; resolve them against the worker's scope (the app folder), not the origin root - on github.io the root is a 404. */
   const raw = (event.notification.data && event.notification.data.url) ? String(event.notification.data.url) : "/";
-  const target = new URL(raw.replace(/^\//, ""), self.registration.scope).href;
+  /* GE (security review 2026-11-10): a notification may only open a page inside the app; anything else opens the app's home. */
+  let target = self.registration.scope;
+  try { const u = new URL(raw.replace(/^\//, ""), self.registration.scope); if (u.origin === self.location.origin) target = u.href; } catch (e) {}
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
     for (const c of list) { if (c.url.startsWith(self.location.origin)) { c.focus(); c.navigate(target).catch(() => {}); return; } }
     return self.clients.openWindow(target);

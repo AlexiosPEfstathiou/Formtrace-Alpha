@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace -> GF user text as text -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
+**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> GF user text as text -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
@@ -770,7 +770,18 @@ stay callable from outside. The owner's live check confirmed it.
 row that is not deliberately public. **Test:** every screen still loads (the gate's store check + a click-through), cron jobs still run.
 **Rule for both accounts from now on:** write `from public, anon, authenticated` in every revoke.
 
-## GE. Notifications can only come from Formtrace - CRITICAL / HIGH
+## GE. Notifications can only come from Formtrace - CRITICAL / HIGH - CODE BUILT 2026-11-10 (owner: redeploy, header, secret)
+
+**Built 2026-11-10 (C):** `push-send`, `release-send` and `refund-send` require the header `x-webhook-secret` to equal the
+`WEBHOOK_SECRET` Edge Function secret - **the check is off while that secret is not set**, so the roll-out cannot interrupt
+notifications or payouts. `push-send` no longer trusts the request body: it takes the row id, re-reads the notification from
+`push_outbox` and does not send a row twice. `sw.js` opens a notification's link only if it stays inside the app (else the app's
+home). The database side (the internal notification writer) was closed by GD.
+**Owner steps, in this order:** (1) redeploy the three functions (Verify JWT stays OFF); (2) Database -> Webhooks: on each of the three
+webhooks add the HTTP header `x-webhook-secret` with a long random value; (3) Edge Functions -> Secrets: add `WEBHOOK_SECRET` with
+the same value - this switches the check on. Steps also in `docs/PUSH_SETUP.md`.
+**Tests:** GE-T1 a real notification still arrives and opens the right tab; GE-T2 a call without the header is refused (C can check
+from the laptop once the secret is set); GE-T3 a weekly release / a refund still goes out (next real one, or the sandbox).
 
 **Finding:** the three webhook-driven Edge Functions (push-send, release-send, refund-send) run with sign-in checking off and do
 not verify who is calling; the service worker opens a notification's link as given.

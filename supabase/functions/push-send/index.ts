@@ -1,5 +1,5 @@
 // Formtrace — push-send Edge Function (Item CE)
-// Called by a Database Webhook on INSERT into public.push_outbox. Loads the
+// Called by a Database Webhook on INSERT into public.push_outbox (header x-webhook-secret, see GE below). Loads the
 // recipient's subscriptions, honours their per-type prefs, sends a Web Push to
 // each, and records the result on the outbox row. Prunes dead subscriptions.
 //
@@ -16,11 +16,23 @@ webpush.setVapidDetails(
   Deno.env.get("VAPID_PRIVATE_KEY")!,
 );
 
+// GE (security review 2026-11-10): only the Database Webhook may call this function. The webhook sends the header
+// x-webhook-secret; it must equal the WEBHOOK_SECRET secret. While WEBHOOK_SECRET is not set the check is off (so the
+// function can be deployed first, the header added to the webhook second, and the secret set last).
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
+function sameSecret(a: string, b: string) { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; }
+const authorized = (req: Request) => !WEBHOOK_SECRET || sameSecret(req.headers.get("x-webhook-secret") ?? "", WEBHOOK_SECRET);
+
 Deno.serve(async (req) => {
+  if (!authorized(req)) return new Response("unauthorized", { status: 401 });
   let payload: any;
   try { payload = await req.json(); } catch { return new Response("bad json", { status: 400 }); }
-  const row = payload?.record ?? payload;               // webhook shape or direct call
-  if (!row?.to_user || !row?.title) return new Response("no row", { status: 400 });
+  const rec = payload?.record ?? payload;
+  if (!rec?.id) return new Response("no row", { status: 400 });
+  // GE: never trust the request for who gets what - re-read the row the database queued; a row already sent is not sent again
+  const { data: row } = await sb.from("push_outbox").select("id,to_user,kind,title,body,url,sent_at").eq("id", rec.id).maybeSingle();
+  if (!row) return new Response("no row", { status: 400 });
+  if (row.sent_at) return new Response("already sent", { status: 200 });
 
   // per-type opt-out
   const { data: prof } = await sb.from("profiles").select("push_prefs").eq("id", row.to_user).maybeSingle();
