@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> GF user text as text (built 2026-11-10, SQL given) -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
+**SECURITY (review 2026-11-10) - before live keys (DW): ~~GD lock internal functions~~ (SQL run 2026-11-10; click-through GD-T1 pending) -> GE notifications only from Formtrace (code built 2026-11-10; owner: redeploy + header + secret) -> ~~GF user text as text~~ (built + SQL run 2026-11-10; tests GF-T2..T4 pending) -> GG offers / goals write lock; then GH credit in one step, GI hardening, GJ code health.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
 **Brand consistency (owner, 2026-11-04):** ~~**FV**~~ Formtrace everywhere - DONE 2026-11-04 · **FZ** sound effects - placeholders BUILT 2026-11-05 (L1; designed files and L2 later) · **FX** refine the sign-in emails · **FY** Stripe branding (interim now, final after OpenArt).
 **HIGH PRIORITY (owner, 2026-11-04):** **FP** explain every refund that is not full - BUILT 2026-11-04 (SQL run ✓; panel correct; push did not arrive - diagnosing) · **FQ** credit and refunds history with unique references - BUILT (SQL run ✓) · **FR** admin.formtrace.ie control panel (logged, to design) · **FT** make the repo private via GitHub Pro (owner steps; history scanned clean) · **FO** full-credit refund keeps payout costs - FIXED (SQL run ✓).
@@ -790,7 +790,7 @@ not verify who is calling; the service worker opens a notification's link as giv
 the request; (3) `sw.js` opens only links inside the app, otherwise the app's home. The database side is covered by GD.
 **Test:** a real notification still arrives and opens the right tab; a call without the secret is refused.
 
-## GF. User-written text is always shown as text - HIGH - BUILT 2026-11-10 (SQL given)
+## GF. User-written text is always shown as text - HIGH - BUILT, SQL RUN 2026-11-10 (owner tests GF-T2..T4 left)
 
 **Built 2026-11-10 (C):** (1) `toast` shows **plain text** (no message used HTML or entities - checked all 314 calls); (2) the
 Instagram and Snapchat link builders **encode** the handle and both link attributes are escaped; (3) database rule
@@ -800,7 +800,7 @@ silent while typing, a hint when leaving the field (they save as you type, so ha
 (5) the workout-delete confirmation no longer double-escapes the name (EZ-2). **Checked and clean:** no raw server text is placed
 into the page as HTML; the 17 local values inserted into markup are fixed wording; the video player and badge texts escape.
 Raw server messages in toasts stay (they are the app's own user-facing sentences) - now harmless as plain text.
-**Tests:** GF-T1 run the SQL (rules 4); GF-T2 set a display name and an exercise name containing `<b>bold</b>` and a quote - they
+**Tests:** ~~GF-T1~~ SQL run ✓ 2026-11-10 (as expected); GF-T2 set a display name and an exercise name containing `<b>bold</b>` and a quote - they
 appear literally in every message; GF-T3 Social settings: a link typed into Instagram is held back with a hint, a username saves;
 GF-T4 a shared handle's Open button goes to the right profile.
 
