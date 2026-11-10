@@ -14,6 +14,14 @@ Tip: allow ~10 minutes after a change for the phone to pick up the new version (
 - [ ] **GF-T3** Profile -> Social settings: type a full link into Instagram and leave the field - red border and a hint, nothing saved; type a plain username - it saves (green flash).
 - [ ] **GF-T4** A handle someone shared with you: **Open** goes to the right profile.
 
+## Offers and goals after the write lock (GG, 2026-11-10) - two accounts (a trainee and a coach)
+- [ ] **GG-T1** Trainee posts a goal; coach sends an offer on it (with a pitch video if you like) - "Offer sent".
+- [ ] **GG-T2** Trainee proposes a change (counter); coach accepts or keeps the terms; the offer shows the right price and length.
+- [ ] **GG-T3** Trainee **accepts** the offer: the goal is created and (test mode) the payment page opens; the other pending offers on that goal are declined automatically.
+- [ ] **GG-T4** Trainee **declines** a different offer: "Declined". Opening an offer marks it viewed (no error).
+- [ ] **GG-T5** On the active goal: the coach changes the **level**; **mark complete**, then **reopen**; the trainee **cancels** a goal. Each works without an error message.
+- [ ] **GG-T6** A **renewal**: the coach sends a direct offer to an existing trainee, the trainee accepts - a new goal starts.
+If anything says "permission denied for table / column ..." or one of the new guard sentences ("Only the trainee can accept an offer", "A goal starts from an accepted offer"...), note what you were doing.
 ## Anywhere — pull-to-refresh (GC)
 - [ ] **GC-T1** On **Goal** or **Notifications**, at the top, pull down: the gold arrow follows your finger, flips past the threshold with a tiny buzz, and spins on release; the list updates; the refresh sound plays (Sounds on).
 - [ ] **GC-T2** Release before the arrow flips: it slides away, nothing refreshes.
