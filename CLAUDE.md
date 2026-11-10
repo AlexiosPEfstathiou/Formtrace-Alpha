@@ -77,15 +77,16 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
 ## Design assets list (owner, 2026-11-02)
 Whenever you build or change a visual element (icon, badge, animation, illustration, shareable image, empty state, branded email or page) **or a sound**, add or update its row in `docs/DESIGN_ASSETS.md`, with its tier (L1 / L2 / Later / Code) and spec. It is the brief for the openart theme (PRODUCT_LOG EW).
 
-## Last session (2026-11-04 night, personal account)
-Read the top of docs/HANDOVER.md ("Session 2026-11-04 night"). Done: FU verified; FP refund push passed on the phone; EJ dispute tests 1-2 (hold + lost path pass); **EJ part 3 - a card dispute cancels the goal and its payouts on opening, both sides told; SQL applied via Supabase MCP (journal run ✓)**; GA camera logged. Pending SQL: FV follow-up (given). Next: EJ part 3 test with a fresh 0259 payment; FZ / openart brief / FX. GB logged (weekly report by schedule, work account). **2026-11-05 (work account):** FV closed (no SQL pending), ED done, FZ placeholder sounds + Settings switches, GC pull-to-refresh. **2026-11-10 (work account): whole-repo security review - items GD-GJ logged (GD-GG before live keys); details in the git-ignored `docs/private/` on the work laptop. Same day: GD, GE, GF, GG built and their SQL run (see HANDOVER); open: `refund-send` not deployed under that name, owner tests in `docs/TEST_QUEUE.md`, GH also built, SQL run, functions redeployed. **GK: the trainee's Training tab is now a control panel (large Start a session + buttons that open each section).** Next item code: **GL**.
+## Last session (2026-11-05 to 2026-11-10, work account)
+Read the top of docs/HANDOVER.md ("Session 2026-11-05 to 2026-11-10"). **Whole-repo security review: items GD-GJ; GD, GE, GF, GG,
+GH built and all their SQL run** (details in the git-ignored `docs/private/` on the work laptop). **Open: `refund-send` is not
+deployed under that name (404)**; owner tests in `docs/TEST_QUEUE.md` (security ones first); GD step 4; GI; GJ. Product: **GK
+trainee Training tab as a control panel**, GA camera first pass, EZ builder fixes + EZ-6 / 6b cumulative notes, FZ sounds (passed),
+GC pull-to-refresh, EW openart brief. No SQL pending. Next item code: **GL**.
 
-## Session before (2026-11-04, work account)
-Read the top of docs/HANDOVER.md (session 2026-11-04 summary). Done: EJ disputes + 3D Secure, FO / FP / FQ refunds and credit history, EU part 2, EX landing page, FV Formtrace everywhere, design-assets list finalised. Pending SQL: FU clean-up and FV follow-up (given). Suggested next: FZ placeholder sounds, openart style brief + L1 prompts, FX email templates. Next item code: **GA**.
-
-## Session before (2026-11-02 evening)
-Domain live at https://formtrace.ie/ (EF done). Email EH then in progress. Built: EU rest timer; FI "Choose now" fix. See the top of docs/HANDOVER.md. Next item code: **FM**.
-
+## Session before (2026-11-04 night, personal account)
+FU verified; FP refund push passed on the phone; EJ dispute tests 1-2; EJ part 3 (a card dispute cancels the goal and its payouts);
+GA camera logged; GB weekly report logged. EJ part 3 test (fresh 0259 payment) still to do from the personal account.
 ## Brand name (owner, 2026-11-04)
 Write **Formtrace** (not FormTrace) in all new text. Older text is swept under PRODUCT_LOG FV when the owner says go.
 

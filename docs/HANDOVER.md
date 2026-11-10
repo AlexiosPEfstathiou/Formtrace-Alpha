@@ -1,16 +1,55 @@
-# Formtrace Coach — Handover (as of 2026-10-29)
+# Formtrace Coach — Handover (as of 2026-11-10)
 
-## Update 2026-11-10 (work account) - security review
-- **Later the same day:** **GH** credit reservation - SQL run (1 | 6 | 0 | 1), `checkout-create` + `stripe-webhook` redeployed (sandbox tests GH-T2..T5 pending). **GK (owner, user feedback): the trainee's Training tab is a control panel** - a large Start a session button on top, then buttons (Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls, Vacation) that open one section at a time; built as a last step of `renderEngagement` (`trainingControlPanel`), trainee view only. Next code **GL**.
-- **Security fixes done the same day (2026-11-10):** **GD** internal functions locked - SQL run (0 / 0 / 0). **GE** webhook secret on push-send / release-send (both answer 401 without it; a real notification still arrives - GE-T1 passed); service worker opens only in-app links; **`refund-send` is NOT deployed under that name (404) - owner to check the Edge Functions list and the `payment_refunds` webhook target.** **GF** toasts plain text, handle links encoded, handle rules - SQL run. **GG** offers / goals write lock - SQL run (17 | 3 | 7 | 5 | 0 | 2). **Left:** owner tests GD-T1, GF-T2..T4, GG-T1..T6 (in `docs/TEST_QUEUE.md`), the state check inside the refund queue (GD step 4), then **GH** (credit in one step), GI, GJ. **New rule: every revoke names `public, anon, authenticated`; new app-facing functions get `grant execute ... to authenticated`** (or re-run `migrations_lock_internal_functions.sql` after adding the name to its list).
-- Whole-repo code review done. **Seven items logged: GD-GJ** (PRODUCT_LOG, "Security review 2026-11-10"). **GD is confirmed on the live database** (internal functions callable from outside because revokes name only `public`) and, with GE / GF / GG, must be fixed **before live keys (DW)**. The detailed report is deliberately NOT in the repo (public until FT): `docs/private/CODE_REVIEW_2026-11-10.md` on the work laptop. Nothing was changed in the app or the database by the review. New rules in CLAUDE.md ("Security rules"). Next code **GK**.
-- Also since 2026-11-05: EZ building workouts (fixes 1-9), EZ-6 / 6b cumulative review notes + editing, GA camera first pass, `docs/TEST_QUEUE.md` + the test-interview rule.
+## Session 2026-11-05 to 2026-11-10 (work account) - summary
 
-## Update 2026-11-05 (work account)
-- **All pending owner tests in one checklist: `docs/TEST_QUEUE.md`** (GC pull-to-refresh, EZ builder, EZ-6 / 6b notes). Update it when tests pass or new ones are queued.
-- **Built today:** FZ placeholder sounds + Settings switches (Sounds / Workout sounds), GC pull-to-refresh. **Tests queued for the owner:** FZ-T1..T5 and GC-T1..T4 (steps in PRODUCT_LOG FZ / GC). ED done (code name kept out of the repo). FV closed. Next code **GD**.
-- Owner: the **EJ part 3 test** will be done from the **personal account**. The open test dispute ("Dispute test", EUR 34) was **accepted** in Stripe (closed as lost; its goal had already ended). **Harvey Specter (coach test account) now has notifications on.** **FV follow-up SQL run ✓ (notes_left 0, unsent_left 0) - FV fully closed; no SQL pending.**
+**Start here (in this order):**
+1. **`refund-send` is not deployed under that name** - a call to it answers 404 "function not found". Owner to check the Edge
+   Functions list and which function the `payment_refunds` webhook points to. Another name = it still runs the old, unprotected
+   code (redeploy from `supabase/functions/refund-send/index.ts`). Not deployed = queued refunds were never sent through Stripe
+   (status query in the SQL journal). **Resolve before live keys.**
+2. **Owner tests - `docs/TEST_QUEUE.md`** (about 45 lines). The security ones first: **GD-T1** (click through the app as trainee
+   and coach - any "permission denied for function ..." means a function is missing from the keep list), **GF-T2..T4**,
+   **GG-T1..T6** (every offer / goal flow with two accounts), **GH-T2..T5** (credit at checkout, sandbox). Then GK, GA, EZ, GC.
+   **When the owner says he tested, interview him through the queue** (rule in CLAUDE.md).
+3. **GD step 4** - a state check inside the refund queue itself (backstop; the revoke already closes the hole).
+4. **GI** (medium hardening bundle), **GJ** (code health). Then back to product: FX sign-in emails, openart month, pilot.
 
+**Security review (2026-11-10).** Whole repo reviewed; seven items GD-GJ in PRODUCT_LOG ("Security review 2026-11-10").
+**The detailed report is NOT in the repo** (public until FT): `docs/private/CODE_REVIEW_2026-11-10.md` on the work laptop,
+git-ignored. Done the same day, all SQL run:
+- **GD** internal functions locked: `migrations_lock_internal_functions.sql` (0 | 0 | 0). Cause: 105 of 113 revokes said
+  `from public` only - on Supabase `anon` and `authenticated` hold their own grants. 82 app-facing functions keep
+  `authenticated`; everything else is owner / service role only.
+- **GE** `push-send` and `release-send` require the header `x-webhook-secret` = the `WEBHOOK_SECRET` secret (set by the owner;
+  both answer 401 without it; a real notification still arrives). `push-send` re-reads the outbox row. `sw.js` opens only
+  in-app links. Setup in `docs/PUSH_SETUP.md`.
+- **GF** `toast` is plain text; social-handle links encoded; `migrations_handle_rules.sql`; the settings fields validate first.
+- **GG** `migrations_offers_goals_write_lock.sql` (17 | 3 | 7 | 5 | 0 | 2): column-level insert / update on `offers` and
+  `engagements`, no delete, two guards (only the trainee accepts; a goal must match an accepted offer).
+- **GH** `migrations_credit_reservation.sql` (1 | 6 | 0 | 1) + `checkout-create` + `stripe-webhook` redeployed: credit is
+  reserved when a checkout opens and spent in one locked step; credit checkouts expire after 31 minutes.
+**New rules (CLAUDE.md, "Security rules"):** every revoke names `public, anon, authenticated`; a new app-facing function gets
+`grant execute ... to authenticated` (or add its name to the list in the lock migration and re-run it); user text is escaped;
+new tables get column-level write access; exploit detail stays in `docs/private/` while the repo is public.
+
+**Product work (2026-11-05 / 06 / 10).**
+- **GK (2026-11-10, user feedback): the trainee's Training tab is a control panel** - a large Start a session button on top,
+  then buttons (Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls, Vacation) that open one section at a
+  time. Built as the last step of `renderEngagement` (`trainingControlPanel`); trainee view only. **Not yet seen on a phone.**
+- **GA camera, first pass:** orientation follows the phone (motion sensor; the whole-recorder rotation and the toggle are gone),
+  preview = recorded frame, one mirror decision for preview / lines / saved video (owner: saved video mirrored) + a Mirror
+  button. **Unverified: which way each sideways direction turns** (GA-T4) - one line to swap in `startRec`.
+- **EZ coach experience, building workouts:** unsaved-changes guard (back button passed), delete confirm, hold / type steppers,
+  safe save, undo remove, estimate = rest x sets. **EZ-6 / EZ-6b:** cumulative dated coach notes per exercise for trainee and
+  coach, replay of the latest voice-over, coaches edit / delete their own notes (`exercise_notes`, `edit_exercise_note`).
+- **FZ** placeholder sounds + two Settings switches (**passed**). **GC** pull-to-refresh. **EW** `docs/OPENART_BRIEF.md` (style
+  brief + L1 prompts). **FV** closed, **ED** done (code name kept out of the repo).
+- `docs/TEST_QUEUE.md` holds every pending owner test.
+
+**State.** No SQL pending. Edge Functions as deployed: `push-send`, `release-send` (with the secret), `checkout-create`,
+`stripe-webhook`, `connect-onboard`; `refund-send` - see point 1. Stripe still sandbox, `payments_via_stripe = 0`.
+**Before live keys (DW):** point 1, the security tests in point 2, GD step 4. **FT (private repo) is now more useful** - it lets
+the detailed review be shared between the two accounts. Next item code: **GL**.
 ## Session 2026-11-04 night (personal account) - summary
 - SQL journal: **FU** clean-up verified (old_left 0, via Supabase MCP). **FV follow-up still NOT run** (`platform_rates.note` still says FormTrace; unsent pushes 0).
 - **FP refund push test PASSED** on the phone (Chrome) - test `push_outbox` row 61 sent 23:16:07, no error.
