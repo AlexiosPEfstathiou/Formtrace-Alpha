@@ -77,7 +77,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Goal celebration screen | `s-celebrate` | Optional L2 illustration behind it |
 | "Your journey" recap screen | `s-journey` | Later: an illustrated recap |
 | Payment tracker steps map | goal payment card (DL) | Accepted → Deposit → Training → Complete |
-| Rest timer stopwatch (ring, green → red) | workout screen (EU) | Crown, side button, ring |
+| Rest timer pill (small ring green → red + countdown; GN 2026-11-10 replaced the large stopwatch) | workout screen, top-right in the streak badge's place (EU / GN) | 38 px high pill, 30 px ring, no crown |
 | Analysis progress ring | after a set (`#analyze`) | |
 | Glisten / guide pulse effects | calendar, cards, call walkthrough | |
 | Loading spinner / app loading | everywhere | Could use the logo mark (L2) |

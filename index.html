@@ -849,7 +849,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
   .bd-fill{height:100%;border-radius:4px;}
   .bd-row .bv{font-size:12px;font-variant-numeric:tabular-nums;width:34px;text-align:right;color:var(--ink);font-weight:600;}
 
-  #toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(16px);background:var(--panel2);border:1px solid var(--line2);color:var(--ink);padding:12px 18px;border-radius:13px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s;z-index:60;max-width:86%;text-align:center;line-height:1.45;}
+  #toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(16px);background:var(--panel2);border:1px solid var(--line2);color:var(--ink);padding:12px 18px;border-radius:13px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s;z-index:300;max-width:86%;text-align:center;line-height:1.45;}   /* GN: above the header, the rest pill and sheets */
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .empty{text-align:center;padding:60px 20px;color:var(--faint);}
   .empty .ic{font-size:40px;opacity:.5;}
@@ -1113,6 +1113,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
   .cal-danger{animation:caldanger 1s ease-in-out infinite;}
   @keyframes caldanger{0%,100%{background:rgba(255,90,90,.25);border-color:rgba(255,90,90,.5);}50%{background:rgba(255,90,90,.7);border-color:var(--red);}}
   /* persistent streak badge, top-left of phone */
+  body.rest-on #streak-badge{visibility:hidden;}   /* GN: the rest pill takes its place */
   #streak-badge{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:70;display:flex;align-items:center;gap:5px;
     background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;font-weight:800;font-size:14px;padding:6px 12px 6px 10px;border-radius:20px;
     box-shadow:0 4px 14px rgba(245,197,66,.4);font-variant-numeric:tabular-nums;pointer-events:auto;}
@@ -10440,29 +10441,25 @@ function startRest(itemIndex){
 }
 function ensureRestTimer(){
   const r=restGet(); let el=document.getElementById("rest-timer");
-  if(!r){ if(el) el.remove(); if(restTick){ clearInterval(restTick); restTick=null; } return; }
+  if(!r){ if(el) el.remove(); document.body.classList.remove("rest-on"); if(restTick){ clearInterval(restTick); restTick=null; } return; }
   if(!el){
-    const R=54, C=2*Math.PI*R;
+    /* GN (owner, 2026-11-10): the big stopwatch over the middle of the screen covered buttons and hid its own message.
+       It is now a small pill in the top-right corner, in the streak badge's place (the badge steps aside while resting). */
+    const R=12, C=2*Math.PI*R;
     el=document.createElement("div"); el.id="rest-timer"; el.setAttribute("role","timer"); el.setAttribute("aria-label","Rest timer");
-    el.style.cssText="position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;cursor:pointer;-webkit-tap-highlight-color:transparent";
-    el.innerHTML=`<svg width="128" height="146" viewBox="0 0 132 150" style="display:block;overflow:visible">
-        <rect x="56" y="1" width="20" height="9" rx="3" fill="var(--panel2)" stroke="var(--line2)" stroke-width="1.5"/>
-        <rect x="62" y="9" width="8" height="9" fill="var(--panel2)" stroke="var(--line2)" stroke-width="1.5"/>
-        <rect x="108" y="26" width="13" height="7" rx="2" fill="var(--panel2)" stroke="var(--line2)" stroke-width="1.5" transform="rotate(45 114 30)"/>
-        <circle cx="66" cy="84" r="64" fill="var(--panel)" stroke="var(--line2)" stroke-width="2"/>
-        <circle cx="66" cy="84" r="${R}" fill="none" stroke="var(--line)" stroke-width="9"/>
-        <circle id="rt-ring" cx="66" cy="84" r="${R}" fill="none" stroke-width="9" stroke-linecap="round" transform="rotate(-90 66 84)" style="stroke-dasharray:${C} ${C}"/>
-        <text id="rt-time" x="66" y="91" text-anchor="middle" font-size="27" font-weight="800" fill="var(--ink)" style="font-variant-numeric:tabular-nums">0:00</text>
-        <text x="66" y="111" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--muted)" letter-spacing="2">REST</text>
-      </svg>`;
+    el.style.cssText="position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:71;display:flex;align-items:center;gap:7px;height:38px;padding:0 13px 0 5px;border-radius:19px;background:var(--panel2);border:1px solid var(--line2);cursor:pointer;-webkit-tap-highlight-color:transparent";
+    el.innerHTML=`<svg width="30" height="30" viewBox="0 0 30 30" style="display:block;overflow:visible">
+        <circle cx="15" cy="15" r="${R}" fill="none" stroke="var(--line)" stroke-width="4"/>
+        <circle id="rt-ring" cx="15" cy="15" r="${R}" fill="none" stroke-width="4" stroke-linecap="round" transform="rotate(-90 15 15)" style="stroke-dasharray:${C} ${C}"/>
+      </svg><span id="rt-time" style="font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums">0:00</span>`;   /* no REST label: the pill must fit the badge slot beside long titles */
     el.addEventListener("click",restNudge);
-    document.body.appendChild(el);
+    ($("#phone")||document.body).appendChild(el);
     el.__C=C;
   }
   const paint=()=>{
     const r2=restGet(); const e2=document.getElementById("rest-timer"); if(!e2) return;
-    if(!r2){ e2.remove(); clearInterval(restTick); restTick=null; try{ if(navigator.vibrate) navigator.vibrate([180,90,180]); }catch(e){} sfx("restOver"); toast("Rest's over - on to your next set",2600); return; }
-    const onScreen=$("#s-trainee-workout")&&$("#s-trainee-workout").classList.contains("active"); e2.style.display=onScreen?"":"none";
+    if(!r2){ e2.remove(); document.body.classList.remove("rest-on"); clearInterval(restTick); restTick=null; try{ if(navigator.vibrate) navigator.vibrate([180,90,180]); }catch(e){} sfx("restOver"); toast("Rest's over - on to your next set",2600); return; }
+    const onScreen=$("#s-trainee-workout")&&$("#s-trainee-workout").classList.contains("active"); e2.style.display=onScreen?"flex":"none"; document.body.classList.toggle("rest-on",!!onScreen);   /* GN: the streak badge steps aside */
     const left=Math.max(0,(r2.until-Date.now())/1000), frac=Math.min(1,left/r2.total), C=e2.__C;
     const ring=e2.querySelector("#rt-ring"); const col=`hsl(${Math.round(115*frac)},100%,${50+Math.round(5*frac)}%)`;   /* neon green -> red */
     ring.style.strokeDashoffset=String(-(C*(1-frac)));   /* the empty part grows clockwise from the top */
