@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status at session end:** ~~GD~~ ~~GE~~ ~~GF~~ ~~GG~~ ~~GH~~ built and SQL run. **Still open before live keys (DW): (1) `refund-send` is not deployed under that name (404) - find it or deploy it; (2) owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5; (3) GD step 4 (state check inside the refund queue).** Then GI hardening, GJ code health.
+**GM (2026-11-10 evening, personal account): camera / microphone "access was denied" help gave a path that no longer exists in Chrome for Android - REWRITTEN (owner to re-test GM-T1).**
 **GL (2026-11-10 evening, personal account): GK on the phone - whole screen slid up and Start a session seemed dead - FIXED (owner to re-test GL-T1).**
 **GK (2026-11-10): trainee Training tab as a control panel - built; owner to look at it on the phone (GK-T1..T5); next: a live value on each button, the same panel for a trainee without a coach.**
 **Tests queued (owner, 2026-11-05):** ~~**FZ-T1..T5**~~ sounds work (owner) · **GC-T1..T4** pull-to-refresh (steps in the FZ and GC entries).
@@ -744,6 +745,13 @@ left -> -90 deg, top to the right -> +90 deg; if one comes out upside down, swap
 apps mid-recording, iPhone (CX), trim (BC) and pose reliability (AH) on landscape files.
 
 Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / restarted in general."** Finding that prompted it: **on desktop the camera preview is drawn like a phone camera (portrait frame) but the recording comes out landscape** - what the user frames is not what is saved. To scope before building: (1) the orientation and aspect contract - preview, recording and pose overlay must use the same frame on phone portrait, phone landscape and desktop webcams (most are 16:9 landscape only); (2) camera choice (front / back / external), resolution and frame-rate constraints, and what happens when the device cannot meet them; (3) permission and restart behaviour (CU), switching apps mid-recording, iOS Safari specifics (CX - no iPhone to test); (4) the pose overlay reliability (AH) and trim (BC) on the new pipeline; (5) a short test matrix (Android Chrome, desktop Chrome, iPhone when available). Related history: CS check-in photo, CU permission denied, CW portrait mode scrapped, AH pose overlay. Not started.
+
+---
+
+## GM. Denied camera / microphone: the repair steps were wrong on Android - FIXED 2026-11-10 (personal account)
+
+**Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
+**Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
 
 ---
 

@@ -51,7 +51,7 @@ new tables get column-level write access; exploit detail stays in `docs/private/
 **Before live keys (DW):** point 1, the security tests in point 2, GD step 4. **FT (private repo) is now more useful** - it lets
 the detailed review be shared between the two accounts. Next item code: **GL**.
 
-**Evening 2026-11-10 (personal account): GL fixed** - on the phone the GK panel slid the whole app up (`scrollIntoView` scrolled `#phone`), so the tab bar sat mid-screen and the session opened off-screen; `scrollInto()` + frame scroll guard + Start debounce. Owner to re-test **GL-T1**. Next item code: **GM**.
+**Evening 2026-11-10 (personal account): GL fixed** - on the phone the GK panel slid the whole app up (`scrollIntoView` scrolled `#phone`), so the tab bar sat mid-screen and the session opened off-screen; `scrollInto()` + frame scroll guard + Start debounce. Owner to re-test **GL-T1**. **GM fixed:** the denied-camera / microphone help now gives the real Chrome for Android path (⋮ -> Settings -> Site settings), plus the phone-level Chrome permission; Try again button no longer clipped - re-test **GM-T1**. Next item code: **GN**.
 ## Session 2026-11-04 night (personal account) - summary
 - SQL journal: **FU** clean-up verified (old_left 0, via Supabase MCP). **FV follow-up still NOT run** (`platform_rates.note` still says FormTrace; unsent pushes 0).
 - **FP refund push test PASSED** on the phone (Chrome) - test `push_outbox` row 61 sent 23:16:07, no error.

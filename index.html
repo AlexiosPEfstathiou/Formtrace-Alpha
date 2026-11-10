@@ -2900,14 +2900,14 @@ async function hydrateAvatars(root){
    path. On every failure show the steps for THIS browser and a Try again button.
    "denied" is never remembered by the app - only the browser's own memory counts. */
 function permHelpHtml(kind,retryFnName){
-  const ua=navigator.userAgent||""; const ios=/iPhone|iPad|iPod/.test(ua); const android=/Android/.test(ua); const chrome=/Chrome|CriOS|Edg/.test(ua); const safari=ios&&!/CriOS|FxiOS/.test(ua);
+  const ua=navigator.userAgent||""; const ios=/iPhone|iPad|iPod/.test(ua); const android=/Android/.test(ua); const chrome=/Chrome|CriOS|Edg/.test(ua); const safari=ios&&!/CriOS|FxiOS/.test(ua); const samsung=/SamsungBrowser/.test(ua);   /* GM: Samsung Internet also says "Chrome" */
   const what=kind==="mic"?"microphone":"camera";
   let steps;
   if(safari) steps=`Tap <b>aA</b> (left of the address bar) → <b>Website Settings</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. If Formtrace is installed on your home screen: iPhone <b>Settings → Safari → ${what[0].toUpperCase()+what.slice(1)}</b> → Allow, then reopen the app.`;
-  else if(android&&chrome) steps=`Tap the <b>lock icon</b> (left of the address bar) → <b>Permissions</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow</b>. Installed as an app: long-press the Formtrace icon → <b>App info → Permissions</b>.`;
+  else if(android&&chrome&&!samsung) steps=`Open <b>Chrome</b> → <b>⋮</b> (top right) → <b>Settings</b> → <b>Site settings</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → under <b>Blocked</b> tap <b>formtrace.ie</b> → <b>Allow</b>. This works for the installed app too.<div style="margin-top:6px">Still blocked? Your phone may be blocking Chrome itself: phone <b>Settings</b> → <b>Apps</b> → <b>Chrome</b> → <b>Permissions</b> → <b>${what[0].toUpperCase()+what.slice(1)}</b> → <b>Allow only while using the app</b>.</div><div style="margin-top:6px">Then tap Try again.</div>`;   /* GM: the old "lock icon" path no longer exists in Chrome for Android */
   else if(chrome) steps=`Click the <b>${what} icon</b> in the address bar (right side) and choose <b>Always allow</b>, then Try again.`;
   else steps=`Open your browser's site settings for this page and allow the ${what}, then Try again.`;
-  return `<div style="text-align:left;font-size:12.5px;line-height:1.55"><b style="color:var(--amber)">${what[0].toUpperCase()+what.slice(1)} access was denied.</b><div style="margin-top:6px">${steps}</div><button class="btn sm primary" style="width:auto;margin-top:10px" onclick="${retryFnName}()">Try again</button></div>`;
+  return `<div style="text-align:left;font-size:12.5px;line-height:1.55"><b style="color:var(--amber)">${what[0].toUpperCase()+what.slice(1)} access was denied.</b><div style="margin-top:6px">${steps}</div><button class="btn sm primary" style="width:auto;margin-top:10px;padding:0 20px;white-space:nowrap" onclick="${retryFnName}()">Try again</button></div>`;
 }
 /* CN-16: playback failures are invisible on the phone - record them. Media error
    code (1 aborted, 2 network, 3 decode, 4 src not supported), the storage path,
