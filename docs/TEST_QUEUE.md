@@ -10,6 +10,10 @@ Tip: allow ~10 minutes after a change for the phone to pick up the new version (
 
 - [x] **GE-T1** PASSED 2026-11-10 - (after the webhook secret is set) a real notification still arrives - e.g. congratulate someone in Social, or have the coach review a session - and tapping it opens the right tab.
 
+- [ ] **GF-T2** Change your display name to `Alex <b>bold</b> "x"` (and name an exercise the same way): in every message it appears exactly as typed - no bold text, nothing odd. Change it back afterwards.
+- [ ] **GF-T3** Profile -> Social settings: type a full link into Instagram and leave the field - red border and a hint, nothing saved; type a plain username - it saves (green flash).
+- [ ] **GF-T4** A handle someone shared with you: **Open** goes to the right profile.
+
 ## Anywhere — pull-to-refresh (GC)
 - [ ] **GC-T1** On **Goal** or **Notifications**, at the top, pull down: the gold arrow follows your finger, flips past the threshold with a tiny buzz, and spins on release; the list updates; the refresh sound plays (Sounds on).
 - [ ] **GC-T2** Release before the arrow flips: it slides away, nothing refreshes.
