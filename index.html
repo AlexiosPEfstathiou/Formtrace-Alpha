@@ -198,6 +198,15 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 body.rec-ui-90 #countdown,body.rec-ui-90 #rtimer,body.rec-ui-90 #r-statmsg,body.rec-ui-90 #r-deck .rside .i{transform:rotate(90deg)}
 body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,body.rec-ui-270 #r-deck .rside .i{transform:rotate(-90deg)}
 #r-mirror.on{border-color:#F0D231;color:#F0D231}
+/* GK: the trainee's Training tab as a control panel */
+.tr-start{width:100%;height:60px;font-size:17px;font-weight:800;border-radius:16px;margin:0}
+.tr-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.tr-tile{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tr-tile .tr-ic{font-size:20px;line-height:1;flex:0 0 auto}
+.tr-tile.on{border-color:#F0D231;background:var(--accent-surface)}
+.tr-sec{display:none;margin-top:12px}
+.tr-sec.open{display:block}
+.tr-sec>*:first-child{margin-top:0!important}
 /* EZ-6: cumulative coach notes */
 .exn .exn-row{display:flex;gap:10px;margin-top:7px;font-size:13px;line-height:1.45}
 .exn .exn-d{flex:0 0 auto;min-width:54px;color:var(--faint);font-size:11.5px;padding-top:1px;line-height:1.35}
@@ -8079,6 +8088,53 @@ async function openWeekPool(pool){
    for the coach, the same numbers with an assign action. Built by a function so
    it can be redrawn in place after an assign/remove without re-rendering the
    whole screen (refreshWeekUI below). */
+/* ---- Item GK (owner, 2026-11-10 - feedback: the trainee's Training tab is too busy, too much scrolling, too much for a
+   new user). The tab becomes a control panel: a large "Start a session" button at the top, then a grid of buttons -
+   Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls, Vacation. Everything is closed until its
+   button is tapped (one open at a time; the choice is kept across re-draws, so acting inside a section does not close it).
+   Trainee view only - the coach's view of a trainee is unchanged. The screen is drawn exactly as before and this step
+   then moves each part into its section, so nothing inside the sections changed; if this step fails the old layout stays. ---- */
+let trPanelOpen=null;
+const TR_TILES=[["calendar","\uD83D\uDCC5","Calendar"],["weight","\u2696\uFE0F","Weight"],["macros","\uD83C\uDF7D\uFE0F","Macros"],["checkins","\uD83D\uDCF8","Check-ins"],["pbs","\uD83C\uDFC6","Personal bests"],["measures","\uD83D\uDCCF","Measurements"],["progress","\uD83D\uDCC8","Progress"],["calls","\uD83D\uDCDE","Calls"]];
+function trainingControlPanel(body){
+  try{
+    const start=body.querySelector("#wk-card"); if(!start) return;
+    const dash=body.querySelector("[data-tr-dash]");
+    const secs={}, add=(k,n)=>{ (secs[k]=secs[k]||[]).push(n); };
+    let seenStart=false, seenDash=false;
+    for(const n of [...body.children]){
+      if(n===start){ seenStart=true; continue; }
+      if(n===dash){ seenDash=true; continue; }
+      if(n.id==="eng-fab-row"||(n.dataset&&n.dataset.trTop)) continue;
+      if(n.dataset&&n.dataset.trSec){ add(n.dataset.trSec,n); continue; }
+      if(seenStart&&!seenDash) add("calendar",n);              // everything between the Start card and the dashboard is the calendar
+    }
+    const dashHead=dash?dash.querySelector("[data-tr-dash-head]"):null;
+    if(dash) [...dash.children].forEach(n=>{ if(n.dataset&&n.dataset.trSec) add(n.dataset.trSec,n); });
+    const tiles=document.createElement("div"); tiles.className="tr-tiles";
+    const host=document.createElement("div"); host.className="tr-host";
+    const defs=TR_TILES.filter(t=>secs[t[0]]&&secs[t[0]].length);
+    if(trPanelOpen&&!defs.some(t=>t[0]===trPanelOpen)) trPanelOpen=null;
+    const boxes={};
+    const paint=scroll=>{
+      tiles.querySelectorAll("[data-tile]").forEach(b=>{ const on=b.dataset.tile===trPanelOpen; b.classList.toggle("on",on); b.setAttribute("aria-expanded",on?"true":"false"); });
+      Object.keys(boxes).forEach(k=>boxes[k].classList.toggle("open",k===trPanelOpen));
+      if(dashHead&&(trPanelOpen==="macros"||trPanelOpen==="weight")) boxes[trPanelOpen].insertBefore(dashHead,boxes[trPanelOpen].firstChild);   // the Goal / Week / Day switch goes with the charts
+      if(scroll&&trPanelOpen) setTimeout(()=>{ try{ tiles.scrollIntoView({behavior:"smooth",block:"start"}); }catch(e){} },40);
+    };
+    defs.forEach(([k,ic,label])=>{
+      const box=document.createElement("div"); box.className="tr-sec"; box.dataset.sec=k; secs[k].forEach(n=>box.appendChild(n)); host.appendChild(box); boxes[k]=box;
+      const b=document.createElement("button"); b.type="button"; b.className="tr-tile"; b.dataset.tile=k; b.innerHTML=`<span class="tr-ic">${ic}</span><span>${label}</span>`;
+      b.addEventListener("click",()=>{ trPanelOpen=(trPanelOpen===k?null:k); paint(true); }); tiles.appendChild(b);
+    });
+    const vacWrap=secs.vacation&&secs.vacation[0], vac=vacWrap?vacWrap.querySelector("button"):null;
+    if(vac){ const b=document.createElement("button"); b.type="button"; b.className="tr-tile"; b.innerHTML=`<span class="tr-ic">\uD83C\uDFD6\uFE0F</span><span>${escapeHtml(vac.textContent||"Vacation")}</span>`;
+      b.addEventListener("click",()=>vac.click()); tiles.appendChild(b); vacWrap.style.display="none"; }
+    start.after(tiles); tiles.after(host);
+    if(dash) dash.style.display="none";                       // its cards now live in the sections
+    paint(false);
+  }catch(e){ console.warn("training control panel (GK)",e); }
+}
 function thisWeekCardEl(iAmCoach){
     const thisMon=weekStartISO(new Date());
     const rows=weekRows[thisMon]||[];
@@ -8089,7 +8145,8 @@ function thisWeekCardEl(iAmCoach){
     const daysLeft=Math.max(0,Math.round((sunday-new Date(todayISO()+"T00:00:00"))/86400000));
     const card=document.createElement("div");card.className="card";card.id="wk-card";
     const paused=isPausedOn(todayISO());
-    card.innerHTML=`<div class="wk-card">
+    const hero=!iAmCoach&&traineeMerged;   /* GK: the trainee's own tab - a large Start button first */
+    card.innerHTML=`<div class="wk-card"${hero?' style="flex-direction:column;align-items:stretch;gap:14px"':""}>
         <div style="flex:1">
           <div class="eyebrow">This week</div>
           <div class="wk-big" style="margin-top:6px">${done} <span style="font-size:14px;color:var(--muted);font-weight:700">of ${target} done</span></div>
@@ -8098,7 +8155,9 @@ function thisWeekCardEl(iAmCoach){
         </div>
         ${iAmCoach
           ? `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${currentEng.status==="active"?"":"disabled"}>Assign a session</button>`
-          : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`}
+          : (hero
+            ? `<button class="btn primary tr-start" id="wk-start" style="order:-1" ${pool.length?"":"disabled"}>${pool.length?"\u25B6 Start a session":"No session to start yet"}</button>`
+            : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`)}
       </div>`;
     card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(thisMon) : openWeekPool(pool));
     return card;
@@ -8252,7 +8311,7 @@ async function renderEngagement(skipFetch){
       ? `${streakInfo.left} session${streakInfo.left===1?"":"s"} still to do and the week closes ${streakInfo.daysLeft===0?"today":"tomorrow"}. Finish ${streakInfo.left===1?"it":"them"} to keep your streak${streakInfo.weeks?` (${streakInfo.weeks} week${streakInfo.weeks===1?"":"s"} and counting)`:""}.`
       : `You missed a workout. Your ${streakInfo.count}-day streak is paused — complete tomorrow to reinstate it. Miss again and it resets to zero.`;
     warn.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:22px">⚠️</div><div style="flex:1"><div style="font-weight:800;color:var(--red)">Streak at risk</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45">${riskCopy}</div></div></div>`;
-    body.appendChild(warn);
+    warn.dataset.trTop="1"; body.appendChild(warn);   /* GK: stays above the control panel */
   }
 
   if(WEEK_MODEL) body.appendChild(thisWeekCardEl(iAmCoach));   // Item AT: this-week card (see thisWeekCardEl)
@@ -8484,7 +8543,7 @@ async function renderEngagement(skipFetch){
   }else if(traineeMerged){
     const act=(traineeEngs||[]).filter(e=>e.status==="active");
     if(act.length){
-      const wraps=act.map(()=>{ const w=document.createElement("div"); w.style.cssText="margin-top:18px"; body.appendChild(w); return w; });
+      const wraps=act.map(()=>{ const w=document.createElement("div"); w.style.cssText="margin-top:18px"; w.dataset.trSec="calls"; body.appendChild(w); return w; });
       store._sb.from("profiles").select("id,display_name").in("id",[...new Set(act.map(e=>e.coach_id))]).then(({data})=>{
         const byId=Object.fromEntries((data||[]).map(p=>[p.id,p]));
         act.forEach((e,i)=>renderCallScheduling(wraps[i], e, byId[e.coach_id]||{display_name:"your coach"}));
@@ -8515,7 +8574,7 @@ async function renderEngagement(skipFetch){
           openPauseAllMineSheet();
         }
       };
-      vacWrap.appendChild(vacBtn);
+      vacWrap.dataset.trSec="vacation"; vacWrap.appendChild(vacBtn);   /* GK: shown as a button in the control panel */
       body.appendChild(vacWrap);
     }
   }
@@ -8576,6 +8635,7 @@ async function renderEngagement(skipFetch){
   fabRow.style.left=""; fabRow.style.right=""; fabRow.style.bottom="";
   fabRow.style.padding="0"; fabRow.style.marginTop="22px";
   body.appendChild(fabRow);
+  if(traineeMerged) trainingControlPanel(body);   /* GK: the trainee's tab becomes a control panel */
  }catch(err){
   console.error("renderEngagement failed",err);
   { const g=$("#eng-fab-row"), b=$("#engagement-body"); if(g && b && g.parentElement===b) $("#s-engagement").appendChild(g); }   // same fab-row rescue: an error render must not eat the row and poison the next one
@@ -8591,7 +8651,7 @@ function renderDashboard(container, iAmCoach){
   const logs=Object.values(logsByDate).sort((a,b)=>a.log_date<b.log_date?-1:1);
   const wrap=document.createElement("div");wrap.style.marginTop="22px";
   const head=document.createElement("div");head.className="section-h";
-  head.innerHTML=`<div class="eyebrow">Dashboard</div>`;
+  head.innerHTML=`<div class="eyebrow">Dashboard</div>`; head.dataset.trDashHead="1"; wrap.dataset.trDash="1";   /* GK */
   const seg=document.createElement("div");seg.className="seg";seg.style.cssText="margin:0;width:auto";
   seg.innerHTML=`<button data-dm="goal" class="${dashMode==="goal"?"on":""}">Goal</button><button data-dm="week" class="${dashMode==="week"?"on":""}">Week</button><button data-dm="day" class="${dashMode==="day"?"on":""}">Day</button>`;
   head.appendChild(seg);
@@ -8611,7 +8671,7 @@ function renderDashboard(container, iAmCoach){
   if(!logs.length){
     const em=document.createElement("div");em.className="empty";em.style.padding="30px 20px";
     em.innerHTML=goalLine+`<p>${iAmCoach?"No macro or weight logs from this trainee yet.":"Log your macros to see your dashboard build up here."}</p>`;
-    wrap.appendChild(em);
+    em.dataset.trSec="progress"; wrap.appendChild(em);   /* GK */
     container.appendChild(wrap);
     seg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{dashMode=b.getAttribute("data-dm");renderEngagement();}));
     return;
@@ -8760,7 +8820,7 @@ function renderDashboard(container, iAmCoach){
   });
   svg+=`</svg></div>`;
   macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Macros (g)</div><div style="font-size:11.5px;color:var(--faint);margin-bottom:${goal?"4px":"12px"}">${dashMode==="week"?"Weekly daily-average":"Daily"} · total kcal above each bar</div>`+goalLine+svg;
-  wrap.appendChild(macroCard);
+  macroCard.dataset.trSec="macros"; wrap.appendChild(macroCard);
 
   // ---- weight line chart (SVG) with area fill + themed color + date axis ----
   // Weekly buckets average the weight, which yields long decimals — round to
@@ -8853,12 +8913,12 @@ function renderDashboard(container, iAmCoach){
   }else{
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
   }
-  wrap.appendChild(wCard);
+  wCard.dataset.trSec="weight"; wrap.appendChild(wCard);
 
   // ---- check-in photo timelapse ----
   const ciCard=document.createElement("div");ciCard.className="card";ciCard.style.padding="16px 14px";
   ciCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Weekly check-ins</span><button id="dash-tl-play" class="tl-play" style="display:none">▶ Play timelapse</button></div><div id="dash-checkins" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
-  wrap.appendChild(ciCard);
+  ciCard.dataset.trSec="checkins"; wrap.appendChild(ciCard);
 
   // ---- personal bests (item R), placed above measurements per spec.
   // "Body measurements" only exists here (there is no such section on the
@@ -8866,14 +8926,14 @@ function renderDashboard(container, iAmCoach){
   // measurements" — flagged in case the Profile tab was actually meant. ----
   const pbCard=document.createElement("div");pbCard.className="card";pbCard.style.padding="16px 14px";
   pbCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">🏆 Personal bests</div><div id="dash-pbs"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
-  wrap.appendChild(pbCard);
+  pbCard.dataset.trSec="pbs"; wrap.appendChild(pbCard);
 
   // ---- body measurements over time ----
   const msCard=document.createElement("div");msCard.className="card";msCard.style.padding="16px 14px";
   msCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Body measurements (cm)</span>${iAmCoach?"":`<button id="dash-ms-add" class="tl-play">＋ Log</button>`}</div>
     <div style="font-size:11.5px;color:var(--faint);margin-bottom:12px">Quarterly · change since first entry</div>
     <div id="dash-measures"><div style="font-size:12px;color:var(--faint)">Loading…</div></div>`;
-  wrap.appendChild(msCard);
+  msCard.dataset.trSec="measures"; wrap.appendChild(msCard);
 
   container.appendChild(wrap);
   seg.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{dashMode=b.getAttribute("data-dm");renderEngagement();}));

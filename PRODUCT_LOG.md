@@ -745,6 +745,29 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ---
 
+## GK. The trainee's Training tab as a control panel - BUILT 2026-11-10 (owner, from user feedback)
+
+**Feedback received (owner, 2026-11-10):** the trainee's Training tab is too busy - too much scrolling up and down, too much
+information for a new user. **Owner's direction:** make it a control panel with buttons; **Start Session at the top and
+prominent** so it is not skipped; everything else below as buttons - one for Calendar, one for Weight history, one for Macros,
+etc. - all minimised until opened.
+**Before:** one long scroll - the This-week card (with a small "Start a session" button), the whole month calendar and its
+legend, a Dashboard of five cards (macros, weight, weekly check-ins, personal bests, body measurements), call scheduling per
+coach, and "Take a vacation" at the very bottom.
+**Built (C, app only):** trainee view only (the coach's view of a trainee is unchanged).
+- **Top:** a large full-width **Start a session** button, with this week's progress under it ("2 of 3 done", days left, bar).
+  With nothing assigned it reads "No session to start yet" (disabled). A streak-at-risk warning stays above it.
+- **Below:** a two-column grid of buttons - **Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls,
+  Take a vacation / Resume training**. A trainee with no logs yet gets one **Progress** button instead of the five chart buttons.
+- **Closed until tapped:** a button opens its section under the grid and is highlighted; tapping it again closes it; one
+  section open at a time; the choice is kept across re-draws (changing the calendar month, logging something, switching
+  Goal / Week / Day does not close it). The Goal / Week / Day switch travels with Macros and Weight. Vacation is an action:
+  its button does what the old bottom button did.
+- **How:** the screen is drawn exactly as before, then one last step (`trainingControlPanel`) moves each part into its
+  section - nothing inside the sections changed, and if that step fails the old layout remains.
+**Tests:** GK-T1..T5 in the test queue. **Possible next steps:** a small value on each button (latest weight, sessions left,
+next call), icons from the icon family instead of emoji (design list), the same idea for a trainee without a coach
+(`renderSoloTraining`) and for the coach's view.
 ## Security review 2026-11-10 (work account) - items GD to GJ
 
 Whole-repo code review (app, store, service worker, 6 Edge Functions, 118 migrations). **The detailed findings are kept out of

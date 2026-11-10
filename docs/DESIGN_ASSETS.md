@@ -81,6 +81,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Analysis progress ring | after a set (`#analyze`) | |
 | Glisten / guide pulse effects | calendar, cards, call walkthrough | |
 | Loading spinner / app loading | everywhere | Could use the logo mark (L2) |
+| Training tab control-panel buttons (Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls, Vacation) + the large Start a session button | trainee Training tab (GK, 2026-11-10) | **Emoji placeholders** - replace with icons from the tab / header family (L2), same 24 px grid |
 | Undo bar ("Removed ... Undo", 5 s) | workout builder (EZ-5, 2026-11-05) | Theme colours |
 | Pull-to-refresh indicator (round, gold arrow, flips, spins) | top of the main screens (GC, 2026-11-05) | Theme colours; the arrow could become the logo mark (L2) |
 
