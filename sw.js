@@ -40,7 +40,14 @@ self.addEventListener("notificationclick", (event) => {
   let target = self.registration.scope;
   try { const u = new URL(raw.replace(/^\//, ""), self.registration.scope); if (u.origin === self.location.origin) target = u.href; } catch (e) {}
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-    for (const c of list) { if (c.url.startsWith(self.location.origin)) { c.focus(); c.navigate(target).catch(() => {}); return; } }
+    /* GO (2026-11-11): the app is already open - tell it which tab to show, then bring it forward. Before, this asked the
+       browser to navigate the page (client.navigate), which on the owner's phone left the app on the screen it was already
+       on: an alert for Review opened on Goal. A message does not depend on the browser's navigation rules. */
+    for (const c of list) { if (c.url.startsWith(self.location.origin)) {
+      let tab = ""; try { tab = new URL(target).hash.replace("#", ""); } catch (e) {}
+      try { c.postMessage({ type: "ft-nav", tab: tab, url: target }); } catch (e) {}
+      return c.focus().catch(() => {});
+    } }
     return self.clients.openWindow(target);
   }));
 });

@@ -763,6 +763,18 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ---
 
+## GO. A tapped notification opened the wrong tab when the app was already open - FIXED 2026-11-11 (work account)
+
+**Owner report 2026-11-11:** the GI-2 test alert ("Payout failed (test)", link `/#admin`) arrived, but tapping it opened the
+**Goal** tab instead of **Review**. **Finding:** the whole path was checked and is correct - the outbox row's link is forwarded by
+`push-send`, the service worker resolves it to `.../#admin`, `admin` is a valid tab, and nothing in the app redirects to Goal.
+With the app already open, the service worker brought it forward and asked the browser to navigate the page
+(`client.navigate`); on the owner's phone that left the app on the screen it was already on. Why the navigation did not take
+effect could not be determined from the code (the worker does claim its pages) - **not guessed**. The 2026-11-10 notification
+test linked to Goal, so the same failure looked like success. It affects every notification, not only admin alerts.
+**Fix:** `sw.js` now sends the open app a message (`{type:"ft-nav", tab}`) and brings it forward; `index.html` listens and goes
+to that tab (if the app is still starting, the tab is left in the address for the start-up code). Opening from closed is
+unchanged (the link in the address). **Not verified on a phone** - GO-T1 / GO-T2 in the test queue.
 ## GL. Training tab on the phone: the whole screen slid up; "Start a session" seemed dead - FIXED 2026-11-10 (personal account)
 
 **Owner report 20:38, Android phone (screenshot):** after opening a Training section the whole app had moved up - the tab bar sat in the middle of the screen with black below it - and after **Start a session** the session never appeared. **Finding:** `trainingControlPanel` (GK) scrolls the tile grid into view with `element.scrollIntoView()`, which scrolls **every** scrollable ancestor - including `#phone` (`overflow:hidden`, but still scrollable by script). The app frame was left shifted, so the tab bar moved up and anything at the bottom (the session sheet, the session screen) opened below the visible area. Database / logs: `start_session` answered 200 **about 30 times in three minutes** (ten in one second at 20:37:19) - the taps reached the server; one client error "Failed to fetch" was a duplicate request cut off. Same pattern existed in two older places (`goToCalendarWeek`, the weekly-call walkthrough's calendar cell).

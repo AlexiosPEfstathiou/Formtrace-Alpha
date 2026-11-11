@@ -3649,6 +3649,12 @@ async function ensurePushDefault(){
 }
 /* notification click → the right screen: the URL carries a hash */
 window.addEventListener("hashchange",()=>{ const h=(location.hash||"").replace("#",""); if(h&&ME&&TAB_TOPLEVEL.has(h)){ go(h); history.replaceState(null,"",location.pathname); } });
+/* GO (2026-11-11): a notification tapped while the app is open. The service worker sends { type: "ft-nav", tab } and the
+   app goes there. Not signed in yet (still starting): leave the tab in the address, where the start-up code picks it up. */
+if(navigator.serviceWorker&&typeof navigator.serviceWorker.addEventListener==="function") navigator.serviceWorker.addEventListener("message",ev=>{
+  const d=ev.data; if(!d||d.type!=="ft-nav"||typeof d.tab!=="string"||!TAB_TOPLEVEL.has(d.tab)) return;
+  if(ME) go(d.tab); else { try{ history.replaceState(null,"","#"+d.tab); }catch(e){} }
+});
 /* Item CP: persistent header. Profile (avatar) top-left; settings gear and the streak badge top-right. */
 let _hdrWired=false;
 function showHeader(on){
