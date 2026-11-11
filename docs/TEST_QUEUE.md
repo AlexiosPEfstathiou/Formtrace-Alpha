@@ -42,7 +42,7 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] **GI1-T3** After a goal is **completed** (or ended): each side can **rate** the other, once.
 - [ ] **GI1-T4** The streak number on the badge still updates after a completed session (it is now maintained only by the database).
 ## Notifications open the right tab (GO, 2026-11-11)
-- [ ] **GO-T1** With the app **open on another tab** (e.g. Home), send the test alert (SQL journal: `select public._admin_alert(...)`), tap it: the app comes forward on **Review**.
+- [ ] **GO-T1** (owner 2026-11-11: a tapped alert opened Review - confirm which case) With the app **open on another tab** (e.g. Home), send the test alert (SQL journal: `select public._admin_alert(...)`), tap it: the app comes forward on **Review**.
 - [ ] **GO-T2** With the app **fully closed** (swiped away), send it again, tap it: the app opens on **Review**.
 
 ## Anywhere — pull-to-refresh (GC)
