@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (GI-1 policies, GI-2 Stripe events, GI-3 library pin + CSP, GI-4 Edge Function errors / origin), GJ code health.
+**SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events, GI-3 library pin + CSP, GI-4 Edge Function errors / origin), GJ code health.
 **GN (2026-11-10 evening, personal account): rest stopwatch covered buttons and its own message - now a small pill top-right (owner to re-test GN-T1).**
 **GM (2026-11-10 evening, personal account): camera / microphone "access was denied" help gave a path that no longer exists in Chrome for Android - REWRITTEN (owner to re-test GM-T1).**
 **GL (2026-11-10 evening, personal account): GK on the phone - whole screen slid up and Start a session seemed dead - FIXED (owner to re-test GL-T1).**
@@ -913,7 +913,7 @@ goal in a single transaction; `checkout-create` calls it; an abandoned part-cred
 
 **Split into four parts (2026-11-11):** GI-1 write rules (SQL) - GI-2 Stripe events - GI-3 library pin + CSP - GI-4 Edge Function errors / origin.
 
-**GI-1 WRITTEN 2026-11-11 (C): `supabase/migrations_write_rules.sql` (given).** Inventory first (live policies replayed from the
+**GI-1 WRITTEN and RUN ✓ 2026-11-11 (1 | 1 | 1 | 4 | 1 | false): `supabase/migrations_write_rules.sql`.** Inventory first (live policies replayed from the
 migrations, every write the app makes): the app writes a review once per submission, a rating once per goal, a submission per
 assigned workout; **only the coach ever adds or removes assigned workouts** (trainees save a draft / mark opened; everything else
 goes through database functions); the app never reads `fee_overrides` directly and never writes `streak_count`.
