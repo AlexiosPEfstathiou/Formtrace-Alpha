@@ -928,7 +928,7 @@ goes through database functions); the app never reads `fee_overrides` directly a
   the new one). **Expect:** `reviews_insert 1 | ratings_insert 1 | submissions_insert 1 | assigned_policies 4 | fee_select 1 |
   streak_editable false`. **Tests:** GI1-T1..T4 in the test queue.
 
-**GI-2 BUILT 2026-11-11 (C): `supabase/migrations_payment_failure_alerts.sql` (given) + `stripe-webhook` (to redeploy).**
+**GI-2 BUILT 2026-11-11 (C): `supabase/migrations_payment_failure_alerts.sql` - SQL RUN ✓ (4 | 2 | 0 | 1) + `stripe-webhook` (owner: redeploy the existing function, add 4 events in Stripe).**
 - **Any payout or refund that becomes `failed` alerts the admins by push** (amount, goal, reason) - a trigger on both tables.
   Before, the row was marked failed and nobody was told.
 - **A refund that fails later** (accepted by Stripe, rejected by the bank): `record_refund_failure()` marks the row failed, clears
