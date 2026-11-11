@@ -76,6 +76,27 @@ Deno.serve(async (req) => {
       } });
       if (dErr) throw dErr;                             // DB failure -> 500 below, so Stripe retries
     }
+    // GI-2 (security review 2026-11-10): payments that fail later must not fail silently.
+    // A refund Stripe accepted and the bank then rejected: refund.failed, or refund.updated / charge.refund.updated with
+    // status failed or canceled. record_refund_failure() marks the refund row failed, clears "received" on the goal,
+    // alerts the admins and tells the trainee it is being sorted out.
+    if (event.type === "refund.failed" || event.type === "refund.updated" || event.type === "charge.refund.updated") {
+      const rf = event.data.object as any;
+      if (rf && rf.id && (rf.status === "failed" || rf.status === "canceled")) {
+        const { error: rErr } = await sb.rpc("record_refund_failure", { p_refund: rf.id, p_reason: rf.failure_reason || rf.status });
+        if (rErr) throw rErr;                           // DB failure -> 500 below, so Stripe retries
+      }
+    }
+    // A payout reversed in Stripe: noted on the payout, admins alerted.
+    if (event.type === "transfer.reversed") {
+      const tr = event.data.object as any;
+      if (tr && tr.id) {
+        const { error: tErr } = await sb.rpc("record_transfer_reversal", { p_transfer: tr.id, p_reversed_cents: Number(tr.amount_reversed || 0) });
+        if (tErr) throw tErr;
+      }
+    }
+    // checkout.session.expired is not handled on purpose: a restarted checkout has a second session, and releasing the
+    // credit reservation when the first one expires would cancel the one in use. The reservation's own expiry (GH) returns it.
   } catch (err) {
     console.error("stripe-webhook handling", err);
     return new Response("Handler failed - Stripe will retry", { status: 500 });

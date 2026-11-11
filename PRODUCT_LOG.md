@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events, GI-3 library pin + CSP, GI-4 Edge Function errors / origin), GJ code health.
+**SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin + CSP, GI-4 Edge Function errors / origin), GJ code health.
 **GN (2026-11-10 evening, personal account): rest stopwatch covered buttons and its own message - now a small pill top-right (owner to re-test GN-T1).**
 **GM (2026-11-10 evening, personal account): camera / microphone "access was denied" help gave a path that no longer exists in Chrome for Android - REWRITTEN (owner to re-test GM-T1).**
 **GL (2026-11-10 evening, personal account): GK on the phone - whole screen slid up and Start a session seemed dead - FIXED (owner to re-test GL-T1).**
@@ -927,6 +927,21 @@ goes through database functions); the app never reads `fee_overrides` directly a
 - Existing policies of those kinds are dropped by reading the live catalog (policies add up - a looser one left behind would defeat
   the new one). **Expect:** `reviews_insert 1 | ratings_insert 1 | submissions_insert 1 | assigned_policies 4 | fee_select 1 |
   streak_editable false`. **Tests:** GI1-T1..T4 in the test queue.
+
+**GI-2 BUILT 2026-11-11 (C): `supabase/migrations_payment_failure_alerts.sql` (given) + `stripe-webhook` (to redeploy).**
+- **Any payout or refund that becomes `failed` alerts the admins by push** (amount, goal, reason) - a trigger on both tables.
+  Before, the row was marked failed and nobody was told.
+- **A refund that fails later** (accepted by Stripe, rejected by the bank): `record_refund_failure()` marks the row failed, clears
+  "received" on the goal, alerts the admins, and tells the trainee it is being sorted out. Webhook events: `refund.failed`,
+  `refund.updated`, `charge.refund.updated` (status failed / canceled).
+- **A payout reversed in Stripe** (`transfer.reversed`): noted on the payout, admins alerted.
+- **Not handled on purpose: `checkout.session.expired`** - a restarted checkout has a second session, and releasing the credit
+  reservation when the first expires would cancel the one in use; GH's 40-minute expiry already returns the credit.
+**Owner steps, in order:** (1) run the SQL (expect `functions 4 | triggers 2 | open_to_users 0 | admins >= 1`); (2) redeploy
+`stripe-webhook` - **update the existing function, do not create a new one**; (3) in Stripe -> Developers -> Webhooks -> the
+endpoint -> add events `refund.failed`, `refund.updated`, `charge.refund.updated`, `transfer.reversed` (sandbox now; the same
+list on the live endpoint at go-live, DW). **Test GI2-T1:** in the SQL editor mark one old test payout failed -> the admin gets
+the push (SQL in the journal).
 
 - **Policies:** a review can only be written for a submission from one of the coach's own goals; a rating only by a party of that
   goal, about the other party; a submission only for the trainee's own assigned workout; review which columns of an assigned workout
