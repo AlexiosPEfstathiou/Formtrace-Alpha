@@ -66,3 +66,5 @@ secret instead. Until the secret exists the check is off; set things up in this 
 3. **Edge Functions -> Secrets**: add `WEBHOOK_SECRET` with that same value. From this moment a call without the header gets 401.
 To rotate it: change the header on the three webhooks and the secret together (a few seconds of refused calls at most; releases
 are re-tried by the daily job, a notification sent in that gap is lost).
+
+**Function addresses (2026-11-11):** a function's URL is fixed when it is first created; renaming it later changes only the display name. `refund-send` lives at `/functions/v1/super-api`. The others match their names (`push-send`, `release-send`, `checkout-create`, `connect-onboard`, `stripe-webhook`). When testing a function from outside, use the URL shown in the Edge Functions list, not the name.

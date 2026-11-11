@@ -3,10 +3,7 @@
 ## Session 2026-11-05 to 2026-11-10 (work account) - summary
 
 **Start here (in this order):**
-1. **`refund-send` is not deployed under that name** - a call to it answers 404 "function not found". Owner to check the Edge
-   Functions list and which function the `payment_refunds` webhook points to. Another name = it still runs the old, unprotected
-   code (redeploy from `supabase/functions/refund-send/index.ts`). Not deployed = queued refunds were never sent through Stripe
-   (status query in the SQL journal). **Resolve before live keys.**
+1. ~~`refund-send` not deployed~~ **RESOLVED 2026-11-11:** it exists, its URL is `/functions/v1/super-api` (auto-generated address; the name was changed later). Tested there: 401 without the secret - protected. **Still to do: the unknown `smooth-service` function** (not in the repo, never called by the app, Verify JWT on) - owner to look at its code and delete it. **GD step 4 SQL** (`migrations_refund_queue_state_check.sql`) is written and given - not yet confirmed run.
 2. **Owner tests - `docs/TEST_QUEUE.md`** (about 45 lines). The security ones first: **GD-T1** (click through the app as trainee
    and coach - any "permission denied for function ..." means a function is missing from the keep list), **GF-T2..T4**,
    **GG-T1..T6** (every offer / goal flow with two accounts), **GH-T2..T5** (credit at checkout, sandbox). Then GK, GA, EZ, GC.
