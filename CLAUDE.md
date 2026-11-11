@@ -102,3 +102,4 @@ Every owner test that is built and waiting goes into `docs/TEST_QUEUE.md` (group
 - User-written text is inserted with `escapeHtml` / `textContent`, never raw; URLs built from user text use `encodeURIComponent`.
 - New tables: row-level security on, and write access by column (like `profiles`), not `for all`.
 - **While the repo is public, exploit detail goes in `docs/private/` (git-ignored), not in committed files.**
+- **Edge Functions (2026-11-11):** redeploying means updating the EXISTING function - never create a second one (an old copy, `smooth-service`, kept running unprotected code for a day). A function's URL is fixed at creation and may differ from its name (`refund-send` = `/functions/v1/super-api`); test at the URL shown in the Edge Functions list. The deployed set must equal the six folders in `supabase/functions/`.

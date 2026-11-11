@@ -3,12 +3,12 @@
 ## Session 2026-11-05 to 2026-11-10 (work account) - summary
 
 **Start here (in this order):**
-1. ~~`refund-send` not deployed~~ **RESOLVED 2026-11-11:** it exists, its URL is `/functions/v1/super-api` (auto-generated address; the name was changed later). Tested there: 401 without the secret - protected. **`smooth-service` = the original, unprotected `push-send`; the `push_outbox` webhook was still using it until 2026-11-11 17:10, when the owner switched it to `push-send` (test row 77 sent, no error). Still to do: DELETE `smooth-service`** (callable with the public key until then). **GD step 4 SQL** (`migrations_refund_queue_state_check.sql`) is written and given - not yet confirmed run.
+1. ~~`refund-send`~~ **closed 2026-11-11:** it lives at `/functions/v1/super-api` (auto-generated address) and is protected. **`smooth-service` was the original, unprotected `push-send`** and the `push_outbox` webhook was still using it - the owner moved the webhook to `push-send` (test row 77 sent) and **deleted `smooth-service`** (404 confirmed). Deployed functions = the six in the repo. **Lesson: redeploying must update the EXISTING function, not create a new one; test a function at the URL shown in the Edge Functions list.**
 2. **Owner tests - `docs/TEST_QUEUE.md`** (about 45 lines). The security ones first: **GD-T1** (click through the app as trainee
    and coach - any "permission denied for function ..." means a function is missing from the keep list), **GF-T2..T4**,
    **GG-T1..T6** (every offer / goal flow with two accounts), **GH-T2..T5** (credit at checkout, sandbox). Then GK, GA, EZ, GC.
    **When the owner says he tested, interview him through the queue** (rule in CLAUDE.md).
-3. **GD step 4** - a state check inside the refund queue itself (backstop; the revoke already closes the hole).
+3. ~~GD step 4~~ **run 2026-11-11** (`migrations_refund_queue_state_check.sql`, guarded 2 | open_to_users 0).
 4. **GI** (medium hardening bundle), **GJ** (code health). Then back to product: FX sign-in emails, openart month, pilot.
 
 **Security review (2026-11-10).** Whole repo reviewed; seven items GD-GJ in PRODUCT_LOG ("Security review 2026-11-10").
