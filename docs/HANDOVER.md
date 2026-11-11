@@ -3,7 +3,7 @@
 ## Session 2026-11-05 to 2026-11-10 (work account) - summary
 
 **Start here (in this order):**
-1. ~~`refund-send` not deployed~~ **RESOLVED 2026-11-11:** it exists, its URL is `/functions/v1/super-api` (auto-generated address; the name was changed later). Tested there: 401 without the secret - protected. **Still to do: the unknown `smooth-service` function** (not in the repo, never called by the app, Verify JWT on) - owner to look at its code and delete it. **GD step 4 SQL** (`migrations_refund_queue_state_check.sql`) is written and given - not yet confirmed run.
+1. ~~`refund-send` not deployed~~ **RESOLVED 2026-11-11:** it exists, its URL is `/functions/v1/super-api` (auto-generated address; the name was changed later). Tested there: 401 without the secret - protected. **`smooth-service` = the original, unprotected `push-send`; the `push_outbox` webhook was still using it until 2026-11-11 17:10, when the owner switched it to `push-send` (test row 77 sent, no error). Still to do: DELETE `smooth-service`** (callable with the public key until then). **GD step 4 SQL** (`migrations_refund_queue_state_check.sql`) is written and given - not yet confirmed run.
 2. **Owner tests - `docs/TEST_QUEUE.md`** (about 45 lines). The security ones first: **GD-T1** (click through the app as trainee
    and coach - any "permission denied for function ..." means a function is missing from the keep list), **GF-T2..T4**,
    **GG-T1..T6** (every offer / goal flow with two accounts), **GH-T2..T5** (credit at checkout, sandbox). Then GK, GA, EZ, GC.
