@@ -911,6 +911,23 @@ goal in a single transaction; `checkout-create` calls it; an abandoned part-cred
 
 ## GI. Security hardening - MEDIUM (bundle)
 
+**Split into four parts (2026-11-11):** GI-1 write rules (SQL) - GI-2 Stripe events - GI-3 library pin + CSP - GI-4 Edge Function errors / origin.
+
+**GI-1 WRITTEN 2026-11-11 (C): `supabase/migrations_write_rules.sql` (given).** Inventory first (live policies replayed from the
+migrations, every write the app makes): the app writes a review once per submission, a rating once per goal, a submission per
+assigned workout; **only the coach ever adds or removes assigned workouts** (trainees save a draft / mark opened; everything else
+goes through database functions); the app never reads `fee_overrides` directly and never writes `streak_count`.
+- **reviews:** only for a submission from one of the coach's own goals. **ratings:** only a party of the goal, about the other
+  party, once it is completed or ended. **submissions:** only against the trainee's own assigned workout.
+- **assigned_workouts** (the one policy "for all, either party" is replaced by four): read both; **add: the coach, as 'assigned'**;
+  change: both (columns already limited to draft / opened); **remove: the coach, only a session not yet started**. New finding
+  while reading: either party could delete any session - including a **submitted** one, which is the evidence the refund rules use
+  ("coach unresponsive": a submitted session left unreviewed past its deadline). The app only ever removed unstarted ones.
+- **fee_overrides:** readable by the coach concerned and admins. **profiles.streak_count:** no longer user-editable.
+- Existing policies of those kinds are dropped by reading the live catalog (policies add up - a looser one left behind would defeat
+  the new one). **Expect:** `reviews_insert 1 | ratings_insert 1 | submissions_insert 1 | assigned_policies 4 | fee_select 1 |
+  streak_editable false`. **Tests:** GI1-T1..T4 in the test queue.
+
 - **Policies:** a review can only be written for a submission from one of the coach's own goals; a rating only by a party of that
   goal, about the other party; a submission only for the trainee's own assigned workout; review which columns of an assigned workout
   a trainee may change; `streak_count` leaves the user-editable profile columns; fee overrides readable only by the coach concerned

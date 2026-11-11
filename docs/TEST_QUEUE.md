@@ -36,6 +36,11 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] **GK-T3** Each button opens its section under the grid and is highlighted; tapping it again closes it; opening another closes the first: Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls.
 - [ ] **GK-T4** Inside **Calendar**: change the month, tap a day, log something - the calendar stays open. Inside **Weight** / **Macros**: Goal / Week / Day switches and the section stays open.
 - [ ] **GK-T5** **Take a vacation** (last button) opens the same panel as before; while on a break it reads **Resume training**.
+## Sessions, reviews and ratings after the tighter write rules (GI-1, 2026-11-11) - a trainee and a coach
+- [ ] **GI1-T1** Coach: **assign** a session to a trainee; **remove** one that has not been started; move one to another date. Each works.
+- [ ] **GI1-T2** Trainee: open the session, mark sets (the draft saves), **submit** it. Coach: it appears in the review queue; **send a review**.
+- [ ] **GI1-T3** After a goal is **completed** (or ended): each side can **rate** the other, once.
+- [ ] **GI1-T4** The streak number on the badge still updates after a completed session (it is now maintained only by the database).
 ## Anywhere — pull-to-refresh (GC)
 - [ ] **GC-T1** On **Goal** or **Notifications**, at the top, pull down: the gold arrow follows your finger, flips past the threshold with a tiny buzz, and spins on release; the list updates; the refresh sound plays (Sounds on).
 - [ ] **GC-T2** Release before the arrow flips: it slides away, nothing refreshes.
