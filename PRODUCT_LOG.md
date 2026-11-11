@@ -45,7 +45,7 @@ the list below are done, superseded, or parked (bottom).
 **Any time (small):** **ER** pay right after accept / Stripe setup right after approval · **EQ** tab badges for unpitched goals / unviewed pitches · **EO** tracker map variant per goal (EG finding) · **EN** first-call push after acceptance · **EM** stale "Post your next goal" card after posting (bug) · **DN** compare the deployed push-send code (owner pastes it) ·
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
-**SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin + CSP, GI-4 Edge Function errors / origin), GJ code health.
+**SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
 **GN (2026-11-10 evening, personal account): rest stopwatch covered buttons and its own message - now a small pill top-right (owner to re-test GN-T1).**
 **GM (2026-11-10 evening, personal account): camera / microphone "access was denied" help gave a path that no longer exists in Chrome for Android - REWRITTEN (owner to re-test GM-T1).**
 **GL (2026-11-10 evening, personal account): GK on the phone - whole screen slid up and Start a session seemed dead - FIXED (owner to re-test GL-T1).**
@@ -954,6 +954,22 @@ goes through database functions); the app never reads `fee_overrides` directly a
 endpoint -> add events `refund.failed`, `refund.updated`, `charge.refund.updated`, `transfer.reversed` (sandbox now; the same
 list on the live endpoint at go-live, DW). **Test GI2-T1:** in the SQL editor mark one old test payout failed -> the admin gets
 the push (SQL in the journal).
+
+**GI-3 part A BUILT 2026-11-11 (C, app only): the libraries are pinned with integrity hashes.**
+- **Supabase library:** was `@supabase/supabase-js@2` (floating - whatever the newest 2.x is, no check). Now
+  `@2.119.0/dist/umd/supabase.js` (the version `@2` resolved to that day, so nothing changes for users) with
+  `integrity="sha384-..."` and `crossorigin`. The **published** file is used, not jsDelivr's generated default (that one
+  carries a banner and can change). Hash taken from jsDelivr's metadata and verified against the real bytes (219,856 bytes,
+  sha256 matches). **To upgrade: change the version and the hash together.**
+- **QR-code library** (cdnjs, already pinned to 1.0.0): integrity hash added (cdnjs's published sha512, verified).
+- **If the Supabase file cannot load** (offline, CDN down, integrity refused) the app now shows "Formtrace could not load a
+  file it needs. Check your connection and reload the page." instead of a blank screen.
+- Not covered: MediaPipe is loaded as a module import (already pinned to 0.10.14; browsers have no integrity attribute for
+  imports yet) and its models come from Google's storage.
+**GI-3 part B (Content-Security-Policy) - next, staged:** the page's inline scripts mean the policy must allow inline script,
+so its value is limiting where the page may load from and send to. It cannot be tried in report-only mode on GitHub Pages (that
+needs a header), so it will ship behind a test switch (`?csp=1`) for the owner to try before it becomes the default.
+**Test GI3-T1:** after the update the app opens and signs in as usual; Profile -> the QR code still appears.
 
 - **Policies:** a review can only be written for a submission from one of the coach's own goals; a rating only by a party of that
   goal, about the other party; a submission only for the trainee's own assigned workout; review which columns of an assigned workout

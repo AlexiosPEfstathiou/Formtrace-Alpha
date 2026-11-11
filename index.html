@@ -2110,7 +2110,12 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 
 
 <!-- Supabase client + config + data layer (window.store).  Load order matters. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- GI-3 (security review 2026-11-10): the Supabase library is pinned to one exact version with an integrity hash - the browser refuses the file if a single byte differs. The published file (not jsDelivr's generated default) is used because its bytes never change. To upgrade: change the version AND the hash together (hash from data.jsdelivr.com, verified against the file). -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous"></script>
+<script>/* GI-3: if that file could not load (no connection, CDN down, integrity refused), say so instead of a blank screen */
+if(!window.supabase){ document.addEventListener("DOMContentLoaded",function(){ var b=document.createElement("div"); b.setAttribute("role","alert");
+  b.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:28px;background:#0B0E11;color:#EEF3F6;font:16px/1.5 system-ui,sans-serif;text-align:center";
+  b.textContent="Formtrace could not load a file it needs. Check your connection and reload the page."; document.body.appendChild(b); }); }</script>
 <script src="config.js"></script>
 <script src="store.supabase.js"></script>
 
@@ -12346,7 +12351,7 @@ async function wireCertCard(){
 }
 /* ---- Item DG: referral by QR. The QR carries the same ?ref= link (BN); a voucher share will add &v=<token> (BW, after BI). */
 let qrLibP=null;
-function loadQrLib(){ if(window.QRCode) return Promise.resolve(); if(qrLibP) return qrLibP; qrLibP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.onload=()=>res(); s.onerror=()=>{ qrLibP=null; rej(new Error("QR library failed to load")); }; document.head.appendChild(s); }); return qrLibP; }
+function loadQrLib(){ if(window.QRCode) return Promise.resolve(); if(qrLibP) return qrLibP; qrLibP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA=="; s.crossOrigin="anonymous";   /* GI-3: integrity hash (cdnjs's published value, verified) */ s.onload=()=>res(); s.onerror=()=>{ qrLibP=null; rej(new Error("QR library failed to load")); }; document.head.appendChild(s); }); return qrLibP; }
 async function renderQrInto(el,text){ await loadQrLib(); el.innerHTML=""; new QRCode(el,{text,width:344,height:344,colorDark:"#0B0E11",colorLight:"#FFFFFF",correctLevel:QRCode.CorrectLevel.H}); }
 async function referralShareImage(link,name){
   const qrEl=document.createElement("div"); await renderQrInto(qrEl,link); const src=qrEl.querySelector("canvas"); if(!src) return null;

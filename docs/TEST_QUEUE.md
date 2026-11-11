@@ -41,6 +41,9 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] **GI1-T2** Trainee: open the session, mark sets (the draft saves), **submit** it. Coach: it appears in the review queue; **send a review**.
 - [ ] **GI1-T3** After a goal is **completed** (or ended): each side can **rate** the other, once.
 - [ ] **GI1-T4** The streak number on the badge still updates after a completed session (it is now maintained only by the database).
+## After the library pin (GI-3, 2026-11-11)
+- [ ] **GI3-T1** The app opens and signs in as usual (if the library were refused you would see "Formtrace could not load a file it needs"). Profile -> your **QR code** still appears.
+
 ## Notifications open the right tab (GO, 2026-11-11)
 - [ ] **GO-T1** (owner 2026-11-11: a tapped alert opened Review - confirm which case) With the app **open on another tab** (e.g. Home), send the test alert (SQL journal: `select public._admin_alert(...)`), tap it: the app comes forward on **Review**.
 - [ ] **GO-T2** With the app **fully closed** (swiped away), send it again, tap it: the app opens on **Review**.
