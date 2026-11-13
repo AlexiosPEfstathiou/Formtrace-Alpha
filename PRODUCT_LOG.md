@@ -46,6 +46,9 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**GQ (2026-11-13, owner): tapping "Your coach reviewed a workout" should open that reviewed workout, not the Training tab - logged, not started.**
+**GR (2026-11-13, owner): a review reaches the trainee only after the coach confirms sending it - logged, not started.**
+**GS (2026-11-13, owner): coaches can withdraw a workout review within an hour; set reviews, notes and videos are kept for reuse - logged, not started.**
 **GP (2026-11-13, personal account): voice-over drawings replayed in different places from where they were drawn - FIXED for new voice-overs (owner to re-test GP-T1).**
 **GN (2026-11-10 evening, personal account): rest stopwatch covered buttons and its own message - now a small pill top-right (owner to re-test GN-T1).**
 **GM (2026-11-10 evening, personal account): camera / microphone "access was denied" help gave a path that no longer exists in Chrome for Android - REWRITTEN (owner to re-test GM-T1).**
@@ -761,6 +764,24 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## GQ. The review notification opens the reviewed workout (owner, 2026-11-13) - not started
+
+**Owner:** "When pressing the notification as a trainee that a review is sent to me I go to the Training tab. I want to go directly into the workout reviewed." **Today:** `push_on_review` (migrations_push.sql) sends `url = '/#trainee-home'` for every review, so the app opens the trainee's Training tab. **To build:** put the reviewed workout in the link (e.g. `/#workout=<assigned_id>`, from `submissions.assigned_id`), teach the app's notification router (GO: the service worker posts the URL to an open app) to open that workout's screen with its review, and fall back to the Training tab if the workout is gone or belongs to another account. Same idea could later serve other pushes (offer, payment). SQL: one `create or replace function public.push_on_review` (journal it); app: router case. Test: tap the push with the app closed and with it open.
+
+---
+
+## GR. A review reaches the trainee only when the coach confirms it (owner, 2026-11-13) - not started
+
+**Owner:** "If a coach closes the app or stops reviewing without submitting the review we shouldn't send it to the trainee. Coach confirmation necessary." **What the code does today (read 2026-11-13):** the `reviews` row - and with it the trainee's push (`push_on_review`) and unseen badge (`mark_reviewed`) - is written **only** by the **Send review** button; tags, comments and voice-overs live in memory (`reviewState`) until then. So leaving mid-review should not send anything - **to confirm with the owner whether he saw a review arrive that was never sent** (if so, find the path). Two gaps found while reading: (1) **Send review** goes straight through (the only question is "Send without tagging?" when nothing is tagged) - no "Send this review to <trainee>?" confirmation; (2) leaving the review screen **loses** everything recorded so far (voice-overs are uploaded but only referenced from memory), which links to GS. **To build:** a confirmation step on Send review (summary: sets tagged, voice-overs, overall note -> **Send to <name>** / Keep editing); a server-side guard so nothing reaches the trainee without that explicit send; optionally a saved draft so leaving does not lose the work (shared with GS).
+
+---
+
+## GS. Coaches can withdraw a workout review within an hour (owner, 2026-11-13) - not started
+
+**Owner:** "Give coaches the ability to withdraw workout reviews within an hour of submission. When they do so each set review should still be available for reuse unless the coach replaces them. Withdrawing a workout review shouldn't lose all notes and videos recorded by the coach." **To design:** a **Withdraw review** button on the coach's sent review for 60 minutes after `reviews.created_at` (server-checked, `security definer`, coach of that review only); withdrawing hides the review from the trainee (row kept with `withdrawn_at`, or moved to a draft) and resets the workout to "awaiting review" (`mark_reviewed` undone, unseen badge cleared); the coach reopens it with **every set's tags, comments, voice-overs + drawings and coach grades pre-filled** and can keep or replace each one before sending again (GR's confirmation applies). **Open questions for the owner:** does the trainee get a message when a review is withdrawn (the original push cannot be recalled)? Do achievements / stats that counted the review (e.g. "first review") roll back? Does the 1-hour clock restart when the review is sent again? Needs a migration (journal it) and RLS/grant care per the security rules; ties into EZ-6 / 6b (exercise notes) so withdrawn notes do not show as "latest" meanwhile.
 
 ---
 
