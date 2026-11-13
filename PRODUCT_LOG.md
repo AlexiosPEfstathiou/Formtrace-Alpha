@@ -1532,6 +1532,8 @@ Draft by Claude, **review by a lawyer** before live. Not started.
 
 ## DW. Live keys and go-live
 
+**Owner decision 2026-11-13 16:24 (personal account): go live now for the first coach and tester; the tester skips payment with a live 100%-off promotion code `ALPHATEST`.** A 100% code makes the Checkout total EUR 0 (ED: `no_payment_required` -> deposit 0 = comp, no PaymentIntent, weekly releases skipped), so no money moves and the coach does not need live payouts for that goal. Steps given to the owner (live coupon + `ALPHATEST`, live webhook endpoint with the 9 events, live `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`, live Connect branding, one owner test, then `payments_via_stripe` = 1). Checked 2026-11-13: `release_hold_days` 14 / `release_hold_fast_days` 7 (restored), pilot fees 0 %, `payments_via_stripe` still 0. **Still open from the checklist (owner told):** offer wording describes the old weekly-charge model (untrue under escrow); terms page / consent (DX postponed); VAT advice; anyone paying **without** the code is charged for real and their coach then needs live payouts set up.
+
 Owner, 2026-10-29 - work tomorrow. Switch from the sandbox to live Stripe: live activation
 complete; **live** secret key replaces the test key in Supabase secrets (one secret per
 mode - never in chat or repo); a **live** webhook endpoint with its own signing secret;
