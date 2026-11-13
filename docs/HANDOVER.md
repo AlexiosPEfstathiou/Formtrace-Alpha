@@ -1,6 +1,6 @@
 # Formtrace Coach — Handover (as of 2026-11-10)
 
-**2026-11-13 (personal account): GP fixed** - voice-over drawings were stored relative to the video's box, not the picture, so they replayed elsewhere; new voice-overs now store picture coordinates (old ones unchanged). Owner to re-test **GP-T1**. **Logged (not started): GQ** review push opens the reviewed workout, **GR** coach confirms before a review is sent, **GS** withdraw a review within an hour keeping set reviews / notes / videos. Next item code: **GT**.
+**2026-11-13 (personal account): GP fixed** - voice-over drawings were stored relative to the video's box, not the picture, so they replayed elsewhere; new voice-overs now store picture coordinates (old ones unchanged). Owner to re-test **GP-T1**. **Logged (not started): GQ** review push opens the reviewed workout, **GR** coach confirms before a review is sent, **GS** withdraw a review within an hour keeping set reviews / notes / videos (owner decided: no message to the trainee, no achievement roll-back, the hour restarts on each re-send). Next item code: **GT**.
 
 ## Session 2026-11-05 to 2026-11-10 (work account) - summary
 
