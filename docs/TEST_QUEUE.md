@@ -64,6 +64,7 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] Also check: the second button reads **"+ Add several…"**; the label reads **"Target kg (level 1)"**.
 
 ## As the coach — reviewing a session (EZ-6 / EZ-6b)
+- [ ] **GP-T1** (2026-11-13) Record a **new** voice-over on a portrait clip and draw near a joint (e.g. the knee); in the preview and later as the trainee, the drawing appears on the same spot of the body. (Old voice-overs may still be off.)
 Needs a trainee with **two or more reviewed sessions** of the same exercise.
 - [ ] **EZ6-T4** While reviewing that exercise, **"Your notes on this exercise (N)"** shows every earlier note, dated, newest first, above the sets. Write a new comment in a set's box and send the review.
 - [ ] **EZ6b-T2** Tap **Edit** on one of your notes, change it, **Save**: it shows "edited" under its date.

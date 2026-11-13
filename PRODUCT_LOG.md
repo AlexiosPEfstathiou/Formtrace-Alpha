@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**GP (2026-11-13, personal account): voice-over drawings replayed in different places from where they were drawn - FIXED for new voice-overs (owner to re-test GP-T1).**
 **GN (2026-11-10 evening, personal account): rest stopwatch covered buttons and its own message - now a small pill top-right (owner to re-test GN-T1).**
 **GM (2026-11-10 evening, personal account): camera / microphone "access was denied" help gave a path that no longer exists in Chrome for Android - REWRITTEN (owner to re-test GM-T1).**
 **GL (2026-11-10 evening, personal account): GK on the phone - whole screen slid up and Start a session seemed dead - FIXED (owner to re-test GL-T1).**
@@ -760,6 +761,14 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## GP. Voice-over drawings replay in the wrong place - FIXED 2026-11-13 (personal account)
+
+**Owner report 2026-11-13:** "The voice-over's drawings do not show in the same positions during playback as when they were drawn." **Finding (CL telestration):** stroke points were normalised to the **box** around the video, and the two boxes differ: drawing happens in a fixed-height box with `object-fit: contain` (black bars beside a portrait clip), playback in a box of at most 240 px with `object-fit: cover` (picture cropped and scaled differently). The same 0-1 numbers therefore pointed at different parts of the picture. Measured with a portrait test clip in both layouts: a mark drawn at 25 % / 30 % of the picture replayed at (117, 72) px instead of (49, 216) px.
+**Fix (index.html):** `telePicRect(box, video)` works out where the picture actually is inside its box (object-fit, intrinsic size, the saved 90 / 270 rotation); new strokes carry `f: 1` and store points relative to the **picture**; `teleDraw` maps them back through the picture rectangle at playback (and live while drawing). Verified in a headless browser with the same test clip: the replayed point lands exactly on the drawn spot. **Old voice-overs** (strokes without `f`) keep the old box mapping, so their drawings may still be off - re-recording fixes them. No SQL.
+Seen on the way, not changed: on playback a portrait clip is shown cropped (cover, max 240 px), so a drawing near the bottom of the picture can fall outside the visible part - candidate for GA (camera / player rework).
 
 ---
 

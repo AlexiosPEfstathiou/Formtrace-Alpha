@@ -1,5 +1,7 @@
 # Formtrace Coach — Handover (as of 2026-11-10)
 
+**2026-11-13 (personal account): GP fixed** - voice-over drawings were stored relative to the video's box, not the picture, so they replayed elsewhere; new voice-overs now store picture coordinates (old ones unchanged). Owner to re-test **GP-T1**. Next item code: **GQ**.
+
 ## Session 2026-11-05 to 2026-11-10 (work account) - summary
 
 **Start here (in this order):**
