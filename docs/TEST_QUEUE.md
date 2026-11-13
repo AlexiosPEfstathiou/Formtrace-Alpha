@@ -68,7 +68,7 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] **GS-T1** Open a review you sent less than an hour ago: **Withdraw this review** shows with the minutes left; withdraw -> the workout is back in your queue.
 - [ ] **GS-T2** Open it again: tags, notes, voice-overs (with drawings) and overall feedback are all filled in; change one, send - the trainee sees the new version.
 - [ ] **GS-T3** As the trainee, after a withdrawal: the review is gone from the workout until it is sent again.
-- [ ] **GP-T1** (2026-11-13) Record a **new** voice-over on a portrait clip and draw near a joint (e.g. the knee); in the preview and later as the trainee, the drawing appears on the same spot of the body. (Old voice-overs may still be off.)
+- [ ] **GP-T1** (2026-11-13, re-fixed 16:05 - GP-2) Record a **new** voice-over on a portrait clip and draw near a joint (e.g. the knee); in the preview and later as the trainee, the drawing **appears** and sits on the same spot of the body; the whole clip is visible in the player. (Old voice-overs may still be off.)
 Needs a trainee with **two or more reviewed sessions** of the same exercise.
 - [ ] **EZ6-T4** While reviewing that exercise, **"Your notes on this exercise (N)"** shows every earlier note, dated, newest first, above the sets. Write a new comment in a set's box and send the review.
 - [ ] **EZ6b-T2** Tap **Edit** on one of your notes, change it, **Save**: it shows "edited" under its date.

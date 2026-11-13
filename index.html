@@ -11807,13 +11807,14 @@ function teleCanvasOver(box,pointer){
   fit(); return {canvas:c,ctx,fit};
 }
 function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
-  const box=document.createElement("div");box.style.cssText="position:relative;max-height:240px";
-  box.innerHTML=`<video muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:cover" src="${videoUrl}"></video>
+  const box=document.createElement("div");box.style.cssText="position:relative;width:100%;max-height:240px;overflow:hidden;border-radius:12px;background:#000";   /* GP-2: the video used to overflow to ~900 px, so drawings landed off the visible area; now the frame takes the clip's shape (set below, or by a saved rotation), capped at 240 px */
+  box.innerHTML=`<video muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:contain" src="${videoUrl}"></video>
     <audio src="${audioUrl}" style="display:none"></audio>
     <button class="vo-playbtn" type="button">▶</button>
     <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
       <div class="vo-meter-track"><div class="vo-meter-fill"></div></div></div>`;
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
+  v.addEventListener("loadedmetadata",()=>{ if(!box.style.aspectRatio&&v.videoWidth&&v.videoHeight) box.style.aspectRatio=v.videoWidth+" / "+v.videoHeight; });   /* GP-2: unless a rotation already set it */
   watchVideoErrors(v,videoPath,videoUrl,"voiceover:"+activeScreenName()); if(a){ a.addEventListener("error",()=>reportError("audio",`voiceover audio: code ${(a.error||{}).code||"?"} · url ${String(audioUrl||"").slice(0,80)}`,null)); }   // CN-16
   const tele=(marks&&marks.length)?teleCanvasOver(box,false):null; if(tele) box.insertAdjacentHTML("beforeend",'<div style="position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:2px 7px">✎ drawn by your coach</div>');
   wireRotation(box,v,videoPath);
