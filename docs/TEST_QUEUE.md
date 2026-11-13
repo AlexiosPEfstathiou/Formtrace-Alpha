@@ -64,6 +64,9 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] Also check: the second button reads **"+ Add several…"**; the label reads **"Target kg (level 1)"**.
 
 ## As the coach — reviewing a session (EZ-6 / EZ-6b)
+- [ ] **GT-T1** (2026-11-13) While recording a voice-over: pinch with two fingers to zoom in, drag with two fingers to move, pinch back to the full picture; one finger still draws, and a pinch never leaves a stray line.
+- [ ] **GT-T2** Draw while zoomed in, then zoom out: the drawing stays on the same spot of the body.
+- [ ] **GT-T3** Play it back (preview, then as the trainee): the video zooms and moves at the same moments, and the drawings sit where they were drawn.
 - [ ] **GR-T1** (2026-11-13) Tap **Send review**: a "Send this review to <name>?" summary appears; **Keep editing** sends nothing; **Send review** sends it.
 - [ ] **GS-T1** Open a review you sent less than an hour ago: **Withdraw this review** shows with the minutes left; withdraw -> the workout is back in your queue.
 - [ ] **GS-T2** Open it again: tags, notes, voice-overs (with drawings) and overall feedback are all filled in; change one, send - the trainee sees the new version.

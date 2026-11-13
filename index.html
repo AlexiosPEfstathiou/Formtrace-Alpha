@@ -11477,7 +11477,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
       <div id="vo-check-status" style="font-size:12px;color:var(--faint);margin-top:8px;text-align:center">Requesting microphone…</div>
     </div>
     <div id="vo-main" style="display:none">
-      <div id="vo-vid-box" style="width:100%;height:min(280px,42vh);overflow:hidden;border-radius:12px;position:relative;background:#000"><video id="vo-vid" muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:contain" src="${url}"></video></div><!-- CN-19: fixed height + overflow hidden; a portrait clip used to overflow the box and cover Start recording -->
+      <div id="vo-vid-box" style="width:100%;height:min(280px,42vh);overflow:hidden;border-radius:12px;position:relative;background:#000"><div class="tele-zoom" style="position:absolute;inset:0;transform-origin:0 0"><video id="vo-vid" muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:contain" src="${url}"></video></div></div><!-- CN-19: fixed height + overflow hidden; a portrait clip used to overflow the box and cover Start recording -->
       <div id="vo-tools" style="display:none;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
         <button type="button" class="btn sm ghost vo-tool" data-tool="red" style="width:auto;border-color:#FF4D4D;color:#FF4D4D">● Red</button>
         <button type="button" class="btn sm ghost vo-tool" data-tool="green" style="width:auto;border-color:#3DDC84;color:#3DDC84">● Green</button>
@@ -11512,10 +11512,38 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   const pt=e=>{ const r=tele.canvas.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top;
     if(cur&&cur.f===1){ const pr=telePicRect(vidBox,vid); if(pr) return [cl((x-pr.x)/pr.w),cl((y-pr.y)/pr.h)]; }   /* GP: relative to the picture */
     return [cl(x/r.width),cl(y/r.height)]; };
-  tele.canvas.addEventListener("pointerdown",e=>{ if(!recorder||recorder.state!=="recording") return; e.preventDefault(); tele.canvas.setPointerCapture(e.pointerId); cur={t:now(),kind:"stroke",color:teleColor,points:[]}; if(telePicRect(vidBox,vid)) cur.f=1; cur.points.push(pt(e)); marks.push(cur); repaint(); });   /* GP: f:1 = picture coordinates */
-  tele.canvas.addEventListener("pointermove",e=>{ if(!cur) return; e.preventDefault(); cur.points.push(pt(e)); repaint(); });
+  /* GT: two fingers pinch to zoom and drag to move around; one finger draws. Zoom changes are marks, replayed for the trainee. */
+  const zL=vidBox.querySelector(".tele-zoom"); const fingers=new Map(); let pinch=null, lastZoomAt=0, waitAllUp=false;
+  const zoomReset=()=>{ teleZoomSet(zL,vidBox,vid,{s:1}); };
+  const zoomMark=force=>{ const z=zL.__z||{s:1,tx:0,ty:0}; const R0=telePicRect(vidBox,vid,true); if(!R0) return;
+    const W=vidBox.clientWidth,H=vidBox.clientHeight; let u=.5,v=.5;
+    if(z.s>1.001){ u=cl(((W/2-z.tx)/z.s-R0.x)/R0.w); v=cl(((H/2-z.ty)/z.s-R0.y)/R0.h); }
+    const t=now(); if(!force&&t-lastZoomAt<0.08) return; lastZoomAt=t;
+    marks.push({t,kind:"zoom",s:Math.round(z.s*1000)/1000,u:Math.round(u*1000)/1000,v:Math.round(v*1000)/1000}); };
+  const boxPt=e=>{ const r=vidBox.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+  tele.canvas.addEventListener("pointerdown",e=>{ if(!recorder||recorder.state!=="recording") return; e.preventDefault(); tele.canvas.setPointerCapture(e.pointerId);
+    fingers.set(e.pointerId,boxPt(e));
+    if(fingers.size>=2){   /* a second finger: drop the stroke the first one started, start a pinch */
+      if(cur){ marks.splice(marks.indexOf(cur),1); cur=null; }
+      const [a,b]=[...fingers.values()]; const z=zL.__z||{s:1,tx:0,ty:0};
+      pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,m0:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},z0:{...z}}; waitAllUp=true; repaint(); return; }
+    if(waitAllUp) return;
+    cur={t:now(),kind:"stroke",color:teleColor,points:[]}; if(telePicRect(vidBox,vid)) cur.f=1; cur.points.push(pt(e)); marks.push(cur); repaint(); });   /* GP: f:1 = picture coordinates */
+  tele.canvas.addEventListener("pointermove",e=>{
+    if(fingers.has(e.pointerId)) fingers.set(e.pointerId,boxPt(e));
+    if(pinch&&fingers.size>=2){ e.preventDefault();
+      const [a,b]=[...fingers.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y)||1, m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      const s=Math.min(4,Math.max(1,pinch.z0.s*d/pinch.d0));
+      const qx=(pinch.m0.x-pinch.z0.tx)/pinch.z0.s, qy=(pinch.m0.y-pinch.z0.ty)/pinch.z0.s;   /* the point under the fingers stays under them */
+      if(s<=1.001){ zoomReset(); } else { zL.__z={s,tx:m.x-s*qx,ty:m.y-s*qy}; zL.style.transform=`translate(${zL.__z.tx}px,${zL.__z.ty}px) scale(${s})`; }
+      zoomMark(false); repaint(); return; }
+    if(!cur) return; e.preventDefault(); cur.points.push(pt(e)); repaint(); });
   const endStroke=()=>{ if(cur&&cur.points.length<2){ marks.splice(marks.indexOf(cur),1); } cur=null; repaint(); };
-  tele.canvas.addEventListener("pointerup",endStroke); tele.canvas.addEventListener("pointercancel",endStroke);
+  const fingerUp=e=>{ fingers.delete(e.pointerId);
+    if(pinch&&fingers.size<2){ pinch=null; zoomMark(true); }
+    if(!fingers.size) waitAllUp=false;
+    if(!pinch) endStroke(); };
+  tele.canvas.addEventListener("pointerup",fingerUp); tele.canvas.addEventListener("pointercancel",fingerUp);
   $$("#vo-tools .vo-tool").forEach(b=>b.addEventListener("click",()=>{ teleColor=b.getAttribute("data-tool"); $$("#vo-tools .vo-tool").forEach(x=>x.classList.toggle("on",x===b)); }));
   $("#vo-erase").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return; if(cur) endStroke(); marks.push({t:now(),kind:"erase"}); repaint(); status.textContent="Cleared - draw again when you're ready."; });
   $("#vo-pause").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return;
@@ -11694,6 +11722,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     recPeak=0;
     marks=[]; vidPausedByCoach=false; $("#vo-pause").textContent="⏸ Pause video"; $$("#vo-tools .vo-tool").forEach(x=>x.classList.toggle("on",x.getAttribute("data-tool")===teleColor));
     recorder.start(); recStart=performance.now();
+    zoomReset(); fingers.clear(); pinch=null; waitAllUp=false;   /* GT */
     $("#vo-tools").style.display="flex"; tele.canvas.style.display=""; repaint();
     try{ await vid.play(); }catch(e){}
     status.textContent="Recording… talking over the clip.";
@@ -11701,7 +11730,7 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     recordBtn.onclick=stopRecording;
   };
   const stopRecording=()=>{
-    if(cur) endStroke(); $("#vo-tools").style.display="none"; tele.canvas.style.display="none";   // Item CL
+    if(cur) endStroke(); pinch=null; fingers.clear(); waitAllUp=false; zoomReset(); $("#vo-tools").style.display="none"; tele.canvas.style.display="none";   // Item CL; GT: back to the full picture
     if(recorder&&recorder.state!=="inactive") recorder.stop();
     vid.pause();
   };
@@ -11778,7 +11807,7 @@ function teleVideoTime(marks,t){
    object-fit contain - bars beside a portrait clip) and playback (max 240 px, object-fit cover - cropped), so drawings
    landed in different places. Now each stroke stores f:1 and points relative to the PICTURE as shown (fit + rotation
    taken into account); old strokes (no f) keep the box mapping. */
-function telePicRect(box,vid){
+function telePicRect(box,vid,unzoomed){
   try{
     const vw=vid.videoWidth, vh=vid.videoHeight, ew=vid.offsetWidth, eh=vid.offsetHeight; if(!vw||!vh||!ew||!eh) return null;
     const fit=getComputedStyle(vid).objectFit;
@@ -11787,8 +11816,24 @@ function telePicRect(box,vid){
     if(/rotate\((90|270)deg\)/.test(vid.style.transform||"")){ const tmp=cw; cw=ch; ch=tmp; }
     const vr=vid.getBoundingClientRect(), br=box.getBoundingClientRect();
     const cx=vr.left+vr.width/2-br.left, cy=vr.top+vr.height/2-br.top;
-    return {x:cx-cw/2,y:cy-ch/2,w:cw,h:ch};
+    /* GT: the video may sit in a zoom layer (translate + scale, origin top-left of the box) - take it out, then put it back */
+    const L=vid.closest&&vid.closest(".tele-zoom"), z=(L&&L.__z)||{s:1,tx:0,ty:0};
+    const R0={x:(cx-z.tx)/z.s-cw/2,y:(cy-z.ty)/z.s-ch/2,w:cw,h:ch};
+    if(unzoomed) return R0;
+    return {x:z.s*R0.x+z.tx,y:z.s*R0.y+z.ty,w:z.s*cw,h:z.s*ch};
   }catch(e){ return null; }
+}
+/* GT (owner, 2026-11-13): pinch-to-zoom during a voice-over, replayed for the trainee. A zoom mark is {t,kind:"zoom",s,u,v}:
+   scale s (1-4) and the picture point (u,v, 0-1) shown at the centre of the frame - independent of the frame's size, so it
+   replays the same in a different player. */
+function teleZoomAt(marks,t){ let z=null; for(const m of (marks||[])){ if(m.t>t) break; if(m.kind==="zoom") z=m; } return z?{s:z.s,u:z.u,v:z.v}:{s:1,u:.5,v:.5}; }
+function teleZoomSet(L,box,vid,z){
+  if(!L) return; const s=Math.min(4,Math.max(1,Number(z&&z.s)||1));
+  if(s<=1.001){ L.__z={s:1,tx:0,ty:0}; L.style.transform=""; return; }
+  const R0=telePicRect(box,vid,true); if(!R0) return;
+  const W=box.clientWidth, H=box.clientHeight;
+  const tx=W/2-s*(R0.x+z.u*R0.w), ty=H/2-s*(R0.y+z.v*R0.h);
+  L.__z={s,tx,ty}; L.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
 }
 function teleDraw(ctx,W,H,marks,t,pr){
   ctx.clearRect(0,0,W,H);
@@ -11808,7 +11853,7 @@ function teleCanvasOver(box,pointer){
 }
 function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
   const box=document.createElement("div");box.style.cssText="position:relative;width:100%;max-height:240px;overflow:hidden;border-radius:12px;background:#000";   /* GP-2: the video used to overflow to ~900 px, so drawings landed off the visible area; now the frame takes the clip's shape (set below, or by a saved rotation), capped at 240 px */
-  box.innerHTML=`<video muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:contain" src="${videoUrl}"></video>
+  box.innerHTML=`<div class="tele-zoom" style="position:absolute;inset:0;transform-origin:0 0;transition:transform .12s linear"><video muted playsinline style="width:100%;height:100%;border-radius:12px;background:#000;object-fit:contain" src="${videoUrl}"></video></div>
     <audio src="${audioUrl}" style="display:none"></audio>
     <button class="vo-playbtn" type="button">▶</button>
     <div class="vo-meter-wrap vo-meter-overlay"><div class="vo-meter-lab">Playback level</div>
@@ -11862,11 +11907,16 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
       const {vt,frozen}=teleVideoTime(marks,a.currentTime);
       if(frozen){ if(!v.paused) v.pause(); if(Math.abs(v.currentTime-vt)>0.2) v.currentTime=vt; }
       else { if(v.paused&&!videoEnded) v.play().catch(()=>{}); if(Math.abs(v.currentTime-vt)>0.35) v.currentTime=vt; }
-      tele.fit(); teleDraw(tele.ctx,tele.canvas.width,tele.canvas.height,marks,a.currentTime,telePicRect(box,v));   /* GP */
+      teleFrame();   /* GP / GT */
     } else if(Math.abs(v.currentTime-a.currentTime)>0.35) v.currentTime=a.currentTime;
     },800);
   };
-  const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); if(meterRAF){cancelAnimationFrame(meterRAF);meterRAF=null;} meterFill.style.width="0%"; };
+  /* GT: drawings and the coach's zoom follow the audio clock every frame while playing */
+  const zLayer=box.querySelector(".tele-zoom"); let teleRAF=null;
+  const teleFrame=()=>{ if(!tele) return; teleZoomSet(zLayer,box,v,teleZoomAt(marks,a.currentTime)); tele.fit(); teleDraw(tele.ctx,tele.canvas.width,tele.canvas.height,marks,a.currentTime,telePicRect(box,v)); };
+  const teleLoop=()=>{ teleFrame(); teleRAF=(!a.paused&&!a.ended)?requestAnimationFrame(teleLoop):null; };
+  a.addEventListener("play",()=>{ if(tele&&!teleRAF) teleRAF=requestAnimationFrame(teleLoop); });
+  const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); if(teleRAF){ cancelAnimationFrame(teleRAF); teleRAF=null; } if(meterRAF){cancelAnimationFrame(meterRAF);meterRAF=null;} meterFill.style.width="0%"; };
   btn.addEventListener("click",()=>{ v.paused?play():pause(); });
   a.addEventListener("ended",pause);
   /* Manual-stop recordings (item: extra time to wrap up) mean audio can now
