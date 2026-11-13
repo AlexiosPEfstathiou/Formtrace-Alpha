@@ -3583,7 +3583,7 @@ function renderAppTabs(current){
   if(!window.__achChecked){ window.__achChecked=true; checkAchievements(); checkStreakBadgeLevelUp(); }   // Item CY catch-up; Item BW level-up animation
   loadFastReviewers(); setTimeout(ensurePushDefault,1500); setTimeout(ensurePayoutsPrompt,4000);   /* Item ER: payouts prompt for coaches */   /* Item DO: push on by default (silent if already allowed, else one explained prompt) */
   try{ const tz=Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz&&tz!==ME.tz){ store._sb.rpc("set_my_tz",{p_tz:tz}).then(()=>{ ME.tz=tz; }); } }catch(e){}   // Item DI: the morning summary goes out at 08:00 in this zone
-  try{ const h=(location.hash||"").replace("#",""); if(h&&TAB_TOPLEVEL.has(h)&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>go(h),0); } }catch(e){}   // Item CE: opened from a notification
+  try{ const h=(location.hash||"").replace("#",""); if(h&&(TAB_TOPLEVEL.has(h)||isReviewLink(h))&&h!==current){ history.replaceState(null,"",location.pathname); setTimeout(()=>navTarget(h),0); } }catch(e){}   /* GQ: also #review=<workout> */   // Item CE: opened from a notification
 }
 /* CR-5: swipe left / right between tabs. Only when the tab bar is showing, no overlay or
    sheet is open, and the gesture did not start on something that scrolls sideways or
@@ -3653,12 +3653,19 @@ async function ensurePushDefault(){
   }catch(e){ console.error("push default",e); }
 }
 /* notification click → the right screen: the URL carries a hash */
-window.addEventListener("hashchange",()=>{ const h=(location.hash||"").replace("#",""); if(h&&ME&&TAB_TOPLEVEL.has(h)){ go(h); history.replaceState(null,"",location.pathname); } });
+/* GQ (owner, 2026-11-13): the review push links to "#review=<assigned workout id>" and opens that workout's review. */
+function isReviewLink(h){ return /^review=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(h||"")); }   /* a hoisted function: start-up code may run before this line */
+function navTarget(h){
+  if(isReviewLink(h)){ const id=h.slice(7); try{ go(roleOf()==="coach"?"coach":"trainee-home"); }catch(e){} setTimeout(()=>openReview(id,true),0); return true; }
+  if(TAB_TOPLEVEL.has(h)){ go(h); return true; }
+  return false;
+}
+window.addEventListener("hashchange",()=>{ const h=(location.hash||"").replace("#",""); if(h&&ME&&(TAB_TOPLEVEL.has(h)||isReviewLink(h))){ navTarget(h); history.replaceState(null,"",location.pathname); } });
 /* GO (2026-11-11): a notification tapped while the app is open. The service worker sends { type: "ft-nav", tab } and the
    app goes there. Not signed in yet (still starting): leave the tab in the address, where the start-up code picks it up. */
 if(navigator.serviceWorker&&typeof navigator.serviceWorker.addEventListener==="function") navigator.serviceWorker.addEventListener("message",ev=>{
-  const d=ev.data; if(!d||d.type!=="ft-nav"||typeof d.tab!=="string"||!TAB_TOPLEVEL.has(d.tab)) return;
-  if(ME) go(d.tab); else { try{ history.replaceState(null,"","#"+d.tab); }catch(e){} }
+  const d=ev.data; if(!d||d.type!=="ft-nav"||typeof d.tab!=="string"||!(TAB_TOPLEVEL.has(d.tab)||isReviewLink(d.tab))) return;
+  if(ME) navTarget(d.tab); else { try{ history.replaceState(null,"","#"+d.tab); }catch(e){} }   /* GQ */
 });
 /* Item CP: persistent header. Profile (avatar) top-left; settings gear and the streak badge top-right. */
 let _hdrWired=false;
@@ -11054,7 +11061,17 @@ async function _openReview(assignedId,readonly=false){
     const createdRows=await Promise.all(missing.map(row=>store.setLabels.add(row).catch(e=>{ console.error("backfill set label failed",e); return null; })));
     for(const created of createdRows){ if(created&&created.id) labelBy[created.item_index+"-"+created.set_index]=created; }
   }
-  reviewState={overall:existing?existing.overall:"",per_set:{}, assignedId, labelBy};
+  /* GS (owner, 2026-11-13): a review the coach withdrew comes back pre-filled - every set's tags, notes, videos, voice-overs and
+     drawings - to keep or replace before sending again. */
+  let draft=null;
+  if(!readonly){ try{ const { data }=await store._sb.from("reviews").select("*").in("submission_id",subs.map(s=>s.id)).not("withdrawn_at","is",null).order("withdrawn_at",{ascending:false}).limit(1); draft=(data||[])[0]||null; }catch(e){ console.error("withdrawn review load",e); } }
+  const draftSets={};
+  if(draft){ (Array.isArray(draft.per_set)?draft.per_set:[]).forEach(p=>{ if(!p) return;
+    const ii=Number.isInteger(p.item_index)?p.item_index:(rep.items||[]).findIndex(it=>it&&it.name===p.exercise); if(ii<0) return;
+    const si=Number.isInteger(p.set_index)?p.set_index:Math.max(0,(Number(p.set)||1)-1);
+    draftSets[ii+"-"+si]={...p}; }); }
+  reviewState={overall:existing?existing.overall:(draft?draft.overall||"":""),per_set:draftSets, assignedId, labelBy};
+  if(draft) setTimeout(()=>toast("Your withdrawn review is back - keep or replace each part, then send",3800),300);
   /* Reachable straight from the trainee's training list, where the engagement
      context was never loaded. currentEngOther is null there, and reading
      .display_name off it threw — so the screen silently never opened. Load the
@@ -11310,6 +11327,21 @@ async function _openReview(assignedId,readonly=false){
   else oaWrap.innerHTML+=`<p style="font-size:14px;color:var(--muted);line-height:1.5">${escapeHtml(existing?existing.overall||"—":"—")}</p>`;
   body.appendChild(oaWrap);
   $("#rev-submit").style.display=readonly?"none":"flex";
+  /* GS: the coach can withdraw a sent review for one hour (the hour restarts each time it is sent again) */
+  const sentAt=existing?new Date(existing.sent_at||existing.created_at).getTime():0;
+  if(readonly&&existing&&roleOf()==="coach"&&existing.coach_id===ME.id&&!existing.withdrawn_at&&sentAt&&Date.now()-sentAt<3600000){
+    const left=Math.max(1,Math.ceil((3600000-(Date.now()-sentAt))/60000));
+    const wd=document.createElement("div");wd.style.cssText="margin-top:14px";
+    wd.innerHTML=`<button class="btn sm ghost" type="button" style="width:100%">Withdraw this review</button><div style="font-size:11.5px;color:var(--faint);margin-top:6px;text-align:center">Possible for ${left} more min. Everything you recorded is kept for when you send it again.</div>`;
+    wd.querySelector("button").addEventListener("click",async ev=>{
+      const ok=await openConfirm({title:"Withdraw this review?",body:"Your trainee will no longer see it, and the workout goes back to your review queue with every tag, note, video and voice-over kept. Your trainee is not told.",confirmLabel:"Withdraw review",cancelLabel:"Keep it sent",danger:true});
+      if(!ok) return; const b=ev.currentTarget||wd.querySelector("button"); b.disabled=true;
+      const { error }=await store._sb.rpc("withdraw_review",{p_review:existing.id});
+      if(error){ b.disabled=false; toast(error.message||"Couldn't withdraw the review",4000); return; }
+      toast("Review withdrawn - it's back in your queue"); openReview(assignedId,false);
+    });
+    body.appendChild(wd);
+  }
   hydrateVideos(body);
   $$(".screen").forEach(s=>s.classList.remove("active"));$("#s-review").classList.add("active");
 }
@@ -11318,16 +11350,19 @@ $("#rev-submit").addEventListener("click",async()=>{
   try{
     const per_set=Object.values(reviewState.per_set);
     const totalSets=Object.keys(reviewState.labelBy||{}).length;
-    if(totalSets && per_set.filter(p=>p.labels&&p.labels.length).length===0){
-      const ok=await openConfirm({title:"Send without tagging?",body:"You haven't tagged any sets. Tags are what the trainee sees for form, and what we keep as labelled data.",confirmLabel:"Send anyway",cancelLabel:"Go back and tag"});
-      if(!ok){ btn.disabled=false;btn.textContent=o; return; }
-    }
-    await store.reviews.add({submission_id:currentSubmission.id,coach_id:ME.id,overall:($("#rev-overall")?.value||"").trim(),per_set});
+    /* GR (owner, 2026-11-13): nothing reaches the trainee until the coach confirms this summary */
+    { const tagged=per_set.filter(p=>p&&p.labels&&p.labels.length).length, vos=per_set.filter(p=>p&&p.voiceover_path).length,
+        vids=per_set.filter(p=>p&&p.video_path).length, notes=per_set.filter(p=>p&&p.comment).length, overall=($("#rev-overall")?.value||"").trim();
+      const who=(currentEngOther&&currentEngOther.display_name)||"your trainee";
+      const parts=[`${tagged} of ${totalSets||per_set.length} sets tagged`]; if(notes) parts.push(`${notes} note${notes>1?"s":""}`); if(vos) parts.push(`${vos} voice-over${vos>1?"s":""}`); if(vids) parts.push(`${vids} video${vids>1?"s":""}`); parts.push(overall?"overall feedback written":"no overall feedback");
+      const noTags=totalSets&&!tagged?"No sets are tagged - tags are what the trainee sees for form, and what we keep as labelled data. ":"";   /* replaces the separate "Send without tagging?" question */
+      const ok=await openConfirm({title:`Send this review to ${who}?`,body:noTags+parts.join(" · ")+". You can withdraw it for an hour after sending.",confirmLabel:noTags?"Send anyway":"Send review",cancelLabel:"Keep editing",icon:"📝"});
+      if(!ok){ btn.disabled=false;btn.textContent=o; return; } }
     await saveCoachGrades();
-    // server-checked: refuses unless a review row exists, and flags the
-    // workout unseen so the trainee's homepage badge appears
-    const { error:mrErr }=await store._sb.rpc("mark_reviewed",{p_assigned:reviewState.assignedId});
-    if(mrErr) throw mrErr;
+    /* GR / GS: one server call writes the review (or re-sends a withdrawn one), marks the workout reviewed and notifies the
+       trainee - the only way a review reaches them. */
+    const { error:srErr }=await store._sb.rpc("send_review",{p_submission:currentSubmission.id,p_overall:($("#rev-overall")?.value||"").trim(),p_per_set:per_set});
+    if(srErr) throw srErr;
     toast("Review sent ✓"); openEngagement(currentEng.id);
   }catch(err){console.error(err);toast(err.message||"Couldn't send review",4000);}
   finally{btn.disabled=false;btn.textContent=o;}

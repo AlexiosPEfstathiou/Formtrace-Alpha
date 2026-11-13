@@ -64,6 +64,10 @@ If anything says "permission denied for table / column ..." or one of the new gu
 - [ ] Also check: the second button reads **"+ Add several…"**; the label reads **"Target kg (level 1)"**.
 
 ## As the coach — reviewing a session (EZ-6 / EZ-6b)
+- [ ] **GR-T1** (2026-11-13) Tap **Send review**: a "Send this review to <name>?" summary appears; **Keep editing** sends nothing; **Send review** sends it.
+- [ ] **GS-T1** Open a review you sent less than an hour ago: **Withdraw this review** shows with the minutes left; withdraw -> the workout is back in your queue.
+- [ ] **GS-T2** Open it again: tags, notes, voice-overs (with drawings) and overall feedback are all filled in; change one, send - the trainee sees the new version.
+- [ ] **GS-T3** As the trainee, after a withdrawal: the review is gone from the workout until it is sent again.
 - [ ] **GP-T1** (2026-11-13) Record a **new** voice-over on a portrait clip and draw near a joint (e.g. the knee); in the preview and later as the trainee, the drawing appears on the same spot of the body. (Old voice-overs may still be off.)
 Needs a trainee with **two or more reviewed sessions** of the same exercise.
 - [ ] **EZ6-T4** While reviewing that exercise, **"Your notes on this exercise (N)"** shows every earlier note, dated, newest first, above the sets. Write a new comment in a set's box and send the review.
@@ -80,6 +84,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — the workout (EZ-6)
+- [ ] **GQ-T1** (2026-11-13) Tap the "Your coach reviewed a workout" notification (app closed, then app open): the review of **that workout** opens; Back returns to Training.
 - [ ] **EZ6-T2** Each exercise shows **"Your coach's notes (N)"**: all the comments from earlier reviews of that exercise, dated, newest first; 3 shown, then **Show all**. The note written in EZ6-T4 is at the top; an edited one shows "edited"; a deleted one is gone.
 - [ ] **EZ6-T3** **▶ Replay the latest voice-over (date)** plays the coach's voice-over with its drawings; **Close** stops it.
 
