@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**GU (2026-11-14, owner): explore the goal-gradient effect and how to use it - logged, not started.**
 **GT (2026-11-13, personal account): pinch-to-zoom during a voice-over, replayed for the trainee - BUILT (owner to test GT-T1..T3).**
 **GQ / GR / GS (2026-11-13, personal account) - BUILT, SQL applied: review push opens that workout's review; coach confirms a summary before a review is sent (server-only path); coach can withdraw a review for an hour with everything kept. Owner to test GQ-T1, GR-T1, GS-T1..T3.**
 **GP (2026-11-13, personal account): voice-over drawings replayed in different places from where they were drawn - FIXED for new voice-overs (owner to re-test GP-T1).**
@@ -763,6 +764,20 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## GU. Explore the goal-gradient effect and how to use it (owner, 2026-11-14) - not started
+
+**Owner:** "Explore the goal-gradient effect and how we can use it to our advantage." **The effect:** people speed up their effort as they get closer to a goal (Hull's goal-gradient hypothesis; Kivetz, Urminsky & Zheng 2006 - coffee-card members bought faster as they neared the free coffee, and a 12-stamp card with 2 stamps pre-filled was completed faster than a 10-stamp blank card: the *illusion of progress*). The flip side: effort tends to sag in the middle of a long goal and drop after a reward is reached.
+**Where it could apply in Formtrace (ideas to assess, nothing decided):**
+- **Weekly sessions:** the Training card already says "0 of 4 done - 2 left" (GK); show the remaining distance more strongly as the week nears its end ("1 session left this week").
+- **The goal as a whole:** a visible progress line towards the goal's end date / target; break long goals into sub-milestones (weeks, a mid-goal check-in) so there is always a near target - counters the middle slump.
+- **Endowed progress:** count something already done at the start (e.g. the first check-in or the accepted offer as step 1 of N) so no one starts at zero.
+- **Quests, points, achievements (FS / FL):** show "x of y" towards the next reward; make the next reward always close.
+- **Coaches:** progress towards payouts, reviews this week, profile completeness (the coach checklist already does part of this).
+- **After a goal ends:** offer the next goal or renewal at the moment of completion, before motivation drops.
+**To decide:** which 2-3 places first, and how to measure it (e.g. sessions completed in the last 2 days of a week, goal completion rate, drop-off by week). **Care:** no artificial urgency that misleads, and no pressure that conflicts with rest days or safety.
 
 ---
 
