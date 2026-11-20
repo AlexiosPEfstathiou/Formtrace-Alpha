@@ -1473,6 +1473,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <!-- Item CO: trainee homepage v2 - the structured section first -->
     <div id="home-today" class="home-today" style="display:none"></div>
+    <div id="home-unfinished" style="display:none"></div>   <!-- HC: a workout left in the middle -->
     <div id="home-checklist" style="display:none"></div>   <!-- Item ES: the daily checklist -->
     <div id="home-reviews" class="home-reviews" style="display:none"></div>
     <div id="home-weight" class="home-milestone" style="display:none"></div>
@@ -4061,6 +4062,7 @@ async function renderHome(){
     await Promise.all([
       renderHomeWeekStatus(engs, todayEl),   // Item CO: replaces Today's program
       renderHomeChecklist(engs, $("#home-checklist")),   // Item ES: daily checklist
+      renderHomeUnfinished(engs, $("#home-unfinished")),   /* HC */
       renderHomeMilestone($("#home-milestone"))
     ]);
     await Promise.all([
@@ -4339,6 +4341,39 @@ async function renderCoachChecklist(el){
     go(b.getAttribute("data-cgo")); }));   /* owner 2026-11-02: review / assign / calls / macros open the first trainee who still needs it */
   const hb=document.querySelector('#app-tabbar [data-go="home"]'); if(hb){ refreshTabBadges(); }
   if(all){ const ck=`ft-dcdone-coach-${ME.id}-${todayISO()}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){} playDayComplete(); } }
+}
+/* HC (owner, 2026-11-20): a workout left in the middle - recorded sets are saved as a draft on the server (assigned_workouts.draft)
+   but nothing said so, and a restart looked like lost work. Unfinished workouts now stand out in the session list and on Home. */
+function draftProgress(a){
+  try{ const res=a&&a.draft&&Array.isArray(a.draft.results)?a.draft.results:null; if(!res) return null;
+    let done=0; res.forEach(arr=>(Array.isArray(arr)?arr:[]).forEach(x=>{ if(x) done++; }));
+    const items=(a.snapshot&&a.snapshot.items)||[]; const total=items.reduce((t,it)=>t+(it.kind==="interval"?1:(Number(it.sets)||0)),0);
+    return done>0?{done,total:Math.max(total,done)}:null; }catch(e){ return null; }
+}
+async function unfinishedWorkouts(opts){
+  try{ let q=store._sb.from("assigned_workouts").select("id,engagement_id,snapshot,draft,status").eq("status","assigned").not("draft","is",null);
+    if(opts.ids) q=q.in("id",opts.ids); else if(opts.engIds) q=q.in("engagement_id",opts.engIds); else return [];
+    const { data, error }=await q; if(error) throw error;
+    return (data||[]).map(a=>({...a,progress:draftProgress(a)})).filter(a=>a.progress);
+  }catch(e){ console.warn("unfinished workouts (HC)",e&&e.message); return []; }
+}
+async function renderHomeUnfinished(engs, el){
+  if(!el) return; el.style.display="none";
+  if(!ME||roleOf()!=="trainee") return;
+  const active=(engs||[]).filter(e=>e.status==="active"); if(!active.length) return;
+  const weekAgo=Date.now()-7*86400000;   /* only recent ones - drafts abandoned months ago are not "unfinished today" */
+  const list=(await unfinishedWorkouts({engIds:active.map(e=>e.id)}))
+    .filter(a=>{ const t=Date.parse(a.draft&&a.draft.saved_at||""); return !isNaN(t)&&t>=weekAgo; })
+    .sort((a,b)=>String(b.draft.saved_at).localeCompare(String(a.draft.saved_at))).slice(0,2);
+  if(!list.length) return;
+  el.className="card"; el.style.cssText="margin:0 0 12px;padding:14px 16px;border:1.5px solid var(--lime)";
+  el.innerHTML=`<div class="eyebrow" style="margin:0 0 6px;color:var(--lime)">Unfinished workout${list.length>1?"s":""}</div>
+    ${list.map(a=>`<button data-unf="${a.id}" type="button" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;padding:8px 0;text-align:left;color:var(--ink);cursor:pointer">
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px">${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${a.progress.done} of ${a.progress.total} sets recorded and saved</div></div>
+        <span class="btn sm primary" style="width:auto;padding:0 16px;pointer-events:none">Continue</span></button>`).join("")}`;
+  el.style.display="";
+  el.querySelectorAll("[data-unf]").forEach(b=>b.addEventListener("click",()=>openAssigned(b.getAttribute("data-unf"))));
 }
 async function renderHomeChecklist(engs, el){
   if(!el||!ME||roleOf()!=="trainee") return;
@@ -8110,6 +8145,9 @@ async function openWeekPool(pool){
     const ca=a.created_at&&isoOf(new Date(a.created_at))<(a.week_start||today), cb=b.created_at&&isoOf(new Date(b.created_at))<(b.week_start||today);
     if(ca!==cb) return ca?-1:1; return String(a.created_at).localeCompare(String(b.created_at));
   });
+  /* HC: unfinished workouts first, marked */
+  const unf={}; (await unfinishedWorkouts({ids:pool.map(a=>a.id)})).forEach(u=>{ unf[u.id]=u.progress; });
+  sorted.sort((a,b)=>(unf[b.id]?1:0)-(unf[a.id]?1:0));
   for(const a of sorted){
     const carried=a.created_at&&a.week_start&&isoOf(new Date(a.created_at))<a.week_start;
     const eng=(traineeEngs||[]).find(e=>e.id===a.engagement_id)||currentEng||{};
@@ -8117,6 +8155,9 @@ async function openWeekPool(pool){
     row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${((a.snapshot&&a.snapshot.items)||[]).length} exercises${eng.goal_title?` · ${escapeHtml(eng.goal_title)}`:""}${carried?` · <span style="color:var(--attn)">carried from last week</span>`:""}</div></div>
       <div style="color:var(--lime)">→</div>`;
+    if(unf[a.id]){ row.style.border="1.5px solid var(--lime)"; row.style.borderRadius="14px";
+      const tag=document.createElement("div"); tag.style.cssText="font-size:11.5px;font-weight:700;color:var(--lime);margin-top:4px";
+      tag.textContent=`Unfinished · ${unf[a.id].done} of ${unf[a.id].total} sets saved - tap to continue`; row.firstElementChild.appendChild(tag); }
     row.addEventListener("click",()=>startSession(a));
     body.appendChild(row);
   }
@@ -9901,6 +9942,7 @@ async function openAssigned(id){
       // in-progress draft (recorded sets not yet submitted)
       if(currentAssigned.draft && Array.isArray(currentAssigned.draft.results)){
         localResults=reshapeResults(currentAssigned.draft.results,items);
+        const pg=draftProgress(currentAssigned); if(pg) setTimeout(()=>toast(`Welcome back - your ${pg.done} recorded set${pg.done>1?"s are":" is"} saved`,3200),400);   /* HC */
       }
     }else{
       // submitted/reviewed → rebuild from the stored submission report

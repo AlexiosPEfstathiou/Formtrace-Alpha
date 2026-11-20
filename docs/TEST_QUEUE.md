@@ -87,6 +87,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HC-T1** (2026-11-20) Record a set or two, leave the workout and restart the app: Home shows "Unfinished workout - N of M sets recorded and saved - Continue"; Continue opens it with the sets there and "Welcome back" message; in Start a session it is listed first and marked.
 - [ ] **HB-T1** (2026-11-20) After a set, Set complete shows reps and target but no "Form match ..." line; the coach's review shows no "🤖 Form match" line either.
 - [ ] **GZ-T1** (SQL run 2026-11-20) Make 3 personal bests in one week (a first record counts; correcting reps counts): after each, the quest card shows x -> x+1 of 3; at 3, "Quest complete +10 points"; Profile -> Points shows 10.
 - [ ] **GY-T1** (2026-11-20) Finish a set of an exercise you did before with a weight: **Weight used** is already filled with last time's weight; change it and the new value is kept; a bodyweight exercise stays blank.

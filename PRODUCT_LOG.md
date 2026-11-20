@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HC (2026-11-20, personal account): unfinished workouts stand out - Home card "Unfinished workout - Continue", marked first in Start a session, "your sets are saved" on reopening - BUILT (owner to test HC-T1). Owner also reported the camera lines (pose overlay) not showing - to ask about (see HC).**
 **HB (2026-11-20, personal account): automatic form match hidden from trainees and coaches (still saved) - DONE (owner to check HB-T1).**
 **GZ (2026-11-20, personal account): first weekly quest "Personal Bests this week" (3 = 10 points) + points ledger + Profile balance - BUILT, SQL run ✓ by the owner 2026-11-20 18:57 (owner to test GZ-T1).**
 **HA (2026-11-20, owner): design one points reward system across daily, weekly and monthly quests - logged, not started.**
@@ -771,6 +772,14 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## HC. A workout left in the middle stands out and appears on Home - BUILT 2026-11-20 (personal account)
+
+**Owner report 20:27:** he restarted the app (because the pose **lines were not showing on the camera** - *ask him about that later*, GA) and got a scare that his recorded videos and sets were lost; asked that a workout left in the middle stands out and appears on the homepage as an unfinished workout. **Finding:** nothing was lost - recorded sets are saved to the server as a draft after every set (`assigned_workouts.draft`); his "Lower Body" had 8 sets saved at 20:28. The app just never said so. Also found: older abandoned drafts from July - September on the same account.
+**Built (index.html):** **Home** - a lime-bordered **"Unfinished workout"** card above the daily checklist: name, "N of M sets recorded and saved", **Continue** (opens the workout); only drafts saved in the **last 7 days**, newest first, at most 2. **Start a session** list - unfinished workouts first, lime border, "Unfinished · N of M sets saved - tap to continue". **Reopening** a workout with saved sets - toast "Welcome back - your N recorded sets are saved". Counts: sets with a result in the draft / sets in the workout. No SQL. Not done: clearing very old drafts (they stay on their workouts; Home ignores them).
+**Open (owner, to ask):** the camera's pose lines not showing before the restart - device, screen, Lines on or off.
 
 ---
 
