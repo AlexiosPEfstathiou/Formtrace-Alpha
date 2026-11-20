@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HB (2026-11-20, personal account): automatic form match hidden from trainees and coaches (still saved) - DONE (owner to check HB-T1).**
 **GZ (2026-11-20, personal account): first weekly quest "Personal Bests this week" (3 = 10 points) + points ledger + Profile balance - BUILT, SQL run ✓ by the owner 2026-11-20 18:57 (owner to test GZ-T1).**
 **HA (2026-11-20, owner): design one points reward system across daily, weekly and monthly quests - logged, not started.**
 **GY (2026-11-20, personal account): the set's weight field is pre-filled with last time's weight - BUILT (owner to test GY-T1).**
@@ -770,6 +771,12 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## HB. Automatic form match no longer shown - DONE 2026-11-20 (personal account)
+
+**Owner:** "The form match information after a video is submitted is too technical and often wrong. Do not present this to the trainee or coach. We keep it to improve our Formtrace later." **Done (index.html):** a switch `SHOW_FORM_MATCH = false` hides the "Form match x% · at the turnaround y% · right knee 62° more open ..." line on the trainee's **Set complete** screen and the "🤖 ... auto-compared to your reference" line on the coach's review. The comparison is **still computed and saved** with every set (`r.form` in the submission), so nothing is lost for later training. Two related coach notes reworded so they no longer promise comparisons: "record one in your library so Formtrace can learn this exercise" and "Pose tracked on only x% of this set - the rep count may be unreliable here". Not changed: rep counting, the pose overlay ("Lines") and personal bests. No SQL.
 
 ---
 

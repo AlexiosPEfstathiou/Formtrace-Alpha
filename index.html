@@ -3406,6 +3406,9 @@ function describeDeviation(d){
   if(/hip|knee|elbow|shoulder$/.test(d.part)) return `${d.part} ${a}° ${d.deg>0?"more open":"more bent"}`;
   return `${d.part} off by ${a}°`;
 }
+/* HB (owner, 2026-11-20): the automatic form match is too technical and often wrong - not shown to trainees or coaches.
+   It is still computed and saved with each set (r.form) to improve Formtrace later. */
+const SHOW_FORM_MATCH=false;
 function formSummaryLine(form){
   if(!form) return "";
   const bits=(form.deviations||[]).map(describeDeviation).filter(Boolean);
@@ -10894,7 +10897,7 @@ function showResult(exName,it,setIndex,r,itemIndex){
   $("#res-target").textContent=`reps counted · target ${it.reps}`;
   /* Item BO: form assist for the trainee, right after the set. */
   { let fl=$("#res-form"); if(!fl){ fl=document.createElement("div"); fl.id="res-form"; fl.style.cssText="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5"; $("#res-target").insertAdjacentElement("afterend",fl); }
-    fl.textContent = r.form ? formSummaryLine(r.form) : ""; fl.style.display=r.form?"":"none"; }
+    fl.textContent = (SHOW_FORM_MATCH&&r.form) ? formSummaryLine(r.form) : ""; fl.style.display=(SHOW_FORM_MATCH&&r.form)?"":"none"; }   /* HB */
   // comparison against the same set last time round
   const cmpEl=$("#res-cmp");
   if(cmpEl){
@@ -11308,7 +11311,7 @@ async function _openReview(assignedId,readonly=false){
       const badgeHtml = shownTags.length
         ? `<div class="grade-badge tags">${shownTags.map(t=>`<span class="ftag-chip">${escapeHtml(t)}</span>`).join("")}</div>`
         : `<div class="grade-badge"><span class="grade-lab">${readonly?"not graded":"tag below"}</span></div>`;
-      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${(!r.form && roleOf()==="coach" && item.exercise_id && !(item.landmarks&&item.landmarks.frames))?`<div style="font-size:12px;color:var(--faint);margin:-4px 0 8px">No reference recorded for this exercise - record one in your library to get form comparisons on future sets.</div>`:""}${(r.pose_coverage!=null&&r.pose_coverage<0.6)?`<div style="font-size:12px;color:var(--amber);margin:-4px 0 8px">Pose tracked on only ${Math.round(r.pose_coverage*100)}% of this set - rep count and form comparison are unreliable here.</div>`:""}${r.form?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
+      div.innerHTML=`<div class="rs-h"><div style="font-weight:700">${escapeHtml(item.name)} · Set ${si+1}</div>${badgeHtml}</div>${(!r.form && roleOf()==="coach" && item.exercise_id && !(item.landmarks&&item.landmarks.frames))?`<div style="font-size:12px;color:var(--faint);margin:-4px 0 8px">No reference recorded for this exercise - record one in your library so Formtrace can learn this exercise.</div>`:""}${(r.pose_coverage!=null&&r.pose_coverage<0.6)?`<div style="font-size:12px;color:var(--amber);margin:-4px 0 8px">Pose tracked on only ${Math.round(r.pose_coverage*100)}% of this set - the rep count may be unreliable here.</div>`:""}${(SHOW_FORM_MATCH&&r.form)?`<div style="font-size:12px;color:var(--muted);margin:-4px 0 8px;line-height:1.45">🤖 ${escapeHtml(formSummaryLine(r.form))} <span style="color:var(--faint)">· auto-compared to your reference, your tags decide</span></div>`:""}
         <div style="font-size:12px;color:var(--muted);margin-bottom:${wLine?"6px":"10px"}">${shownReps} reps · target ${item.reps}${repNote}</div>${wLine}`;
       // trainee's submitted video for this set
       if(r.video_path){
