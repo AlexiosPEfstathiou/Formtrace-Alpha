@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HH (2026-11-20, personal account): "See today's calorie budget" opens a card with the coach's kcal and protein + "Got it" (completes the task, numbers stay on the row); a complete daily checklist pays a 10-point bonus once per day - BUILT; SQL `migrations_daily_bonus.sql` given (owner to run; HH-T1, HH-T2).**
 **HG (2026-11-20, personal account): coach note "Retain note when trainee performs this exercise again" checkbox; More reps / More weight take a number that becomes the trainee's target and weight default next time - BUILT; SQL `migrations_note_retain.sql` given (owner to run; tests HG-T1, HG-T2).**
 **HF (2026-11-20, personal account): coach can move the clip back / forward while recording a voice-over (2 s buttons + position slider), replayed for the trainee - BUILT (owner to test HF-T1).**
 **HE (2026-11-20, personal account): swiping sideways through the macros dashboard switched Training to Goal - tab swipe now ignores any sideways-scrolling box - BUILT (owner to test HE-T1).**
@@ -776,6 +777,15 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## HH. Calorie budget card and daily-checklist bonus - BUILT 2026-11-20 (personal account)
+
+**Owner request:** the Home task "See today's calorie budget" completed instantly on tap; it should show the calories and protein the coach recommended with a "Got it" button that completes it, and the budget stays visible on the row. Completing all the daily tasks pays 10 bonus points.
+**Built (index.html):** the row reads "tap to see what your coach set" until seen; tapping opens a card - "Today's budget · Set by your coach", a 🔥 kcal tile and a 🥩 protein tile (whichever the coach set), a line pointing to "Log yesterday's macros" - and **Got it** ticks the task; the row then shows "2,200 kcal · 150 g protein". When the list reaches Day complete, the app calls `claim_daily_bonus(today)`; if paid, the Day complete overlay shows "+10 points · daily bonus" (points join the GZ ledger and the Profile balance).
+**Server (`migrations_daily_bonus.sql`):** pays once per person per local day (unique ref `daily:all:<user>:<day>`); refuses any day but today in the trainee's time zone; and requires today's weight and yesterday's macros in the logs (the tasks the server can see - sleep, budget and rest day are ticked on the phone only, so they cannot be verified). Not yet tested on the database: my rolled-back test call timed out waiting for an approval in the Supabase connector.
+**Design:** two L2 rows added to DESIGN_ASSETS (budget card icons, bonus badge).
 
 ---
 

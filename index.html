@@ -4404,7 +4404,7 @@ async function renderHomeChecklist(engs, el){
   items.push({k:"login",t:"Open Formtrace",done:true});
   items.push({k:"weigh",t:"Weigh yourself",sub:(tLog&&tLog.weight_kg!=null)?`${tLog.weight_kg} kg`:"",done:!!(tLog&&tLog.weight_kg!=null),act:"weigh"});
   items.push({k:"macros",t:"Log yesterday's macros",sub:(yLog&&yLog.kcal!=null)?`${Number(yLog.kcal).toLocaleString()} kcal`:"",done:!!(yLog&&(yLog.kcal!=null||yLog.protein_g!=null)),act:"macros"});
-  if(plan&&(plan.kcal||plan.protein_g)) items.push({k:"budget",t:"See today's calorie budget",sub:[plan.kcal?`${Number(plan.kcal).toLocaleString()} kcal`:"",plan.protein_g?`${plan.protein_g} g protein`:""].filter(Boolean).join(" · "),done:!!man.budget,act:"tick"});
+  if(plan&&(plan.kcal||plan.protein_g)) items.push({k:"budget",t:"See today's calorie budget",sub:man.budget?[plan.kcal?`${Number(plan.kcal).toLocaleString()} kcal`:"",plan.protein_g?`${plan.protein_g} g protein`:""].filter(Boolean).join(" · "):"tap to see what your coach set",done:!!man.budget,act:"budget"});   /* HH: opens the budget; "Got it" completes it */
   if(active.length){
     const X=weekRows.length, dn=weekRows.filter(a=>a.status!=="assigned").length;   /* Item FF: weekly line + rest-day option; either completes it for today */
     let base=man.baseDone; if(base==null){ base=dn; dcSetVal("baseDone",dn); }
@@ -4420,15 +4420,36 @@ async function renderHomeChecklist(engs, el){
   el.style.display="";
   el.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",(ev)=>{ const alt=ev&&ev.target&&ev.target.closest?ev.target.closest("[data-alt]"):null; if(alt){ ev.stopPropagation(); if(!dcGet().rest){ dcSet("rest"); renderHomeChecklist(engs, el); } return; }   /* Item FF: "I'll take a rest day" */
     const k=b.getAttribute("data-dc"), a=b.getAttribute("data-act");
-    if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
-  if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){} playDayComplete(); } }
+    if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="budget") openBudgetCard(plan,()=>{ if(!dcGet().budget){ dcSet("budget"); } renderHomeChecklist(engs, el); }); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
+  if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){}
+    /* HH (owner, 2026-11-20): 10 bonus points for a complete day - the server pays once per local day */
+    let bonus=null; try{ const { data, error }=await store._sb.rpc("claim_daily_bonus",{p_day:iso}); if(error) throw error; bonus=data; }catch(e){ console.warn("daily bonus (HH)",e&&e.message); }
+    playDayComplete(bonus&&bonus.paid?bonus:null); } }
 }
-function playDayComplete(){
+/* HH (owner, 2026-11-20): "See today's calorie budget" shows the coach's numbers; "Got it" completes the task */
+function openBudgetCard(plan,onGotIt){
+  if(!plan) return;
+  const tile=(ic,val,unit,lab)=>`<div style="flex:1;min-width:0;background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:16px 10px;text-align:center">
+      <div style="font-size:26px;line-height:1">${ic}</div>
+      <div style="font-size:30px;font-weight:900;margin-top:8px;letter-spacing:-.5px">${val}</div>
+      <div style="font-size:12px;color:var(--muted);font-weight:700">${unit}</div>
+      <div style="font-size:11.5px;color:var(--faint);margin-top:4px">${lab}</div></div>`;
+  pwShow(`<div class="eyebrow" style="margin-bottom:4px">Today's budget</div>
+    <div style="font-weight:800;font-size:18px;margin-bottom:12px">Set by your coach</div>
+    <div style="display:flex;gap:10px">
+      ${plan.kcal?tile("🔥",Number(plan.kcal).toLocaleString(),"kcal","Calories to eat today"):""}
+      ${plan.protein_g?tile("🥩",escapeHtml(String(plan.protein_g)),"g protein","Protein to reach today"):""}
+    </div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px">Log what you eat tomorrow morning under "Log yesterday's macros" to see how close you came.</div>
+    <button class="btn primary" id="bud-ok" style="margin-top:14px">Got it</button>`);
+  $("#bud-ok").onclick=()=>{ pwHide(); try{ onGotIt&&onGotIt(); }catch(e){} };
+}
+function playDayComplete(bonus){
   try{
     if(!document.getElementById("dc-css")){ const st=document.createElement("style"); st.id="dc-css"; st.textContent="@keyframes dcPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}@keyframes dcFall{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),110vh) rotate(var(--r));opacity:.9}}@keyframes dcFade{0%,82%{opacity:1}100%{opacity:0}}"; document.head.appendChild(st); }
     const reduce=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     const ov=document.createElement("div"); ov.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,14,17,.74);overflow:hidden;animation:dcFade 2.8s forwards";
-    ov.innerHTML=`<div style="width:96px;height:96px;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:900;${reduce?"":"animation:dcPop .55s cubic-bezier(.2,1.4,.4,1)"}">✓</div><div style="margin-top:14px;font-size:22px;font-weight:900;color:var(--ink)">Day complete</div><div style="font-size:13px;color:var(--muted);margin-top:4px">Everything on today's list - see you tomorrow.</div>`;
+    ov.innerHTML=`<div style="width:96px;height:96px;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:900;${reduce?"":"animation:dcPop .55s cubic-bezier(.2,1.4,.4,1)"}">✓</div><div style="margin-top:14px;font-size:22px;font-weight:900;color:var(--ink)">Day complete</div><div style="font-size:13px;color:var(--muted);margin-top:4px">Everything on today's list - see you tomorrow.</div>${bonus?`<div style="margin-top:12px;padding:6px 14px;border-radius:999px;background:var(--lime);color:var(--lime-ink);font-weight:900;font-size:14px;${reduce?"":"animation:dcPop .55s .35s cubic-bezier(.2,1.4,.4,1) both"}">+${bonus.points} points · daily bonus</div>`:""}`;
     if(!reduce){ const cols=["var(--lime)","var(--attn)","var(--blue)","var(--violet)","#fff"]; for(let i=0;i<36;i++){ const p=document.createElement("span"); p.style.cssText=`position:absolute;top:-14px;left:${(Math.random()*100).toFixed(1)}vw;width:8px;height:12px;border-radius:2px;background:${cols[i%cols.length]};--dx:${(Math.random()*40-20).toFixed(0)}vw;--r:${(Math.random()*720-360).toFixed(0)}deg;animation:dcFall ${(1.4+Math.random()*1.1).toFixed(2)}s ${(Math.random()*.4).toFixed(2)}s ease-in forwards`; ov.appendChild(p); } }
     ov.addEventListener("click",()=>ov.remove()); document.body.appendChild(ov);
     try{ if(navigator.vibrate) navigator.vibrate([30,40,60]); }catch(e){}

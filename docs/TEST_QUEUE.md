@@ -87,6 +87,8 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HH-T1** (2026-11-20, trainee Home) Tap "See today's calorie budget": a card with the coach's kcal and protein; Got it ticks the task and the numbers stay on the row.
+- [ ] **HH-T2** (2026-11-20, trainee Home; after the SQL) Complete every daily task: Day complete shows "+10 points · daily bonus"; Profile points balance up by 10; doing it again the same day pays nothing.
 - [ ] **HG-T1** (2026-11-20, coach then trainee; after the SQL) Leave two set notes, one with Retain unticked: next time the trainee does that exercise only the ticked one is in "Your coach's notes".
 - [ ] **HG-T2** (2026-11-20, coach then trainee) Tap More weight on a set and type e.g. 25 kg (and More reps 12): the next time the trainee does that exercise, the set shows "12 reps target @ 25 kg (coach)", the card shows the targets and the weight field is 25.
 - [ ] **HF-T1** (2026-11-20, as the coach) Record a voice-over: use ⏪ 2 s, 2 s ⏩ and the slider (playing and paused), draw after a jump; the preview and the trainee's replay jump to the same moments with the drawings in place.
