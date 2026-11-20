@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HF (2026-11-20, personal account): coach can move the clip back / forward while recording a voice-over (2 s buttons + position slider), replayed for the trainee - BUILT (owner to test HF-T1).**
 **HE (2026-11-20, personal account): swiping sideways through the macros dashboard switched Training to Goal - tab swipe now ignores any sideways-scrolling box - BUILT (owner to test HE-T1).**
 **HD (2026-11-20, personal account): pose lines did not come back after the phone was locked ~30 min - engine now rebuilt on return and when Lines is turned on with no figure - BUILT (owner to test HD-T1).**
 **HC (2026-11-20, personal account): unfinished workouts stand out - Home card "Unfinished workout - Continue", marked first in Start a session, "your sets are saved" on reopening - BUILT (owner to test HC-T1). Owner also reported the camera lines (pose overlay) not showing - to ask about (see HC).**
@@ -774,6 +775,14 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## HF. Move the clip back or forward during a voice-over - BUILT 2026-11-20 (personal account)
+
+**Owner request:** coaches could not move the video back or forward while recording a voice-over, so if they paused late they missed the moment.
+**Built (index.html):** while recording, under the drawing tools: **⏪ 2 s**, a **position slider** (lime) and **2 s ⏩**. Works while the video plays or is paused. Each move is a new telestration mark `{t,kind:"seek",vt}` on the audio clock (slider drags throttled to about 8 marks a second), so the trainee's replay jumps exactly where the coach did. `teleVideoTime` rewritten as "video was at v0 at audio time a0", which gives the same result as before for pause/resume-only marks (checked) and handles seeks; the player now follows a jump within a frame (not up to 0.8 s) and restarts a clip that had reached its end when the coach went back. The "drawn by your coach" label shows only when there are drawings. No SQL.
+**Not done:** a phone/browser that still runs the old app version replays a voice-over with seeks without the jumps until it updates (service worker refresh).
 
 ---
 

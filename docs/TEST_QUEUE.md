@@ -87,6 +87,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HF-T1** (2026-11-20, as the coach) Record a voice-over: use ⏪ 2 s, 2 s ⏩ and the slider (playing and paused), draw after a jump; the preview and the trainee's replay jump to the same moments with the drawings in place.
 - [ ] **HE-T1** (2026-11-20, phone) Training tab: scroll the macros dashboard charts sideways - the tab stays; swipe on an empty part of the screen - the tab changes.
 - [ ] **HD-T1** (2026-11-20, phone) Open the camera in a workout, lock the phone for 5+ minutes, unlock: the lines come back within a few seconds. If not, toggle Lines off and on ("Restarting the pose lines…").
 - [ ] **HC-T1** (2026-11-20) Record a set or two, leave the workout and restart the app: Home shows "Unfinished workout - N of M sets recorded and saved - Continue"; Continue opens it with the sets there and "Welcome back" message; in Start a session it is listed first and marked.

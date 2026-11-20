@@ -11634,6 +11634,11 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
         <button type="button" class="btn sm ghost" id="vo-erase" style="width:auto" title="Clears every drawing on the video in one tap">🧹 Erase all</button>
         <button type="button" class="btn sm" id="vo-pause" style="width:auto">⏸ Pause video</button>
       </div>
+      <div id="vo-seek" style="display:none;align-items:center;gap:8px;margin-top:8px">   <!-- HF: move the clip back or forward while recording -->
+        <button type="button" class="btn sm ghost" id="vo-back" style="width:auto;padding-left:10px;padding-right:10px" title="Back 2 seconds">⏪ 2 s</button>
+        <input type="range" id="vo-scrub" min="0" max="1000" value="0" step="1" style="flex:1;accent-color:var(--lime)" aria-label="Position in the clip">
+        <button type="button" class="btn sm ghost" id="vo-fwd" style="width:auto;padding-left:10px;padding-right:10px" title="Forward 2 seconds">2 s ⏩</button>
+      </div>
       <div id="vo-status" style="font-size:12.5px;color:var(--muted);margin:10px 0;text-align:center">Tap record, then talk — it starts the clip automatically.</div>
       <button class="btn primary" id="vo-record">🎤 Start recording</button>
       <div id="vo-review" style="display:none;margin-top:14px">
@@ -11699,6 +11704,19 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
   $("#vo-pause").addEventListener("click",()=>{ if(!recorder||recorder.state!=="recording") return;
     if(!vidPausedByCoach){ vid.pause(); vidPausedByCoach=true; marks.push({t:now(),kind:"pause"}); $("#vo-pause").textContent="▶ Resume video"; status.textContent="Video paused - draw and talk, then resume."; }
     else { vidPausedByCoach=false; marks.push({t:now(),kind:"resume"}); vid.play().catch(()=>{}); $("#vo-pause").textContent="⏸ Pause video"; status.textContent="Recording… tap the video to draw, or pause it to mark a moment."; } });
+  /* HF (owner, 2026-11-20): move the clip back or forward while recording - a seek mark, replayed for the trainee */
+  const scrub=$("#vo-scrub"); let scrubbing=false, lastSeekAt=-1;
+  const seekTo=(vt,force)=>{ if(!recorder||recorder.state!=="recording") return; const d=vid.duration||0; if(!d) return;
+    vt=Math.min(Math.max(0,vt),Math.max(0,d-0.05)); vid.currentTime=vt;
+    const t=now(); if(force||t-lastSeekAt>=0.12){ lastSeekAt=t; const last=marks[marks.length-1];
+      if(last&&last.kind==="seek"&&t-last.t<0.12) { last.vt=Math.round(vt*1000)/1000; } else marks.push({t,kind:"seek",vt:Math.round(vt*1000)/1000}); }
+    if(!vidPausedByCoach&&vid.paused) vid.play().catch(()=>{}); };
+  $("#vo-back").addEventListener("click",()=>seekTo(vid.currentTime-2,true));
+  $("#vo-fwd").addEventListener("click",()=>seekTo(vid.currentTime+2,true));
+  scrub.addEventListener("pointerdown",()=>{ scrubbing=true; });
+  scrub.addEventListener("input",()=>{ scrubbing=true; seekTo(scrub.value/1000*(vid.duration||0),false); });
+  scrub.addEventListener("change",()=>{ seekTo(scrub.value/1000*(vid.duration||0),true); scrubbing=false; });
+  vid.addEventListener("timeupdate",()=>{ if(!scrubbing&&vid.duration) scrub.value=String(Math.round(vid.currentTime/vid.duration*1000)); });
 
   const cleanupStream=()=>{
     if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
@@ -11873,14 +11891,14 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
     marks=[]; vidPausedByCoach=false; $("#vo-pause").textContent="⏸ Pause video"; $$("#vo-tools .vo-tool").forEach(x=>x.classList.toggle("on",x.getAttribute("data-tool")===teleColor));
     recorder.start(); recStart=performance.now();
     zoomReset(); fingers.clear(); pinch=null; waitAllUp=false;   /* GT */
-    $("#vo-tools").style.display="flex"; tele.canvas.style.display=""; repaint();
+    $("#vo-tools").style.display="flex"; $("#vo-seek").style.display="flex"; scrub.value="0"; lastSeekAt=-1; tele.canvas.style.display=""; repaint();
     try{ await vid.play(); }catch(e){}
     status.textContent="Recording… talking over the clip.";
     recordBtn.textContent="⏹ Stop recording";
     recordBtn.onclick=stopRecording;
   };
   const stopRecording=()=>{
-    if(cur) endStroke(); pinch=null; fingers.clear(); waitAllUp=false; zoomReset(); $("#vo-tools").style.display="none"; tele.canvas.style.display="none";   // Item CL; GT: back to the full picture
+    if(cur) endStroke(); pinch=null; fingers.clear(); waitAllUp=false; zoomReset(); $("#vo-tools").style.display="none"; $("#vo-seek").style.display="none"; tele.canvas.style.display="none";   // Item CL; GT: back to the full picture
     if(recorder&&recorder.state!=="inactive") recorder.stop();
     vid.pause();
   };
@@ -11947,11 +11965,14 @@ async function openVoiceoverRecorder(exName,setIndex,videoPath,key,btnEl){
    since the last erase with t <= audio time are drawn. Nothing is re-encoded. */
 const TELE_COLORS={red:"#FF4D4D",green:"#3DDC84"};
 /* video time for an audio time, and whether the video should be frozen there */
+/* HF: {t,kind:"seek",vt} - the coach moved the clip to video time vt (back or forward) at audio time t. */
 function teleVideoTime(marks,t){
-  let off=0, pauseAt=null;
-  for(const m of (marks||[])){ if(m.t>t) break; if(m.kind==="pause"&&pauseAt==null) pauseAt=m.t; else if(m.kind==="resume"&&pauseAt!=null){ off+=m.t-pauseAt; pauseAt=null; } }
-  if(pauseAt!=null) return {vt:pauseAt-off,frozen:true};
-  return {vt:t-off,frozen:false};
+  let a0=0, v0=0, paused=false;   /* the video was at v0 at audio time a0 */
+  for(const m of (marks||[])){ if(m.t>t) break;
+    if(m.kind==="pause"&&!paused){ v0+=m.t-a0; a0=m.t; paused=true; }
+    else if(m.kind==="resume"&&paused){ a0=m.t; paused=false; }
+    else if(m.kind==="seek"&&isFinite(m.vt)){ v0=Math.max(0,m.vt); a0=m.t; } }
+  return paused?{vt:v0,frozen:true}:{vt:v0+(t-a0),frozen:false};
 }
 /* GP (owner, 2026-11-13): marks were normalised to the BOX, but the box differs between drawing (fixed height,
    object-fit contain - bars beside a portrait clip) and playback (max 240 px, object-fit cover - cropped), so drawings
@@ -12011,7 +12032,7 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
   const v=box.querySelector("video"), a=box.querySelector("audio"), btn=box.querySelector(".vo-playbtn");
   v.addEventListener("loadedmetadata",()=>{ if(!box.style.aspectRatio&&v.videoWidth&&v.videoHeight) box.style.aspectRatio=v.videoWidth+" / "+v.videoHeight; });   /* GP-2: unless a rotation already set it */
   watchVideoErrors(v,videoPath,videoUrl,"voiceover:"+activeScreenName()); if(a){ a.addEventListener("error",()=>reportError("audio",`voiceover audio: code ${(a.error||{}).code||"?"} · url ${String(audioUrl||"").slice(0,80)}`,null)); }   // CN-16
-  const tele=(marks&&marks.length)?teleCanvasOver(box,false):null; if(tele) box.insertAdjacentHTML("beforeend",'<div style="position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:2px 7px">✎ drawn by your coach</div>');
+  const tele=(marks&&marks.length)?teleCanvasOver(box,false):null; if(tele&&marks.some(m=>m.kind==="stroke")) box.insertAdjacentHTML("beforeend",'<div style="position:absolute;left:8px;top:8px;z-index:3;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:8px;padding:2px 7px">✎ drawn by your coach</div>');
   wireRotation(box,v,videoPath);
   const meterFill=box.querySelector(".vo-meter-fill");
   let syncInt=null, meterCtx=null, meterRAF=null, meterWired=false;
@@ -12064,7 +12085,9 @@ function buildSyncPlayer(videoUrl,audioUrl,videoPath,marks){
   /* GT: drawings and the coach's zoom follow the audio clock every frame while playing */
   const zLayer=box.querySelector(".tele-zoom"); let teleRAF=null;
   const teleFrame=()=>{ if(!tele) return; teleZoomSet(zLayer,box,v,teleZoomAt(marks,a.currentTime)); tele.fit(); teleDraw(tele.ctx,tele.canvas.width,tele.canvas.height,marks,a.currentTime,telePicRect(box,v)); };
-  const teleLoop=()=>{ teleFrame(); teleRAF=(!a.paused&&!a.ended)?requestAnimationFrame(teleLoop):null; };
+  const teleSeek=()=>{ if(!tele||v.seeking||!v.duration) return; const s=teleVideoTime(marks,a.currentTime); const vt=Math.min(s.vt,v.duration-0.05);   /* HF: follow the coach's back / forward moves at once */
+    if(Math.abs(v.currentTime-vt)>0.5){ v.currentTime=vt; if(videoEnded&&vt<v.duration-0.3){ videoEnded=false; if(!s.frozen) v.play().catch(()=>{}); } } };
+  const teleLoop=()=>{ teleSeek(); teleFrame(); teleRAF=(!a.paused&&!a.ended)?requestAnimationFrame(teleLoop):null; };
   a.addEventListener("play",()=>{ if(tele&&!teleRAF) teleRAF=requestAnimationFrame(teleLoop); });
   const pause=()=>{ v.pause();a.pause();btn.textContent="▶";stopSync(); if(teleRAF){ cancelAnimationFrame(teleRAF); teleRAF=null; } if(meterRAF){cancelAnimationFrame(meterRAF);meterRAF=null;} meterFill.style.width="0%"; };
   btn.addEventListener("click",()=>{ v.paused?play():pause(); });
