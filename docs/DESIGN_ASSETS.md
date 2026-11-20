@@ -121,6 +121,9 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Social media profile and cover images | Instagram etc. | L2 | future | Profile 1080 x 1080 (round-safe), cover per platform |
 | Onboarding walkthrough art | first-run tours (EV) | Later | future | |
 | Encouragement-video frame / card | EY | Later | future | |
+| **Weekly quest progress card** - quest icon, progress bar x -> x+1 of N, count bump (GZ) | after a personal best (workout) | L2 | placeholder (code: trophy emoji, lime bar, scale bump) | Quest icon 24 px family + a 0.8 s progress animation (Lottie or sprite); reduced-motion still frame |
+| **Quest complete celebration** - "Quest complete +N points" burst (GZ) | when a weekly quest completes | L2 | placeholder (code: pop + 14 sparks, gold / lime) | 1.2 s celebration (Lottie), points coin icon; must sit inside a card, not full screen |
+| **Points icon / coin** (GZ, FS) | Profile -> Points card, quest card | L2 | placeholder (text only) | 24 px icon + 64 px coin, SVG |
 | Points, shop, Events, leaderboard art; cosmetic add-ons (avatar frames, themes, celebration styles) | FL / FS | Later | future | Second openart month |
 | App-store screenshots and listing art | native app (deferred) | Later | future | |
 

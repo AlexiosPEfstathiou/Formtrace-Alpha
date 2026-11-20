@@ -184,6 +184,9 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 #ptr.ready svg{transform:rotate(180deg)}
 #ptr.spin svg{animation:ptrspin .8s linear infinite}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
+@keyframes qbump{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.25);opacity:1}100%{transform:scale(1);opacity:1}}   /* GZ quest animations (code placeholders; openart later) */
+@keyframes qpop{0%{transform:scale(.3);opacity:0}55%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes qspark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
 @keyframes rtflash{0%,100%{transform:scale(1);box-shadow:0 0 0 0 transparent}50%{transform:scale(1.16);box-shadow:0 0 0 4px var(--lime)}}   /* GX: rest pill flashes twice */
 @media (prefers-reduced-motion:reduce){#ptr.spin svg{animation-duration:2s}}
 /* EZ-5: the Undo bar above the builder's Save button */
@@ -10459,6 +10462,44 @@ function restFlash(){
   if(!el||el.style.display==="none"){ restNudge(); return; }   /* timer not visible: fall back to the message */
   el.style.animation="none"; void el.offsetWidth; el.style.animation="rtflash .38s ease-in-out 2";
 }
+/* GZ (owner, 2026-11-20): the first weekly quest - "Personal Bests this week", 3 a week, 10 points. The server records each
+   personal best and pays the points (recompute_personal_best -> _pb_quest_step); this only shows it. Code placeholder for
+   the openart animations (docs/DESIGN_ASSETS.md: weekly quest progress, quest complete). Tap to close. */
+function showQuestStep(q){
+  try{
+    if(!q||!(q.goal>0)||q.before>=q.goal) return;   /* already completed this week: nothing to show */
+    const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const old=document.getElementById("quest-pop"); if(old) old.remove();
+    const el=document.createElement("div"); el.id="quest-pop";
+    el.style.cssText="position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);z-index:250;background:var(--panel2);border:1px solid var(--line2);border-radius:18px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer";
+    const pct=n=>Math.max(0,Math.min(100,Math.round(100*n/q.goal)));
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:26px">🏆</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase">Weekly quest</div>
+          <div style="font-weight:800;font-size:15px;margin-top:1px">${escapeHtml(q.name||"Personal Bests this week")}</div>
+          <div style="height:8px;border-radius:5px;background:var(--line);margin-top:8px;overflow:hidden"><div id="qp-bar" style="height:100%;width:${pct(q.before)}%;background:var(--lime);border-radius:5px;transition:width ${reduce?0:.7}s ease-out"></div></div>
+        </div>
+        <div style="font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap"><span id="qp-n">${q.before}</span><span style="color:var(--muted);font-size:15px"> / ${q.goal}</span></div>
+      </div>
+      <div id="qp-done" style="display:none;margin-top:12px;text-align:center;position:relative">
+        <div style="font-weight:800;font-size:17px;color:var(--lime)">Quest complete</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">+${q.points||0} points · balance ${q.balance||0}</div>
+      </div>`;
+    el.addEventListener("click",()=>el.remove());
+    ($("#phone")||document.body).appendChild(el);
+    setTimeout(()=>{ const b=el.querySelector("#qp-bar"), n=el.querySelector("#qp-n"); if(b) b.style.width=pct(q.after)+"%";
+      if(n){ n.textContent=String(q.after); if(!reduce) n.style.animation="qbump .45s ease-out"; } },350);
+    if(q.completed){
+      setTimeout(()=>{ const d=el.querySelector("#qp-done"); if(!d) return; d.style.display="block"; if(!reduce){ d.style.animation="qpop .5s ease-out";
+          for(let i=0;i<14;i++){ const sp=document.createElement("span"); const a=(i/14)*Math.PI*2, r=60+Math.random()*30;
+            sp.style.cssText=`position:absolute;left:50%;top:10px;width:7px;height:7px;border-radius:50%;background:${i%2?"var(--lime)":"#F0D231"};--dx:${Math.round(Math.cos(a)*r)}px;--dy:${Math.round(Math.sin(a)*r*.6)}px;animation:qspark .8s ease-out forwards`;
+            d.appendChild(sp); } }
+        try{ if(navigator.vibrate) navigator.vibrate([40,60,40]); }catch(e){} try{ sfx("unlock"); }catch(e){} },1300);
+    }
+    setTimeout(()=>{ if(el.isConnected) el.remove(); }, q.completed?6000:3600);
+  }catch(e){ console.warn("quest step",e); }
+}
 function restLeftText(){ const r=restGet(); const s=r?Math.ceil(Math.max(0,(r.until-Date.now())/1000)):0; return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
 function restSkip(){
   try{ localStorage.removeItem(restKey()); }catch(e){}
@@ -10930,6 +10971,7 @@ function showResult(exName,it,setIndex,r,itemIndex){
         if(data){
           myPBs[it.name.trim().toLowerCase()]=data;
           toast(`🏆 ${it.name} — New personal best!`,4200);
+          if(data.quest) setTimeout(()=>showQuestStep(data.quest),900);   /* GZ: weekly quest progress */
         }
       }catch(e){ console.error("recompute_personal_best (run migrations_personal_bests.sql)",e); }
     }
@@ -12740,6 +12782,18 @@ async function renderProfile(){
           <div class="lr-main"><h3>Pause all trainees</h3><div class="sub">Away for a while? Puts every active goal on hold with one message.</div></div>
           <div class="arw">→</div></div></div>`;
   }
+  /* GZ: points balance (points_ledger, written only by the server; RLS: own rows) */
+  try{
+    const { data:pts, error:pe }=await store._sb.from("points_ledger").select("amount,reason,created_at").eq("user_id",ME.id).order("created_at",{ascending:false}).limit(50);
+    if(!pe&&pts&&pts.length){
+      const bal=pts.reduce((t,x)=>t+Number(x.amount||0),0);
+      html+=`<div class="section-h"><div class="eyebrow">Points</div></div>
+        <div class="card" id="pf-points"><div style="font-size:24px;font-weight:800">${bal} point${bal===1?"":"s"}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Earned from quests. What you can spend them on is coming soon.</div>
+          ${pts.slice(0,3).map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span style="color:var(--muted);min-width:0">${escapeHtml(x.reason||"Points")} · ${fmtDay(String(x.created_at).slice(0,10))}</span><b style="white-space:nowrap">${Number(x.amount)>0?"+":""}${Number(x.amount)}</b></div>`).join("")}
+        </div>`;
+    }
+  }catch(e){ console.warn("points card (GZ)",e&&e.message); }
   /* Item FM + FQ (owner, 2026-11-04): Credit and refunds - the balance and the FULL history (credit movements and refunds
      to the card), each with its unique reference; tap any line for its report. Shown to every trainee. */
   if(roleOf()==="trainee"){ try{
