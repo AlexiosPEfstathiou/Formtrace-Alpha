@@ -3612,8 +3612,10 @@ function renderAppTabs(current){
 (function(){
   let sx=0,sy=0,st=0,skip=false;
   const ph=document.getElementById("phone")||document.body;
+  /* HE: any box that really scrolls sideways (macros dashboard, charts, check-in strips, rows added later) keeps the swipe */
+  function inSideScroller(el){ for(let n=el;n&&n!==ph&&n.nodeType===1;n=n.parentElement){ try{ if(n.scrollWidth>n.clientWidth+2&&/(auto|scroll)/.test(getComputedStyle(n).overflowX)) return true; }catch(e){} } return false; }
   ph.addEventListener("touchstart",e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now();
-    skip=!!e.target.closest("input,textarea,select,canvas,video,.mg-bar,.hm-row,.wk-slots,.strip,[data-noswipe],.sheet,#rec,#photocap,#clap-overlay") || document.body.classList.contains("rec-open") || $("#sheet-lib")?.classList.contains("on"); },{passive:true});
+    skip=!!e.target.closest("input,textarea,select,canvas,video,.mg-bar,.hm-row,.wk-slots,.strip,[data-noswipe],.sheet,#rec,#photocap,#clap-overlay") || inSideScroller(e.target) || document.body.classList.contains("rec-open") || $("#sheet-lib")?.classList.contains("on"); },{passive:true});
   ph.addEventListener("touchend",e=>{ if(skip) return; const bar=$("#app-tabbar"); if(!bar||bar.style.display==="none") return;
     const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy; if(Date.now()-st>700||Math.abs(dx)<70||Math.abs(dy)>50) return;
     const btns=[...bar.querySelectorAll("button[data-go]")]; const i=btns.findIndex(b=>b.classList.contains("on")); if(i<0) return;
