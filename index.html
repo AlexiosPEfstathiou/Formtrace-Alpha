@@ -3613,6 +3613,12 @@ async function pushSubscribe(quiet){
   const { error:e2 }=await store._sb.from("push_subscriptions").upsert({endpoint:j.endpoint,user_id:ME.id,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,200)},{onConflict:"endpoint"}); if(e2) throw e2;
   if(!quiet) try{ reg.showNotification("Formtrace",{body:"Push is on. You'll hear about offers, reviews, calls and friends here.",icon:"icon-192.png",badge:"badge-96.png",tag:"test"}); }catch(e){}
 }
+/* GW (owner, 2026-11-20): a shared phone gets the pushes of whoever is signed in. Signing out takes this phone off the
+   account's push list (the browser keeps its permission); signing in puts it on the new account (ensurePushDefault). */
+async function pushDetachDevice(){
+  try{ const reg=await navigator.serviceWorker.getRegistration(); const sub=reg?await reg.pushManager.getSubscription():null;
+    if(sub) await store._sb.from("push_subscriptions").delete().eq("endpoint",sub.endpoint); }catch(e){}
+}
 async function pushUnsubscribe(){
   const reg=await navigator.serviceWorker.getRegistration(); const sub=reg?await reg.pushManager.getSubscription():null;
   if(sub){ try{ await store._sb.from("push_subscriptions").delete().eq("endpoint",sub.endpoint); }catch(e){} await sub.unsubscribe(); }
@@ -3640,7 +3646,7 @@ async function ensurePushDefault(){
     if(!ME||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)) return;
     const prefs=(ME.push_prefs&&typeof ME.push_prefs==="object")?ME.push_prefs:{};
     if(prefs.all===false) return;
-    if(Notification.permission==="granted"){ if(!(await pushIsSubscribed())) await pushSubscribe(true); return; }
+    if(Notification.permission==="granted"){ await pushSubscribe(true); return; }   /* GW: always (re)attach this phone to the account now signed in - it may have belonged to another account */
     if(Notification.permission!=="default") return;
     let last=0; try{ last=+(localStorage.getItem("ft-push-ask")||0); }catch(e){}
     if(Date.now()-last<7*86400000) return;
@@ -3821,7 +3827,7 @@ function openSetNewPassword(){
     catch(e){ console.error("set new password",e); $("#pw-msg").textContent=e.message||"Couldn't save the password"; b.disabled=false; } };
 }
 try{ store._sb.auth.onAuthStateChange(ev=>{ if(ev==="PASSWORD_RECOVERY"){ pwRecovery=false; setTimeout(openSetNewPassword,50); } }); }catch(e){}
-$("#au-forgot-btn").addEventListener("click",openForgotPassword);$("#prof-signout").addEventListener("click",async()=>{ await store.auth.signOut(); ME=null; urlCache.clear(); hideStreakBadge(); showAuth(); });
+$("#au-forgot-btn").addEventListener("click",openForgotPassword);$("#prof-signout").addEventListener("click",async()=>{ await pushDetachDevice(); await store.auth.signOut(); ME=null; urlCache.clear(); hideStreakBadge(); showAuth(); });
 
 function showAuth(){
   try{ const lpm=sessionStorage.getItem("ft-lp-mode"); if(lpm){ sessionStorage.removeItem("ft-lp-mode"); setTimeout(()=>{ try{ setAuthMode(lpm); }catch(e){} },0); } }catch(e){}   /* EX: the landing page asked for sign-up or sign-in */
@@ -3869,6 +3875,7 @@ function showConsentGate(){
     }
   };
   $("#cg-signout").onclick=async()=>{
+    await pushDetachDevice();   /* GW */
     try{ await store.auth.signOut(); }catch(e){}
     ME=null; urlCache.clear(); hideStreakBadge(); showAuth();
   };

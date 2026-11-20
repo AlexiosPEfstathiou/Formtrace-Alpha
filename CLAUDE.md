@@ -10,7 +10,7 @@ other's chats or memory - **this repository is the shared memory.**
    **`docs/HANDOVER.md`** and **`supabase/SQL_JOURNAL.md`** before doing anything else.
 2. **Every 5 owner prompts** in a session: update `docs/HANDOVER.md` (state, plan,
    decisions, blockers) and this file (any new rule or convention), commit
-   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-13, personal account - GP voice-over drawings, GQ / GR / GS review push link, send confirmation, withdraw; see top of HANDOVER.)
+   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-20, personal account - GU goal-gradient logged, GV push diagnosis, GW morning-summary fix + shared-phone push; see top of HANDOVER.)
 3. **Every SQL command handed to the owner** gets a row in `supabase/SQL_JOURNAL.md`
    (status `given`); when the owner confirms, mark it `run ✓` with the result. Never
    assume SQL was run - check the journal, or run its verification query.
@@ -65,7 +65,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **GV**; next **GW**) - **always check the log for the highest code before allocating: both accounts write items**,
+- New product items take the next two-letter code (last used: **GW**; next **GX**) - **always check the log for the highest code before allocating: both accounts write items**,
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").

@@ -86,6 +86,10 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T4** Turn the phone **sideways, top to the LEFT**: the countdown, timer and icons turn to face you; there is no Portrait/Landscape button any more. Record a set → it is saved **upright in landscape**. Then **top to the RIGHT** → also upright. **If one is upside down, note which side.**
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
+## Notifications (GW, 2026-11-20)
+- [ ] **GW-T1** Tomorrow about 08:00: the morning summary arrives on the phone (e.g. "Rest day today") even with nothing new in the app.
+- [ ] **GW-T2** On one phone, sign out of Alex Stinson and sign in as the coach (push allowed): pushes for the coach arrive, and none for Alex Stinson until you sign back in.
+
 ## As the trainee — the workout (EZ-6)
 - [ ] **GQ-T1** (2026-11-13) Tap the "Your coach reviewed a workout" notification (app closed, then app open): the review of **that workout** opens; Back returns to Training.
 - [ ] **EZ6-T2** Each exercise shows **"Your coach's notes (N)"**: all the comments from earlier reviews of that exercise, dated, newest first; 3 shown, then **Show all**. The note written in EZ6-T4 is at the top; an edited one shows "edited"; a deleted one is gone.
