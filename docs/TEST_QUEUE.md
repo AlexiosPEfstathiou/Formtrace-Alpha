@@ -87,6 +87,8 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HG-T1** (2026-11-20, coach then trainee; after the SQL) Leave two set notes, one with Retain unticked: next time the trainee does that exercise only the ticked one is in "Your coach's notes".
+- [ ] **HG-T2** (2026-11-20, coach then trainee) Tap More weight on a set and type e.g. 25 kg (and More reps 12): the next time the trainee does that exercise, the set shows "12 reps target @ 25 kg (coach)", the card shows the targets and the weight field is 25.
 - [ ] **HF-T1** (2026-11-20, as the coach) Record a voice-over: use ⏪ 2 s, 2 s ⏩ and the slider (playing and paused), draw after a jump; the preview and the trainee's replay jump to the same moments with the drawings in place.
 - [ ] **HE-T1** (2026-11-20, phone) Training tab: scroll the macros dashboard charts sideways - the tab stays; swipe on an empty part of the screen - the tab changes.
 - [ ] **HD-T1** (2026-11-20, phone) Open the camera in a workout, lock the phone for 5+ minutes, unlock: the lines come back within a few seconds. If not, toggle Lines off and on ("Restarting the pose lines…").

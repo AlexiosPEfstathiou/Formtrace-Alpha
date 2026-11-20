@@ -9969,6 +9969,7 @@ async function openAssigned(id){
     }
   }catch(e){ console.error("restore results",e); }
   await loadPrevSeries(currentAssigned); await loadExerciseNotes(ME.id,(currentAssigned&&currentAssigned.snapshot&&currentAssigned.snapshot.items)||[]);   /* EZ-6 */
+  await loadCoachTargets(currentAssigned&&currentAssigned.status==="assigned"&&currentAssigned.snapshot&&currentAssigned.snapshot.items);   /* HG */
   await loadMyPBs();
   /* CN-8: a reviewed workout opens here as a summary - make the coach's feedback one obvious tap away. */
   try{ const fb=$("#tw-feedback"); if(fb){ fb.style.display="none"; if(currentAssigned.status==="reviewed"){ fb.innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div style="font-size:24px">📝</div><div style="flex:1"><div style="font-weight:800">Your coach reviewed this workout</div><div style="font-size:12.5px;color:var(--muted)">Tags, notes, voice-over and drawings on your sets</div></div><button class="btn primary sm" id="tw-feedback-open" style="width:auto">See feedback</button></div>`; fb.style.display=""; $("#tw-feedback-open").addEventListener("click",()=>openReview(currentAssigned.id,true)); } } }catch(e){}
@@ -10057,6 +10058,47 @@ function exnStartEdit(btn){
     if(ok) run("","Note deleted \u2713"); });
   row.querySelector('[data-x="cancel"]').addEventListener("click",ev=>{ ev.stopPropagation(); exnRedraw(box); });
 }
+/* HG (owner, 2026-11-20): the coach can give "More reps" / "More weight" a number. The next time the trainee performs that
+   exercise (in any workout), those numbers are the set's target and the weight field's default. Read from the trainee's
+   own reviews (RLS: withdrawn ones are hidden); only the newest review that set targets for the exercise counts, and only
+   until the trainee has performed the exercise again. Keyed by exercise name (lower case) and set index. */
+let coachTargets={};
+async function loadCoachTargets(items){
+  coachTargets={};
+  try{
+    if(!ME||!Array.isArray(items)||!items.length) return;
+    const byKey={}; items.forEach(x=>{ if(x&&x.name&&!x.wildcard_mg) byKey[x.name.trim().toLowerCase()]=x.name; });
+    if(!Object.keys(byKey).length) return;
+    const { data, error }=await store._sb.from("reviews").select("per_set,sent_at,created_at,coach_id").neq("coach_id",ME.id).order("created_at",{ascending:false}).limit(40);
+    if(error) throw error;
+    const found={};
+    for(const rv of (data||[])){ const at=rv.sent_at||rv.created_at||"";
+      for(const p of (Array.isArray(rv.per_set)?rv.per_set:[])){
+        if(!p||!p.exercise) continue; const k=String(p.exercise).trim().toLowerCase(); if(!byKey[k]) continue;
+        const d=Array.isArray(p.directives)?p.directives:[];
+        const reps=(d.includes("reps")&&+p.next_reps>0)?Math.round(+p.next_reps):null;
+        const kg=(d.includes("weight")&&+p.next_weight_kg>0)?+p.next_weight_kg:null;
+        if(reps==null&&kg==null) continue;
+        if(found[k]&&found[k].at!==at) continue;   /* an older review */
+        found[k]=found[k]||{at,sets:{}};
+        const si=Number.isInteger(p.set_index)?p.set_index:(+p.set>0?+p.set-1:0);
+        if(!found[k].sets[si]) found[k].sets[si]={reps,kg};
+      } }
+    const cur=currentAssigned&&currentAssigned.id;
+    await Promise.all(Object.keys(found).map(async k=>{
+      try{ const rows=await store.setLabels.list({trainee_id:ME.id,exercise_name:byKey[k]});
+        if((rows||[]).some(r=>r.assigned_id!==cur&&String(r.created_at||"")>String(found[k].at))) delete found[k];   /* already performed since */
+      }catch(e){}
+    }));
+    coachTargets=found;
+  }catch(e){ console.warn("coach targets (HG)",e&&e.message); coachTargets={}; }
+}
+function coachTargetFor(it,s){ const c=it&&it.name&&coachTargets[it.name.trim().toLowerCase()]; return (c&&c.sets[s])||null; }
+function targetText(it,s){   /* "12 reps target @ 25 kg", with the coach's numbers where set */
+  const c=coachTargetFor(it,s); const reps=(c&&c.reps!=null)?c.reps:it.reps, kg=(c&&c.kg!=null)?c.kg:it.weight_target_kg;
+  return {reps,kg,coach:!!c};
+}
+
 let prevSeries=null;
 async function loadPrevSeries(a){
   prevSeries=null;
@@ -10209,7 +10251,11 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
     // amber coach note — the whole point of a dedicated button over a
     // free-text comment is that it doesn't need reading to register.
     const directives=prevSeries&&prevSeries.directives[it.name];
-    if(directives&&directives.length){
+    const ctx=it.name&&coachTargets[it.name.trim().toLowerCase()];   /* HG */
+    if(ctx){
+      const lines=Object.keys(ctx.sets).map(Number).sort((a,b)=>a-b).map(si=>{ const t=ctx.sets[si]; return `Set ${si+1}: ${[t.reps!=null?t.reps+" reps":"",t.kg!=null?t.kg+" kg":""].filter(Boolean).join(" @ ")}`; });
+      inner+=`<div class="prev-note directive-note"><div class="pn-h">⬆ Your coach's targets for today</div><div class="pn-b">${escapeHtml(lines.join(" · "))}</div></div>`;
+    }else if(directives&&directives.length){
       const dTxt=directives.map(d=>d==="reps"?"more reps":"more weight").join(" and ");
       inner+=`<div class="prev-note directive-note"><div class="pn-h">⬆ From your coach</div><div class="pn-b">Aim for ${escapeHtml(dTxt)} on this exercise today.</div></div>`;
     }
@@ -10226,12 +10272,12 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
           ? `<div class="grade-num" style="color:var(--lime);font-size:19px">${shown}</div><div class="grade-lab">reps ✓</div>`
           : `<div class="grade-num" style="font-size:19px">${shown}</div><div class="grade-lab">reps</div>`;
         inner+=`<div class="setrow done" ${r.video_path?`data-play="${i}-${s}" style="cursor:pointer"`:""}><div class="set-n">✓</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">target ${it.reps} reps${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}${r.weight_kg!=null?` · ${r.weight_kg} kg`:""}</div></div>
+          <div class="set-mid"><div class="lab">Set ${s+1}${r.video_path?' <span style="color:var(--lime-dim);font-size:11px">▶ replay</span>':''}</div><div class="det">${(t=>`target ${t.reps} reps${t.kg!=null?` @ ${t.kg} kg`:""}${t.coach?" (coach)":""}`)(targetText(it,s))}${r.weight_kg!=null?` · ${r.weight_kg} kg`:""}</div></div>
           <div class="grade-badge">${badge}</div></div>`;
       }else{
         const isNext=(s===nextUndone)&&!locked;
         inner+=`<div class="setrow"><div class="set-n">${s+1}</div>
-          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${it.reps} reps target${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}${it.level>1?` · L${it.level}`:""}</div></div>
+          <div class="set-mid"><div class="lab">Set ${s+1}</div><div class="det">${(t=>`${t.reps} reps target${t.kg!=null?` @ ${t.kg} kg`:""}${t.coach?" (coach)":""}`)(targetText(it,s))}${it.level>1?` · L${it.level}`:""}</div></div>
           <div style="display:flex;gap:6px">
             ${isNext?`<button class="set-cta ghost" data-skip-i="${i}" data-skip-s="${s}" style="flex:0 0 auto">Skip</button>`:""}
             <button class="set-cta ${isNext?"":"locked"}" data-i="${i}" data-s="${s}">${locked?"—":isNext?"● Record":"Locked"}</button>
@@ -10634,7 +10680,7 @@ function startTraineeSet(itemIndex,setIndex){
   if(restBlocks()){ restFlash(); return; }   /* Item EU: resting; GX: flash the timer */
   const it=currentAssigned.snapshot.items[itemIndex];
   openRecorder({
-    title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}`,review:true,audio:true,useLabel:"✓ Use this take",
+    title:it.name||"Set",subtitle:(t=>`set ${setIndex+1} · aim ${t.reps} reps${t.kg!=null?` @ ${t.kg} kg`:""}`)(targetText(it,setIndex)),review:true,audio:true,useLabel:"✓ Use this take",
     // last time's cue, kept on screen while they set up and perform
     note:(prevSeries&&prevSeries.notes[it.name])||"",
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
@@ -10951,7 +10997,7 @@ function showResult(exName,it,setIndex,r,itemIndex){
   $("#res-title").textContent=`${exName} · Set ${setIndex+1}`;
   $("#res-eyebrow").textContent="Set complete";
   $("#res-reps").textContent=r.reps;
-  $("#res-target").textContent=`reps counted · target ${it.reps}`;
+  $("#res-target").textContent=`reps counted · target ${targetText(it,setIndex).reps}`;   /* HG */
   /* Item BO: form assist for the trainee, right after the set. */
   { let fl=$("#res-form"); if(!fl){ fl=document.createElement("div"); fl.id="res-form"; fl.style.cssText="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5"; $("#res-target").insertAdjacentElement("afterend",fl); }
     fl.textContent = (SHOW_FORM_MATCH&&r.form) ? formSummaryLine(r.form) : ""; fl.style.display=(SHOW_FORM_MATCH&&r.form)?"":"none"; }   /* HB */
@@ -11051,9 +11097,13 @@ function showResult(exName,it,setIndex,r,itemIndex){
     wIn._saveT=setTimeout(saveWorkoutDraft,400);
   };
   // show what they lifted for this exercise last time, so they can progress
+  const ctW=coachTargetFor(it,setIndex);   /* HG: the coach's proposed weight is the default, ahead of last time's */
+  if(ctW&&ctW.kg!=null&&r.weight_kg==null&&(wIn.value||"").trim()===""){
+    wIn.value=String(ctW.kg); r.weight_kg=ctW.kg; clearTimeout(wIn._saveT); wIn._saveT=setTimeout(saveWorkoutDraft,400);
+  }
   lastWeightFor(it.name).then(prev=>{
-    if(!prev)return;
-    wLast.textContent=`Last time: ${prev.weight} kg${prev.on?" · "+fmtDay(prev.on):""}`;
+    if(!prev){ if(ctW&&ctW.kg!=null) wLast.textContent=`Your coach's target: ${ctW.kg} kg`; return; }
+    wLast.textContent=`${ctW&&ctW.kg!=null?`Your coach's target: ${ctW.kg} kg · `:""}Last time: ${prev.weight} kg${prev.on?" · "+fmtDay(prev.on):""}`;
     /* GY (owner, 2026-11-20): pre-fill the field with last time's weight - only if this set has none yet, the trainee
        has not started typing, and last time was not bodyweight (0 / blank stays blank) */
     if(Number(prev.weight)>0 && r.weight_kg==null && (wIn.value||"").trim()===""){
@@ -11401,19 +11451,31 @@ async function _openReview(assignedId,readonly=false){
         // a specific target number (a coach wanting an exact figure can
         // still say so in the comment below); independently toggleable,
         // since a coach might reasonably want both at once.
-        const dWrap=document.createElement("div");dWrap.style.cssText="margin-bottom:12px;display:flex;gap:8px";
+        const dWrap=document.createElement("div");dWrap.style.cssText="margin-bottom:12px;display:flex;gap:8px;align-items:flex-start";
         const liveDirectives=(reviewState.per_set[key]||{}).directives;
         const savedDirectives=savedEntry?.directives||[];
         const curD=new Set(liveDirectives||savedDirectives);
-        [["reps","⬆ More reps"],["weight","⬆ More weight"]].forEach(([dKey,dLabel])=>{
-          const p=document.createElement("button");p.type="button";p.className="pill directive-pill";p.textContent=dLabel;p.style.flex="1";
-          if(curD.has(dKey))p.classList.add("on");
+        /* HG (owner, 2026-11-20): an optional number - the target for this set next time (next_reps / next_weight_kg) */
+        const live0=reviewState.per_set[key]||{};
+        [["reps","⬆ More reps","next_reps","reps",1,String(shownReps!=null&&isFinite(+shownReps)?+shownReps+1:"")],
+         ["weight","⬆ More weight","next_weight_kg","kg","any",(r.weight_kg!=null?String(+r.weight_kg+2.5):"")]].forEach(([dKey,dLabel,field,unit,step,hint])=>{
+          const col=document.createElement("div");col.style.cssText="flex:1;min-width:0";
+          const p=document.createElement("button");p.type="button";p.className="pill directive-pill";p.textContent=dLabel;p.style.width="100%";
+          const nRow=document.createElement("label");nRow.style.cssText="display:none;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--muted)";
+          nRow.innerHTML=`<span>Next time</span><input type="number" inputmode="${unit==="kg"?"decimal":"numeric"}" min="0" step="${step}" placeholder="${escapeHtml(hint)}" style="width:64px;height:32px;background:var(--panel);border:1px solid var(--line2);border-radius:9px;color:var(--ink);padding:0 8px;font-size:14px"><span>${unit}</span>`;
+          const nIn=nRow.querySelector("input");
+          const v0=(live0[field]!=null?live0[field]:(savedEntry&&savedEntry[field]!=null?savedEntry[field]:null)); if(v0!=null) nIn.value=String(v0);
+          const sync=()=>{ nRow.style.display=p.classList.contains("on")?"flex":"none"; };
+          if(curD.has(dKey))p.classList.add("on"); sync();
           p.addEventListener("click",()=>{
             p.classList.toggle("on");
             if(p.classList.contains("on")) curD.add(dKey); else curD.delete(dKey);
             reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,directives:[...curD],item_index:ii,set_index:si};
+            sync(); if(p.classList.contains("on")&&!nIn.value) setTimeout(()=>nIn.focus(),0);
           });
-          dWrap.appendChild(p);
+          nIn.addEventListener("input",()=>{ const s=(nIn.value||"").trim(), v=Number(s);
+            reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,item_index:ii,set_index:si,[field]:(s===""||!isFinite(v)||v<=0)?null:(unit==="reps"?Math.round(v):v)}; });
+          col.appendChild(p); col.appendChild(nRow); dWrap.appendChild(col);
         });
         div.appendChild(dWrap);
         // per-set comment
@@ -11421,6 +11483,12 @@ async function _openReview(assignedId,readonly=false){
         ci.value=(reviewState.per_set[key]||{}).comment||"";
         ci.addEventListener("input",()=>{ reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,comment:ci.value.trim()}; });
         div.appendChild(ci);
+        /* HG (owner, 2026-11-20): keep the note in the exercise's history (shown every time the trainee does it) or only on this set */
+        const rt=document.createElement("label");rt.style.cssText="display:flex;align-items:center;gap:8px;margin-top:7px;font-size:12.5px;color:var(--muted);cursor:pointer";
+        rt.innerHTML=`<input type="checkbox" style="width:17px;height:17px;accent-color:var(--lime)"><span>Retain note when trainee performs this exercise again</span>`;
+        const rtIn=rt.querySelector("input"); const rt0=(reviewState.per_set[key]||{}).retain; rtIn.checked=(rt0!=null?rt0:(savedEntry&&savedEntry.retain!=null?savedEntry.retain:true))!==false;
+        rtIn.addEventListener("change",()=>{ reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,retain:rtIn.checked}; });
+        div.appendChild(rt);
         // attach feedback video per set
         const fbRow=document.createElement("div");fbRow.style.cssText="margin-top:10px";
         const fbBtn=document.createElement("button");fbBtn.className="btn sm";
