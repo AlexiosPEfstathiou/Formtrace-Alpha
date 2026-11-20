@@ -12772,6 +12772,58 @@ function moveSettingsSections(){
   /* Item CY: achievements grid under the handles */
   if(!from.querySelector("#pf-achievements")){ const anchor=$("#sp-handles")||from.querySelector(".card"); const holder=document.createElement("div"); if(anchor&&anchor.nextSibling) from.insertBefore(holder,anchor.nextSibling); else from.appendChild(holder); renderProfileAchievements(holder); }
 }
+/* HI (owner, 2026-11-20): levels and the Shop.
+   Exp = every point ever earned (spending points never lowers it). Level 1 -> 2 takes 50 exp; each later level takes
+   125% of the exp of all the previous levels together (owner's rule): 50, 63, 141, 318, 715, 1609 ... (rounded). */
+function levelReqs(n){ const r=[50]; let sum=50; while(r.length<n){ const x=Math.round(sum*1.25); r.push(x); sum+=x; } return r; }
+function levelFor(exp){
+  exp=Math.max(0,Math.floor(exp||0)); let lvl=1, floor=0;
+  for(const need of levelReqs(40)){ if(exp<floor+need) return {level:lvl,into:exp-floor,need,exp}; floor+=need; lvl++; }
+  return {level:lvl,into:0,need:0,exp};
+}
+async function pointsSummary(){
+  const { data, error }=await store._sb.from("points_ledger").select("amount").eq("user_id",ME.id).limit(5000);
+  if(error) throw error;
+  let bal=0, exp=0; for(const x of (data||[])){ const a=Number(x.amount||0); bal+=a; if(a>0) exp+=a; }
+  return {bal,exp};
+}
+async function wireLevelAndShop(){
+  const btn=$("#pf-shop"); if(btn&&!btn._wired){ btn._wired=true; btn.addEventListener("click",()=>openShop()); }
+  const el=$("#pf-level"); if(!el) return;
+  let s={bal:0,exp:0}; try{ s=await pointsSummary(); }catch(e){ console.warn("level (HI)",e&&e.message); }
+  const L=levelFor(s.exp), pct=L.need?Math.min(100,Math.round(L.into/L.need*100)):100;
+  el.innerHTML=`<div style="display:flex;align-items:baseline;gap:8px;font-size:12.5px"><b style="font-size:14px">Level ${L.level}</b>
+      <span style="flex:1"></span><span style="color:var(--muted)">${L.need?`${L.need-L.into} exp to level ${L.level+1}`:"Top level"}</span></div>
+    <div style="height:8px;border-radius:5px;background:var(--line2);overflow:hidden;margin-top:6px" role="progressbar" aria-valuemin="0" aria-valuemax="${L.need}" aria-valuenow="${L.into}" aria-label="Exp towards the next level">
+      <div style="height:100%;width:${pct}%;background:var(--lime);border-radius:5px;transition:width .6s ease"></div></div>
+    <div style="font-size:11px;color:var(--faint);margin-top:4px">${L.into} / ${L.need} exp</div>`;
+}
+async function openShop(){
+  pwShow(`<div style="font-weight:800;font-size:18px">Shop</div><div style="font-size:12.5px;color:var(--muted);margin-top:8px">Loading…</div>`);
+  let s={bal:0,exp:0}, items=[];
+  try{ s=await pointsSummary(); }catch(e){}
+  try{ const { data, error }=await store._sb.from("shop_items").select("id,name,description,icon,price_points").order("sort").order("price_points"); if(error) throw error; items=data||[]; }catch(e){ console.warn("shop items (HI)",e&&e.message); }
+  pwShow(`<div style="display:flex;align-items:center;gap:10px"><div style="font-weight:800;font-size:18px;flex:1">Shop</div>
+      <div style="font-weight:900;font-size:15px;color:var(--lime)">${s.bal} point${s.bal===1?"":"s"}</div></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px">Your balance - earn more from quests and the daily checklist.</div>
+    <div style="margin-top:12px;max-height:55vh;overflow:auto">${items.length?items.map(it=>{ const ok=s.bal>=it.price_points; return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)">
+        <div style="width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 40px">${escapeHtml(it.icon||"🎁")}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14px">${escapeHtml(it.name)}</div>${it.description?`<div style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4">${escapeHtml(it.description)}</div>`:""}</div>
+        <button type="button" class="btn sm ${ok?"primary":"ghost"}" data-buy="${escapeHtml(it.id)}" data-price="${it.price_points}" data-name="${escapeHtml(it.name)}" style="width:auto;white-space:nowrap" ${ok?"":"disabled"}>${it.price_points} pts</button></div>`; }).join("")
+      :`<div style="text-align:center;padding:22px 8px;border-top:1px solid var(--line)"><div style="font-size:30px">🛍</div><div style="font-weight:800;margin-top:6px">Nothing in the shop yet</div><div style="font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45">Items are on their way - keep collecting points.</div></div>`}</div>
+    <button class="btn ghost sm" id="shop-close" style="width:auto;margin-top:12px">Close</button>`);
+  $("#shop-close").onclick=pwHide;
+  $("#pw-card").querySelectorAll("[data-buy]").forEach(b=>b.addEventListener("click",async()=>{
+    const name=b.getAttribute("data-name"), price=+b.getAttribute("data-price"), id=b.getAttribute("data-buy");
+    pwHide();
+    const yes=await openConfirm({title:`Buy ${name}?`,body:`${price} points will be taken from your balance.`,confirmLabel:`Buy for ${price} points`,cancelLabel:"Not now"});
+    if(yes){ try{ const { data, error }=await store._sb.rpc("buy_shop_item",{p_item:id}); if(error) throw error;
+        toast(`Bought ✓ · ${data&&data.balance!=null?data.balance+" points left":""}`,3000); }
+      catch(e){ toast((e&&e.message)||"Couldn't buy that",4000); }
+      wireLevelAndShop(); }
+    openShop();
+  }));
+}
 async function renderProfile(){
   const body=$("#profile-body");
   const r=roleOf();
@@ -12785,7 +12837,9 @@ async function renderProfile(){
         <div style="margin-top:6px"><span class="badge ${r}">${r}</span>${isAdmin()?' <span class="badge admin">admin</span>':""}</div>
         <div class="cbadges" id="pf-badges" style="margin-top:6px"></div>
         <div class="ct">${ratings.length?`${starsHtml(avg)} ${avg.toFixed(1)} · ${ratings.length} rating${ratings.length>1?"s":""}`:"No ratings yet"}</div></div>
-    </div>`;
+      <button type="button" class="btn sm ghost" id="pf-shop" style="width:auto;margin-left:auto;align-self:flex-start;color:var(--lime);border-color:var(--lime)">🛍 Shop</button>   <!-- HI -->
+    </div>
+    <div id="pf-level" style="margin:10px 0 2px"></div>   <!-- HI: level bar -->`;
   html+=`<div class="card" style="margin-top:18px">
       <div class="field" style="margin:0 0 12px"><label>Display name</label><input id="pf-name" value="${escapeHtml(ME.display_name||"")}"></div>
       <div class="field" style="margin:0 0 12px"><label>City</label><input id="pf-city" value="${escapeHtml(ME.city||"")}"></div>
@@ -12961,7 +13015,7 @@ async function renderProfile(){
       const bal=pts.reduce((t,x)=>t+Number(x.amount||0),0);
       html+=`<div class="section-h"><div class="eyebrow">Points</div></div>
         <div class="card" id="pf-points"><div style="font-size:24px;font-weight:800">${bal} point${bal===1?"":"s"}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Earned from quests. What you can spend them on is coming soon.</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45">Earned from quests. Spend them in the Shop - every point earned also counts as exp towards your level.</div>
           ${pts.slice(0,3).map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span style="color:var(--muted);min-width:0">${escapeHtml(x.reason||"Points")} · ${fmtDay(String(x.created_at).slice(0,10))}</span><b style="white-space:nowrap">${Number(x.amount)>0?"+":""}${Number(x.amount)}</b></div>`).join("")}
         </div>`;
     }
@@ -13017,6 +13071,7 @@ async function renderProfile(){
   /* CQ-6: avatar tap = view or replace; coach badges under the name */
   try{ const av=$("#pf-avatar"); if(av){ hydrateAvatars(av.parentElement); av.addEventListener("click",async()=>{ const view=ME.avatar_path?await openConfirm({title:"Profile photo",body:"View it full size, or replace it?",confirmLabel:"View",cancelLabel:"Replace"}):false; if(view){ try{ const u=await playable(ME.avatar_path); if(u) openPhotoLightbox(u); }catch(e){} } else { const inp=$("#sp-photo-input"); if(inp) inp.click(); else toast("Open Settings → Social profile to add a photo",3000); } }); } }catch(e){}
   (async()=>{ try{ if(ME.role==="coach"){ const facts=await loadCoachFacts([ME.id]); const el=$("#pf-badges"); if(el&&facts&&facts[ME.id]) el.innerHTML=badgeSpans(facts[ME.id],false); } }catch(e){} })();
+  wireLevelAndShop();   /* HI */
   wireReferralCard();   // Item BN: copy/share + live counts for the referral card
   wireCertCard();       // certifications (BH badge system)
   wireTop1Card();       // Item BX standing
