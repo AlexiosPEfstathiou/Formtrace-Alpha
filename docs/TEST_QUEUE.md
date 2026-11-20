@@ -86,6 +86,9 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T4** Turn the phone **sideways, top to the LEFT**: the countdown, timer and icons turn to face you; there is no Portrait/Landscape button any more. Record a set → it is saved **upright in landscape**. Then **top to the RIGHT** → also upright. **If one is upside down, note which side.**
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
+## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **GX-T1** Finish a set, then tap **Record** on the next one straight away: the rest pill in the top-right corner flashes twice. Tap the pill: "Break ends in m:ss" counts down; **Add 30 seconds** adds 30 s; **Skip break** ends it and the next set can be recorded.
+
 ## Notifications (GW, 2026-11-20)
 - [ ] **GW-T1** Tomorrow about 08:00: the morning summary arrives on the phone (e.g. "Rest day today") even with nothing new in the app.
 - [ ] **GW-T2** On one phone, sign out of Alex Stinson and sign in as the coach (push allowed): pushes for the coach arrive, and none for Alex Stinson until you sign back in.

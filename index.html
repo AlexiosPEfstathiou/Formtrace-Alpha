@@ -184,6 +184,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 #ptr.ready svg{transform:rotate(180deg)}
 #ptr.spin svg{animation:ptrspin .8s linear infinite}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
+@keyframes rtflash{0%,100%{transform:scale(1);box-shadow:0 0 0 0 transparent}50%{transform:scale(1.16);box-shadow:0 0 0 4px var(--lime)}}   /* GX: rest pill flashes twice */
 @media (prefers-reduced-motion:reduce){#ptr.spin svg{animation-duration:2s}}
 /* EZ-5: the Undo bar above the builder's Save button */
 #wo-undo{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 158px);transform:translateX(-50%) translateY(8px);z-index:60;display:flex;align-items:center;gap:14px;
@@ -10451,6 +10452,40 @@ function restKey(){ return `ft-rest-${currentAssigned&&currentAssigned.id}`; }
 function restGet(){ try{ const r=JSON.parse(localStorage.getItem(restKey())||"null"); if(r&&r.until>Date.now()) return r; }catch(e){} return null; }
 function restBlocks(){ return !!(currentAssigned&&restGet()); }
 function restNudge(){ toast("Take a break to rest before the next set",2400); try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){} }
+/* GX (owner, 2026-11-20): trying to record during the break flashes the timer twice; tapping the timer opens
+   "Break ends in X" with Skip break / Add 30 seconds. */
+function restFlash(){
+  const el=document.getElementById("rest-timer"); try{ if(navigator.vibrate) navigator.vibrate(30); }catch(e){}
+  if(!el||el.style.display==="none"){ restNudge(); return; }   /* timer not visible: fall back to the message */
+  el.style.animation="none"; void el.offsetWidth; el.style.animation="rtflash .38s ease-in-out 2";
+}
+function restLeftText(){ const r=restGet(); const s=r?Math.ceil(Math.max(0,(r.until-Date.now())/1000)):0; return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+function restSkip(){
+  try{ localStorage.removeItem(restKey()); }catch(e){}
+  const el=document.getElementById("rest-timer"); if(el) el.remove();
+  document.body.classList.remove("rest-on"); if(restTick){ clearInterval(restTick); restTick=null; }
+}
+function restAdd(secs){
+  const r=restGet(); if(!r) return;
+  r.until+=secs*1000; r.total+=secs;
+  try{ localStorage.setItem(restKey(),JSON.stringify(r)); }catch(e){}
+  ensureRestTimer();
+}
+function openRestDialog(){
+  if(!restGet()) return;
+  pwShow(`<div id="rt-dlg" style="text-align:center">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Rest</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:16px">Break ends in <span id="rt-dlg-left" style="font-variant-numeric:tabular-nums">${restLeftText()}</span></div>
+      <button class="btn primary" id="rt-dlg-add" type="button">Add 30 seconds</button>
+      <button class="btn ghost" id="rt-dlg-skip" type="button" style="margin-top:8px">Skip break</button>
+      <button class="btn ghost" id="rt-dlg-close" type="button" style="margin-top:8px;color:var(--muted)">Keep resting</button>
+    </div>`);
+  const tick=setInterval(()=>{ const sp=document.getElementById("rt-dlg-left"); if(!sp){ clearInterval(tick); return; }
+    if(!restGet()){ clearInterval(tick); pwHide(); return; } sp.textContent=restLeftText(); },250);
+  $("#rt-dlg-add").onclick=()=>{ restAdd(30); const sp=document.getElementById("rt-dlg-left"); if(sp) sp.textContent=restLeftText(); };
+  $("#rt-dlg-skip").onclick=()=>{ clearInterval(tick); restSkip(); pwHide(); toast("Break skipped - on to your next set",2200); };
+  $("#rt-dlg-close").onclick=()=>{ clearInterval(tick); pwHide(); };
+}
 function setsRemaining(){
   const items=(currentAssigned&&currentAssigned.snapshot&&currentAssigned.snapshot.items)||[];
   for(let i=0;i<items.length;i++){ const it=items[i]||{}; const done=s=>!!(localResults&&localResults[i]&&localResults[i][s]);
@@ -10477,7 +10512,7 @@ function ensureRestTimer(){
         <circle cx="15" cy="15" r="${R}" fill="none" stroke="var(--line)" stroke-width="4"/>
         <circle id="rt-ring" cx="15" cy="15" r="${R}" fill="none" stroke-width="4" stroke-linecap="round" transform="rotate(-90 15 15)" style="stroke-dasharray:${C} ${C}"/>
       </svg><span id="rt-time" style="font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums">0:00</span>`;   /* no REST label: the pill must fit the badge slot beside long titles */
-    el.addEventListener("click",restNudge);
+    el.addEventListener("click",openRestDialog);   /* GX */
     ($("#phone")||document.body).appendChild(el);
     el.__C=C;
   }
@@ -10495,7 +10530,7 @@ function ensureRestTimer(){
   paint(); if(!restTick) restTick=setInterval(paint,250);
 }
 function startTraineeSet(itemIndex,setIndex){
-  if(restBlocks()){ restNudge(); return; }   /* Item EU: resting */
+  if(restBlocks()){ restFlash(); return; }   /* Item EU: resting; GX: flash the timer */
   const it=currentAssigned.snapshot.items[itemIndex];
   openRecorder({
     title:it.name||"Set",subtitle:`set ${setIndex+1} · aim ${it.reps} reps${it.weight_target_kg!=null?` @ ${it.weight_target_kg} kg`:""}`,review:true,audio:true,useLabel:"✓ Use this take",
@@ -10542,7 +10577,7 @@ function buildIntervalSegments(it){
   return segs;
 }
 function startIntervalExercise(itemIndex){
-  if(restBlocks()){ restNudge(); return; }   /* Item EU: resting */
+  if(restBlocks()){ restFlash(); return; }   /* Item EU: resting; GX: flash the timer */
   const it=currentAssigned.snapshot.items[itemIndex];
   const segments=buildIntervalSegments(it);
   const first=segments[0];
