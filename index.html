@@ -3097,6 +3097,19 @@ function hidePoseWarn(){ const el=$("#r-posewarn"); if(el) el.style.display="non
    Now four attempts with backoff (0s, 1s, 3s, 7s) - GPU context loss is often
    transient - and the warning offers a manual retry after that. */
 let poseRebuilding=false;
+/* HD (2026-11-20): after the phone is locked for a while, Android can drop the GPU context under the pose engine.
+   detectForVideo then returns nothing WITHOUT throwing, so the failure counter never trips and the lines stay off
+   until a full restart. Now: coming back after 20 s or more in the background rebuilds the engine (and restarts a
+   camera track that ended); turning Lines on when no figure has been seen for 3 s rebuilds it too. */
+let poseHiddenAt=0, poseStale=false, poseLastHit=0;
+document.addEventListener("visibilitychange",()=>{ try{
+  if(document.visibilityState==="hidden"){ poseHiddenAt=Date.now(); return; }
+  const away=poseHiddenAt?Date.now()-poseHiddenAt:0; poseHiddenAt=0;
+  if(away<20000) return;
+  if(landmarker) poseStale=true;
+  const recOn=$("#rec")&&$("#rec").classList.contains("on");
+  if(recOn&&typeof rStream!=="undefined"&&rStream&&rStream.getVideoTracks().some(t=>t.readyState==="ended")) startCam().catch(e=>console.error("camera restart after resume",e));
+}catch(e){} });
 async function resetPoseEngine(){
   if(poseRebuilding) return; poseRebuilding=true;
   try{ if(landmarker&&landmarker.close) landmarker.close(); }catch(e){ console.error("pose close",e); }
@@ -13831,6 +13844,7 @@ async function startCam(){
 function rLoop(){
   try{
     updateDims();
+    if(poseStale&&landmarker&&!poseRebuilding){ poseStale=false; resetPoseEngine(); }   /* HD */
     if(rvideo.readyState>=2&&landmarker){
       sizeCanvas();
       if(rvideo.currentTime!==rLastT){
@@ -13855,6 +13869,7 @@ function rLoop(){
         if(res){
           rctx.save();rctx.clearRect(0,0,roverlay.width,roverlay.height);
           const mirror=rMirror; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}   /* GA: same decision as the preview */
+          if(res.landmarks&&res.landmarks.length) poseLastHit=Date.now();   /* HD */
           if(rShow&&res.landmarks){for(const lm of res.landmarks)drawFigure(rctx,lm,roverlay.width,roverlay.height);}
           rctx.restore();
           if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
@@ -14009,7 +14024,9 @@ function syncCaptureTools(){
 $("#cd-cancel").addEventListener("click",()=>{ cancelCountdown(); gestureHold=0; });
 $("#r-close").addEventListener("click",closeRecorder);
 $("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"environment":"user";try{await startCam();}catch(e){toast("Couldn't switch camera");}});
-$("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);});
+$("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);
+  else if(Date.now()-poseLastHit>3000&&!poseRebuilding){ toast("Restarting the pose lines…",2200); resetPoseEngine(); }   /* HD: Lines on with no figure seen - rebuild the engine */
+});
 $("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
 $("#r-preview").addEventListener("click",()=>{rplay.currentTime=0;rplay.play();});
 $("#r-posewarn-retry")?.addEventListener("click",()=>{ $("#r-posewarn-retry").disabled=true; resetPoseEngine().finally(()=>{ $("#r-posewarn-retry").disabled=false; }); });   // Item AH
