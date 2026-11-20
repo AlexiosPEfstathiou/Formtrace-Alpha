@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**GY (2026-11-20, personal account): the set's weight field is pre-filled with last time's weight - BUILT (owner to test GY-T1).**
 **GX (2026-11-20, personal account): rest timer flashes when you try to record early; tapping it offers Skip break / Add 30 seconds - BUILT (owner to test GX-T1).**
 **GW (2026-11-20, personal account): morning summary crashed every day (now fixed, SQL applied); a shared phone now gets the pushes of whoever is signed in. Owner to test GW-T1, GW-T2.**
 **GV (2026-11-20, personal account): "not getting push notifications on my phone" - RESOLVED, no fault: push works (server test arrived); nothing was sent because there was no activity since 13 Nov, and the phone was on silent.**
@@ -767,6 +768,12 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## GY. Weight used: pre-filled with last time's weight - BUILT 2026-11-20 (personal account)
+
+**Owner:** on the "Weight used" field, instead of only showing "Last time: 5 kg · Mon 2 Nov", also pre-fill the field with 5 kg. **Built (index.html, set complete screen):** when `lastWeightFor` finds an earlier weight for the exercise, the field is filled with it and saved to the workout draft like a typed value - **only** if this set has no weight yet, the trainee has not started typing, and last time was above 0 (bodyweight stays blank, as the label asks). The "Last time" hint stays. The trainee can change or clear it. No SQL. Not verified on a phone (GY-T1).
 
 ---
 

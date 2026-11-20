@@ -10952,6 +10952,12 @@ function showResult(exName,it,setIndex,r,itemIndex){
   lastWeightFor(it.name).then(prev=>{
     if(!prev)return;
     wLast.textContent=`Last time: ${prev.weight} kg${prev.on?" · "+fmtDay(prev.on):""}`;
+    /* GY (owner, 2026-11-20): pre-fill the field with last time's weight - only if this set has none yet, the trainee
+       has not started typing, and last time was not bodyweight (0 / blank stays blank) */
+    if(Number(prev.weight)>0 && r.weight_kg==null && (wIn.value||"").trim()===""){
+      wIn.value=String(prev.weight); r.weight_kg=Number(prev.weight);
+      clearTimeout(wIn._saveT); wIn._saveT=setTimeout(saveWorkoutDraft,400);
+    }
   }).catch(()=>{});
 }
 /* Most recent weight this trainee used for an exercise on an EARLIER workout.

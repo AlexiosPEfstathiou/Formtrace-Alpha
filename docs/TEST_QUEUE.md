@@ -87,6 +87,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **GY-T1** (2026-11-20) Finish a set of an exercise you did before with a weight: **Weight used** is already filled with last time's weight; change it and the new value is kept; a bodyweight exercise stays blank.
 - [ ] **GX-T1** Finish a set, then tap **Record** on the next one straight away: the rest pill in the top-right corner flashes twice. Tap the pill: "Break ends in m:ss" counts down; **Add 30 seconds** adds 30 s; **Skip break** ends it and the next set can be recorded.
 
 ## Notifications (GW, 2026-11-20)
