@@ -4348,6 +4348,8 @@ async function renderCoachChecklist(el){
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
     ${items.map(i=>`<button data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
   el.style.display="";
+  mountQuestFlip(el, all, todayISO());   /* HK */
+  showNewCoachPoints(el);   /* HK */
   el.querySelectorAll("[data-cgo]").forEach(b=>b.addEventListener("click",async()=>{ const tg=b.getAttribute("data-ctgt");
     if(tg){ b.disabled=true; b.style.opacity=".55"; try{ const cached=window.__ftCoachTargets&&Date.now()-window.__ftCoachTargets.t<120000?window.__ftCoachTargets.d:null;   /* latency: no round trip on a tap */
       let data=cached; if(!data){ const res=await store._sb.rpc("coach_todo_targets"); if(res.error) throw res.error; data=res.data; window.__ftCoachTargets={t:Date.now(),d:data}; }
@@ -4421,6 +4423,7 @@ async function renderHomeChecklist(engs, el){
   el.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",(ev)=>{ const alt=ev&&ev.target&&ev.target.closest?ev.target.closest("[data-alt]"):null; if(alt){ ev.stopPropagation(); if(!dcGet().rest){ dcSet("rest"); renderHomeChecklist(engs, el); } return; }   /* Item FF: "I'll take a rest day" */
     const k=b.getAttribute("data-dc"), a=b.getAttribute("data-act");
     if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="budget") openBudgetCard(plan,()=>{ if(!dcGet().budget){ dcSet("budget"); } renderHomeChecklist(engs, el); }); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
+  mountQuestFlip(el, all, iso);   /* HK */
   claimDailyTaskPoints(items, iso, el);   /* HJ */
   if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){}
     /* HH (owner, 2026-11-20): 10 bonus points for a complete day - the server pays once per local day */
@@ -4444,14 +4447,81 @@ async function claimDailyTaskPoints(items, iso, el){
     }catch(e){ console.warn("daily task points (HJ)",i.k,e&&e.message); }
   }
 }
-function playPointsPop(anchor,pts){
+/* HK (owner, 2026-11-21): the Today card flips sideways to the weekly quests. When every daily task is done it flips by
+   itself (once a day); a small "⇄" button switches between the two sides at any time. Quests are worked out and paid
+   by the server (weekly_quests_sync); a quest paid just now shows a "+N points" pop. */
+let wqCache=null;
+async function loadWeeklyQuests(force){
+  if(!force&&wqCache&&Date.now()-wqCache.t<30000) return wqCache.d;
+  const { data, error }=await store._sb.rpc("weekly_quests_sync"); if(error) throw error;
+  wqCache={t:Date.now(),d:data}; return data;
+}
+function weeklyQuestsHtml(d){
+  const qs=(d&&d.quests)||[]; const avail=qs.filter(q=>+q.goal>0);
+  const doneN=avail.filter(q=>q.done).length;
+  const resets=d&&d.resets?new Date(d.resets+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short"}):"Mon";
+  return `<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">This week</div>
+      <div style="font-size:12px;font-weight:800;color:${avail.length&&doneN===avail.length?"var(--lime)":"var(--muted)"}">${doneN} of ${avail.length} · resets ${escapeHtml(resets)}</div></div>
+    ${qs.map(q=>{ const goal=+q.goal||0, prog=Math.min(+q.progress||0,goal||0), pct=goal?Math.round(prog/goal*100):0;
+      const chip=q.each?`+${q.points} each`:`+${q.points}`;
+      return `<div data-wq="${escapeHtml(q.key)}" style="border-top:1px solid var(--line);padding:9px 0;${goal?"":"opacity:.55"}">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;${q.done?"background:var(--lime);color:var(--lime-ink,#0B0E11)":"border:1.5px solid var(--line2);color:var(--faint)"}">${q.done?"✓":""}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;${q.done?"color:var(--muted)":""}">${escapeHtml(q.name)}</div>
+            <div style="font-size:11.5px;color:var(--faint)">${q.note?escapeHtml(q.note)+(goal?" · ":""):""}${goal?`${prog} of ${goal}`:""}</div></div>
+          <span style="font-size:12px;font-weight:900;white-space:nowrap;color:${q.paid?"var(--lime)":"var(--faint)"}">${q.paid&&!q.each?"✓ ":""}${chip}</span></div>
+        ${goal&&!q.done?`<div style="height:4px;border-radius:3px;background:var(--line2);margin:7px 0 0 30px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--lime)"></div></div>`:""}
+      </div>`; }).join("")||`<div style="font-size:12.5px;color:var(--faint);padding:8px 0">No quests this week.</div>`}`;
+}
+function mountQuestFlip(el, allDone, iso){
+  try{
+    if(!el||!ME) return;
+    if(!document.getElementById("qf-css")){ const st=document.createElement("style"); st.id="qf-css";
+      st.textContent=".qflip{perspective:1400px;margin:0 0 12px}.qf-inner{display:grid;transform-style:preserve-3d;transition:transform .75s cubic-bezier(.3,.9,.3,1)}.qf-inner.flipped{transform:rotateY(180deg)}.qf-face{grid-area:1/1;-webkit-backface-visibility:hidden;backface-visibility:hidden;margin:0!important;padding:12px 14px 8px!important;display:flex;flex-direction:column}.qf-back{transform:rotateY(180deg)}.qf-inner:not(.flipped) .qf-back,.qf-inner.flipped .qf-front{pointer-events:none}.qf-btn{align-self:flex-end;margin-top:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:11.5px;font-weight:700;padding:6px 2px 2px;cursor:pointer}@media (prefers-reduced-motion: reduce){.qf-inner{transition:none}}";
+      document.head.appendChild(st); }
+    const front=document.createElement("div"); front.className="card qf-face qf-front";
+    Array.from(el.childNodes||[]).forEach(n=>front.appendChild(n));   /* not a while(firstChild) loop - a stub DOM never empties */
+    const back=document.createElement("div"); back.className="card qf-face qf-back";
+    back.innerHTML=`<div style="font-size:12.5px;color:var(--faint);padding:6px 0">Loading this week's quests…</div>`;
+    const inner=document.createElement("div"); inner.className="qf-inner"; inner.appendChild(front); inner.appendChild(back);
+    el.className="qflip"; el.style.cssText=""; el.appendChild(inner);
+    const fb=document.createElement("button"); fb.type="button"; fb.className="qf-btn"; fb.textContent="⇄ Weekly quests"; fb.setAttribute("aria-label","Show this week's quests"); front.appendChild(fb);
+    const sideKey=`ft-qside-${ME.id}-${iso}`, autoKey=`ft-qauto-${ME.id}-${iso}`;
+    const get=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
+    const flip=(toWeekly,remember)=>{ inner.classList.toggle("flipped",!!toWeekly); if(remember) set(sideKey,toWeekly?"weekly":"daily"); };
+    fb.addEventListener("click",()=>flip(true,true));
+    let side=get(sideKey);
+    if(allDone&&get(autoKey)!=="1"){ set(autoKey,"1"); set(sideKey,"weekly"); setTimeout(()=>flip(true,false),1100); }
+    else if(side==="weekly"||(allDone&&side!=="daily")) inner.classList.add("flipped");
+    loadWeeklyQuests(false).then(d=>{
+      back.innerHTML=weeklyQuestsHtml(d);
+      const bb=document.createElement("button"); bb.type="button"; bb.className="qf-btn"; bb.textContent="⇄ Today's tasks"; bb.setAttribute("aria-label","Show today's tasks");
+      bb.addEventListener("click",()=>flip(false,true)); back.appendChild(bb);
+      let delay=inner.classList.contains("flipped")?200:1300;
+      ((d&&d.quests)||[]).filter(q=>q.just_paid).forEach(q=>{ setTimeout(()=>{ const row=back.querySelector(`[data-wq="${q.key}"]`); playPointsPop(inner.classList.contains("flipped")?row:el,q.points,"weekly quest"); },delay); delay+=450; });
+      if(((d&&d.quests)||[]).some(q=>q.just_paid)) wqCache=null;
+    }).catch(e=>{ console.warn("weekly quests (HK)",e&&e.message); back.innerHTML=`<div style="font-size:12.5px;color:var(--faint);padding:6px 0">Weekly quests are not available right now.</div>`; const bb=document.createElement("button"); bb.type="button"; bb.className="qf-btn"; bb.textContent="⇄ Today's tasks"; bb.addEventListener("click",()=>flip(false,true)); back.appendChild(bb); });
+  }catch(e){ console.warn("quest flip (HK)",e&&e.message); }
+}
+/* HK: coaches earn points for actions taken anywhere in the app; Home shows a pop for each new one since last look */
+async function showNewCoachPoints(anchor){
+  try{
+    if(!ME||roleOf()!=="coach") return;
+    const k=`ft-ptsseen-${ME.id}`; let seen=null; try{ seen=localStorage.getItem(k); }catch(e){}
+    if(!seen){ try{ localStorage.setItem(k,new Date().toISOString()); }catch(e){} return; }
+    const { data, error }=await store._sb.from("points_ledger").select("amount,reason,created_at").eq("user_id",ME.id).gt("created_at",seen).gt("amount",0).order("created_at",{ascending:true}).limit(8);
+    if(error||!data||!data.length) return;
+    try{ localStorage.setItem(k,data[data.length-1].created_at); }catch(e){}
+    data.forEach((x,i)=>setTimeout(()=>playPointsPop(anchor,x.amount,String(x.reason||"").replace(/^Weekly quest: /,"").toLowerCase()),300+i*450));
+  }catch(e){}
+}
+function playPointsPop(anchor,pts,label){
   try{
     if(!document.getElementById("pp-css")){ const st=document.createElement("style"); st.id="pp-css"; st.textContent="@keyframes ppRise{0%{transform:translate(-50%,6px) scale(.6);opacity:0}18%{transform:translate(-50%,0) scale(1.08);opacity:1}30%{transform:translate(-50%,0) scale(1)}100%{transform:translate(-50%,-46px);opacity:0}}"; document.head.appendChild(st); }
     const reduce=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     const r=anchor&&anchor.getBoundingClientRect?anchor.getBoundingClientRect():null;
     const x=r?Math.min(window.innerWidth-40,r.right-36):window.innerWidth/2, y=r?r.top+r.height/2-12:window.innerHeight/2;
     const p=document.createElement("div");
-    p.textContent=`+${pts} point${pts===1?"":"s"}`;
+    p.textContent=`+${pts} point${pts===1?"":"s"}${label?" · "+label:""}`;
     p.style.cssText=`position:fixed;left:${x}px;top:${y}px;z-index:9999;pointer-events:none;padding:4px 10px;border-radius:999px;background:var(--lime);color:var(--lime-ink,#0B0E11);font-weight:900;font-size:13px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25);${reduce?"transform:translate(-50%,0);transition:opacity .4s 1s;":"animation:ppRise 1.5s cubic-bezier(.2,.9,.3,1) forwards;"}`;
     document.body.appendChild(p);
     if(reduce) requestAnimationFrame(()=>{ p.style.opacity="0"; });

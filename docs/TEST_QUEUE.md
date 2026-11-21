@@ -87,6 +87,10 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HK-T1** (2026-11-21, trainee Home; after the SQL) Tap "⇄ Weekly quests": the card flips to "This week" with 9 quests and progress; "⇄ Today's tasks" flips back.
+- [ ] **HK-T2** (trainee) Finish all of today's tasks: after Day complete the card flips to the weekly quests by itself (once).
+- [ ] **HK-T3** (trainee) Complete a quest (e.g. the 3rd personal best, or 5th weigh-in): "+30 points · weekly quest" pops; Profile points and level bar go up.
+- [ ] **HK-T4** (coach) Review a session / assign one: next time Home opens, "+5 points · reviewed a session" (or +2) pops; the coach card flips to 4 coach quests.
 - [ ] **HJ-T1** (2026-11-21, trainee Home; after the SQL) Complete a daily task (e.g. weigh in): "+3 points" rises from the row; Profile points go up; reopening Home pays nothing again.
 - [ ] **HI-T1** (2026-11-20, Profile) Under the profile photo: "Level N", the bar and "x exp to level N+1" match your points earned (375 exp = level 2).
 - [ ] **HI-T2** (2026-11-20, Profile; after the SQL) The Shop button on the right opens the Shop with your balance and "Nothing in the shop yet".
