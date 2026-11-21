@@ -123,6 +123,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Encouragement-video frame / card | EY | Later | future | |
 | **Level bar** - "Level N", lime progress bar, "x exp to level N+1" under the profile photo (HI) | Profile | L2 | placeholder (code: plain bar) | Level badge / number medallion family + a level-up animation (not built yet) |
 | **Shop** - Shop button, shop sheet, item icons, empty state (HI) | Profile -> Shop | L2 | placeholder (code: 🛍 / 🎁 emoji) | Shop icon 24 px; item icon set 40 px; empty-state illustration |
+| **Points pop** - "+N points" lime chip rising from a completed daily task (HJ) | Home checklist | L2 | placeholder (code: CSS chip, 1.5 s rise) | Coin icon + number, 1-1.5 s; pairs with the success sound |
 | **Daily budget card** - calories and protein tiles set by the coach, "Got it" (HH) | Home checklist -> See today's calorie budget | L2 | placeholder (code: 🔥 / 🥩 emoji tiles) | Two icons (calories, protein) 32 px in the app family; card layout as built |
 | **Daily bonus badge** - "+10 points · daily bonus" pop on the Day complete overlay (HH) | Home, all daily tasks done | L2 | placeholder (code: lime pill, scale pop) | Points coin icon + pill, 0.5 s pop; matches the points icon (GZ) |
 | **Weekly quest progress card** - quest icon, progress bar x -> x+1 of N, count bump (GZ) | after a personal best (workout) | L2 | placeholder (code: trophy emoji, lime bar, scale bump) | Quest icon 24 px family + a 0.8 s progress animation (Lottie or sprite); reduced-motion still frame |

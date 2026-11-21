@@ -4421,10 +4421,43 @@ async function renderHomeChecklist(engs, el){
   el.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",(ev)=>{ const alt=ev&&ev.target&&ev.target.closest?ev.target.closest("[data-alt]"):null; if(alt){ ev.stopPropagation(); if(!dcGet().rest){ dcSet("rest"); renderHomeChecklist(engs, el); } return; }   /* Item FF: "I'll take a rest day" */
     const k=b.getAttribute("data-dc"), a=b.getAttribute("data-act");
     if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="budget") openBudgetCard(plan,()=>{ if(!dcGet().budget){ dcSet("budget"); } renderHomeChecklist(engs, el); }); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
+  claimDailyTaskPoints(items, iso, el);   /* HJ */
   if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){}
     /* HH (owner, 2026-11-20): 10 bonus points for a complete day - the server pays once per local day */
     let bonus=null; try{ const { data, error }=await store._sb.rpc("claim_daily_bonus",{p_day:iso}); if(error) throw error; bonus=data; }catch(e){ console.warn("daily bonus (HH)",e&&e.message); }
     playDayComplete(bonus&&bonus.paid?bonus:null); } }
+}
+/* HJ (owner, 2026-11-21): each daily task pays points once a day (server: claim_daily_task), with a short "+N" animation
+   rising from its row. Remembered per task per day on the phone so the server is asked once. Coach list: not yet (HJ plan). */
+const DAILY_TASK_PTS={login:1,sleep:2,budget:2,weigh:3,macros:5,workout:10,rest:3};
+async function claimDailyTaskPoints(items, iso, el){
+  if(!ME||roleOf()!=="trainee") return;
+  const wantKey=i=>{ if(i.k!=="workout") return DAILY_TASK_PTS[i.k]!=null?i.k:null; return /done today/.test(i.sub||"")?"workout":"rest"; };
+  let delay=0;
+  for(const i of items){
+    if(!i.done) continue; const task=wantKey(i); if(!task) continue;
+    const ck=`ft-dcpts-${ME.id}-${iso}-${i.k}`; let had=false; try{ had=localStorage.getItem(ck)==="1"; }catch(e){}
+    if(had) continue;
+    try{ const { data, error }=await store._sb.rpc("claim_daily_task",{p_task:task,p_day:iso}); if(error) throw error;
+      try{ localStorage.setItem(ck,"1"); }catch(e){}
+      if(data&&data.paid){ const row=el.querySelector(`[data-dc="${i.k}"]`); setTimeout(()=>playPointsPop(row,data.points),delay); delay+=380; }
+    }catch(e){ console.warn("daily task points (HJ)",i.k,e&&e.message); }
+  }
+}
+function playPointsPop(anchor,pts){
+  try{
+    if(!document.getElementById("pp-css")){ const st=document.createElement("style"); st.id="pp-css"; st.textContent="@keyframes ppRise{0%{transform:translate(-50%,6px) scale(.6);opacity:0}18%{transform:translate(-50%,0) scale(1.08);opacity:1}30%{transform:translate(-50%,0) scale(1)}100%{transform:translate(-50%,-46px);opacity:0}}"; document.head.appendChild(st); }
+    const reduce=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const r=anchor&&anchor.getBoundingClientRect?anchor.getBoundingClientRect():null;
+    const x=r?Math.min(window.innerWidth-40,r.right-36):window.innerWidth/2, y=r?r.top+r.height/2-12:window.innerHeight/2;
+    const p=document.createElement("div");
+    p.textContent=`+${pts} point${pts===1?"":"s"}`;
+    p.style.cssText=`position:fixed;left:${x}px;top:${y}px;z-index:9999;pointer-events:none;padding:4px 10px;border-radius:999px;background:var(--lime);color:var(--lime-ink,#0B0E11);font-weight:900;font-size:13px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25);${reduce?"transform:translate(-50%,0);transition:opacity .4s 1s;":"animation:ppRise 1.5s cubic-bezier(.2,.9,.3,1) forwards;"}`;
+    document.body.appendChild(p);
+    if(reduce) requestAnimationFrame(()=>{ p.style.opacity="0"; });
+    try{ if(typeof sfx==="function") sfx("success"); }catch(e){}
+    setTimeout(()=>p.remove(),1700);
+  }catch(e){}
 }
 /* HH (owner, 2026-11-20): "See today's calorie budget" shows the coach's numbers; "Got it" completes the task */
 function openBudgetCard(plan,onGotIt){
@@ -12774,8 +12807,9 @@ function moveSettingsSections(){
 }
 /* HI (owner, 2026-11-20): levels and the Shop.
    Exp = every point ever earned (spending points never lowers it). Level 1 -> 2 takes 50 exp; each later level takes
-   125% of the exp of all the previous levels together (owner's rule): 50, 63, 141, 318, 715, 1609 ... (rounded). */
-function levelReqs(n){ const r=[50]; let sum=50; while(r.length<n){ const x=Math.round(sum*1.25); r.push(x); sum+=x; } return r; }
+   125% of the exp of all the previous levels together (owner's rule). Base 375 since HJ: 375, 469, 1055, 2374 ... (rounded). */
+const LEVEL_BASE=375;   /* HJ (owner, 2026-11-21): level 2 = one good week (was 50) */
+function levelReqs(n){ const r=[LEVEL_BASE]; let sum=LEVEL_BASE; while(r.length<n){ const x=Math.round(sum*1.25); r.push(x); sum+=x; } return r; }
 function levelFor(exp){
   exp=Math.max(0,Math.floor(exp||0)); let lvl=1, floor=0;
   for(const need of levelReqs(40)){ if(exp<floor+need) return {level:lvl,into:exp-floor,need,exp}; floor+=need; lvl++; }

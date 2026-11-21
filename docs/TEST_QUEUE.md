@@ -87,7 +87,8 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
-- [ ] **HI-T1** (2026-11-20, Profile) Under the profile photo: "Level N", the bar and "x exp to level N+1" match your points earned (50 exp = level 2).
+- [ ] **HJ-T1** (2026-11-21, trainee Home; after the SQL) Complete a daily task (e.g. weigh in): "+3 points" rises from the row; Profile points go up; reopening Home pays nothing again.
+- [ ] **HI-T1** (2026-11-20, Profile) Under the profile photo: "Level N", the bar and "x exp to level N+1" match your points earned (375 exp = level 2).
 - [ ] **HI-T2** (2026-11-20, Profile; after the SQL) The Shop button on the right opens the Shop with your balance and "Nothing in the shop yet".
 - [ ] **HH-T1** (2026-11-20, trainee Home) Tap "See today's calorie budget": a card with the coach's kcal and protein; Got it ticks the task and the numbers stay on the row.
 - [ ] **HH-T2** (2026-11-20, trainee Home; after the SQL) Complete every daily task: Day complete shows "+10 points · daily bonus"; Profile points balance up by 10; doing it again the same day pays nothing.
