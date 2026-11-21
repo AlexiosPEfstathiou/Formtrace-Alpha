@@ -10,7 +10,7 @@ other's chats or memory - **this repository is the shared memory.**
    **`docs/HANDOVER.md`** and **`supabase/SQL_JOURNAL.md`** before doing anything else.
 2. **Every 5 owner prompts** in a session: update `docs/HANDOVER.md` (state, plan,
    decisions, blockers) and this file (any new rule or convention), commit
-   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-20 evening, personal account - GX-HF: rest timer, weight prefill, PB weekly quest + points, form match hidden, unfinished workouts, pose lines after lock, tab swipe, voice-over seek; see top of HANDOVER.)
+   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-21 night, personal account - HG-HK: retained notes + numeric targets, calorie budget card, daily bonus, levels + Shop, daily task points, weekly quests + coach points + flip card; all SQL run; see top of HANDOVER.)
 3. **Every SQL command handed to the owner** gets a row in `supabase/SQL_JOURNAL.md`
    (status `given`); when the owner confirms, mark it `run ✓` with the result. Never
    assume SQL was run - check the journal, or run its verification query.
