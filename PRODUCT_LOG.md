@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HM (2026-11-22, personal account): daily "+N points" pops showed in random places when the app opened from the macros notification - pops now wait until their Home row is really on screen - BUILT (HM-T1).**
 **HL (2026-11-21, personal account): quest card flip button moved top right in lime; a completed weekly quest gets a celebration (what was achieved, +points, Nice / Share) shown only while Home is on screen - BUILT (HL-T1, HL-T2). HK-T1 flip passed.**
 **HK (2026-11-21): weekly quests for trainees and coaches, coach per-action points, flip card on Home - spec confirmed by the owner 22:05, BUILT; SQL `migrations_weekly_quests.sql` run ✓ 23:39 (owner to test HK-T1..T4).**
 **HJ (2026-11-21, personal account): trainee daily tasks pay points (Open 1 · Sleep 2 · Budget 2 · Weigh 3 · Macros 5 · Workout 10 / rest 3) with a "+N points" pop on each task; level 2 now needs 375 exp (one good week) - BUILT; SQL `migrations_daily_task_points.sql` run ✓ 22:05 (HJ-T1).**
@@ -781,6 +782,14 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## HM. Point pops only on the Home daily card - BUILT 2026-11-22 (personal account)
+
+**Owner report 10:21:** opened the app from the macros notification, logged macros, and the point animations appeared in random places of the screen; they belong on the Home daily quests. Ledger check: today paid opened 1, macros 5, weigh 3, sleep 2 (10:18-10:19) - no other payments.
+**Cause (my mistake in HJ/HL):** inactive screens are not hidden - `.screen` is only faded (opacity 0, transformed), so a Home row keeps a position while another screen or a sheet is in front. HJ popped at that position; HL's guard (`getClientRects`) could not tell the difference.
+**Built:** `isOnScreen(node)` - the node's screen is the active one, it is inside the viewport, and `elementFromPoint` at its centre lands on it (nothing in front). Daily pops are queued (`pendingPops`) and shown on their own row when it is visible (checked every 0.7 s while any are waiting, and on each Home render); on the weekly side of the card they rise from the card. Quest celebrations and coach pops use the same check. Tested in a browser: inactive screen false, active true, covered by a sheet false.
 
 ---
 

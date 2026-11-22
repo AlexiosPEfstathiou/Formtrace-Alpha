@@ -4436,14 +4436,13 @@ const DAILY_TASK_PTS={login:1,sleep:2,budget:2,weigh:3,macros:5,workout:10,rest:
 async function claimDailyTaskPoints(items, iso, el){
   if(!ME||roleOf()!=="trainee") return;
   const wantKey=i=>{ if(i.k!=="workout") return DAILY_TASK_PTS[i.k]!=null?i.k:null; return /done today/.test(i.sub||"")?"workout":"rest"; };
-  let delay=0;
   for(const i of items){
     if(!i.done) continue; const task=wantKey(i); if(!task) continue;
     const ck=`ft-dcpts-${ME.id}-${iso}-${i.k}`; let had=false; try{ had=localStorage.getItem(ck)==="1"; }catch(e){}
     if(had) continue;
     try{ const { data, error }=await store._sb.rpc("claim_daily_task",{p_task:task,p_day:iso}); if(error) throw error;
       try{ localStorage.setItem(ck,"1"); }catch(e){}
-      if(data&&data.paid){ const row=el.querySelector(`[data-dc="${i.k}"]`); setTimeout(()=>playPointsPop(row,data.points),delay); delay+=380; }
+      if(data&&data.paid){ pendingPops.push({k:i.k,pts:data.points}); schedulePopFlush(); }   /* HM: shown on the Home row once it is really on screen */
     }catch(e){ console.warn("daily task points (HJ)",i.k,e&&e.message); }
   }
 }
@@ -4496,7 +4495,7 @@ function queueQuestCheers(list){ if(!list||!list.length) return; const a=questQu
 let questCheerOpen=false;
 function flushQuestCheers(el){
   if(questCheerOpen||document.visibilityState!=="visible") return;
-  if(!el||!el.getClientRects||!el.getClientRects().length) return;   /* Home is not on screen */
+  if(!isOnScreen(el)) return;   /* HM: Home is not really on screen (another screen, a sheet in front, scrolled away) */
   const a=questQueueGet(); if(!a.length) return;
   const q=a.shift(); questQueueSet(a); questCheerOpen=true;
   showQuestCheer(q,()=>{ questCheerOpen=false; setTimeout(()=>flushQuestCheers(el),250); });
@@ -4584,6 +4583,7 @@ function mountQuestFlip(el, allDone, iso){
 async function showNewCoachPoints(anchor){
   try{
     if(!ME||roleOf()!=="coach") return;
+    if(!isOnScreen(anchor)){ setTimeout(()=>{ if(isOnScreen(anchor)) showNewCoachPoints(anchor); },1500); return; }   /* HM: not over another screen; try again shortly */
     const k=`ft-ptsseen-${ME.id}`; let seen=null; try{ seen=localStorage.getItem(k); }catch(e){}
     if(!seen){ try{ localStorage.setItem(k,new Date().toISOString()); }catch(e){} return; }
     const { data, error }=await store._sb.from("points_ledger").select("amount,reason,created_at").eq("user_id",ME.id).gt("created_at",seen).gt("amount",0).order("created_at",{ascending:true}).limit(8);
@@ -4592,11 +4592,38 @@ async function showNewCoachPoints(anchor){
     data.forEach((x,i)=>setTimeout(()=>playPointsPop(anchor,x.amount,String(x.reason||"").replace(/^Weekly quest: /,"").toLowerCase()),300+i*450));
   }catch(e){}
 }
+/* HM (owner, 2026-11-22): the +N pops appeared "in random places" - inactive screens are only faded out (opacity 0,
+   transformed), so a Home row still has a position while another screen or a sheet is in front. A pop now waits until
+   its row is genuinely visible: Home is the active screen, the row is inside the viewport and nothing covers it. */
+const pendingPops=[]; let popTimer=null;
+function isOnScreen(node){
+  try{
+    if(!node||document.visibilityState!=="visible") return false;
+    const scr=node.closest&&node.closest(".screen"); if(scr&&!scr.classList.contains("active")) return false;
+    const r=node.getBoundingClientRect(); if(!r.width||!r.height) return false;
+    const x=r.left+r.width/2, y=r.top+Math.min(r.height/2,20);
+    if(x<0||y<0||x>window.innerWidth||y>window.innerHeight) return false;
+    const hit=document.elementFromPoint(x,y); return !!hit&&(hit===node||node.contains(hit));
+  }catch(e){ return false; }
+}
+function schedulePopFlush(){ if(!popTimer) popTimer=setInterval(flushPops,700); setTimeout(flushPops,300); }
+function flushPops(){
+  if(!pendingPops.length){ clearInterval(popTimer); popTimer=null; return; }
+  const card=$("#home-checklist"); const flipped=!!(card&&card.querySelector(".qf-inner.flipped"));
+  let shown=0;
+  for(let i=0;i<pendingPops.length;){
+    const p=pendingPops[i];
+    const row=card&&card.querySelector(`.qf-front [data-dc="${p.k}"]`)||card&&card.querySelector(`[data-dc="${p.k}"]`);
+    const anchor=flipped?card&&card.querySelector(".qf-back"):row;
+    if(anchor&&isOnScreen(anchor)){ pendingPops.splice(i,1); const a=anchor; setTimeout(()=>playPointsPop(a,p.pts),shown*380); shown++; }
+    else i++;
+  }
+}
 function playPointsPop(anchor,pts,label){
   try{
     if(!document.getElementById("pp-css")){ const st=document.createElement("style"); st.id="pp-css"; st.textContent="@keyframes ppRise{0%{transform:translate(-50%,6px) scale(.6);opacity:0}18%{transform:translate(-50%,0) scale(1.08);opacity:1}30%{transform:translate(-50%,0) scale(1)}100%{transform:translate(-50%,-46px);opacity:0}}"; document.head.appendChild(st); }
     const reduce=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    if(anchor&&anchor.getClientRects&&!anchor.getClientRects().length) return;   /* HL: not on screen (e.g. Home rendered behind another tab) */
+    if(anchor&&!isOnScreen(anchor)) return;   /* HL/HM: never pop over another screen */
     const r=anchor&&anchor.getBoundingClientRect?anchor.getBoundingClientRect():null;
     const x=r?Math.min(window.innerWidth-40,r.right-36):window.innerWidth/2, y=r?r.top+r.height/2-12:window.innerHeight/2;
     const p=document.createElement("div");

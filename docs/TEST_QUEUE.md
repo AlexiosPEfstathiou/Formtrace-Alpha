@@ -87,6 +87,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HM-T1** (2026-11-22, phone) Open the app from a notification (e.g. macros), log the item, then go to Home: the "+N points" pops rise from the matching rows of the daily card, and nothing pops on other screens.
 - [ ] **HL-T1** (2026-11-21, Home) The lime "⇄ Weekly" pill is top right of the Today card; "⇄ Today" top right on the back.
 - [ ] **HL-T2** (Home) Complete a weekly quest (e.g. 5th weigh-in) while on another tab, then open Home: a "Weekly quest complete" card names it with +points; Share gives an image; Nice closes it (several show one after another).
 - [ ] **HK-T2** (trainee) Finish all of today's tasks: after Day complete the card flips to the weekly quests by itself (once).
