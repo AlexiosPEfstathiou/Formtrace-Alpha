@@ -8568,6 +8568,9 @@ function thisWeekCardEl(iAmCoach){
     const card=document.createElement("div");card.className="card";card.id="wk-card";
     const paused=isPausedOn(todayISO());
     const hero=!iAmCoach&&traineeMerged;   /* GK: the trainee's own tab - a large Start button first */
+    /* HS (owner, 2026-11-22): once every session this week is done, the coach's button assigns next week's */
+    const weekDoneAll=target>0&&done>=target&&!pool.length;
+    const nextMonD=new Date(thisMon+"T00:00:00"); nextMonD.setDate(nextMonD.getDate()+7); const nextMon=weekStartISO(nextMonD);
     card.innerHTML=`<div class="wk-card"${hero?' style="flex-direction:column;align-items:stretch;gap:14px"':""}>
         <div style="flex:1">
           <div class="eyebrow">This week</div>
@@ -8576,12 +8579,12 @@ function thisWeekCardEl(iAmCoach){
           <div class="wk-bar"><i style="width:${target?Math.min(100,Math.round(done/target*100)):0}%"></i></div>
         </div>
         ${iAmCoach
-          ? `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${currentEng.status==="active"?"":"disabled"}>Assign a session</button>`
+          ? `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${currentEng.status==="active"?"":"disabled"}>${weekDoneAll?"Assign next week":"Assign a session"}</button>`
           : (hero
             ? `<button class="btn primary tr-start" id="wk-start" style="order:-1" ${pool.length?"":"disabled"}>${pool.length?"\u25B6 Start a session":"No session to start yet"}</button>`
             : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`)}
       </div>`;
-    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(thisMon) : openWeekPool(pool));
+    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(weekDoneAll?nextMon:thisMon) : openWeekPool(pool));
     return card;
 }
 /* Redraw just one week's header/slots (and the this-week card if it is this

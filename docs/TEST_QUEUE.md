@@ -90,6 +90,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T8** Phone sideways (each way): the lines stay on the body as well as in portrait; the saved landscape video is upright with the lines on it.
 - [ ] **GA-T9** Turn the phone back and forth before recording: the countdown, timer and side icons turn smoothly in place; rep counting still works on a landscape set.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HS-T1** (2026-11-22, coach, a trainee who finished this week) The This week card button says "Assign next week"; the sheet says "Assign · week of" next Monday and the session lands in next week.
 - [ ] **HR-T1** (2026-11-22) Propose a coaching call: the start time is two 24-hour boxes (e.g. 18 : 30); the sent call shows 18:30. Coach weekly side shows "Assign next week's sessions".
 - [ ] **HQ-T1** (2026-11-22) Open a workout (trainee) and a review (coach): the tab bar stays; the last set / Submit and "Send review" are not hidden behind it.
 - [ ] **HP-T2** (trainee calendar) Tap a past day with a workout: Open workout / Log weight and macros (+ call for today or later).

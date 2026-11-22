@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HS (2026-11-22, personal account): coach's "This week" card - when every session this week is done, the button reads "Assign next week" and assigns into next week - BUILT (HS-T1).**
 **GA-2 (2026-11-22, personal account): camera second pass - new pose lines (all body joints, glow + core strokes, ring joints, angle arcs, smoothing) and landscape detection on an upright frame; icons turn smoothly in place - BUILT (GA-T7..T9; GA-T1..T6 still to test).**
 **HR (2026-11-22, personal account): times in 24-hour form - the call time picker is now two 24-hour selects (the phone's own picker showed AM/PM); coach weekly quest named "Assign next week's sessions" - BUILT (HR-T1). HP-T1 passed (same-day call proposed).**
 **HQ (2026-11-22, personal account): the tab bar stays visible inside a workout and a review - BUILT (HQ-T1).**
@@ -752,6 +753,13 @@ and a footer (Formtrace, Ireland, contact@formtrace.ie, link to terms). Simple H
 styles, one column, the gold button), dark-mode safe, plain-text fallback. Sender name **Formtrace** (Authentication -> SMTP:
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
+
+## HS. "Assign next week" once this week is complete - BUILT 2026-11-22 (personal account)
+
+**Owner 19:44:** the "This week" card in the coach's view of a trainee says "Assign a session" and assigns into this week; when the trainee has x / x workouts finished, the button should assign sessions to next week.
+**Built:** `thisWeekCardEl` - when this week has a target, all of it is done and nothing is left, the coach's button reads **Assign next week** and opens the assign sheet for next week's Monday ("Assign · week of …"). Otherwise unchanged. No SQL.
+
+---
 
 ## GA. Camera - refine / restart in general (owner, 2026-11-04) - FIRST PASS BUILT 2026-11-05; SECOND PASS (GA-2) BUILT 2026-11-22
 
