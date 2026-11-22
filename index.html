@@ -235,7 +235,8 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 .goal-bar .gb-left{display:flex;flex-direction:column;min-width:0}
 .goal-bar .gb-ago{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .goal-bar .gb-who{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.goal-bar .gb-new{padding:1px 7px;border-radius:999px;background:var(--lime);color:var(--lime-ink,#0B0E11);font-size:10.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+.goal-bar .gb-avw{position:relative;display:inline-flex}
+.goal-bar .gb-new{position:absolute;top:-7px;right:-22px;padding:0 5px;border-radius:999px;background:var(--lime);color:var(--lime-ink,#0B0E11);font-size:8.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;border:2px solid var(--panel);line-height:1.3}   /* HX: sticker on the avatar's top right */
 .goal-bar .gb-emoji{font-size:26px;line-height:1;justify-self:center}
 .goal-bar .gb-tot{font-size:12px;font-weight:800;text-align:right;line-height:1.3;display:flex;flex-direction:column;align-items:flex-end}
 .goal-bar .gb-pitched{font-size:10.5px;color:var(--lime);font-weight:800;margin-top:2px}
@@ -7811,8 +7812,8 @@ async function renderMarket(){
     const tot=(l.weeks&&l.sessions_per_week)?`Total of ${l.weeks*l.sessions_per_week} sessions over ${l.weeks} weeks`:(l.weeks?`Over ${l.weeks} weeks`:"Length open");
     const bar=document.createElement("div"); bar.className="goal-bar"+(isNew?" is-new":"")+(pitched?" is-pitched":"");
     bar.innerHTML=`<button type="button" class="gb-row" aria-expanded="false">
-        <span class="avatar gb-av" ${p.avatar_path?`data-avatar="${escapeHtml(p.avatar_path)}"`:""}>${escapeHtml(p.avatar_initials||initials(who))}</span>
-        <span class="gb-left"><span class="gb-ago">${isNew?'<span class="gb-new">New</span>':""}${agoS}</span><span class="gb-who">${escapeHtml(who)}</span></span>
+        <span class="gb-avw"><span class="avatar gb-av" ${p.avatar_path?`data-avatar="${escapeHtml(p.avatar_path)}"`:""}>${escapeHtml(p.avatar_initials||initials(who))}</span>${isNew?'<span class="gb-new">New</span>':""}</span>
+        <span class="gb-left"><span class="gb-ago">${agoS}</span><span class="gb-who">${escapeHtml(who)}</span></span>
         <span class="gb-emoji" title="${escapeHtml(l.focus||"General")}">${goalEmoji(l.focus)}</span>
         <span class="gb-tot">${escapeHtml(tot)}${pitched?'<span class="gb-pitched">✓ Pitched</span>':""}</span>
       </button>`;
