@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**Correction 2026-11-22: ER, EQ, EO, EN and EM, listed by me as open small items, were already built or fixed on 2026-11-02 (they await owner tests only). DN closed (deployed push-send matches the repo, healthy).**
 **GI (2026-11-22, personal account): security hardening finished - GI-2 webhook deployed (owner: add 4 Stripe events), GI-3 B Content-Security-Policy behind ?csp=1, GI-4 payment functions accept only the app's origin and return a fixed error - BUILT and DEPLOYED (GI-T1..T3).**
 **GK-2 (2026-11-22, personal account): each Training-tab button shows a live value (sessions left, latest weight, latest macros, last check-in, records, last measurement, next call) - BUILT (GK-T6). HV approved by the owner ("very good").**
 **HV (2026-11-22, personal account): the call proposal card redesigned - date tile, weekday and time, a full-width "✓ Accept call", "Suggest another time" and "Decline" as equal quiet buttons - BUILT (HV-T1).**
@@ -1973,7 +1974,10 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
-## DN. Review the push-send Edge Function setup (owner has doubts)
+## DN. Review the push-send Edge Function setup (owner has doubts) - CLOSED 2026-11-22
+
+**Closed 2026-11-22 (personal account), read through the Supabase connector:** (1) the deployed `push-send` (version 2) is identical to `supabase/functions/push-send/index.ts` (only a final newline differs); (2) Verify JWT is **off** - correct since GE: the database webhook authenticates with `x-webhook-secret` instead; (5) health, last 14 days: 19 pushes of five kinds, none unsent, morning summaries (`daily`) sending at 08:00 since the GW fix, one real error (an offer push, a dead device). Secrets and the webhook settings (3, 4) were checked when GE / GV were done. Nothing to change.
+
 
 Owner, 2026-10-29: "Review if I created the push-send correctly - I have doubts."
 Push works end to end (a server test arrived on Android on 2026-09-25), so the review
