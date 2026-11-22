@@ -227,6 +227,9 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 #r-mirror.on{border-color:#F0D231;color:#F0D231}
 /* GK: the trainee's Training tab as a control panel */
 .tr-start{width:100%;height:60px;font-size:17px;font-weight:800;border-radius:16px;margin:0}
+.sent-pin{position:sticky;bottom:calc(env(safe-area-inset-bottom) + 84px);margin-top:18px;z-index:4}   /* HW: pinned above the tab bar */
+.sent-pin-btn{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;border-radius:14px;background:var(--panel2,var(--panel));border:1px solid var(--line2);color:var(--ink);font:inherit;font-size:14px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer}
+.sent-pin-alert{margin-left:6px;padding:2px 8px;border-radius:999px;background:rgba(255,176,32,.16);color:var(--amber);font-size:11.5px;font-weight:800}
 .tr-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px}   /* GK-2 fix: long values must not widen a column */
 .tr-tile{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .tr-tile .tr-ic{font-size:20px;line-height:1;flex:0 0 auto}
@@ -7819,8 +7822,9 @@ async function renderMarket(){
   }));
   // --- Your sent offers (outcomes for offers whose listing is no longer open) ---
   if(sentOutcomes.length){
-    const wrap=document.createElement("div");wrap.style.marginTop="24px";
-    wrap.innerHTML=`<div class="eyebrow" style="margin:2px 2px 10px">Your sent offers</div>`;
+    /* HW (owner, 2026-11-22): Open goals is the long list of goals to pitch; sent offers are history - a small button pinned at
+       the bottom of the screen opens them in a sheet. A trainee's counter-proposal still needs an answer, so the button says so. */
+    const wrap=document.createElement("div");
     const statusLabel={pending:"Pending",accepted:"Accepted",rejected:"Not selected",expired:"Goal expired",countered:"Change proposed"};
     const statusClass={pending:"pending",accepted:"accepted",rejected:"rejected",expired:"rejected"};
     for(const o of sentOutcomes){
@@ -7845,7 +7849,15 @@ async function renderMarket(){
         }
       wrap.appendChild(row);
     }
-    body.appendChild(wrap);
+    const toAnswer=sentOutcomes.filter(o=>o.status==="countered").length;
+    const pin=document.createElement("div"); pin.className="sent-pin";
+    pin.innerHTML=`<button type="button" class="sent-pin-btn">📨 Your sent offers <span style="color:var(--faint);font-weight:700">${sentOutcomes.length}</span>${toAnswer?`<span class="sent-pin-alert">${toAnswer} to answer</span>`:""}<span style="margin-left:auto;color:var(--faint)">›</span></button>`;
+    pin.querySelector("button").addEventListener("click",()=>{
+      const sb=$("#sheet-body"); sb.innerHTML=""; sb.appendChild(wrap);
+      $("#sheet-lib").querySelector("h3").textContent="Your sent offers"; $("#sheet-add").style.display="none";
+      $("#sheet-scrim").classList.add("on"); $("#sheet-lib").classList.add("on");
+    });
+    body.appendChild(pin);
   }
   body.querySelectorAll("[data-offer]").forEach(b=>b.addEventListener("click",()=>openOffer(b.getAttribute("data-offer"))));
   hydrateVideos(body);

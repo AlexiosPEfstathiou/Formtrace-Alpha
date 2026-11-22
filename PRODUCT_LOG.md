@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HW (2026-11-22, personal account): BH - Open goals is the long list; "Your sent offers" is now a small button pinned above the tab bar that opens them in a sheet ("n to answer" when a counter waits); 12 demo goals from 12 demo trainees for the owner's aesthetic review - BUILT; demo SQL `demo_open_goals.sql` given (with its removal lines).**
 **Correction 2026-11-22: ER, EQ, EO, EN and EM, listed by me as open small items, were already built or fixed on 2026-11-02 (they await owner tests only). DN closed (deployed push-send matches the repo, healthy).**
 **GI (2026-11-22, personal account): security hardening finished - GI-2 webhook deployed (owner: add 4 Stripe events), GI-3 B Content-Security-Policy behind ?csp=1, GI-4 payment functions accept only the app's origin and return a fixed error - BUILT and DEPLOYED (GI-T1..T3).**
 **GK-2 (2026-11-22, personal account): each Training-tab button shows a live value (sessions left, latest weight, latest macros, last check-in, records, last measurement, next call) - BUILT (GK-T6). HV approved by the owner ("very good").**
@@ -1974,6 +1975,14 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## HW. Open goals: sent offers out of the way; demo goals for review - BUILT 2026-11-22 (personal account) - part of BH
+
+**Owner 21:18 (screenshot: "No open goals right now" over a long "Your sent offers" list of Accepted rows):** the Open goals tab is supposed to be a long list of goals not yet accepted; Your sent offers is history that should barely show. Minimise it into a button pinned at the bottom. Add 12 dummy goals from 12 dummy accounts so the owner can see how it looks and propose aesthetic changes.
+**Built (index.html):** `renderMarket` - the sent offers are no longer drawn under the goals; a **📨 Your sent offers  n  ›** button sits pinned above the tab bar (sticky) and opens them in the bottom sheet, with their Keep my terms / Agree buttons intact. When a trainee's counter-proposal waits, the button carries an amber **"n to answer"**.
+**Demo data (`supabase/demo_open_goals.sql`, owner to run):** 12 trainee accounts `demo-goal-01..12@formtrace.invalid` with Irish names and cities, no password (nobody can sign in as them), bio "DEMO account (HW) - not a real person"; one open goal each (Strength, Muscle gain, Endurance, Mobility, Weight loss - realistic titles and details), posted 0-5 days ago so they stay open 2-7 more days. Removal lines at the bottom of the file (offers, goals, accounts - profiles go with the accounts). Tested in a rolled-back transaction: accounts and goals created with names and cities, removal leaves nothing. **Remove before real coaches use Open goals** - and admin counts include them meanwhile.
+
+---
+
 ## DN. Review the push-send Edge Function setup (owner has doubts) - CLOSED 2026-11-22
 
 **Closed 2026-11-22 (personal account), read through the Supabase connector:** (1) the deployed `push-send` (version 2) is identical to `supabase/functions/push-send/index.ts` (only a final newline differs); (2) Verify JWT is **off** - correct since GE: the database webhook authenticates with `x-webhook-secret` instead; (5) health, last 14 days: 19 pushes of five kinds, none unsent, morning summaries (`daily`) sending at 08:00 since the GW fix, one real error (an offer push, a dead device). Secrets and the webhook settings (3, 4) were checked when GE / GV were done. Nothing to change.
