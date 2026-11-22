@@ -10238,7 +10238,21 @@ async function loadExerciseNotes(traineeId,items){
     const { data, error }=await store._sb.rpc("exercise_notes",{p_trainee:traineeId,p_exercise_ids:ids,p_names:names}); if(error) throw error;
     exNotes=Array.isArray(data)?data:[];
   }catch(e){ console.warn("exercise notes (EZ-6)",e&&e.message); exNotes=null; }
+  await loadExerciseNoteCurrent(traineeId);   /* HN */
 }
+/* HN (owner, 2026-11-22): one consolidated coach note per exercise (coach_exercise_notes) - shown every time the trainee
+   does the exercise, on the workout card and on the camera. Set comments stay with that set's review. */
+let exNoteCur={};
+async function loadExerciseNoteCurrent(traineeId){
+  exNoteCur={};
+  try{ if(!traineeId) return;
+    const { data, error }=await store._sb.from("coach_exercise_notes").select("coach_id,exercise_key,exercise_name,note,updated_at").eq("trainee_id",traineeId).order("updated_at",{ascending:false});
+    if(error) throw error;
+    for(const r of (data||[])){ const k=r.exercise_key; if(!exNoteCur[k]) exNoteCur[k]=r; if(ME&&r.coach_id===ME.id) exNoteCur["mine:"+k]=r; }
+  }catch(e){ console.warn("exercise note (HN)",e&&e.message); }
+}
+function exNoteFor(it,mine){ const k=it&&it.name?it.name.trim().toLowerCase():""; return k?(exNoteCur[(mine?"mine:":"")+k]||null):null; }
+function exerciseNoteHtml(n){ return n?`<div class="prev-note"><div class="pn-h">Your coach's note on this exercise</div><div class="pn-b">${escapeHtml(n.note)}</div></div>`:""; }
 function exNotesFor(it){
   if(!Array.isArray(exNotes)||!it) return []; if(it.wildcard_mg&&!it.exercise_id) return [];
   return exNotes.filter(r=>(it.exercise_id&&r.exercise_id===it.exercise_id)||(!r.exercise_id&&r.exercise_name===it.name)||(!it.exercise_id&&r.exercise_name===it.name));
@@ -10445,7 +10459,7 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
             <div class="ex-info"><h3>${escapeHtml(it.name)}</h3>
               <div class="ex-meta">${r.skipped
                 ? `<div style="color:var(--faint)">skipped</div>`
-                : `<div><b>${fmt(r.total_seconds||0)}</b></div><div><b>${((r.total_distance_m||0)/1000).toFixed(2)} km</b></div>`}</div></div></div>`;
+                : `<div><b>${fmt(r.total_seconds||0)}</b></div><div><b>${((r.total_distance_m||0)/1000).toFixed(2)} km</b></div>`}</div></div>${r.skipped&&currentAssigned&&currentAssigned.status==="assigned"?`<button type="button" class="set-cta ghost" data-unskip-i="${i}" data-unskip-s="0" style="flex:0 0 auto;font-size:12px;align-self:center">↶ Undo skip</button>`:""}</div>`;
       }else{
         card.innerHTML=`<div class="ex-top" style="margin-bottom:6px">
             <div class="ex-thumb" style="font-size:22px;display:flex;align-items:center;justify-content:center">🏃</div>
@@ -10464,7 +10478,9 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
           <div class="ex-meta"><div><b>${it.sets}</b> sets</div><div><b>${it.reps}</b> reps</div><div><b>${doneCount}</b> done</div></div></div></div>`;
     // Coach's note from the previous run of this workout, BEFORE any set, so
     // it can still be acted on. Neutral heading: the note may be praise.
-    const prevNote=prevSeries&&prevSeries.notes[it.name]; const exn=exNotesFor(it); if(exn.length) inner+=exNotesHtml(exn,"p"+i,"trainee",it);   /* EZ-6: all of them, dated */
+    const prevNote=null; const exn=exNotesFor(it).filter(n=>n.voiceover_path&&n.video_path);   /* HN: set comments stay in their review */
+    inner+=exerciseNoteHtml(exNoteFor(it));
+    if(exn.length) inner+=exNotesHtml(exn,"p"+i,"trainee",it);
     if(prevNote&&!exn.length){
       inner+=`<div class="prev-note"><div class="pn-h">From your ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last"} ${escapeHtml(prevSeries.prevName||snap.name||"workout")}</div><div class="pn-b">${escapeHtml(prevNote)}</div></div>`;
     }
@@ -10494,8 +10510,9 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
       const r=results[s];
       if(r){
         const shown=(r.reps_label==="incorrect"&&r.reps_corrected!=null)?r.reps_corrected:r.reps;
+        const canUndo=r.skipped&&currentAssigned&&currentAssigned.status==="assigned";   /* HN: a skip can be undone until the workout is submitted */
         const badge = r.skipped
-          ? `<div class="grade-num" style="color:var(--faint);font-size:19px">—</div><div class="grade-lab">skipped</div>`
+          ? (canUndo?`<button type="button" class="set-cta ghost" data-unskip-i="${i}" data-unskip-s="${s}" style="flex:0 0 auto;font-size:12px">↶ Undo skip</button>`:`<div class="grade-num" style="color:var(--faint);font-size:19px">—</div><div class="grade-lab">skipped</div>`)
           : r.reps_label==="incorrect"
           ? `<div class="grade-num" style="color:var(--amber);font-size:19px">${shown}</div><div class="grade-lab">corrected</div>`
           : r.reps_label==="correct"
@@ -10547,6 +10564,11 @@ function renderAssignedWorkout(){ setTimeout(ensureRestTimer,0);   /* Item EU: a
     localResults[ii][si]={reps:0,skipped:true,video_path:null,weight_kg:null,reps_label:null,reps_corrected:null};
     saveWorkoutDraft();
     renderAssignedWorkout();
+  }));
+  wrap.querySelectorAll("[data-unskip-i]").forEach(b=>b.addEventListener("click",ev=>{   /* HN (owner, 2026-11-22): a misclicked skip is reversible */
+    ev.stopPropagation();
+    const ii=+b.getAttribute("data-unskip-i"), si=+b.getAttribute("data-unskip-s");
+    if(localResults[ii]&&localResults[ii][si]&&localResults[ii][si].skipped){ localResults[ii][si]=null; saveWorkoutDraft(); renderAssignedWorkout(); toast("Skip undone",1600); }
   }));
   wrap.querySelectorAll("[data-interval-skip]").forEach(b=>b.addEventListener("click",()=>{
     const ii=+b.getAttribute("data-interval-skip");
@@ -10912,7 +10934,7 @@ function startTraineeSet(itemIndex,setIndex){
   openRecorder({
     title:it.name||"Set",subtitle:(t=>`set ${setIndex+1} · aim ${t.reps} reps${t.kg!=null?` @ ${t.kg} kg`:""}`)(targetText(it,setIndex)),review:true,audio:true,useLabel:"✓ Use this take",
     // last time's cue, kept on screen while they set up and perform
-    note:(prevSeries&&prevSeries.notes[it.name])||"",
+    note:((exNoteFor(it)||{}).note)||"",   /* HN: the consolidated exercise note */
     onComplete:cap=>runAnalysis(itemIndex,setIndex,cap)
   });
 }
@@ -11608,6 +11630,15 @@ async function _openReview(assignedId,readonly=false){
       if(!notedItems.has(ii) && roleOf()==="coach"){
         notedItems.add(ii);
         const prevNote=prevSeries&&prevSeries.notes[item.name]; const exn=exNotesFor(item); if(exn.length){ const w=document.createElement("div"); w.innerHTML=exNotesHtml(exn,"r"+ii,"coach",item); body.appendChild(w.firstElementChild); }   /* EZ-6 */
+        /* HN: the consolidated exercise note - saved when the review is sent */
+        { const cur=exNoteFor(item,true); reviewState.ex_notes=reviewState.ex_notes||{};
+          const key=item.name; const box=document.createElement("div"); box.className="prev-note"; box.style.cssText="border-color:var(--lime-dim,var(--line2))";
+          box.innerHTML=`<div class="pn-h">Exercise note <span style="font-weight:600;color:var(--faint)">· shown every time they do ${escapeHtml(item.name)}, also on the camera</span></div>
+            <textarea rows="2" maxlength="2000" placeholder="One note for this exercise (e.g. keep your back flat)" style="width:100%;margin-top:6px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;color:var(--ink);padding:8px 10px;font:inherit;font-size:14px;resize:vertical"></textarea>`;
+          const ta=box.querySelector("textarea"); ta.value=(reviewState.ex_notes[key]!=null?reviewState.ex_notes[key]:(cur?cur.note:""));
+          if(reviewReadonly){ ta.disabled=true; }
+          ta.addEventListener("input",()=>{ reviewState.ex_notes[key]=ta.value; });
+          body.appendChild(box); }
         if(prevNote&&!exn.length){
           const note=document.createElement("div");note.className="prev-note";
           note.innerHTML=`<div class="pn-h">Your note, ${prevSeries.on?escapeHtml(fmtDay(prevSeries.on)):"last time"}</div><div class="pn-b">${escapeHtml(prevNote)}</div>`;
@@ -11716,9 +11747,11 @@ async function _openReview(assignedId,readonly=false){
         /* HG (owner, 2026-11-20): keep the note in the exercise's history (shown every time the trainee does it) or only on this set */
         const rt=document.createElement("label");rt.style.cssText="display:flex;align-items:center;gap:8px;margin-top:7px;font-size:12.5px;color:var(--muted);cursor:pointer";
         rt.innerHTML=`<input type="checkbox" style="width:17px;height:17px;accent-color:var(--lime)"><span>Retain note when trainee performs this exercise again</span>`;
+        rt.style.display="none";   /* HN (owner, 2026-11-22): replaced by the exercise note - set notes show only in this set's review */
+        const sh=document.createElement("div"); sh.style.cssText="font-size:11.5px;color:var(--faint);margin-top:5px"; sh.textContent="Set note - shown with this set's review only. Use the exercise note above for something they should see every time.";
         const rtIn=rt.querySelector("input"); const rt0=(reviewState.per_set[key]||{}).retain; rtIn.checked=(rt0!=null?rt0:(savedEntry&&savedEntry.retain!=null?savedEntry.retain:true))!==false;
         rtIn.addEventListener("change",()=>{ reviewState.per_set[key]={...(reviewState.per_set[key]||{}),set:si+1,exercise:item.name,retain:rtIn.checked}; });
-        div.appendChild(rt);
+        div.appendChild(rt); div.appendChild(sh);
         // attach feedback video per set
         const fbRow=document.createElement("div");fbRow.style.cssText="margin-top:10px";
         const fbBtn=document.createElement("button");fbBtn.className="btn sm";
@@ -11811,7 +11844,14 @@ $("#rev-submit").addEventListener("click",async()=>{
        trainee - the only way a review reaches them. */
     const { error:srErr }=await store._sb.rpc("send_review",{p_submission:currentSubmission.id,p_overall:($("#rev-overall")?.value||"").trim(),p_per_set:per_set});
     if(srErr) throw srErr;
-    toast("Review sent ✓"); openEngagement(currentEng.id);
+    /* HN: consolidated exercise notes the coach changed */
+    let exSaved=0;
+    for(const [name,val] of Object.entries(reviewState.ex_notes||{})){
+      const cur=exNoteFor({name},true); if(String(val||"").trim()===String((cur&&cur.note)||"").trim()) continue;
+      try{ const { error }=await store._sb.rpc("set_exercise_note",{p_trainee:currentSubmission.trainee_id,p_exercise:name,p_note:String(val||"")}); if(error) throw error; exSaved++; }
+      catch(e){ console.error("exercise note (HN)",e); toast(`Couldn't save the note for ${name}`,3500); }
+    }
+    toast(exSaved?`Review sent ✓ · ${exSaved} exercise note${exSaved>1?"s":""} saved - shown every time`:"Review sent ✓",3200); openEngagement(currentEng.id);
   }catch(err){console.error(err);toast(err.message||"Couldn't send review",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
 });
