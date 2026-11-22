@@ -2,6 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<script>/* GI-3 part B (2026-11-22): Content-Security-Policy behind a test switch. Open the app with ?csp=1 to turn it on for this
+   phone (remembered; ?csp=0 turns it off). GitHub Pages cannot send the header, so the policy is a meta tag added here, before
+   anything else loads. It limits where scripts may come from and where the app may send data; inline scripts stay allowed
+   (the app is one file). Anything it blocks is reported to Review -> Client errors as "csp". Default once tested: on for all. */
+(function(){ try{
+  var q=new URLSearchParams(location.search), v=q.get("csp");
+  if(v==="1") localStorage.setItem("ft-csp","1"); else if(v==="0") localStorage.removeItem("ft-csp");
+  if(localStorage.getItem("ft-csp")!=="1") return;
+  var SB="paovvevuxbbpawtmrffl.supabase.co";
+  var pol=["default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
+    "font-src 'self' data: https://fonts.bunny.net",
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' data: blob: https://"+SB,
+    "connect-src 'self' https://"+SB+" wss://"+SB+" https://cdn.jsdelivr.net https://storage.googleapis.com",
+    "worker-src 'self' blob:", "manifest-src 'self'", "frame-src 'none'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"].join("; ");
+  var m=document.createElement("meta"); m.httpEquiv="Content-Security-Policy"; m.content=pol; document.head.appendChild(m);
+  window.__ftCsp=true; window.__ftCspHits=[];
+  document.addEventListener("securitypolicyviolation",function(e){ try{ var t=(e.violatedDirective||"")+" "+(e.blockedURI||""); if(window.__ftCspHits.indexOf(t)<0){ window.__ftCspHits.push(t); if(window.reportCsp) window.reportCsp(t); } }catch(_){} });
+}catch(e){} })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -2198,6 +2220,8 @@ function activeScreenName(){
   const s=document.querySelector(".screen.active");
   return s&&s.id?s.id.replace(/^s-/,""):"(none)";
 }
+window.reportCsp=t=>{ try{ reportError("csp","blocked: "+t,""); }catch(e){} };   /* GI-3 B: CSP blocks go to Client errors */
+(window.__ftCspHits||[]).forEach(t=>window.reportCsp(t));
 async function reportError(kind,message,stack){
   try{
     if(_errBusy)return;                       // never recurse through our own failure

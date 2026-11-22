@@ -12,14 +12,26 @@ const LIVE = KEY.startsWith("sk_live_") || KEY.startsWith("rk_live_");
 const stripe = new Stripe(KEY);
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const APP_URL = Deno.env.get("APP_URL") ?? "https://formtrace.ie/";   // EF 2026-11-02: the app moved to formtrace.ie
-const cors = {
-  "Access-Control-Allow-Origin": "*",
+/* GI-4 (2026-11-22): only the app's own addresses may call this from a browser (was "*"); a request from any other site is
+   refused. Requests without an Origin header (not a browser) still need a signed-in user's token. Extra addresses (e.g. a
+   preview) can be added with the ALLOWED_ORIGINS secret, comma-separated. */
+const ALLOWED = new Set(["https://formtrace.ie", "https://www.formtrace.ie", "https://alexiospefstathiou.github.io",
+  ...(Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean)]);
+const okOrigin = (o: string | null) => !o || ALLOWED.has(o) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o);
+const corsFor = (o: string | null) => ({
+  ...(o && okOrigin(o) ? { "Access-Control-Allow-Origin": o, "Vary": "Origin" } : {}),
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...cors, "content-type": "application/json" } });
+});
+/* GI-4: the browser gets a fixed sentence; the detail goes to the function logs. Messages our own database functions raise on
+   purpose (code P0001, e.g. "Not enough credit") are meant for the user and pass through. */
+const SORRY = "Something went wrong on our side - please try again in a minute.";
+const userMessage = (err: any) => (err && err.code === "P0001" && err.message) ? String(err.message) : SORRY;
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin"); const cors = corsFor(origin);   /* GI-4: per request - never shared between calls */
+  const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...cors, "content-type": "application/json" } });
+  if (!okOrigin(origin)) return new Response("Forbidden", { status: 403 });
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
@@ -82,6 +94,6 @@ Deno.serve(async (req) => {
     return json({ url: link.url });
   } catch (err: any) {
     console.error("connect-onboard", err);
-    return json({ error: String(err?.message || err) }, 500);
+    return json({ error: userMessage(err) }, 500);   /* GI-4 */
   }
 });

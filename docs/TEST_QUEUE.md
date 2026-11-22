@@ -90,6 +90,9 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T8** Phone sideways (each way): the lines stay on the body as well as in portrait; the saved landscape video is upright with the lines on it.
 - [ ] **GA-T9** Turn the phone back and forth before recording: the countdown, timer and side icons turn smoothly in place; rep counting still works on a landscape set.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **GI-T1** (2026-11-22) Pay for a goal (sandbox card or promo code) and set up / open coach payouts: both still open Stripe as before (the payment functions now only answer formtrace.ie).
+- [ ] **GI-T2** Open https://formtrace.ie/?csp=1 and use the app normally for a day (camera with lines, videos, voice-over, Shop, check-in photo); then Review -> Client errors: no "csp" rows. Then I make it the default.
+- [ ] **GI-T3** Stripe -> Developers -> Webhooks -> endpoint -> add refund.failed, refund.updated, charge.refund.updated, transfer.reversed.
 - [ ] **GK-T6** (2026-11-22, trainee Training tab) Each button shows a small value under its name (sessions left, latest weight, macros, last photo, records, last measurement, next call) and they match what opens.
 - [ ] **HV-T1** (2026-11-22) A call proposed to you shows the date tile, weekday and time, a full-width Accept call, and Suggest another time / Decline side by side; all three work.
 - [ ] **HU-T1** (2026-11-22, trainee, a reviewed workout) The review has a back arrow and "Close review" at the bottom; 💬 Reply -> Send reply shows your reply under Overall feedback.
