@@ -483,7 +483,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
   /* persistent app-level bottom navigation (sits above screens, below modals) */
   #app-tabbar{z-index:9;}
   body.rec-open #app-header{display:none!important;}   /* CQ-4 */
-  body.hdr-on .screen.active>.top>.back{display:none;}   /* CR-1: no back arrows on top-level screens - the header and tabs do that */
+  body.hdr-on .screen.active:not(#s-review):not(#s-trainee-workout)>.top>.back{display:none;}   /* HU: a review and a workout keep their back arrow (they kept the tab bar in HQ) */   /* CR-1: no back arrows on top-level screens - the header and tabs do that */
   .pay-details>summary{cursor:pointer;font-size:12px;font-weight:800;color:var(--ink);list-style:none;display:flex;align-items:center;gap:6px;}  .pay-details>summary::before{content:"▸";transition:transform .15s;}  .pay-details[open]>summary::before{transform:rotate(90deg);}  .pay-details>summary::-webkit-details-marker{display:none;}   /* CR-2 */
   .legend.collapsed>details>summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none;}  .legend.collapsed>details>summary::-webkit-details-marker{display:none;}   /* CR-6 */
   #app-header{position:absolute;top:0;left:0;right:0;z-index:70;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none;}  #app-header>*{pointer-events:auto;}  .hdr-right{display:flex;align-items:center;gap:8px;}  .hdr-btn{background:var(--panel2);border:1px solid var(--line2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;color:var(--ink);}  .hdr-gear{font-size:18px;}  #hdr-streak-slot #streak-badge{position:static;top:auto;right:auto;}  body.hdr-on .screen.active>.top{padding-top:calc(env(safe-area-inset-top) + 62px);}  body.hdr-on #s-home .hero{padding-top:calc(env(safe-area-inset-top) + 56px);}   /* Item CP */
@@ -11581,6 +11581,34 @@ function triggerDownload(blob,filename){
    14. Coach — review a submission (per-set labels + optional video)
    ========================================================================= */
 let currentSubmission=null, reviewState=null, reviewReadonly=false;
+async function mountReviewReplies(body,review){
+  const box=document.createElement("div"); box.className="field"; box.style.marginTop="6px";
+  box.innerHTML=`<div class="rr-list"></div>
+    <div class="rr-form" style="display:none;margin-top:8px"><textarea maxlength="2000" placeholder="${roleOf()==="coach"?"Answer your trainee…":"Reply to your coach…"}" style="width:100%;min-height:70px"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="btn ghost sm rr-cancel" style="flex:1">Cancel</button><button type="button" class="btn primary sm rr-send" style="flex:1">Send reply</button></div></div>
+    <button type="button" class="btn sm rr-open" style="width:100%;margin-top:8px">💬 Reply</button>`;
+  body.appendChild(box);
+  const list=box.querySelector(".rr-list"), form=box.querySelector(".rr-form"), open=box.querySelector(".rr-open"), ta=form.querySelector("textarea");
+  const paint=async()=>{
+    try{ const { data, error }=await store._sb.from("review_replies").select("id,author_id,body,created_at").eq("review_id",review.id).order("created_at");
+      if(error) throw error;
+      list.innerHTML=(data||[]).map(r=>{ const mine=r.author_id===ME.id; return `<div style="margin-top:8px;padding:9px 12px;border-radius:12px;max-width:88%;${mine?"margin-left:auto;background:var(--accent-surface,rgba(198,244,50,.08));border:1px solid var(--accent-border,var(--line2))":"background:var(--panel);border:1px solid var(--line2)"}">
+        <div style="font-size:11px;color:var(--faint);margin-bottom:3px">${mine?"You":(roleOf()==="coach"?"Your trainee":"Your coach")} · ${new Date(r.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
+        <div style="font-size:14px;line-height:1.45;white-space:pre-wrap">${escapeHtml(r.body)}</div></div>`; }).join("");
+    }catch(e){ console.warn("review replies (HU)",e&&e.message); }
+  };
+  open.addEventListener("click",()=>{ form.style.display=""; open.style.display="none"; setTimeout(()=>ta.focus(),0); });
+  form.querySelector(".rr-cancel").addEventListener("click",()=>{ form.style.display="none"; open.style.display=""; });
+  form.querySelector(".rr-send").addEventListener("click",async ev=>{
+    const b=ev.currentTarget, txt=(ta.value||"").trim(); if(!txt){ ta.focus(); return; }
+    b.disabled=true; const o=b.textContent; b.textContent="Sending…";
+    try{ const { error }=await store._sb.rpc("reply_to_review",{p_review:review.id,p_body:txt}); if(error) throw error;
+      ta.value=""; form.style.display="none"; open.style.display=""; toast(roleOf()==="coach"?"Reply sent to your trainee ✓":"Reply sent to your coach ✓"); paint(); }
+    catch(e){ toast((e&&e.message)||"Couldn't send the reply",4000); }
+    finally{ b.disabled=false; b.textContent=o; }
+  });
+  paint();
+}
 async function openReview(assignedId,readonly=false){
   try{ return await _openReview(assignedId,readonly); }
   catch(e){ console.error("openReview",e); reportError("open-review", (e&&e.message)||String(e), e&&e.stack); toast("Couldn't open the review - "+((e&&e.message)||"unknown error"),5000); }
@@ -11919,6 +11947,9 @@ async function _openReview(assignedId,readonly=false){
   if(!readonly){ const ta=document.createElement("textarea");ta.id="rev-overall";ta.placeholder="A sentence or two for your trainee.";ta.value=reviewState.overall;oaWrap.appendChild(ta); }
   else oaWrap.innerHTML+=`<p style="font-size:14px;color:var(--muted);line-height:1.5">${escapeHtml(existing?existing.overall||"—":"—")}</p>`;
   body.appendChild(oaWrap);
+  /* HU (owner, 2026-11-22): replies under the overall feedback, and a Close review button */
+  if(readonly&&existing&&!existing.withdrawn_at) mountReviewReplies(body,existing);
+  if(readonly){ const cl=document.createElement("button"); cl.type="button"; cl.className="btn ghost"; cl.style.cssText="width:100%;margin-top:14px"; cl.textContent="Close review"; cl.addEventListener("click",()=>$("#rev-back").click()); body.appendChild(cl); }
   $("#rev-submit").style.display=readonly?"none":"flex";
   /* GS: the coach can withdraw a sent review for one hour (the hour restarts each time it is sent again) */
   const sentAt=existing?new Date(existing.sent_at||existing.created_at).getTime():0;

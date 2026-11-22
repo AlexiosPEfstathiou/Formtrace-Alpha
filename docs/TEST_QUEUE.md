@@ -90,6 +90,8 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T8** Phone sideways (each way): the lines stay on the body as well as in portrait; the saved landscape video is upright with the lines on it.
 - [ ] **GA-T9** Turn the phone back and forth before recording: the countdown, timer and side icons turn smoothly in place; rep counting still works on a landscape set.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HU-T1** (2026-11-22, trainee, a reviewed workout) The review has a back arrow and "Close review" at the bottom; 💬 Reply -> Send reply shows your reply under Overall feedback.
+- [ ] **HU-T2** (coach; after the SQL) The coach gets "💬 … replied to the review", sees the reply in the review and can answer; the trainee gets that push.
 - [ ] **HT-T1** (2026-11-22, Home) Open the Home card's weekly side: "Weekly check-in photo" now shows ✓ with "Progress captured" +20 (your 19:47 photo counts). Next week: take the photo from the quest - it completes straight away.
 - [ ] **HR-T1** (2026-11-22) Propose a coaching call: the start time is two 24-hour boxes (e.g. 18 : 30); the sent call shows 18:30. Coach weekly side shows "Assign next week's sessions".
 - [ ] **HQ-T1** (2026-11-22) Open a workout (trainee) and a review (coach): the tab bar stays; the last set / Submit and "Send review" are not hidden behind it.

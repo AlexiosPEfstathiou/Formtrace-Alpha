@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HU (2026-11-22, personal account): a review had no back or close button - back arrow restored, "Close review" added; trainee (and coach) can reply under Overall feedback, with a push to the other side - BUILT; SQL `migrations_review_replies.sql` given (HU-T1, HU-T2).**
 **HT (2026-11-22, personal account): the check-in photo quest did not complete after a photo - weekly quests are now re-checked every time the Home card is drawn, and saving a check-in redraws it - BUILT (HT-T1). HS-T1 passed (owner misread; the session went into next week).**
 **HS (2026-11-22, personal account): coach's "This week" card - when every session this week is done, the button reads "Assign next week" and assigns into next week - BUILT (HS-T1).**
 **GA-2 (2026-11-22, personal account): camera second pass - new pose lines (all body joints, glow + core strokes, ring joints, angle arcs, smoothing) and landscape detection on an upright frame; icons turn smoothly in place - BUILT (GA-T7..T9; GA-T1..T6 still to test).**
@@ -754,6 +755,14 @@ and a footer (Formtrace, Ireland, contact@formtrace.ie, link to terms). Simple H
 styles, one column, the gold button), dark-mode safe, plain-text fallback. Sender name **Formtrace** (Authentication -> SMTP:
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
+
+## HU. Close review and reply to a review - BUILT 2026-11-22 (personal account)
+
+**Owner 19:50:** a trainee viewing a coach's review has neither a back button nor an OK button. Add a Reply button to the Overall feedback section for the trainee to answer if needed, and a "Close review" button.
+**Cause of the missing back (my mistake in HQ):** making the review and the workout tab-level screens also switched on the rule that hides screen back arrows when the app header shows (CR-1). Fixed for both screens.
+**Built:** back arrow back on the review and the workout; **Close review** at the bottom of a sent review (same as back); under Overall feedback a **💬 Reply** button opens a box -> **Send reply**; replies show as a short thread (yours on the right, dated). The coach sees the trainee's reply in the same place and can answer. Each reply pushes the other side ("💬 Alex replied to the review", opens the review). Table `review_replies` (parties read; written only through `reply_to_review()`; not on a withdrawn review). Tested in a rolled-back transaction: trainee and coach replies saved (2), both pushes queued, a stranger refused.
+
+---
 
 ## HT. Quests update right after the action - BUILT 2026-11-22 (personal account)
 
