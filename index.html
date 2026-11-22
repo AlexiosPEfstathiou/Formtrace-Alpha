@@ -208,6 +208,9 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 .tr-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
 .tr-tile{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .tr-tile .tr-ic{font-size:20px;line-height:1;flex:0 0 auto}
+.tr-tile .tr-lab{display:flex;flex-direction:column;min-width:0}
+.tr-tile .tr-val{font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}
+.tr-tile.on .tr-val{color:inherit;opacity:.8}
 .tr-tile.on{border-color:#F0D231;background:var(--accent-surface)}
 .tr-sec{display:none;margin-top:12px}
 .tr-sec.open{display:block}
@@ -8522,6 +8525,39 @@ try{
   },true);
 }catch(e){}
 const TR_TILES=[["calendar","\uD83D\uDCC5","Calendar"],["weight","\u2696\uFE0F","Weight"],["macros","\uD83C\uDF7D\uFE0F","Macros"],["checkins","\uD83D\uDCF8","Check-ins"],["pbs","\uD83C\uDFC6","Personal bests"],["measures","\uD83D\uDCCF","Measurements"],["progress","\uD83D\uDCC8","Progress"],["calls","\uD83D\uDCDE","Calls"]];
+/* GK-2 (owner, 2026-11-22): each Training-tab button shows a live value - what you would open it to check. Each value is
+   fetched on its own and fails quietly (the button just shows its label). */
+async function fillTileValues(tiles){
+  const set=(k,txt)=>{ const s=tiles.querySelector(`[data-tv="${k}"]`); if(s&&txt) s.textContent=txt; };
+  const day=iso=>{ if(!iso) return ""; const t=todayISO(); if(iso===t) return "today"; if(iso===addDaysISO(t,-1)) return "yesterday"; return new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}); };
+  const tasks=[];
+  /* calendar: this week's sessions */
+  try{ const thisMon=weekStartISO(new Date()), rows=weekRows[thisMon]||[]; const left=rows.filter(a=>a.status==="assigned").length, done=rows.filter(a=>a.status==="submitted"||a.status==="reviewed").length;
+    set("calendar", rows.length?(left?`${left} session${left===1?"":"s"} left this week`:`${done} done this week ✓`):"Nothing this week yet"); }catch(e){}
+  /* weight and macros: from the logs */
+  tasks.push((async()=>{ const logs=(await store.logs.list({trainee_id:ME.id}))||[]; logs.sort((a,b)=>String(b.log_date).localeCompare(String(a.log_date)));
+    const w=logs.find(l=>l.weight_kg!=null); if(w) set("weight",`${(+w.weight_kg).toFixed(1).replace(/\.0$/,"")} kg · ${day(w.log_date)}`); else set("weight","Not logged yet");
+    const m=logs.find(l=>l.kcal!=null||l.protein_g!=null); if(m) set("macros",[m.kcal!=null?`${Number(m.kcal).toLocaleString()} kcal`:"",m.protein_g!=null?`${m.protein_g} g protein`:""].filter(Boolean).join(" · ")+` · ${day(m.log_date)}`); else set("macros","Not logged yet");
+    if(logs.length) set("progress",`${logs.length} day${logs.length===1?"":"s"} logged`); })());
+  /* check-ins */
+  tasks.push((async()=>{ const { data }=await store._sb.from("checkins").select("checkin_date").eq("trainee_id",ME.id).not("photo_path","is",null).order("checkin_date",{ascending:false}).limit(1);
+    set("checkins",data&&data[0]?`Last photo ${day(data[0].checkin_date)}`:"No photo yet"); })());
+  /* personal bests */
+  tasks.push((async()=>{ const { data }=await store._sb.from("personal_bests").select("exercise_name,achieved_at").eq("trainee_id",ME.id).order("achieved_at",{ascending:false}).limit(200);
+    const n=(data||[]).length; set("pbs",n?`${n} record${n===1?"":"s"} · latest ${String(data[0].exercise_name||"").slice(0,18)}`:"None yet"); })());
+  /* measurements */
+  tasks.push((async()=>{ const rows=(await store.measurements.list({trainee_id:ME.id}))||[]; rows.sort((a,b)=>String(b.measured_on).localeCompare(String(a.measured_on)));
+    set("measures",rows[0]?`Last ${day(rows[0].measured_on)}`:"None yet"); })());
+  /* calls: the next accepted call across active coaching */
+  tasks.push((async()=>{ const { data:engs }=await store._sb.from("engagements").select("id").eq("trainee_id",ME.id).eq("status","active"); const ids=(engs||[]).map(e=>e.id); if(!ids.length) return;
+    const { data }=await store._sb.from("call_proposals").select("*").in("engagement_id",ids).in("status",["accepted","pending"]);
+    const t=todayISO(); let best=null;
+    for(const p of (data||[])){ if(p.status!=="accepted") continue; const d=nextOccurrence(p,t); if(d&&(!best||d<best.d||(d===best.d&&callLocal(p).start<callLocal(best.p).start))) best={d,p}; }
+    if(best) set("calls",`Next ${day(best.d)} ${callLocal(best.p).start}`);
+    else if((data||[]).some(p=>p.status==="pending")) set("calls","Proposal waiting");
+    else set("calls","None arranged"); })());
+  await Promise.all(tasks.map(p=>p.then(()=>{},e=>console.warn("tile value (GK-2)",e&&e.message))));
+}
 function trainingControlPanel(body){
   try{
     const start=body.querySelector("#wk-card"); if(!start) return;
@@ -8550,7 +8586,7 @@ function trainingControlPanel(body){
     };
     defs.forEach(([k,ic,label])=>{
       const box=document.createElement("div"); box.className="tr-sec"; box.dataset.sec=k; secs[k].forEach(n=>box.appendChild(n)); host.appendChild(box); boxes[k]=box;
-      const b=document.createElement("button"); b.type="button"; b.className="tr-tile"; b.dataset.tile=k; b.innerHTML=`<span class="tr-ic">${ic}</span><span>${label}</span>`;
+      const b=document.createElement("button"); b.type="button"; b.className="tr-tile"; b.dataset.tile=k; b.innerHTML=`<span class="tr-ic">${ic}</span><span class="tr-lab"><span>${label}</span><span class="tr-val" data-tv="${k}"></span></span>`;   /* GK-2: a live value under each label */
       b.addEventListener("click",()=>{ trPanelOpen=(trPanelOpen===k?null:k); paint(true); }); tiles.appendChild(b);
     });
     const vacWrap=secs.vacation&&secs.vacation[0], vac=vacWrap?vacWrap.querySelector("button"):null;
@@ -8559,6 +8595,7 @@ function trainingControlPanel(body){
     start.after(tiles); tiles.after(host);
     if(dash) dash.style.display="none";                       // its cards now live in the sections
     paint(false);
+    fillTileValues(tiles);   /* GK-2 */
   }catch(e){ console.warn("training control panel (GK)",e); }
 }
 function thisWeekCardEl(iAmCoach){

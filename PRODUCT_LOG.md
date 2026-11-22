@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**GK-2 (2026-11-22, personal account): each Training-tab button shows a live value (sessions left, latest weight, latest macros, last check-in, records, last measurement, next call) - BUILT (GK-T6). HV approved by the owner ("very good").**
 **HV (2026-11-22, personal account): the call proposal card redesigned - date tile, weekday and time, a full-width "✓ Accept call", "Suggest another time" and "Decline" as equal quiet buttons - BUILT (HV-T1).**
 **HU (2026-11-22, personal account): a review had no back or close button - back arrow restored, "Close review" added; trainee (and coach) can reply under Overall feedback, with a push to the other side - BUILT; SQL `migrations_review_replies.sql` run ✓ 19:55 (HU-T1, HU-T2).**
 **HT (2026-11-22, personal account): the check-in photo quest did not complete after a photo - weekly quests are now re-checked every time the Home card is drawn, and saving a check-in redraws it - BUILT (HT-T1). HS-T1 passed (owner misread; the session went into next week).**
@@ -1095,7 +1096,10 @@ unchanged (the link in the address). **Owner 2026-11-11: "it opened in Review ta
 
 ---
 
-## GK. The trainee's Training tab as a control panel - BUILT 2026-11-10 (owner, from user feedback)
+## GK. The trainee's Training tab as a control panel - BUILT 2026-11-10 (owner, from user feedback); GK-2 BUILT 2026-11-22
+
+**GK-2 (owner 2026-11-22: "Let's do GK" - the logged next step):** a small live value under each button label (`fillTileValues`): **Calendar** "2 sessions left this week" / "2 done this week ✓" / "Nothing this week yet"; **Weight** "82.4 kg · today"; **Macros** "1,450 kcal · 120 g protein · yesterday"; **Check-ins** "Last photo 22 Nov"; **Personal bests** "12 records · latest Squat"; **Measurements** "Last 15 Nov"; **Calls** "Next Tue 18:30" / "Proposal waiting" / "None arranged"; **Progress** "n days logged". Each value is fetched on its own and fails quietly (the label alone). No SQL. **Still open from GK's next steps:** icons from the icon family (design list), the same panel for a trainee without a coach (`renderSoloTraining`) and for the coach's view of a trainee.
+
 
 **Feedback received (owner, 2026-11-10):** the trainee's Training tab is too busy - too much scrolling up and down, too much
 information for a new user. **Owner's direction:** make it a control panel with buttons; **Start Session at the top and
