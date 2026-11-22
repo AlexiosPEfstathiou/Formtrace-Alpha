@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HP (2026-11-22, personal account): tapping a calendar day with a workout offered only the workout (coach could not arrange a same-day call) - the day now offers workout / coaching call / nutrition - BUILT (HP-T1, HP-T2).**
 **HO (2026-11-22, owner): weekly quest rows open the right section when tapped, like the daily tasks - BUILT 13:23 after the owner found check-in, call and friend rows still did nothing (HO-T1).**
 **HN (2026-11-22, personal account): one consolidated coach note per exercise (shown every time, incl. the camera) separate from set notes (review only); a skipped set can be undone - BUILT; SQL `migrations_exercise_note_current.sql` run ✓ 13:22 (HN-T1..T3).**
 **HM (2026-11-22, personal account): daily "+N points" pops showed in random places when the app opened from the macros notification - pops now wait until their Home row is really on screen - BUILT (HM-T1).**
@@ -784,6 +785,14 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 **Owner report 20:56, Android, Chrome browser tab (screenshot of the recorder):** "Camera access was denied" told him to tap the **lock icon** left of the address bar -> Permissions, and for the installed app to long-press the icon -> App info -> Permissions. Neither matches current Chrome for Android (the lock icon is gone; an installed web app's camera permission lives in Chrome's site settings). The **Try again** button was also clipped (label wider than the button).
 **Fix (`permHelpHtml`, CU):** Android Chrome now reads: Chrome -> ⋮ -> Settings -> Site settings -> Camera (or Microphone) -> under Blocked tap formtrace.ie -> Allow (works for the installed app too); if still blocked, the phone may be blocking Chrome itself: phone Settings -> Apps -> Chrome -> Permissions -> Camera -> Allow only while using the app; then Try again. Samsung Internet (its user agent also says "Chrome") now gets the generic "open your browser's site settings" line instead of Chrome steps. Button: padding + no wrap. Same text serves the recorder, check-in photo and voice-over microphone. iPhone and desktop lines unchanged. No SQL. **Not verified on the phone** - GM-T1.
+
+---
+
+## HP. A calendar day offers its options, not only the workout - BUILT 2026-11-22 (personal account)
+
+**Owner report 13:33:** the coach could not set up a call for the same day - tapping the day block opened the already performed workout. When a day has a workout, going into the workout should not be the default; offer the other options too (macros, arrange call, workout).
+**Cause:** `openEngDay` - a coach's day with workouts went straight to the workout (or the missed-day sheet); only an empty day offered "Propose a coaching call" (Item G / AT).
+**Built:** `openDayOptions(iso)` sheet titled with the day: **Open workout - name** (or "Open workouts (n)" / the missed-day sheet, as before), **🎥 Propose a coaching call** (active coaching, today or later - glows during the weekly-call walkthrough), **🍽 Nutrition goal for this week** (coach) or **🍽 Log weight and macros for this day** (trainee, today or earlier). With only one option it opens directly. Same for the trainee's calendar (an empty day no longer just says "No workout scheduled" when there is something to do). No SQL.
 
 ---
 

@@ -9611,16 +9611,42 @@ async function openEngDay(iso){
     }
     // missed day (past, still-assigned) → coach sheet with video reply + modify
     const today=todayISO();
-    const isMissedDay = iso<today && wl.some(a=>a.status==="assigned");
-    if(isMissedDay){ openCoachMissedDay(iso,wl); return; }
-    // one workout: act directly; multiple: show a day sheet
-    if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
-    openEngDaySheet(iso,wl,iAmCoach); return;
+    const openWk=()=>{ const isMissedDay = iso<today && wl.some(a=>a.status==="assigned");
+      if(isMissedDay){ openCoachMissedDay(iso,wl); return; }
+      if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
+      openEngDaySheet(iso,wl,iAmCoach); };
+    openDayOptions(iso,wl,true,openWk); return;   /* HP: workout is one option, not the default */
   }else{
-    if(!wl.length){toast("No workout scheduled this day");return;}
-    if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; }
-    openEngDaySheet(iso,wl,iAmCoach); return;
+    const openWk=()=>{ if(wl.length===1){ engDayAction(wl[0],iAmCoach); return; } openEngDaySheet(iso,wl,iAmCoach); };
+    openDayOptions(iso,wl,false,openWk); return;   /* HP */
   }
+}
+/* HP (owner, 2026-11-22): tapping a calendar day that has a workout went straight into the workout, so a coach could not
+   arrange a call for that day (or open nutrition). The day now offers its options: the workout(s), a coaching call,
+   and nutrition (coach: the week's goal; trainee: log that day). */
+function openDayOptions(iso,wl,iAmCoach,openWk){
+  const today=todayISO(), active=currentEng&&currentEng.status==="active";
+  const canCall=active&&iso>=today, canLog=!iAmCoach&&iso<=today;
+  const opts=[];
+  if(wl.length) opts.push({id:"do-wk",ic:"▤",t:wl.length===1?`Open workout - ${(wl[0].snap_name||(wl[0].snapshot&&wl[0].snapshot.name)||"Workout")}`:`Open workouts (${wl.length})`});
+  if(canCall) opts.push({id:"do-call",ic:"🎥",t:"Propose a coaching call"});
+  if(iAmCoach) opts.push({id:"do-mac",ic:"🍽",t:"Nutrition goal for this week"});
+  if(canLog) opts.push({id:"do-log",ic:"🍽",t:"Log weight and macros for this day"});
+  if(!opts.length){ toast(wl.length?"":"Nothing to do on this day",1800); return; }
+  if(opts.length===1&&wl.length){ openWk(); return; }
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
+  $("#sheet-add").style.display="none";
+  const wrap=document.createElement("div");
+  wrap.innerHTML=opts.map((o,i)=>`<button class="btn ${i===0?"":"ghost"}" data-do="${o.id}" style="width:100%;margin-bottom:10px;justify-content:flex-start;text-align:left">${o.ic}&nbsp; ${escapeHtml(o.t)}</button>`).join("");
+  body.appendChild(wrap);
+  $("#sheet-scrim").classList.add("on"); $("#sheet-lib").classList.add("on");
+  const dq=k=>wrap.querySelector(`[data-do="${k}"]`);
+  if(callGuideOn()&&dq("do-call")){ ensureGuideCss(); dq("do-call").classList.add("ft-guide"); }
+  dq("do-wk")?.addEventListener("click",()=>{ closeSheet(); openWk(); });
+  dq("do-call")?.addEventListener("click",()=>{ window.__ftCallGuide=null; closeSheet(); openProposeCallSheet(false,null,null,iso); });
+  dq("do-mac")?.addEventListener("click",()=>{ closeSheet(); openMacroGoalSheet(weekStartISO(new Date(iso+"T12:00:00"))); });
+  dq("do-log")?.addEventListener("click",()=>{ closeSheet(); openMacroLog(iso); });
 }
 /* Coach: a missed day — reply with a video/text note, or modify the workout */
 function openCoachMissedDay(iso,wl){
