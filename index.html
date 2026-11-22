@@ -9546,13 +9546,22 @@ async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
         <div style="font-size:15px;font-weight:700;margin-top:6px">${when}</div>`);
       d.appendChild(cancelBtn(proposal,"Withdraw proposal"));
     }else{
-      add(`<div style="font-size:13px;color:var(--muted);margin-top:${(series||oneTime)?"14px":"0"}">${escapeHtml((other||{}).display_name||"They")} proposed:</div>
-        <div style="font-size:15px;font-weight:700;margin-top:6px">${when}</div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn sm call-accept" style="flex:1;margin:0">✓ Accept</button>
-          <button class="btn sm ghost call-counter" style="flex:1;margin:0">Different time</button>
-          <button class="btn sm ghost call-decline" style="flex:0 0 auto;margin:0">Decline</button>
-        </div>`);
+      /* HV (owner, 2026-11-22): the proposal card redesigned - a date tile, the time, one clear Accept and two quiet options */
+      const lc=callLocal(proposal), dd=new Date(lc.date+"T12:00:00");
+      const tile=`<div style="flex:0 0 54px;height:58px;border-radius:14px;background:var(--accent-surface,rgba(198,244,50,.08));border:1px solid var(--accent-border,var(--line2));display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">
+          <div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lime)">${dd.toLocaleDateString("en-GB",{month:"short"})}</div>
+          <div style="font-size:22px;font-weight:900;margin-top:3px">${dd.getDate()}</div></div>`;
+      const qb="flex:1;margin:0;height:42px;border-radius:12px;background:transparent;border:1px solid var(--line2);color:var(--ink);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer";
+      add(`<div style="margin-top:${(series||oneTime)?"14px":"0"}">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">📅 ${escapeHtml((other||{}).display_name||"They")} proposed a call</div>
+          <div style="display:flex;align-items:center;gap:12px">${tile}
+            <div style="min-width:0"><div style="font-size:16px;font-weight:800">${escapeHtml(dd.toLocaleDateString("en-GB",{weekday:"long"}))}</div>
+              <div style="font-size:14px;color:var(--muted);margin-top:3px">${callTimeRange(proposal)}${proposal.recur_every_days?` · <span style="color:var(--lime)">${recurLabel(proposal.recur_every_days)}</span>`:""}</div></div></div>
+          <button type="button" class="btn primary call-accept" style="width:100%;margin:14px 0 0;height:46px">✓ Accept call</button>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="button" class="call-counter" style="${qb}">Suggest another time</button>
+            <button type="button" class="call-decline" style="${qb};color:var(--muted)">Decline</button>
+          </div></div>`);
       el.querySelector(".call-accept").addEventListener("click",async()=>{
         const btn=el.querySelector(".call-accept");btn.disabled=true;
         try{ const { error } = await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:proposal.id,p_action:"accept"}); if(error) throw error;
