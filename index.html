@@ -4456,8 +4456,9 @@ async function loadWeeklyQuests(force){
   const { data, error }=await store._sb.rpc("weekly_quests_sync"); if(error) throw error;
   wqCache={t:Date.now(),d:data}; return data;
 }
+const QUEST_LABEL={assign_all:"Assign next week's sessions"};   /* HR (owner, 2026-11-22): the coach's weekly assigning task, in his words */
 function weeklyQuestsHtml(d){
-  const qs=(d&&d.quests)||[]; const avail=qs.filter(q=>+q.goal>0);
+  const qs=((d&&d.quests)||[]).map(q=>QUEST_LABEL[q.key]?{...q,name:QUEST_LABEL[q.key]}:q); const avail=qs.filter(q=>+q.goal>0);
   const doneN=avail.filter(q=>q.done).length;
   const resets=d&&d.resets?new Date(d.resets+"T00:00:00").toLocaleDateString("en-GB",{weekday:"short"}):"Mon";
   return `<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">This week</div>
@@ -9529,7 +9530,7 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
   wrap.innerHTML=`<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px">Pick a time that suits you. ${escapeHtml(otherName)} can accept, decline, or suggest another.</div>
     ${dateFieldHtml}
     <div style="display:flex;gap:10px">
-      <div class="field" style="flex:1"><label for="pc-time">Start time</label><input id="pc-time" type="time" step="300"></div>
+      <div class="field" style="flex:1"><label for="pc-hh">Start time (24-hour)</label><div style="display:flex;align-items:center;gap:6px"><select id="pc-hh" class="sel" aria-label="Hour" style="text-align:center;padding:0 8px"><option value="">--</option>${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,"0")}">${String(h).padStart(2,"0")}</option>`).join("")}</select><b>:</b><select id="pc-mm" class="sel" aria-label="Minutes" style="text-align:center;padding:0 8px">${Array.from({length:12},(_,m)=>`<option value="${String(m*5).padStart(2,"0")}">${String(m*5).padStart(2,"0")}</option>`).join("")}</select></div><input id="pc-time" type="hidden" value=""></div>
       <div class="field" style="flex:1"><label for="pc-dur">Length</label><select id="pc-dur" class="sel"><option value="15">15 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div>
     </div>
     <div class="field"><label for="pc-repeat">Repeat</label>
@@ -9542,7 +9543,10 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
   const ready=()=>{ const d=presetDate||$("#pc-date")?.value, t=$("#pc-time")?.value; $("#pc-send").disabled=!(d&&t); };
   $("#pc-repeat").addEventListener("change",()=>{ $("#pc-repeat-n").style.display=$("#pc-repeat").value==="custom"?"block":"none"; });
   const recurDays=()=>{ const v=$("#pc-repeat").value; if(v==="custom"){ const n=Number($("#pc-repeat-n").value)||0; return n>=1&&n<=90?n:null; } return Number(v)||null; };
-  $("#pc-time").addEventListener("input",ready); $("#pc-date")?.addEventListener("change",ready);
+  /* HR (owner, 2026-11-22): the phone's own time picker shows AM/PM on 12-hour phones - two 24-hour selects instead, kept in #pc-time as HH:MM */
+  const syncT=()=>{ const h=$("#pc-hh").value, m=$("#pc-mm").value; $("#pc-time").value=h?`${h}:${m||"00"}`:""; ready(); };
+  $("#pc-hh").addEventListener("change",syncT); $("#pc-mm").addEventListener("change",syncT);
+  $("#pc-date")?.addEventListener("change",ready);
 
   $("#pc-send").addEventListener("click",async()=>{
     const dateStr=presetDate||$("#pc-date")?.value, start=$("#pc-time").value, mins=Number($("#pc-dur").value)||30;
