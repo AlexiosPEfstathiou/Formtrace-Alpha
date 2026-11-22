@@ -87,6 +87,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HQ-T1** (2026-11-22) Open a workout (trainee) and a review (coach): the tab bar stays; the last set / Submit and "Send review" are not hidden behind it.
 - [ ] **HP-T1** (2026-11-22, coach, a trainee's calendar) Tap today (with a workout done): options sheet - Open workout, Propose a coaching call, Nutrition goal; Propose a call for today works.
 - [ ] **HP-T2** (trainee calendar) Tap a past day with a workout: Open workout / Log weight and macros (+ call for today or later).
 - [ ] **HO-T1** (2026-11-22, Home weekly side) Tap Weekly check-in photo (camera opens), Attend a call (your coaching opens), Make a friend (In Touch opens), Log macros / Weigh in (the log opens), workouts (this week opens).

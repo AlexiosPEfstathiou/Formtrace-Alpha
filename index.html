@@ -500,17 +500,18 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
   #s-coach-apply.active ~ #app-tabbar,
   #s-goals.active ~ #app-tabbar,
   #s-engagement.active:not(.tab-level) ~ #app-tabbar,
-  #s-review.active ~ #app-tabbar,
   #s-timelapse.active ~ #app-tabbar,
   #s-journey.active ~ #app-tabbar,
   #s-rate.active ~ #app-tabbar,
-  #s-celebrate.active ~ #app-tabbar,
-  #s-trainee-workout.active ~ #app-tabbar{display:none !important;}
+  #s-celebrate.active ~ #app-tabbar{display:none !important;}
   .screen .body{padding-bottom:110px;}
   .screen .body.with-tabs{padding-bottom:190px;}
   /* when the calendar keeps the tab bar, its content needs to clear it */
   #s-engagement.tab-level .body{padding-bottom:180px;}
   #s-engagement.tab-level .fab-row{bottom:calc(env(safe-area-inset-bottom) + 78px);}   /* action row above the tab bar */
+  /* HQ (owner, 2026-11-22): the tab bar stays inside a workout and a review - their content and the Send review row clear it */
+  #s-trainee-workout .body,#s-review .body{padding-bottom:200px;}
+  #s-review .fab-row{bottom:calc(env(safe-area-inset-bottom) + 78px);}
   /* per-screen SUB tab bars (coach library/workouts, listings goals/offers)
      stack directly above the persistent app bar instead of overlapping it */
   #s-coach .tabbar, #s-listings .tabbar{bottom:calc(env(safe-area-inset-bottom) + 62px);border-top:1px solid var(--line);}
@@ -3558,7 +3559,7 @@ document.addEventListener("click",async e=>{
    (e.g. a workout, an editor) highlight the section they belong to. */
 const TAB_SECTION={ // screen -> which tab should light up
   home:"home",
-  "trainee-home":"trainee-home", "trainee-workout":"trainee-home",
+  "trainee-home":"trainee-home", "trainee-workout":"trainee-home", review:"trainee-home",
   engagement:"trainee-home",   // the trainee's Training calendar lives here
   listings:"listings", "listing-new":"listings",
   coach:"coach", "ex-edit":"coach", "wo-build":"coach",
@@ -3567,7 +3568,7 @@ const TAB_SECTION={ // screen -> which tab should light up
 };
 // Top-level destinations show the persistent bar; deep/editor screens hide it
 // so it never covers their own bottom action buttons.
-const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","settings","admin","engagement","notifications","intouch"]);
+const TAB_TOPLEVEL=new Set(["home","trainee-home","listings","coach","market","profile","settings","admin","engagement","notifications","intouch","trainee-workout","review"]);   /* HQ: workout and review keep the bar */
 function renderAppTabs(current){
   const bar=$("#app-tabbar"); if(!bar)return;
   /* the engagement screen is top-level only in the trainee's merged calendar; opened as a coach drill-down (no .tab-level) it keeps its own back arrow and action row, so the header hides with the bar */
