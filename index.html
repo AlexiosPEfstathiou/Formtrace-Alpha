@@ -205,10 +205,12 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 #r-mirror.on{border-color:#F0D231;color:#F0D231}
 /* GK: the trainee's Training tab as a control panel */
 .tr-start{width:100%;height:60px;font-size:17px;font-weight:800;border-radius:16px;margin:0}
-.tr-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.tr-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px}   /* GK-2 fix: long values must not widen a column */
 .tr-tile{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .tr-tile .tr-ic{font-size:20px;line-height:1;flex:0 0 auto}
-.tr-tile .tr-lab{display:flex;flex-direction:column;min-width:0}
+.tr-tile{min-width:0;overflow:hidden}
+.tr-tile .tr-lab{display:flex;flex-direction:column;min-width:0;flex:1}
+.tr-tile .tr-lab>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tr-tile .tr-val{font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}
 .tr-tile.on .tr-val{color:inherit;opacity:.8}
 .tr-tile.on{border-color:#F0D231;background:var(--accent-surface)}
@@ -8537,14 +8539,14 @@ async function fillTileValues(tiles){
   /* weight and macros: from the logs */
   tasks.push((async()=>{ const logs=(await store.logs.list({trainee_id:ME.id}))||[]; logs.sort((a,b)=>String(b.log_date).localeCompare(String(a.log_date)));
     const w=logs.find(l=>l.weight_kg!=null); if(w) set("weight",`${(+w.weight_kg).toFixed(1).replace(/\.0$/,"")} kg · ${day(w.log_date)}`); else set("weight","Not logged yet");
-    const m=logs.find(l=>l.kcal!=null||l.protein_g!=null); if(m) set("macros",[m.kcal!=null?`${Number(m.kcal).toLocaleString()} kcal`:"",m.protein_g!=null?`${m.protein_g} g protein`:""].filter(Boolean).join(" · ")+` · ${day(m.log_date)}`); else set("macros","Not logged yet");
+    const m=logs.find(l=>l.kcal!=null||l.protein_g!=null); if(m) set("macros",(m.kcal!=null?`${Number(m.kcal).toLocaleString("en-GB")} kcal`:`${m.protein_g} g protein`)+` · ${day(m.log_date)}`);   /* short enough for half a row */ else set("macros","Not logged yet");
     if(logs.length) set("progress",`${logs.length} day${logs.length===1?"":"s"} logged`); })());
   /* check-ins */
   tasks.push((async()=>{ const { data }=await store._sb.from("checkins").select("checkin_date").eq("trainee_id",ME.id).not("photo_path","is",null).order("checkin_date",{ascending:false}).limit(1);
     set("checkins",data&&data[0]?`Last photo ${day(data[0].checkin_date)}`:"No photo yet"); })());
   /* personal bests */
   tasks.push((async()=>{ const { data }=await store._sb.from("personal_bests").select("exercise_name,achieved_at").eq("trainee_id",ME.id).order("achieved_at",{ascending:false}).limit(200);
-    const n=(data||[]).length; set("pbs",n?`${n} record${n===1?"":"s"} · latest ${String(data[0].exercise_name||"").slice(0,18)}`:"None yet"); })());
+    const n=(data||[]).length; set("pbs",n?`${n} record${n===1?"":"s"}${data[0].achieved_at?" · "+day(String(data[0].achieved_at).slice(0,10)):""}`:"None yet"); })());
   /* measurements */
   tasks.push((async()=>{ const rows=(await store.measurements.list({trainee_id:ME.id}))||[]; rows.sort((a,b)=>String(b.measured_on).localeCompare(String(a.measured_on)));
     set("measures",rows[0]?`Last ${day(rows[0].measured_on)}`:"None yet"); })());
