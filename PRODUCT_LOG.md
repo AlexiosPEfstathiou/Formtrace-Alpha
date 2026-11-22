@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HT (2026-11-22, personal account): the check-in photo quest did not complete after a photo - weekly quests are now re-checked every time the Home card is drawn, and saving a check-in redraws it - BUILT (HT-T1). HS-T1 passed (owner misread; the session went into next week).**
 **HS (2026-11-22, personal account): coach's "This week" card - when every session this week is done, the button reads "Assign next week" and assigns into next week - BUILT (HS-T1).**
 **GA-2 (2026-11-22, personal account): camera second pass - new pose lines (all body joints, glow + core strokes, ring joints, angle arcs, smoothing) and landscape detection on an upright frame; icons turn smoothly in place - BUILT (GA-T7..T9; GA-T1..T6 still to test).**
 **HR (2026-11-22, personal account): times in 24-hour form - the call time picker is now two 24-hour selects (the phone's own picker showed AM/PM); coach weekly quest named "Assign next week's sessions" - BUILT (HR-T1). HP-T1 passed (same-day call proposed).**
@@ -753,6 +754,14 @@ and a footer (Formtrace, Ireland, contact@formtrace.ie, link to terms). Simple H
 styles, one column, the gold button), dark-mode safe, plain-text fallback. Sender name **Formtrace** (Authentication -> SMTP:
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
+
+## HT. Quests update right after the action - BUILT 2026-11-22 (personal account)
+
+**Owner 19:48:** tapped the Weekly check-in photo quest, added a photo, but the quest still looked unfinished and no points were paid. (Also: HS was fine - he misread it; the database shows the 19:46 session in the week of 23 Nov - **HS-T1 passed**.)
+**Found:** the check-in was saved (19:47, dated 22 Nov, this week), but nothing asked the server again: (1) saving a check-in from Home redrew only the check-in card, not the quest card; (2) weekly quests were cached for 30 s on the phone, so a Home redraw soon after an action showed the old state. Quests are paid only when the card asks (`weekly_quests_sync`), so no points either.
+**Built:** `loadWeeklyQuests` is always fresh (only simultaneous calls share one request); saving a check-in (camera or file) on Home calls `questsChanged()`, which redraws Home - the photo quest completes, pays 20 and shows its celebration. Other quests (macros, weigh-in, workouts, friend) complete the next time Home is drawn, which happens when you return to it. No SQL.
+
+---
 
 ## HS. "Assign next week" once this week is complete - BUILT 2026-11-22 (personal account)
 

@@ -4502,12 +4502,16 @@ async function claimDailyTaskPoints(items, iso, el){
 /* HK (owner, 2026-11-21): the Today card flips sideways to the weekly quests. When every daily task is done it flips by
    itself (once a day); a small "⇄" button switches between the two sides at any time. Quests are worked out and paid
    by the server (weekly_quests_sync); a quest paid just now shows a "+N points" pop. */
-let wqCache=null;
+let wqCache=null, wqInflight=null;
+/* HT: always fresh - a quest finished elsewhere (check-in photo, macros, a workout) must show and pay the next time the
+   card is drawn. Only calls made at the same moment share one request. */
 async function loadWeeklyQuests(force){
-  if(!force&&wqCache&&Date.now()-wqCache.t<30000) return wqCache.d;
-  const { data, error }=await store._sb.rpc("weekly_quests_sync"); if(error) throw error;
-  wqCache={t:Date.now(),d:data}; return data;
+  if(wqInflight) return wqInflight;
+  wqInflight=(async()=>{ try{ const { data, error }=await store._sb.rpc("weekly_quests_sync"); if(error) throw error; wqCache={t:Date.now(),d:data}; return data; } finally{ setTimeout(()=>{ wqInflight=null; },0); } })();
+  return wqInflight;
 }
+/* HT: something that can finish a quest just happened - redraw Home's card (and so pay and celebrate) if Home is showing */
+function questsChanged(){ wqCache=null; try{ if($("#s-home")?.classList.contains("active")&&typeof renderHome==="function") Promise.resolve(renderHome()).then(()=>{},e=>console.warn("home refresh (HT)",e&&e.message)); }catch(e){} }
 const QUEST_LABEL={assign_all:"Assign next week's sessions"};   /* HR (owner, 2026-11-22): the coach's weekly assigning task, in his words */
 function weeklyQuestsHtml(d){
   const qs=((d&&d.quests)||[]).map(q=>QUEST_LABEL[q.key]?{...q,name:QUEST_LABEL[q.key]}:q); const avail=qs.filter(q=>+q.goal>0);
@@ -10002,7 +10006,7 @@ $("#pc-use").addEventListener("click",async()=>{
     await saveCheckinBlob(pcBlob,"jpg",iso);
     pcStopCam();$("#photocap").classList.remove("on"); document.body.classList.remove("rec-open");checkinDate=null;
     toast("Check-in saved ✓"); checkAchievementsAndPlay();
-    if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
+    if($("#s-home")?.classList.contains("active")) questsChanged();   /* HT: redraws the check-in card and the quest card (pays the photo quest) */
     else renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
   finally{btn.disabled=false;btn.textContent=o;}
@@ -10023,7 +10027,7 @@ $("#checkin-input").addEventListener("change",async e=>{
     const ext=(file.type||"").includes("png")?"png":(file.type||"").includes("webp")?"webp":"jpg";
     await saveCheckinBlob(file,ext,iso);
     toast("Check-in saved ✓"); checkAchievementsAndPlay();
-    if($("#s-home")?.classList.contains("active")) renderHomeCheckin($("#home-checkin"));
+    if($("#s-home")?.classList.contains("active")) questsChanged();   /* HT: redraws the check-in card and the quest card (pays the photo quest) */
     else renderEngagement();
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
 });
