@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**HY (2026-11-22, personal account): offer form shows "Trainee requested X weeks / Y sessions a week - try not to deviate" and starts from those values; the Open goals sticker reads Counter > Pitched > New - BUILT (HY-T1). HX SQL run ✓.**
 **HX (2026-11-22, personal account): Open goals as teaser bars (photo/initials, posted x ago, "Total of Y sessions over Z weeks", category emoji, New for 12 h, tap to open), newest first; sent offers its own card under the list, not pinned over it; goals get weeks + sessions per week - BUILT; SQL `migrations_goal_teasers.sql` run ✓ 21:44 (HX-T1). Demo SQL (HW) was run.**
 **HW (2026-11-22, personal account): BH - Open goals is the long list; "Your sent offers" is now a small button pinned above the tab bar that opens them in a sheet ("n to answer" when a counter waits); 12 demo goals from 12 demo trainees for the owner's aesthetic review - BUILT; demo SQL `demo_open_goals.sql` given (with its removal lines).**
 **Correction 2026-11-22: ER, EQ, EO, EN and EM, listed by me as open small items, were already built or fixed on 2026-11-02 (they await owner tests only). DN closed (deployed push-send matches the repo, healthy).**
@@ -1976,6 +1977,13 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## HY. Requested length in the offer; Pitched / Counter stickers - BUILT 2026-11-22 (personal account)
+
+**Owner 21:53:** when a coach sends an offer to a goal, Length (weeks) should have a tooltip "Trainee requested X weeks, try to not deviate", same for Sessions / week. On Open goals, a pitched goal shows "Pitched" instead of "New", and "Counter" when a counter-offer arrives.
+**Built:** offer form - an amber ⓘ line under each field, "Trainee requested 12 weeks - try not to deviate." / "Trainee requested 3 sessions a week - try not to deviate.", shown only when the goal has them (HX fields); the fields **start from** the requested values (the coach can change them). Direct offers to a past trainee: no lines. Open goals - the sticker on the avatar: **Counter** (amber, bar outlined amber - an answer is needed) > **Pitched** (outlined lime) > **New**; the old "✓ Pitched" line under the total is gone. No SQL.
+
+---
+
 ## HX. Open goals as teaser bars - BUILT 2026-11-22 (personal account) - part of BH
 
 **Owner 21:30 (screenshot of the HW build with the demo goals):** (1) "Your sent offers" was overlaid on the goals - **my mistake in HW** (sticky); they are two different cards with their own space. (2) The list should not show each goal in full but a **teaser bar**: photo (or initials) on the left, "posted x minutes / hours / days ago" to its right, "Total of Y sessions over Z weeks" top right, a category emoji in the middle (muscle gain = bicep). Many bars in a row, chronological; goals from the **last 12 hours** get a **New** indicator. (Also visible: every poster showed as "A" - coaches cannot read a trainee's profile unless it is social, so names and photos never loaded.)

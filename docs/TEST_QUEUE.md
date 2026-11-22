@@ -90,6 +90,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T8** Phone sideways (each way): the lines stay on the body as well as in portrait; the saved landscape video is upright with the lines on it.
 - [ ] **GA-T9** Turn the phone back and forth before recording: the countdown, timer and side icons turn smoothly in place; rep counting still works on a landscape set.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HY-T1** (2026-11-22, coach) Send an offer on a demo goal: amber "Trainee requested … - try not to deviate" under Length and Sessions / week, fields prefilled; the bar then shows Pitched; a trainee's counter shows Counter.
 - [ ] **HX-T1** (2026-11-22, coach Open goals; after the SQL) Bars newest first with first names, "x ago", emoji and "Total of Y sessions over Z weeks"; the newest have New; tapping a bar opens the goal; Your sent offers is its own card at the end. Post a goal (trainee) shows Weeks and Sessions per week.
 - [ ] **GI-T1** (2026-11-22) Pay for a goal (sandbox card or promo code) and set up / open coach payouts: both still open Stripe as before (the payment functions now only answer formtrace.ie).
 - [ ] **GI-T2** Open https://formtrace.ie/?csp=1 and use the app normally for a day (camera with lines, videos, voice-over, Shop, check-in photo); then Review -> Client errors: no "csp" rows. Then I make it the default.

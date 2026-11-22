@@ -227,7 +227,9 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 #r-mirror.on{border-color:#F0D231;color:#F0D231}
 /* GK: the trainee's Training tab as a control panel */
 .tr-start{width:100%;height:60px;font-size:17px;font-weight:800;border-radius:16px;margin:0}
-.sent-pin{margin-top:22px}   /* HX: its own card after the goals - never over them */
+.sent-pin{margin-top:22px}
+.of-req{font-size:12px;color:var(--amber);margin-top:6px;line-height:1.4}
+.of-req::before{content:"ⓘ ";font-weight:800}   /* HX: its own card after the goals - never over them */
 .goal-bar{border-radius:16px;background:var(--panel);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
 .goal-bar.is-new{border-color:var(--lime-dim,var(--lime));box-shadow:0 0 0 1px rgba(198,244,50,.18),0 6px 18px rgba(198,244,50,.08)}
 .goal-bar .gb-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1.25fr);align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -236,6 +238,9 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 .goal-bar .gb-ago{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .goal-bar .gb-who{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .goal-bar .gb-avw{position:relative;display:inline-flex}
+.goal-bar .gb-new.gb-pitch{background:var(--panel2,#1A1F26);color:var(--lime);border-color:var(--lime)}
+.goal-bar .gb-new.gb-counter{background:var(--amber);color:#0B0E11}
+.goal-bar.is-counter{border-color:rgba(255,176,32,.6)}
 .goal-bar .gb-new{position:absolute;top:-7px;right:-22px;padding:0 5px;border-radius:999px;background:var(--lime);color:var(--lime-ink,#0B0E11);font-size:8.5px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;border:2px solid var(--panel);line-height:1.3}   /* HX: sticker on the avatar's top right */
 .goal-bar .gb-emoji{font-size:26px;line-height:1;justify-self:center}
 .goal-bar .gb-tot{font-size:12px;font-weight:800;text-align:right;line-height:1.3;display:flex;flex-direction:column;align-items:flex-end}
@@ -1629,6 +1634,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
         <label>Length (weeks)</label>
           <!-- Item BK: one committed length, not a range - so the total can commit at acceptance -->
           <div class="stepper-lite"><input id="of-length" type="number" inputmode="numeric" min="1" max="104" placeholder="6"></div>
+          <div class="of-req" id="of-length-req" style="display:none"></div>   <!-- HY: what the trainee asked for -->
       </div>
       <div class="field"><label>Sessions / week</label>
         <select id="of-sessions" class="sel">
@@ -1636,6 +1642,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
           <option>1</option><option>2</option><option>3</option><option>4</option>
           <option>5</option><option>6</option><option>7</option>
         </select>
+        <div class="of-req" id="of-sessions-req" style="display:none"></div>
       </div>
       <div class="field"><label>Start date</label><input id="of-start" type="date"></div>
       <div class="field"><label>Price / week</label>
@@ -7778,6 +7785,7 @@ async function renderMarket(){
   const sentOutcomes=mySent.filter(o=>resolved.has(o.status) || o.status==="countered" || !openIds.has(o.listing_id));   // Item CJ: a counter needs the coach's answer - surface it
   const stillPitching=mySent.filter(o=>!resolved.has(o.status) && o.status!=="countered" && openIds.has(o.listing_id));
   const pitchedIds=new Set(stillPitching.map(o=>o.listing_id));
+  const counterIds=new Set(mySent.filter(o=>o.status==="countered").map(o=>o.listing_id));   /* HY: a trainee's counter waits on this goal */
   $("#market-sub").textContent=open.length?`${open.length} open goal${open.length>1?"s":""}`:"No open goals right now";
   body.innerHTML="";
   /* Item: open goals display first, sent offers second - reversed from the
@@ -7810,12 +7818,15 @@ async function renderMarket(){
     const ageMs=Date.now()-new Date(l.created_at).getTime(), isNew=ageMs<12*3600000;
     const agoS=ageMs<3600000?`${Math.max(1,Math.round(ageMs/60000))} min ago`:ageMs<86400000?`${Math.round(ageMs/3600000)} h ago`:`${Math.floor(ageMs/86400000)} day${Math.floor(ageMs/86400000)===1?"":"s"} ago`;
     const tot=(l.weeks&&l.sessions_per_week)?`Total of ${l.weeks*l.sessions_per_week} sessions over ${l.weeks} weeks`:(l.weeks?`Over ${l.weeks} weeks`:"Length open");
-    const bar=document.createElement("div"); bar.className="goal-bar"+(isNew?" is-new":"")+(pitched?" is-pitched":"");
+    /* HY (owner, 2026-11-22): the sticker says what matters most - Counter (an answer is needed) > Pitched > New */
+    const countered=counterIds.has(l.id);
+    const sticker=countered?'<span class="gb-new gb-counter">Counter</span>':pitched?'<span class="gb-new gb-pitch">Pitched</span>':isNew?'<span class="gb-new">New</span>':"";
+    const bar=document.createElement("div"); bar.className="goal-bar"+(countered?" is-counter":isNew&&!pitched?" is-new":"")+(pitched?" is-pitched":"");
     bar.innerHTML=`<button type="button" class="gb-row" aria-expanded="false">
-        <span class="gb-avw"><span class="avatar gb-av" ${p.avatar_path?`data-avatar="${escapeHtml(p.avatar_path)}"`:""}>${escapeHtml(p.avatar_initials||initials(who))}</span>${isNew?'<span class="gb-new">New</span>':""}</span>
+        <span class="gb-avw"><span class="avatar gb-av" ${p.avatar_path?`data-avatar="${escapeHtml(p.avatar_path)}"`:""}>${escapeHtml(p.avatar_initials||initials(who))}</span>${sticker}</span>
         <span class="gb-left"><span class="gb-ago">${agoS}</span><span class="gb-who">${escapeHtml(who)}</span></span>
         <span class="gb-emoji" title="${escapeHtml(l.focus||"General")}">${goalEmoji(l.focus)}</span>
-        <span class="gb-tot">${escapeHtml(tot)}${pitched?'<span class="gb-pitched">✓ Pitched</span>':""}</span>
+        <span class="gb-tot">${escapeHtml(tot)}</span>
       </button>`;
     const div=document.createElement("div");div.className="card gb-detail";
     div.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -7912,7 +7923,7 @@ async function openOffer(listingId, direct){
   offerDirect=direct||null;
   if(offerDirect){
     $("#offer-sub").textContent=`Direct offer to ${offerDirect.name||"your trainee"}`;
-    offerListing=null; pendingOfferVideo=null;
+    offerListing=null; pendingOfferVideo=null; ["#of-length-req","#of-sessions-req"].forEach(k=>{ const e=$(k); if(e) e.style.display="none"; });   /* HY */
     $("#of-title").value=offerDirect.title||""; $("#of-focus").value=offerDirect.focus||"";
     go("offer"); renderCadencePreview(); return;
   }
@@ -7923,6 +7934,12 @@ async function openOffer(listingId, direct){
   $("#offer-sub").textContent=`Re: ${offerListing.title}`;
   $("#of-title").value=offerListing.title; $("#of-focus").value=offerListing.focus||"";
   $("#of-length").value="";$("#of-sessions").value="";
+  /* HY (owner, 2026-11-22): show what the trainee asked for under both fields, and start from it */
+  { const w=offerListing.weeks, s=offerListing.sessions_per_week, lr=$("#of-length-req"), sr=$("#of-sessions-req");
+    if(lr){ lr.textContent=w?`Trainee requested ${w} week${w===1?"":"s"} - try not to deviate.`:""; lr.style.display=w?"":"none"; }
+    if(sr){ sr.textContent=s?`Trainee requested ${s} session${s===1?"":"s"} a week - try not to deviate.`:""; sr.style.display=s?"":"none"; }
+    if(w) $("#of-length").value=String(w);
+    if(s&&s<=7) $("#of-sessions").value=String(s); }
   $("#of-start").value="";$("#of-price").value="";$("#of-currency").value="$";$("#of-noshow").value="50";
   const slot=$("#of-video-slot");slot.classList.remove("filled");
   slot.innerHTML=`<div class="vic">●</div><div class="vt">Record your pitch</div><div class="vs">Every offer carries a short video. No attachments.</div>`;
