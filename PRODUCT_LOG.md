@@ -46,7 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
-**HO (2026-11-22, owner): weekly quest rows should open the right section when tapped, like the daily tasks - LOGGED, not built.**
+**HO (2026-11-22, owner): weekly quest rows open the right section when tapped, like the daily tasks - BUILT 13:23 after the owner found check-in, call and friend rows still did nothing (HO-T1).**
 **HN (2026-11-22, personal account): one consolidated coach note per exercise (shown every time, incl. the camera) separate from set notes (review only); a skipped set can be undone - BUILT; SQL `migrations_exercise_note_current.sql` run ✓ 13:22 (HN-T1..T3).**
 **HM (2026-11-22, personal account): daily "+N points" pops showed in random places when the app opened from the macros notification - pops now wait until their Home row is really on screen - BUILT (HM-T1).**
 **HL (2026-11-21, personal account): quest card flip button moved top right in lime; a completed weekly quest gets a celebration (what was achieved, +points, Nice / Share) shown only while Home is on screen - BUILT (HL-T1, HL-T2). HK-T1 flip passed.**
@@ -787,10 +787,10 @@ Owner, 2026-11-04 23:23 (personal account): **"The camera needs to be refined / 
 
 ---
 
-## HO. Weekly quests open the right section when tapped - LOGGED 2026-11-22 (owner), not built
+## HO. Weekly quests open the right section when tapped - BUILT 2026-11-22
 
 **Owner:** weekly quest items must redirect to the appropriate section when clicked, just like the daily ones.
-**Likely targets (to confirm when building):** workouts / streak / Personal Bests -> this week's workouts (as the daily Workout task); macros, weigh-in, calorie goal -> the same logging the daily tasks open; check-in photo -> the photo check-in; coach call -> the call with the coach; make a friend -> Social. Coach: review -> sessions waiting for review; calls -> arrange a call; assign -> next week's planner; streaks -> trainees list.
+**Built 13:23** (owner: "clicking the weekly quest items still does not redirect me - weekly check-in, attend a call, make a friend"): each row is a button with a › and opens (`openQuestTarget`): workouts / streak / Personal Bests -> this week's workouts; macros -> log yesterday's macros; weigh-in and calorie goal -> today's log; check-in photo -> the photo check-in camera for today; call -> the active coaching ("Arrange or join your call from here"); make a friend -> In Touch. Coach: review / calls / assign trigger the same action as the matching daily row (the next trainee who needs it); streaks -> trainees. **Targets as planned:** workouts / streak / Personal Bests -> this week's workouts (as the daily Workout task); macros, weigh-in, calorie goal -> the same logging the daily tasks open; check-in photo -> the photo check-in; coach call -> the call with the coach; make a friend -> Social. Coach: review -> sessions waiting for review; calls -> arrange a call; assign -> next week's planner; streaks -> trainees list.
 
 ---
 

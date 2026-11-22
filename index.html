@@ -4346,7 +4346,7 @@ async function renderCoachChecklist(el){
   const items=coachTodo(D); const n=items.filter(i=>i.done).length, all=n===items.length;
   el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
-    ${items.map(i=>`<button data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
+    ${items.map(i=>`<button data-ck="${i.k}" data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
   el.style.display="";
   mountQuestFlip(el, all, todayISO());   /* HK */
   showNewCoachPoints(el);   /* HK */
@@ -4463,11 +4463,11 @@ function weeklyQuestsHtml(d){
       <div style="font-size:12px;font-weight:800;color:${avail.length&&doneN===avail.length?"var(--lime)":"var(--muted)"}">${doneN} of ${avail.length} · resets ${escapeHtml(resets)}</div></div>
     ${qs.map(q=>{ const goal=+q.goal||0, prog=Math.min(+q.progress||0,goal||0), pct=goal?Math.round(prog/goal*100):0;
       const chip=q.each?`+${q.points} each`:`+${q.points}`;
-      return `<div data-wq="${escapeHtml(q.key)}" style="border-top:1px solid var(--line);padding:9px 0;${goal?"":"opacity:.55"}">
+      return `<div data-wq="${escapeHtml(q.key)}" role="button" tabindex="0" style="cursor:pointer;border-top:1px solid var(--line);padding:9px 0;${goal?"":"opacity:.55"}">
         <div style="display:flex;align-items:center;gap:10px"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;${q.done?"background:var(--lime);color:var(--lime-ink,#0B0E11)":"border:1.5px solid var(--line2);color:var(--faint)"}">${q.done?"✓":""}</span>
           <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;${q.done?"color:var(--muted)":""}">${escapeHtml(q.name)}</div>
             <div style="font-size:11.5px;color:var(--faint)">${q.note?escapeHtml(q.note)+(goal?" · ":""):""}${goal?`${prog} of ${goal}`:""}</div></div>
-          <span style="font-size:12px;font-weight:900;white-space:nowrap;color:${q.paid?"var(--lime)":"var(--faint)"}">${q.paid&&!q.each?"✓ ":""}${chip}</span></div>
+          <span style="font-size:12px;font-weight:900;white-space:nowrap;color:${q.paid?"var(--lime)":"var(--faint)"}">${q.paid&&!q.each?"✓ ":""}${chip}</span><span style="color:var(--faint);font-size:16px;margin-left:2px">›</span></div>
         ${goal&&!q.done?`<div style="height:4px;border-radius:3px;background:var(--line2);margin:7px 0 0 30px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--lime)"></div></div>`:""}
       </div>`; }).join("")||`<div style="font-size:12.5px;color:var(--faint);padding:8px 0">No quests this week.</div>`}`;
 }
@@ -4546,6 +4546,27 @@ async function shareQuestCheer(q,head,line,btn){
   }catch(err){ if(!(err&&err.name==="AbortError")){ console.error("share quest",err); toast("Couldn't prepare the image",3500); } }
   finally{ if(btn){ btn.disabled=false; btn.textContent=orig||"Share"; } }
 }
+/* HO (owner, 2026-11-22): a weekly quest row opens the place where it is done, like the daily tasks */
+async function openQuestTarget(key,front){
+  try{
+    const today=todayISO(), yest=addDaysISO(today,-1);
+    if(roleOf()==="coach"){
+      const k={review24:"review",calls_all:"calls",assign_all:"assign"}[key];
+      const row=k&&front&&front.querySelector(`[data-ck="${k}"]`); if(row){ row.click(); return; }
+      go("trainee-home"); return;
+    }
+    if(key==="workouts"||key==="streak"||key==="pb3"){ goToCalendarWeek(weekStartISO(new Date())); return; }
+    if(key==="macros5"){ openMacroLog(yest); return; }
+    if(key==="weigh5"||key==="calories"){ openMacroLog(today); return; }
+    if(key==="photo"){ startCheckin(today); return; }
+    if(key==="friend"){ go("intouch"); renderInTouch(); return; }
+    if(key==="call"){
+      const { data }=await store._sb.from("engagements").select("id").eq("trainee_id",ME.id).eq("status","active").order("started_at",{ascending:false}).limit(1);
+      if(data&&data[0]){ openEngagement(data[0].id); toast("Arrange or join your call from here",2600); } else toast("You have no active coach right now",2600);
+      return;
+    }
+  }catch(e){ console.warn("quest target (HO)",e&&e.message); }
+}
 function mountQuestFlip(el, allDone, iso){
   try{
     if(!el||!ME) return;
@@ -4572,6 +4593,7 @@ function mountQuestFlip(el, allDone, iso){
       const bb=document.createElement("button"); bb.type="button"; bb.className="qf-btn"; bb.textContent="⇄ Today"; bb.setAttribute("aria-label","Show today's tasks");
       bb.addEventListener("click",()=>flip(false,true));
       const bh=back.firstElementChild; if(bh&&bh.tagName==="DIV") bh.appendChild(bb); else back.insertBefore(bb,back.firstChild);
+      back.querySelectorAll("[data-wq]").forEach(r=>{ const go1=()=>openQuestTarget(r.getAttribute("data-wq"),front); r.addEventListener("click",go1); r.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go1(); } }); });   /* HO */
       /* HL: each quest paid just now gets a celebration (queued until Home is on screen) */
       const paid=((d&&d.quests)||[]).filter(q=>q.just_paid&&!q.each).map(q=>({key:q.key,name:q.name,points:q.points,week:d.week_start}));
       if(paid.length){ wqCache=null; queueQuestCheers(paid); }

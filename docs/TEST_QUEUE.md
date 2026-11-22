@@ -87,6 +87,7 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
 ## As the trainee — a workout (GX, 2026-11-20)
+- [ ] **HO-T1** (2026-11-22, Home weekly side) Tap Weekly check-in photo (camera opens), Attend a call (your coaching opens), Make a friend (In Touch opens), Log macros / Weigh in (the log opens), workouts (this week opens).
 - [ ] **HN-T1** (2026-11-22, coach review; after the SQL) Write an exercise note and a set note, send: toast says the exercise note was saved; the trainee's next workout with that exercise shows the exercise note on the card and on the camera, not the set note.
 - [ ] **HN-T2** (trainee) The set note appears in that workout's review only.
 - [ ] **HN-T3** (trainee workout) Tap Skip on a set, then "↶ Undo skip": the set is back with ● Record.
