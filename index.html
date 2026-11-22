@@ -199,6 +199,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 .mini-stepper button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* GA: phone held sideways - the countdown, timer, message and side-button icons turn to face the user; the picture does not */
 #countdown,#rtimer,#r-statmsg,#r-deck .rside .i{transition:transform .25s}
+#countdown,#rtimer,#r-statmsg,#r-deck .rside .i{transition:transform .38s cubic-bezier(.3,1.2,.4,1)}   /* GA-2: icons turn in place like a native camera */
 body.rec-ui-90 #countdown,body.rec-ui-90 #rtimer,body.rec-ui-90 #r-statmsg,body.rec-ui-90 #r-deck .rside .i{transform:rotate(90deg)}
 body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,body.rec-ui-270 #r-deck .rside .i{transform:rotate(-90deg)}
 #r-mirror.on{border-color:#F0D231;color:#F0D231}
@@ -3197,61 +3198,112 @@ function countingDown(){ return !!cdTimer; }
 /* =========================================================================
    3. Skeleton renderer (Formtrace vocabulary)
    ========================================================================= */
-const P={nose:0,Leye:2,Reye:5,Lear:7,Rear:8,Lsh:11,Rsh:12,Lel:13,Rel:14,Lwr:15,Rwr:16,
-  Lpinky:17,Rpinky:18,Lindex:19,Rindex:20,Lthumb:21,Rthumb:22,Lhip:23,Rhip:24,Lknee:25,Rknee:26,Lank:27,Rank:28,Ltoe:31,Rtoe:32};
-const STROKE="#F0D231",FILL="rgba(240, 210, 49,0.12)",HEAD_FILL="rgba(240, 210, 49,0.10)",MIN_VIS=0.5;
+/* GA-2 (owner, 2026-11-22): "the lines looking very slick and beautiful, as many joints as possible without breaking the
+   function". Drawing only - capture, rep counting and form comparison use the raw landmarks, never this.
+   - every body landmark BlazePose gives: shoulders, elbows, wrists, thumb / index / pinky, hips, knees, ankles, heels, toes,
+     plus the head ring with eyes and nose;
+   - two-pass strokes: a soft wide glow under a crisp core (no canvas blur - cheap on phones), round caps and joins;
+   - joints as rings with a bright centre, small dots for fingers and feet, a joint-angle arc at the knees and elbows;
+   - a torso panel with a soft gradient; limbs nearer the camera are drawn a little thicker (BlazePose depth);
+   - points fade in and out with their visibility instead of popping;
+   - smoothed between frames (One Euro filter) so the figure glides instead of jittering. */
+const STROKE="#F0D231",GLOW="240,210,49",MIN_VIS=0.5;
 const Vec={add:(a,b)=>({x:a.x+b.x,y:a.y+b.y}),sub:(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mul:(a,s)=>({x:a.x*s,y:a.y*s}),
   mid:(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}),len:a=>Math.hypot(a.x,a.y),norm:a=>{const l=Math.hypot(a.x,a.y)||1;return{x:a.x/l,y:a.y/l};},perp:a=>({x:-a.y,y:a.x}),dist:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
-
+const P={nose:0,Leye:2,Reye:5,Lear:7,Rear:8,Lsh:11,Rsh:12,Lel:13,Rel:14,Lwr:15,Rwr:16,
+  Lpinky:17,Rpinky:18,Lindex:19,Rindex:20,Lthumb:21,Rthumb:22,Lhip:23,Rhip:24,Lknee:25,Rknee:26,Lank:27,Rank:28,Lheel:29,Rheel:30,Ltoe:31,Rtoe:32};
+/* One Euro filter over a landmark list (normalised x, y, z; visibility eased). Reset after a gap or a change of frame. */
+const poseSmoothState={t:0,key:"",pts:null};
+function smoothPose(lm,key){
+  const now=performance.now()/1000, st=poseSmoothState;
+  const dt=st.pts?now-st.t:0;
+  if(!st.pts||st.key!==key||dt<=0||dt>0.5||st.pts.length!==lm.length){
+    st.pts=lm.map(p=>({x:p.x,y:p.y,z:p.z||0,dx:0,dy:0,v:(p.visibility??p.v??1)})); st.t=now; st.key=key; return st.pts.map(p=>({x:p.x,y:p.y,z:p.z,visibility:p.v}));
+  }
+  st.t=now;
+  const a=(cut)=>{ const tau=1/(2*Math.PI*cut); return 1/(1+tau/dt); };
+  const MINC=1.6, BETA=9, DC=1.2, ad=a(DC);
+  return lm.map((p,i)=>{
+    const s=st.pts[i];
+    const rx=(p.x-s.x)/dt, ry=(p.y-s.y)/dt;
+    s.dx+=ad*(rx-s.dx); s.dy+=ad*(ry-s.dy);
+    const ax=a(MINC+BETA*Math.abs(s.dx)), ay=a(MINC+BETA*Math.abs(s.dy));
+    s.x+=ax*(p.x-s.x); s.y+=ay*(p.y-s.y); s.z+=0.5*((p.z||0)-s.z);
+    s.v+=0.35*((p.visibility??p.v??1)-s.v);
+    return {x:s.x,y:s.y,z:s.z,visibility:s.v};
+  });
+}
 function drawFigure(ctx,lm,W,H){
-  let baseW=4;
-  const pt=i=>({x:lm[i].x*W,y:lm[i].y*H,v:(lm[i].visibility??lm[i].v??1)});
-  const ok=p=>p&&p.v>=MIN_VIS;
-  const line=(a,b,w)=>{ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineWidth=w;ctx.strokeStyle=STROKE;ctx.lineCap="round";ctx.stroke();};
-  const poly=(pts,fill=FILL)=>{if(!pts.length)return;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}ctx.lineWidth=baseW;ctx.strokeStyle=STROKE;ctx.lineJoin="round";ctx.stroke();};
-  const ell=(c,rx,ry,a)=>{ctx.beginPath();ctx.ellipse(c.x,c.y,rx,ry,a,0,Math.PI*2);ctx.fillStyle=HEAD_FILL;ctx.fill();ctx.lineWidth=baseW;ctx.strokeStyle=STROKE;ctx.stroke();};
-  const orect=(start,dir,length,width)=>{const d=Vec.norm(dir),n=Vec.perp(d),hw=width/2;const p1=Vec.add(start,Vec.mul(n,hw));const p2=Vec.add(p1,Vec.mul(d,length));const p3=Vec.add(p2,Vec.mul(n,-width));const p4=Vec.add(p3,Vec.mul(d,-length));poly([p1,p2,p3,p4]);};
-
-  const nose=pt(P.nose),Lear=pt(P.Lear),Rear=pt(P.Rear),Leye=pt(P.Leye),Reye=pt(P.Reye),
-    Lsh=pt(P.Lsh),Rsh=pt(P.Rsh),Lel=pt(P.Lel),Rel=pt(P.Rel),Lwr=pt(P.Lwr),Rwr=pt(P.Rwr),
-    Lidx=pt(P.Lindex),Ridx=pt(P.Rindex),Lpk=pt(P.Lpinky),Rpk=pt(P.Rpinky),Lth=pt(P.Lthumb),Rth=pt(P.Rthumb),
-    Lhip=pt(P.Lhip),Rhip=pt(P.Rhip),Lkn=pt(P.Lknee),Rkn=pt(P.Rknee),Lan=pt(P.Lank),Ran=pt(P.Rank),Lto=pt(P.Ltoe),Rto=pt(P.Rtoe);
-  let scale=(ok(Lsh)&&ok(Rsh))?Vec.dist(Lsh,Rsh):(ok(Lhip)&&ok(Rhip))?Vec.dist(Lhip,Rhip):W*0.15;
-  baseW=Math.max(2.5,scale*0.05);
-  const shC=(ok(Lsh)&&ok(Rsh))?Vec.mid(Lsh,Rsh):null, hipC=(ok(Lhip)&&ok(Rhip))?Vec.mid(Lhip,Rhip):null;
-  if(ok(Lsh)&&ok(Rsh)) line(Lsh,Rsh,baseW);
-  let waistApex=null;
-  if(ok(Lhip)&&ok(Rhip)){const base=Vec.dist(Lhip,Rhip),half=(135*Math.PI/180)/2,h=(base/2)/Math.tan(half);const up=shC?Vec.norm(Vec.sub(shC,hipC)):{x:0,y:-1};waistApex=Vec.add(hipC,Vec.mul(up,h));}
-  if(shC){const end=waistApex||hipC;if(end)line(shC,end,baseW);}
-  let headBase=null,headAngle=0,headRx=scale*0.42,headRy=scale*0.52,headCenter=null;
-  if(ok(Lear)&&ok(Rear)){headBase=Vec.mid(Lear,Rear);headAngle=Math.atan2(Lear.y-Rear.y,Lear.x-Rear.x);headRx=Vec.dist(Lear,Rear)*0.62;headRy=headRx*1.25;}
-  else if(ok(Leye)&&ok(Reye)){headBase=Vec.mid(Leye,Reye);headAngle=Math.atan2(Leye.y-Reye.y,Leye.x-Reye.x);headRx=Vec.dist(Leye,Reye)*0.95;headRy=headRx*1.3;}
-  else if(ok(nose)){headBase={x:nose.x,y:nose.y};}
-  if(headBase){const up=shC?Vec.norm(Vec.sub(headBase,shC)):{x:0,y:-1};headCenter=Vec.add(headBase,Vec.mul(up,headRy*0.7));if(shC)line(shC,headBase,baseW);}
-  if(headCenter)ell(headCenter,headRx,headRy,headAngle+Math.PI/2);
-  if(ok(Lhip)&&ok(Rhip)&&waistApex)poly([Lhip,Rhip,waistApex]);
-  if(ok(Lsh)&&ok(Lel))line(Lsh,Lel,baseW); if(ok(Rsh)&&ok(Rel))line(Rsh,Rel,baseW);
-  if(ok(Lel)&&ok(Lwr))line(Lel,Lwr,baseW); if(ok(Rel)&&ok(Rwr))line(Rel,Rwr,baseW);
-  drawHand(Lwr,Lidx,Lpk,Lth,Lel); drawHand(Rwr,Ridx,Rpk,Rth,Rel);
-  if(ok(Lhip)&&ok(Lkn))line(Lhip,Lkn,baseW); if(ok(Rhip)&&ok(Rkn))line(Rhip,Rkn,baseW);
-  if(ok(Lkn)&&ok(Lan))line(Lkn,Lan,baseW); if(ok(Rkn)&&ok(Ran))line(Rkn,Ran,baseW);
-  drawFoot(Lan,Lto,Lkn); drawFoot(Ran,Rto,Rkn);
-  function drawHand(wr,idx,pk,th,el){
-    if(!ok(wr))return; let dir=null;
-    if(ok(idx)&&ok(pk))dir=Vec.sub(Vec.mid(idx,pk),wr); else if(ok(idx))dir=Vec.sub(idx,wr); else if(ok(el))dir=Vec.sub(wr,el);
-    if(!dir)return; const len=Vec.len(dir)||scale*0.28, handLen=Math.max(scale*0.22,len*1.05);
-    const width=(ok(idx)&&ok(pk))?Vec.dist(idx,pk)*1.1:scale*0.26; orect(wr,dir,handLen,width);
-    if(ok(th))line(wr,th,baseW*0.85);
-    else{const d=Vec.norm(dir),n=Vec.perp(d);const tip=Vec.add(wr,Vec.add(Vec.mul(d,handLen*0.4),Vec.mul(n,width*0.7)));line(wr,tip,baseW*0.85);}
+  if(!lm||lm.length<29) return;
+  const pt=i=>{ const p=lm[i]; return p?{x:p.x*W,y:p.y*H,z:p.z||0,v:(p.visibility??p.v??1)}:null; };
+  const fade=p=>p?Math.max(0,Math.min(1,(p.v-0.32)/0.33)):0;   /* fully visible from ~0.65, gone below ~0.32 */
+  const L={}; for(const k in P) L[k]=pt(P[k]);
+  const shOk=fade(L.Lsh)>0.2&&fade(L.Rsh)>0.2, hipOk=fade(L.Lhip)>0.2&&fade(L.Rhip)>0.2;
+  let scale=shOk?Vec.dist(L.Lsh,L.Rsh):hipOk?Vec.dist(L.Lhip,L.Rhip)*1.25:Math.min(W,H)*0.14;
+  if(shOk&&hipOk) scale=Math.max(scale,Vec.dist(Vec.mid(L.Lsh,L.Rsh),Vec.mid(L.Lhip,L.Rhip))*0.55);
+  const bw=Math.max(2.2,Math.min(scale*0.045,Math.min(W,H)*0.012));
+  const depthW=(a,b)=>{ const z=((a.z||0)+(b.z||0))/2; return Math.max(0.75,Math.min(1.3,1-z*1.2)); };
+  ctx.save(); ctx.lineCap="round"; ctx.lineJoin="round";
+  /* torso panel */
+  if(shOk&&hipOk){
+    const al=Math.min(fade(L.Lsh),fade(L.Rsh),fade(L.Lhip),fade(L.Rhip));
+    const g=ctx.createLinearGradient(Vec.mid(L.Lsh,L.Rsh).x,Vec.mid(L.Lsh,L.Rsh).y,Vec.mid(L.Lhip,L.Rhip).x,Vec.mid(L.Lhip,L.Rhip).y);
+    g.addColorStop(0,`rgba(${GLOW},${0.20*al})`); g.addColorStop(1,`rgba(${GLOW},${0.05*al})`);
+    ctx.beginPath(); ctx.moveTo(L.Lsh.x,L.Lsh.y); ctx.lineTo(L.Rsh.x,L.Rsh.y); ctx.lineTo(L.Rhip.x,L.Rhip.y); ctx.lineTo(L.Lhip.x,L.Lhip.y); ctx.closePath();
+    ctx.fillStyle=g; ctx.fill();
   }
-  function drawFoot(an,toe,kn){
-    if(!ok(an))return; let dir=null; const hasToe=ok(toe)&&Vec.dist(toe,an)>scale*0.08;
-    if(hasToe)dir=Vec.sub(toe,an);
-    else if(ok(kn)){const shank=Vec.norm(Vec.sub(an,kn));let n=Vec.perp(shank);if(n.y<0)n=Vec.mul(n,-1);dir=Vec.norm(Vec.add(Vec.mul(shank,0.5),Vec.mul(n,0.9)));}
-    else dir={x:0,y:1};
-    const len=hasToe?Math.max(scale*0.28,Vec.len(dir)):scale*0.30, width=scale*0.18, back=Vec.mul(Vec.norm(dir),-width*0.3);
-    orect(Vec.add(an,back),dir,len,width);
+  /* bones: [from, to, weight] */
+  const segs=[];
+  const S=(a,b,w)=>{ if(a&&b) segs.push([a,b,w]); };
+  S(L.Lsh,L.Rsh,1); S(L.Lhip,L.Rhip,1); S(L.Lsh,L.Lhip,0.85); S(L.Rsh,L.Rhip,0.85);
+  S(L.Lsh,L.Lel,1); S(L.Lel,L.Lwr,1); S(L.Rsh,L.Rel,1); S(L.Rel,L.Rwr,1);
+  S(L.Lhip,L.Lknee,1.15); S(L.Lknee,L.Lank,1.1); S(L.Rhip,L.Rknee,1.15); S(L.Rknee,L.Rank,1.1);
+  for(const s of ["L","R"]){ const wr=L[s+"wr"], an=L[s+"ank"];
+    S(wr,L[s+"thumb"],0.5); S(wr,L[s+"index"],0.55); S(wr,L[s+"pinky"],0.55); S(L[s+"index"],L[s+"pinky"],0.45);
+    S(an,L[s+"heel"],0.6); S(L[s+"heel"],L[s+"toe"],0.6); S(an,L[s+"toe"],0.55); }
+  /* neck and head */
+  let head=null, headR=0;
+  const earOk=fade(L.Lear)>0.25&&fade(L.Rear)>0.25, eyeOk=fade(L.Leye)>0.25&&fade(L.Reye)>0.25;
+  if(earOk){ head=Vec.mid(L.Lear,L.Rear); headR=Math.max(Vec.dist(L.Lear,L.Rear)*0.62,scale*0.22); head.v=Math.min(L.Lear.v,L.Rear.v); }
+  else if(eyeOk){ head=Vec.mid(L.Leye,L.Reye); headR=Math.max(Vec.dist(L.Leye,L.Reye)*1.55,scale*0.22); head.v=Math.min(L.Leye.v,L.Reye.v); }
+  else if(fade(L.nose)>0.25){ head={x:L.nose.x,y:L.nose.y,v:L.nose.v}; headR=scale*0.3; }
+  if(head&&shOk){ const sc=Vec.mid(L.Lsh,L.Rsh); sc.v=Math.min(L.Lsh.v,L.Rsh.v); const d=Vec.norm(Vec.sub(head,sc)); const nb={x:head.x-d.x*headR,y:head.y-d.y*headR,v:head.v,z:0}; S(sc,nb,0.9); }
+  /* pass 1: glow, pass 2: core */
+  for(const pass of [0,1]){
+    for(const [a,b,w] of segs){
+      const al=Math.min(fade(a),fade(b)); if(al<0.04) continue;
+      const lw=bw*w*depthW(a,b);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+      if(pass===0){ ctx.strokeStyle=`rgba(${GLOW},${0.22*al})`; ctx.lineWidth=lw*2.8; }
+      else{ ctx.strokeStyle=`rgba(${GLOW},${0.95*al})`; ctx.lineWidth=lw; }
+      ctx.stroke();
+    }
   }
+  if(head&&headR){ const al=fade(head);
+    ctx.beginPath(); ctx.arc(head.x,head.y,headR,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${GLOW},${0.07*al})`; ctx.fill();
+    ctx.strokeStyle=`rgba(${GLOW},${0.22*al})`; ctx.lineWidth=bw*2.4; ctx.stroke();
+    ctx.strokeStyle=`rgba(${GLOW},${0.95*al})`; ctx.lineWidth=bw*0.9; ctx.stroke();
+    for(const f of [L.Leye,L.Reye,L.nose]){ const fa=fade(f)*al; if(fa<0.1) continue; ctx.beginPath(); ctx.arc(f.x,f.y,Math.max(1.5,bw*0.38),0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${0.75*fa})`; ctx.fill(); }
+  }
+  /* joint-angle arcs at the knees and elbows */
+  const arc=(a,j,b)=>{ const al=Math.min(fade(a),fade(j),fade(b)); if(al<0.3) return;
+    const a1=Math.atan2(a.y-j.y,a.x-j.x), a2=Math.atan2(b.y-j.y,b.x-j.x); let d=a2-a1; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
+    const r=bw*3.4; ctx.beginPath(); ctx.moveTo(j.x,j.y); ctx.arc(j.x,j.y,r,a1,a1+d,d<0); ctx.closePath();
+    ctx.fillStyle=`rgba(${GLOW},${0.16*al})`; ctx.fill();
+    ctx.beginPath(); ctx.arc(j.x,j.y,r,a1,a1+d,d<0); ctx.strokeStyle=`rgba(255,255,255,${0.55*al})`; ctx.lineWidth=Math.max(1,bw*0.32); ctx.stroke(); };
+  for(const s of ["L","R"]){ arc(L[s+"hip"],L[s+"knee"],L[s+"ank"]); arc(L[s+"sh"],L[s+"el"],L[s+"wr"]); }
+  /* joints */
+  const major=["Lsh","Rsh","Lel","Rel","Lwr","Rwr","Lhip","Rhip","Lknee","Rknee","Lank","Rank"];
+  const minor=["Lthumb","Rthumb","Lindex","Rindex","Lpinky","Rpinky","Lheel","Rheel","Ltoe","Rtoe"];
+  for(const k of major){ const p=L[k], al=fade(p); if(al<0.05) continue; const r=bw*1.15*depthW(p,p);
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*1.9,0,Math.PI*2); ctx.fillStyle=`rgba(${GLOW},${0.16*al})`; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fillStyle=`rgba(12,14,16,${0.55*al})`; ctx.fill();
+    ctx.lineWidth=Math.max(1.2,bw*0.5); ctx.strokeStyle=`rgba(${GLOW},${al})`; ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x,p.y,r*0.42,0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${0.95*al})`; ctx.fill(); }
+  for(const k of minor){ const p=L[k], al=fade(p); if(al<0.05) continue;
+    ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(1.4,bw*0.42),0,Math.PI*2); ctx.fillStyle=`rgba(${GLOW},${0.95*al})`; ctx.fill(); }
+  ctx.restore();
 }
 
 /* =========================================================================
@@ -14313,6 +14365,21 @@ async function startCam(){
   rvideo.srcObject=rStream; rApplyMirror();   /* GA: mirrored from the camera actually opened */
   await rvideo.play();await new Promise(r=>{if(rvideo.readyState>=2)return r();rvideo.onloadeddata=()=>r();});sizeCanvas();
 }
+/* GA-2 (owner, 2026-11-22): with the phone held sideways the camera picture stays portrait, so the person lies on their
+   side in it - and pose detection is far weaker on a sideways body. Detection now runs on an upright copy of the frame
+   (the same turn as the saved landscape recording, but without the mirror: rotation + 180 deg when mirrored, see the log),
+   so the lines hold up in landscape and the captured landmarks are upright, unmirrored - like portrait captures. */
+let poseCanvas=null, poseCtx=null;
+function poseSource(){
+  const vw=rvideo.videoWidth, vh=rvideo.videoHeight;
+  if(!rDevTurn||!vw||!vh||vw>=vh) return {el:rvideo,rot:0,w:vw||roverlay.width,h:vh||roverlay.height};
+  let rot=rDevTurn===270?Math.PI/2:-Math.PI/2;   /* the recording's turn (startRec) */
+  if(rMirror) rot=-rot;                          /* unmirrored frame: the opposite quarter turn */
+  if(!poseCanvas){ poseCanvas=document.createElement("canvas"); poseCtx=poseCanvas.getContext("2d"); }
+  if(poseCanvas.width!==vh||poseCanvas.height!==vw){ poseCanvas.width=vh; poseCanvas.height=vw; }
+  poseCtx.setTransform(1,0,0,1,0,0); poseCtx.translate(vh/2,vw/2); poseCtx.rotate(rot); poseCtx.drawImage(rvideo,-vw/2,-vh/2,vw,vh);
+  return {el:poseCanvas,rot,w:vh,h:vw};
+}
 function rLoop(){
   try{
     updateDims();
@@ -14331,7 +14398,8 @@ function rLoop(){
         let res=null;
         try{
           if(rRecording) capSeen++;
-      res=landmarker.detectForVideo(rvideo,poseTs);
+          const src=poseSource();   /* GA-2: upright frame when the phone is held sideways */
+          res=landmarker.detectForVideo(src.el,poseTs); res&&(res.__src=src);
           poseFails=0;
         }catch(err){
           poseFails++;
@@ -14340,9 +14408,13 @@ function rLoop(){
         }
         if(res){
           rctx.save();rctx.clearRect(0,0,roverlay.width,roverlay.height);
-          const mirror=rMirror; if(mirror){rctx.translate(roverlay.width,0);rctx.scale(-1,1);}   /* GA: same decision as the preview */
+          const src=res.__src||{rot:0,w:roverlay.width,h:roverlay.height};
+          const mirror=rMirror;
+          /* GA-2: the figure is worked out in the detection frame (upright when sideways) and drawn back onto the preview:
+             display = mirror x rotate(-rot) x detection frame */
+          rctx.translate(roverlay.width/2,roverlay.height/2); if(mirror) rctx.scale(-1,1); if(src.rot) rctx.rotate(-src.rot); rctx.translate(-src.w/2,-src.h/2);
           if(res.landmarks&&res.landmarks.length) poseLastHit=Date.now();   /* HD */
-          if(rShow&&res.landmarks){for(const lm of res.landmarks)drawFigure(rctx,lm,roverlay.width,roverlay.height);}
+          if(rShow&&res.landmarks&&res.landmarks[0]) drawFigure(rctx,smoothPose(res.landmarks[0],src.rot+":"+src.w+"x"+src.h),src.w,src.h);   /* GA-2: smoothed for display only */
           rctx.restore();
           if(rRecording&&res.landmarks&&res.landmarks.length)capFrames.push(res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility})));
         }

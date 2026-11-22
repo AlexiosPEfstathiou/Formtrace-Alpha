@@ -86,6 +86,9 @@ Front camera, filming yourself, on your Android phone. Then once with the back c
 - [ ] **GA-T4** Turn the phone **sideways, top to the LEFT**: the countdown, timer and icons turn to face you; there is no Portrait/Landscape button any more. Record a set → it is saved **upright in landscape**. Then **top to the RIGHT** → also upright. **If one is upside down, note which side.**
 - [ ] **GA-T5** Start recording, then turn the phone: the recording's orientation does not change mid-set.
 - [ ] **GA-T6** **Back camera**: not mirrored, and the Mirror button is hidden.
+- [ ] **GA-T7** (2026-11-22) The new lines: every joint (incl. thumbs, fingers, heels, toes), glow, ring joints, knee/elbow arcs; they glide rather than jitter, and fade rather than flicker when a limb leaves the frame. Same look in Replay and in the coach's review.
+- [ ] **GA-T8** Phone sideways (each way): the lines stay on the body as well as in portrait; the saved landscape video is upright with the lines on it.
+- [ ] **GA-T9** Turn the phone back and forth before recording: the countdown, timer and side icons turn smoothly in place; rep counting still works on a landscape set.
 ## As the trainee — a workout (GX, 2026-11-20)
 - [ ] **HR-T1** (2026-11-22) Propose a coaching call: the start time is two 24-hour boxes (e.g. 18 : 30); the sent call shows 18:30. Coach weekly side shows "Assign next week's sessions".
 - [ ] **HQ-T1** (2026-11-22) Open a workout (trainee) and a review (coach): the tab bar stays; the last set / Submit and "Send review" are not hidden behind it.

@@ -107,7 +107,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 ## 7. Camera and recorder — drawn by code
 | Asset | Where | Tier | Notes |
 |---|---|---|---|
-| Pose overlay skeleton (joints, lines) | recorder | Code | Colours and line style follow the theme (lime joints, gold traces as on the landing page) |
+| Pose overlay skeleton (joints, lines) | recorder | Code | GA-2 (2026-11-22): all body landmarks (shoulders, elbows, wrists, thumb/index/pinky, hips, knees, ankles, heels, toes; head ring with eyes and nose); gold #F0D231 two-pass strokes (soft glow under a crisp core), ring joints with a white centre, small finger/foot dots, knee/elbow angle arcs, gradient torso panel, depth-weighted widths, visibility fades, One Euro smoothing. Burned into the recorded video. |
 | Record button, countdown, take review; Mirror button; sideways turn of countdown / timer / icons (GA) | recorder (`#rec`) | Code | |
 
 ## 8. Outside the app

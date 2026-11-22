@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**GA-2 (2026-11-22, personal account): camera second pass - new pose lines (all body joints, glow + core strokes, ring joints, angle arcs, smoothing) and landscape detection on an upright frame; icons turn smoothly in place - BUILT (GA-T7..T9; GA-T1..T6 still to test).**
 **HR (2026-11-22, personal account): times in 24-hour form - the call time picker is now two 24-hour selects (the phone's own picker showed AM/PM); coach weekly quest named "Assign next week's sessions" - BUILT (HR-T1). HP-T1 passed (same-day call proposed).**
 **HQ (2026-11-22, personal account): the tab bar stays visible inside a workout and a review - BUILT (HQ-T1).**
 **HP (2026-11-22, personal account): tapping a calendar day with a workout offered only the workout (coach could not arrange a same-day call) - the day now offers workout / coaching call / nutrition - BUILT (HP-T1, HP-T2).**
@@ -752,7 +753,18 @@ styles, one column, the gold button), dark-mode safe, plain-text fallback. Sende
 the sender is contact@formtrace.ie via Titan since DC). Logo in the email once OpenArt's logo exists (EW; add to
 `docs/DESIGN_ASSETS.md` - "Sign-in / password-reset emails" row). C can draft all templates for the owner to paste.
 
-## GA. Camera - refine / restart in general (owner, 2026-11-04) - FIRST PASS BUILT 2026-11-05
+## GA. Camera - refine / restart in general (owner, 2026-11-04) - FIRST PASS BUILT 2026-11-05; SECOND PASS (GA-2) BUILT 2026-11-22
+
+**GA-2 - owner 2026-11-22 19:33:** "This is the bread and butter of our app. We need the lines looking very slick and beautiful, as many joints incorporated without breaking the function, and a seamless switch between landscape and portrait as if you are in the native camera app."
+**Built (index.html, no SQL):**
+- **New figure** (`drawFigure`, drawing only - capture, rep counting and form comparison still use the raw landmarks): every BlazePose body landmark - shoulders, elbows, wrists, thumb / index / pinky, hips, knees, ankles, heels, toes - plus a head ring with eye and nose dots; a soft wide glow under a crisp gold core (no canvas blur, so it stays cheap on phones); ring joints with a white centre; knee and elbow angle arcs; a gradient torso panel; limbs nearer the camera slightly thicker (BlazePose depth); points fade with their visibility instead of popping. The old stylised hands / feet blocks and the waist triangle are gone. Screenshot checked on a sample pose.
+- **Smoothing:** a One Euro filter on the drawn figure (`smoothPose`) - still when you are still, no lag when you move fast. Reset after a gap or an orientation change.
+- **Landscape that works:** with the phone sideways the camera picture stays portrait, so the body lies on its side in it, and pose detection is much weaker on a sideways body. Detection now runs on an upright copy of each frame (`poseSource`) - the same quarter turn as the saved landscape recording, minus the mirror (the opposite quarter turn when mirrored) - and the figure is mapped back onto the preview. Checked with matrix tests for both sideways directions, mirrored and not: the lines land exactly on the preview, and the detection frame equals the recording frame (mirrored or not). Captured landmarks in landscape are now upright and unmirrored, like portrait ones - better for rep counting and the form comparison.
+- **Native-camera feel:** the countdown, timer, status and side-button icons now turn in place with a short eased animation instead of snapping.
+**Depends on GA-T4** (still untested): which quarter turn is right for each sideways direction. If a landscape recording comes out upside down, the lines will be missing in landscape too - one swap in `startRec` fixes both.
+**Not done (from the original scope):** camera choice / resolution limits, switching apps mid-recording, iPhone motion permission (CX), trim (BC).
+
+
 
 **Owner 2026-11-05 (work account):** "The lines work great. The landscape toggle is not good, and the camera preview is not mirrored."
 Device: **Android phone, front camera, filming himself**. The toggle: it should **turn by itself** when the phone rotates, it **turned
