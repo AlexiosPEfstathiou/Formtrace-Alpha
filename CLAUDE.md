@@ -71,6 +71,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
   happens ("I've paid", "Received ✓").
 - Lime (`--lime`) means tappable. Dark theme first; both themes must work. **Owner 2026-11-23: lime is excluded from the brand - black and yellow are the identity (HZ: replace the lime). Brand yellow = deep gold `#E8B923` (owner 2026-11-23, until feedback suggests otherwise); logo = traced-line F, files in `docs/brand/logo/`.**
 - Achievements and the Consistency badge are **friends-only**, never public.
+- **Rewards are claimed, never auto-paid (owner 2026-11-23, IB):** every points reward - daily tasks, weekly quests, daily bonus, and any future monthly / yearly reward - shows a gold "Claim +N" button when earned; points move only on tap.
 - The owner prefers concise, formal replies; screenshots identify UI problems fastest —
   ask for one on the first "doesn't work" report, and read Review → Client errors.
 
