@@ -15,7 +15,7 @@ stays one family. Tick items here as they are done.
 **image / style reference** in OpenArt.
 
 > **Style block:** Formtrace, a fitness coaching app about movement, form and progress. Dark, premium, minimal.
-> Background near-black #0B0E11. Signature accent warm gold #F0D231 - black and yellow only (owner 2026-11-23: no lime).
+> Background near-black #0B0E11. Signature accent deep gold #E8B923 (owner 2026-11-23; was #F0D231) - black and yellow only (owner 2026-11-23: no lime).
 > Clean geometric shapes, smooth confident lines, subtle glow, no clutter, no text unless asked, no stock-photo look,
 > no gym clichés (no dumbbell clip-art). Flat vector style, crisp edges.
 
@@ -77,7 +77,7 @@ blank calendar page) · no friends (two empty chairs) · no notifications (a qui
 ## Progress
 | Step | Files | Status |
 |---|---|---|
-| 1 | logo-mark.png (+ wordmark) | to do |
+| 1 | logo-mark.png (+ wordmark) | mark chosen 2026-11-23: traced-line F, deep gold #E8B923 - files in docs/brand/logo/; wordmark to do |
 | 2 | app icons, favicon, badge, Stripe icon | waits for 1 |
 | 3 | og-base.png | to do |
 | 4 | landing-hero.png | to do |

@@ -10,7 +10,7 @@ other's chats or memory - **this repository is the shared memory.**
    **`docs/HANDOVER.md`** and **`supabase/SQL_JOURNAL.md`** before doing anything else.
 2. **Every 5 owner prompts** in a session: update `docs/HANDOVER.md` (state, plan,
    decisions, blockers) and this file (any new rule or convention), commit
-   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-22 night, personal account - HV-HX, GK-2, GI finished (webhook + payment functions deployed, CSP behind ?csp=1), DN closed, Open goals teaser bars + demo goals (remove later); all SQL run; see top of HANDOVER.)
+   "Handover refresh", push. Also do it before the session ends. (Last refresh: 2026-11-23 night, personal account - logo chosen: traced-line F in deep gold #E8B923 (docs/brand/logo/); HZ app recolour waits for go. Before that, 2026-11-22 night: HV-HX, GK-2, GI finished (webhook + payment functions deployed, CSP behind ?csp=1), DN closed, Open goals teaser bars + demo goals (remove later); all SQL run; see top of HANDOVER.)
 3. **Every SQL command handed to the owner** gets a row in `supabase/SQL_JOURNAL.md`
    (status `given`); when the owner confirms, mark it `run ✓` with the result. Never
    assume SQL was run - check the journal, or run its verification query.
@@ -69,7 +69,7 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").
-- Lime (`--lime`) means tappable. Dark theme first; both themes must work. **Owner 2026-11-23: lime is excluded from the brand - black and yellow are the identity (HZ: replace the lime).**
+- Lime (`--lime`) means tappable. Dark theme first; both themes must work. **Owner 2026-11-23: lime is excluded from the brand - black and yellow are the identity (HZ: replace the lime). Brand yellow = deep gold `#E8B923` (owner 2026-11-23, until feedback suggests otherwise); logo = traced-line F, files in `docs/brand/logo/`.**
 - Achievements and the Consistency badge are **friends-only**, never public.
 - The owner prefers concise, formal replies; screenshots identify UI problems fastest —
   ask for one on the first "doesn't work" report, and read Review → Client errors.
