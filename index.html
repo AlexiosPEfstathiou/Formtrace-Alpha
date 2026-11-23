@@ -62,38 +62,38 @@ if(!off){for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/^s
 if(!off&&/type=recovery|access_token|error_description|checkout=|stripe=|stripetest=/.test(location.search+location.hash))off=true;
 if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp-off');}catch(e){R.classList.add('lp-off');}})();</script>
 <link rel="preconnect" href="https://fonts.bunny.net" />
-<link rel="stylesheet" href="https://fonts.bunny.net/css?family=big-shoulders-display:800,900&display=swap" />
+<link rel="stylesheet" href="https://fonts.bunny.net/css?family=montserrat:700,800&display=swap" />
 <style>
-  /* ---- EX landing page (signed-out visitors). Brand tokens; display face Big Shoulders Display via Bunny Fonts (EU, no tracking). ---- */
+  /* ---- EX landing page (signed-out visitors). Brand tokens; display face Montserrat (EW 2026-11-23, was Big Shoulders Display) via Bunny Fonts (EU, no tracking). ---- */
   html.lp-off #landing{display:none!important}
   html:not(.lp-off) body{overflow:hidden}
-  #landing{--lp-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  #landing{--lp-display:"Montserrat",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;
     background:#0B0E11;color:#EEF3F6;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;
     padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
   #landing *{box-sizing:border-box}
   #landing .lp-wrap{max-width:1080px;margin:0 auto;padding:0 22px}
   #landing .lp-top{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
-  #landing .lp-logo{font-family:var(--lp-display);font-weight:900;font-size:26px;letter-spacing:.5px;color:#EEF3F6;margin:0}
-  #landing .lp-logo span{color:#F0D231}
+  #landing .lp-logo{margin:0;line-height:0}
+  #landing .lp-logo img{height:30px;width:auto;display:block}
   #landing .lp-signin{color:#A9B5BF;font:inherit;font-size:15px;text-decoration:underline;text-underline-offset:3px;background:none;border:0;cursor:pointer;padding:8px 4px}
   #landing .lp-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:32px;align-items:center;padding:22px 0 60px}
-  #landing h1{font-family:var(--lp-display);font-weight:900;font-size:clamp(50px,8.4vw,100px);line-height:.9;letter-spacing:-.3px;margin:0 0 20px;text-wrap:balance}
+  #landing h1{font-family:var(--lp-display);font-weight:800;font-size:clamp(36px,5.8vw,66px);line-height:1.04;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance}
   #landing .lp-lead{font-size:18.5px;color:#C9D3DA;max-width:32em;margin:0 0 28px}
-  #landing .lp-cta{display:inline-block;font-family:var(--lp-display);font-weight:800;font-size:28px;letter-spacing:.6px;line-height:1;color:#2c2400;background:#F0D231;
+  #landing .lp-cta{display:inline-block;font-family:var(--lp-display);font-weight:800;font-size:20px;letter-spacing:.01em;line-height:1;color:#2c2400;background:#F0D231;
     border:0;border-radius:999px;padding:20px 46px 21px;cursor:pointer;box-shadow:0 10px 34px rgba(240,210,49,.28)}
   #landing .lp-cta:hover{background:#FBE577}
   #landing .lp-cta:focus-visible,#landing .lp-signin:focus-visible,#landing .lp-link:focus-visible,#landing .lp-foot a:focus-visible{outline:3px solid #C8FF3D;outline-offset:3px}
   #landing .lp-note{font-size:14px;color:#8593A0;margin:14px 0 0}
   #landing .lp-fig{display:block;width:100%;max-width:400px;height:auto;justify-self:center}
   #landing .lp-sec{padding:54px 0;border-top:1px solid #232C35}
-  #landing h2{font-family:var(--lp-display);font-weight:800;font-size:clamp(36px,5.4vw,56px);line-height:.95;margin:0 0 30px}
+  #landing h2{font-family:var(--lp-display);font-weight:800;font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.015em;margin:0 0 30px}
   #landing h3{font-size:19px;line-height:1.3;margin:0 0 6px;color:#EEF3F6}
   #landing .lp-why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 48px;margin:0;padding:0;list-style:none}
   #landing .lp-why li{border-left:3px solid #F0D231;padding:2px 0 2px 18px}
   #landing .lp-why p,#landing .lp-steps p{margin:0;color:#A9B5BF;max-width:34em}
   #landing .lp-steps{counter-reset:lps;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px}
   #landing .lp-steps li{counter-increment:lps}
-  #landing .lp-steps li::before{content:counter(lps);display:block;font-family:var(--lp-display);font-weight:900;font-size:64px;line-height:1;color:#F0D231;margin-bottom:6px}
+  #landing .lp-steps li::before{content:counter(lps);display:block;font-family:var(--lp-display);font-weight:800;font-size:52px;line-height:1;color:#F0D231;margin-bottom:6px}
   #landing .lp-end{text-align:center;padding:70px 0 64px;border-top:1px solid #232C35}
   #landing .lp-end h2{margin-bottom:26px}
   #landing .lp-coach{margin:26px auto 0;color:#A9B5BF;font-size:15.5px;max-width:32em}
@@ -283,8 +283,11 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
   #s-home{justify-content:flex-start;}
   .hero{padding:calc(env(safe-area-inset-top) + 60px) 26px 0;}
   .hero.with-tabs{flex:1;overflow-y:auto;padding-bottom:110px;}
-  .logo{font-size:15px;letter-spacing:.28em;font-weight:800;}
-  .logo b{color:var(--lime);}
+  .logo{line-height:0;}
+  .logo img{height:26px;width:auto;}   /* EW 2026-11-23: brand wordmark (Montserrat ExtraBold, outlined SVG) */
+  .logo .wm-light{display:none;}
+  html[data-theme="light"] .logo .wm-dark{display:none;}
+  html[data-theme="light"] .logo .wm-light{display:inline;}
   .hero h2{font-size:40px;line-height:1.02;font-weight:800;letter-spacing:-.03em;margin-top:26px;}
   .hero h2 .g{color:var(--lime);}
   .hero p{color:var(--muted);font-size:15px;line-height:1.55;margin-top:16px;max-width:300px;}
@@ -1390,7 +1393,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 <div id="landing">
   <div class="lp-wrap">
     <header class="lp-top">
-      <p class="lp-logo">FORM<span>TRACE</span></p>
+      <p class="lp-logo"><img src="wordmark.svg" alt="Formtrace" width="150" height="30"></p>
       <button type="button" class="lp-signin" data-lp-go="signin">Sign in</button>
     </header>
     <main>
@@ -1517,7 +1520,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
   <!-- ============ HOME (role-aware hub) ============ -->
   <section class="screen" id="s-home">
     <div class="hero with-tabs">
-      <div class="logo">FORM<b>TRACE</b> · COACH</div>
+      <div class="logo"><img class="wm-dark" src="wordmark.svg" alt="Formtrace"><img class="wm-light" src="wordmark-light.svg" alt="Formtrace"></div>
       <h2 id="home-h">Build a library.<br>Assign the day.<br><span class="g">Grade the form.</span></h2>
       <p id="home-p">Record each exercise once with its correct form. Assemble single-day workouts, assign them, and trainees get reps counted and form graded.</p>
       <!-- Item CO: trainee homepage v2 - the structured section first -->

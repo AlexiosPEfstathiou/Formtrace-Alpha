@@ -16,7 +16,7 @@ all of it** — not one-off pieces.
 **Theme constraints to give openart:** dark UI first (a light theme exists); signature accent **deep gold `#E8B923`** (owner 2026-11-23, until feedback suggests otherwise; was gold `#F0D231`)
 (light theme `#B8960A`); **owner 2026-11-23: lime `#C8FF3D` is excluded from the brand - black and yellow are the identity** (the app's lime still to be replaced, HZ); status red `#FF5A5A`, amber `#FFC24A`, blue `#5AB0FF`,
 violet `#B79CFF`; backgrounds `#0B0E11` / cards `#151B21`. Name: **Formtrace** (owner, 2026-11-04 - not FormTrace;
-wordmark today: "FORM**TRACE**" with TRACE in gold). Display face in use on the landing page: Big Shoulders Display. **Wordmark (owner 2026-11-23): Montserrat ExtraBold 800**, files `docs/brand/logo/wordmark-*.svg`.
+wordmark today: "FORM**TRACE**" with TRACE in gold). Display face in use on the landing page: Big Shoulders Display. **Wordmark (owner 2026-11-23): Montserrat ExtraBold 800**, files `docs/brand/logo/wordmark-*.svg`; live as `wordmark.svg` / `wordmark-light.svg`; landing display face is now Montserrat too (owner option 2).
 Audience: trainees and coaches; fitness, form and progress; community. Must work small (16–24 px) and on phones;
 animations need a calm reduced-motion version. North star: fitness + social life + a community brand (PRODUCT_LOG FS).
 
