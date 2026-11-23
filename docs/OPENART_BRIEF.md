@@ -77,7 +77,7 @@ blank calendar page) · no friends (two empty chairs) · no notifications (a qui
 ## Progress
 | Step | Files | Status |
 |---|---|---|
-| 1 | logo-mark.png (+ wordmark) | mark chosen 2026-11-23: traced-line F, deep gold #E8B923 - files in docs/brand/logo/; wordmark to do |
+| 1 | logo-mark.png (+ wordmark) | mark chosen 2026-11-23: traced-line F, deep gold #E8B923 - files in docs/brand/logo/; wordmark done (Montserrat ExtraBold, outlined SVGs) |
 | 2 | app icons, favicon, badge, Stripe icon | done 2026-11-23 except the Stripe icon (owner uploads icon-512.png in Stripe → Branding) |
 | 3 | og-base.png | to do |
 | 4 | landing-hero.png | to do |
