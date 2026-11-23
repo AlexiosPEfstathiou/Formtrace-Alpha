@@ -66,7 +66,8 @@ One family, 24 px grid, same stroke weight, **SVG**, an outline and a filled (ac
 | "⚡ Reviews within a day" mark | coach card (EL) | L2 | current (text + emoji) | SVG, 16 px inline |
 | Verified / certification badges | coach cards (`badgeSpans`) | Code | current (text pills) | Theme colours only |
 | Top 1% coach gold frame + label | pitch rows (BY) | Code | current (animated gold frame) | Theme colours only |
-| "Offer accepted" pill, red "to assign" / green "to review" counts, tab badge dots | Trainees list (FD), tab bar | Code | current | Theme colours only |
+| "Offer accepted" pill, red "to assign" / green "to review" counts, tab badge dots | Trainees list (FD), tab bar | Code | current | Theme colours only; **tab counters deep gold with black number (IC, 2026-11-23)** |
+| **Tab bar icons** (Home, Training, Goal, Notifications, Social; coach: Open goals, Trainees) | bottom bar | **L1** | **done 2026-11-23 (IC)** - OpenArt motion-trace set, inline SVG | Library and Review icons still to make in the same style |
 
 ## 4. Celebrations, motion and progress — drawn by code
 All **Code**: keep the animation, apply the theme's colours and motion style; no openart files needed.

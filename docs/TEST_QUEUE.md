@@ -10,6 +10,8 @@ Tip: allow ~10 minutes after a change for the phone to pick up the new version (
 
 - [ ] **EW-T2** New wordmark: signed out, formtrace.ie shows the Formtrace logo + wordmark top left and the headlines in the new font; signed in, Home shows the wordmark above the heading; switch to the light theme - the wordmark stays readable.
 
+- [ ] **IC-T1** New tab bar icons: grey, the active tab deep gold; the counters (Goal offers, Social, coach tabs) show as gold circles with black numbers; check dark and light, and the coach bar.
+
 ## First — after the security lock (GD, 2026-11-10)
 - [ ] **GD-T1** Everything still works after the internal functions were locked. As a **trainee** and as a **coach**: sign out and in; open every tab (Home, Goal / Trainees, Training / Library, Social, Profile, Notifications; Review as admin); open a workout and mark a set; submit; as the coach open a review; open the payment tracker on a goal; pause / end pause; Social: congratulate. **If any screen says "permission denied for function …", note the function name** - it is a one-line fix.
 
