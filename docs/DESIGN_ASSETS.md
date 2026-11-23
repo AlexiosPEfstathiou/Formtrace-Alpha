@@ -14,7 +14,7 @@ all of it** — not one-off pieces.
 **Status** — placeholder = stand-in today · current = acceptable but generic · future = not built yet.
 
 **Theme constraints to give openart:** dark UI first (a light theme exists); signature accent **gold `#F0D231`**
-(light theme `#B8960A`); attention lime `#C8FF3D`; status red `#FF5A5A`, amber `#FFC24A`, blue `#5AB0FF`,
+(light theme `#B8960A`); **owner 2026-11-23: lime `#C8FF3D` is excluded from the brand - black and yellow are the identity** (the app's lime still to be replaced, HZ); status red `#FF5A5A`, amber `#FFC24A`, blue `#5AB0FF`,
 violet `#B79CFF`; backgrounds `#0B0E11` / cards `#151B21`. Name: **Formtrace** (owner, 2026-11-04 - not FormTrace;
 wordmark today: "FORM**TRACE**" with TRACE in gold). Display face in use on the landing page: Big Shoulders Display.
 Audience: trainees and coaches; fitness, form and progress; community. Must work small (16–24 px) and on phones;

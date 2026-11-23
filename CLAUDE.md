@@ -65,11 +65,11 @@ service worker. No build step. Hosted on GitHub Pages from `main`; backend Supab
     done, and any mistake made on the way.
 
 ## Conventions
-- New product items take the next two-letter code (last used: **HY**; next **HZ**) - **always check the log for the highest code before allocating: both accounts write items**,
+- New product items take the next two-letter code (last used: **HZ**; next **IA**) - **always check the log for the highest code before allocating: both accounts write items**,
   with an entry under its own `## XX.` heading and a row in the index table.
 - Copy: British English, sentence case, no exclamation-mark spam; buttons say what
   happens ("I've paid", "Received ✓").
-- Lime (`--lime`) means tappable. Dark theme first; both themes must work.
+- Lime (`--lime`) means tappable. Dark theme first; both themes must work. **Owner 2026-11-23: lime is excluded from the brand - black and yellow are the identity (HZ: replace the lime).**
 - Achievements and the Consistency badge are **friends-only**, never public.
 - The owner prefers concise, formal replies; screenshots identify UI problems fastest —
   ask for one on the first "doesn't work" report, and read Review → Client errors.

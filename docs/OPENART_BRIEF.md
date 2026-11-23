@@ -15,7 +15,7 @@ stays one family. Tick items here as they are done.
 **image / style reference** in OpenArt.
 
 > **Style block:** Formtrace, a fitness coaching app about movement, form and progress. Dark, premium, minimal.
-> Background near-black #0B0E11. Signature accent warm gold #F0D231, secondary lime #C8FF3D used sparingly.
+> Background near-black #0B0E11. Signature accent warm gold #F0D231 - black and yellow only (owner 2026-11-23: no lime).
 > Clean geometric shapes, smooth confident lines, subtle glow, no clutter, no text unless asked, no stock-photo look,
 > no gym clichés (no dumbbell clip-art). Flat vector style, crisp edges.
 
