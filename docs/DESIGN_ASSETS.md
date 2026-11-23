@@ -34,7 +34,7 @@ landing page look · tab and header icon family (13) · the core workout sounds 
 | Asset | Where | Tier | Status | Deliverable spec |
 |---|---|---|---|---|
 | Logo mark + wordmark lock-up ("Formtrace", FORM / TRACE) | Home hero (`.logo`), sign-in, landing, emails, Stripe | **L1** | current (text only) | SVG + PNG; horizontal lock-up, stacked lock-up, mark alone; dark and light versions; legible at 24 px tall |
-| App icons | `icon-192.png`, `icon-512.png`, `icon-512-maskable.png` | **L1** | placeholder | PNG 192 and 512; maskable 512 with the mark inside the central 80% safe zone; no transparency on the maskable one | **Done 2026-11-23 (EW): solid traced-line F, deep gold on #0B0E11**
+| App icons | `icon-192.png`, `icon-512.png`, `icon-512-maskable.png` | **L1** | placeholder | PNG 192 and 512; maskable 512 with the mark inside the central 80% safe zone; no transparency on the maskable one | **Done 2026-11-23 (EW): outline traced-line F, deep gold on #0B0E11 (the solid F is for small sizes only - favicon, badge)**
 | Apple touch icon | `apple-touch-icon.png` | **L1** | placeholder | PNG 180 x 180, no transparency (iOS adds the corners) |
 | Notification bar icon | `badge-96.png` | **L1** | placeholder (DJ) | PNG 96 x 96, **white silhouette on transparent** only (Android tints it) | **Done 2026-11-23 (EW): white solid F**
 | Browser tab icon (favicon) | page head | **L1** | placeholder | SVG favicon + PNG 32 and 16 | **Done 2026-11-23 (EW): `favicon.svg` + `favicon-32.png` (the SVG covers 16)**

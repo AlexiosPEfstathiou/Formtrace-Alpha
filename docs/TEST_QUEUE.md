@@ -6,7 +6,7 @@ updates PRODUCT_LOG. Grouped by where you will be in the app. Created 2026-11-05
 Tip: allow ~10 minutes after a change for the phone to pick up the new version (close and reopen the app).
 
 ## Brand icons (EW, 2026-11-23)
-- [ ] **EW-T1** New deep-gold F icon: the browser tab shows it; on the phone, remove and re-add the app to the home screen (icons are cached at install) and check the home-screen icon; a notification shows the white F in the status bar.
+- [ ] **EW-T1** New deep-gold F icon: the browser tab shows it; on the phone, remove and re-add the app to the home screen (icons are cached at install) and check the home-screen icon (outline F); a notification shows the white F in the status bar.
 
 ## First — after the security lock (GD, 2026-11-10)
 - [ ] **GD-T1** Everything still works after the internal functions were locked. As a **trainee** and as a **coach**: sign out and in; open every tab (Home, Goal / Trainees, Training / Library, Social, Profile, Notifications; Review as admin); open a workout and mark a set; submit; as the coach open a review; open the payment tracker on a goal; pause / end pause; Social: congratulate. **If any screen says "permission denied for function …", note the function name** - it is a one-line fix.
