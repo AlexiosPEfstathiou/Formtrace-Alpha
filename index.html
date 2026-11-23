@@ -267,6 +267,48 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .tr-tile.on .tr-val{color:inherit;opacity:.8}
 .tr-tile.on{border-color:#E8B923;background:var(--accent-surface)}
 .tr-sec{display:none;margin-top:12px}
+/* IE: Weeks view of the trainee's calendar */
+.wv-switch{display:flex;gap:4px;padding:4px;margin:0 auto 12px;max-width:280px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.wv-switch button{flex:1;height:34px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.wv-switch button.on{background:#E8B923;color:#0B0E11}
+.wv-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 16px 6px}
+.wv-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.wv-range{font-size:20px;font-weight:800;margin-top:4px;color:var(--ink)}
+.wv-sub{font-size:12px;color:var(--muted);margin-top:2px;min-height:0}
+.wv-big{position:relative;width:74px;height:74px;flex:0 0 auto}
+.wv-big>span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--muted);line-height:1.15}
+.wv-big>span b{font-size:16px;color:var(--ink)}
+.wv-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.wv-row:last-child{border-bottom:0}
+.wv-row.done{cursor:pointer}
+.wv-tick{width:28px;height:28px;flex:0 0 auto;border-radius:50%;border:2px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#0B0E11}
+.wv-row.done .wv-tick{background:#E8B923;border-color:#E8B923}
+.wv-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.wv-txt b{font-size:14.5px;color:var(--ink)}
+.wv-txt span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wv-row.unset .wv-txt b{color:var(--muted)}
+.wv-when{font-size:11.5px;color:var(--muted);text-align:right;line-height:1.3;flex:0 0 auto}
+.wv-start{flex:0 0 auto;height:36px;padding:0 16px;border:0;border-radius:11px;background:#E8B923;color:#0B0E11;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.wv-none{font-size:13px;color:var(--muted);padding:12px 0}
+.wv-h{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 8px;font-size:15px;font-weight:800;color:var(--ink)}
+.wv-all{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.wv-group{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.wv-group .wv-more{display:none}
+.wv-group.all .wv-more{display:block}
+.wv-line+.wv-line{border-top:1px solid var(--line)}
+.wv-line-h{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;background:none;border:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer;position:relative}
+.wv-line-h .wv-ring{flex:0 0 auto}
+.wv-n{position:absolute;left:14px;width:40px;text-align:center;font-size:10.5px;font-weight:800}
+.wv-lr{flex:1;font-size:14.5px;font-weight:700}
+.wv-tag{font-size:12px;color:var(--muted)}
+.wv-chev{color:var(--muted);font-size:20px;transition:transform .2s}
+.wv-line.open .wv-chev{transform:rotate(90deg)}
+.wv-detail{display:none;padding:0 14px 10px 66px}
+.wv-line.open .wv-detail{display:block}
+.wv-mini{display:flex;gap:8px;font-size:12.5px;color:var(--muted);padding:4px 0}
+.wv-mini span:nth-child(2){flex:1;color:var(--ink)}
+.wv-mini.done{cursor:pointer}
+.wv-mini.done span:first-child{color:#E8B923;font-weight:900}
 .tr-sec.open{display:block}
 .tr-sec>*:first-child{margin-top:0!important}
 /* EZ-6: cumulative coach notes */
@@ -4305,7 +4347,7 @@ async function renderHomeNewGoals(p){
    Completed workouts never appear as "today's program"; that block is retired. */
 async function goToCalendarWeek(monISO){
   go("trainee-home");
-  for(let i=0;i<12;i++){ const el=document.querySelector(`.cal-week[data-week="${monISO}"]`); if(el){ scrollInto(el,"start"); return; }   /* GL */ await new Promise(r=>setTimeout(r,250)); }
+  for(let i=0;i<12;i++){ const wv=document.querySelector(`.cal-wv [data-wv-week="${monISO}"]`); const el=(wv&&wv.offsetParent)?wv:document.querySelector(`.cal-week[data-week="${monISO}"]`); if(el&&el.offsetParent){ scrollInto(el,"start"); return; }   /* GL; IE: the Weeks view when it is showing */ await new Promise(r=>setTimeout(r,250)); }
 }
 /* ---- Item ES: the daily checklist on Home. Auto-ticks what the app can see (weigh-in, yesterday's macros, today's
    sessions); the rest is self-reported and kept on this phone for the day. All done -> "Day complete" once a day. ---- */
@@ -8669,6 +8711,81 @@ async function fillTileValues(tiles){
 }
 function goalEmoji(f){ const k=String(f||"").toLowerCase();   /* HX: category -> emoji on the Open goals bars */
   return k.includes("muscle")?"💪":k.includes("strength")?"🏋️":k.includes("mobil")?"🧘":(k.includes("fat")||k.includes("weight"))?"🔥":k.includes("endur")||k.includes("run")?"🏃":k.includes("rehab")?"🩹":k.includes("techn")?"🎯":"⭐"; }
+/* IE (owner, 2026-11-23): the trainee's calendar leads with WEEKS - sessions are set per week, done on any day.
+   Weeks view (default): this week's sessions as a checklist with one Start, earlier weeks as one line each with a ring,
+   then the next week. Month view = the existing day grid, kept for tapping a day (log a past day's weight and macros,
+   calls, check-ins). The choice is remembered per device. */
+let calView=(()=>{ try{ return localStorage.getItem("ft-cal-view")||"weeks"; }catch(e){ return "weeks"; } })();
+function wvRing(done,total,size){
+  const r=size/2-3, c=2*Math.PI*r, f=total?Math.min(1,done/total):0;
+  return `<svg class="wv-ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line2)" stroke-width="3.5"/>${f>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#E8B923" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${(c*f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>`:""}</svg>`;   /* no stray dot at 0 */
+}
+function wvRange(mon){ const s=new Date(mon+"T12:00:00"), e=new Date(addDaysISO(mon,6)+"T12:00:00");
+  const o={day:"numeric",month:"short"}; return s.getMonth()===e.getMonth()?`${s.getDate()} - ${e.toLocaleDateString("en-GB",o)}`:`${s.toLocaleDateString("en-GB",o)} - ${e.toLocaleDateString("en-GB",o)}`; }
+function wvName(a){ return (a.snapshot&&a.snapshot.name)||a.snap_name||"Workout"; }
+function weeksViewEl(){
+  const isDone=a=>a.status==="submitted"||a.status==="reviewed";
+  const thisMon=weekStartISO(new Date());
+  const byAge=rows=>[...rows].sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
+  const wrap=document.createElement("div"); wrap.className="cal-wv";
+  /* this week */
+  const rows=byAge(weekRows[thisMon]||[]), done=rows.filter(isDone).length;
+  const target=Math.max(weekCap!=null?weekCap:0, rows.length);
+  const paused=isPausedOn(todayISO());
+  const next=rows.find(a=>a.status==="assigned");
+  const card=document.createElement("div"); card.className="wv-card"; card.dataset.wvWeek=thisMon;
+  let list="";
+  rows.forEach((a,i)=>{
+    const d=isDone(a), isNext=a===next;
+    list+=`<div class="wv-row${d?" done":""}" data-wv-i="${i}"><span class="wv-tick">${d?"✓":""}</span>
+      <span class="wv-txt"><b>Session ${i+1}</b><span>${escapeHtml(wvName(a))}</span></span>
+      ${d?`<span class="wv-when">Done<br>${a.due_date?escapeHtml(fmtDay(a.due_date)):""}</span>`
+         :isNext&&!paused?`<span class="wv-when">Up next</span><button type="button" class="wv-start" data-wv-start="${i}">Start</button>`
+         :`<span class="wv-when">Any day<br>this week</span>`}</div>`;
+  });
+  for(let i=rows.length;i<target;i++) list+=`<div class="wv-row unset"><span class="wv-tick"></span><span class="wv-txt"><b>Session ${i+1}</b><span>Not set by your coach yet</span></span><span class="wv-when">Any day<br>this week</span></div>`;
+  if(!target) list=`<div class="wv-none">Nothing assigned this week yet.</div>`;
+  card.innerHTML=`<div class="wv-top"><div><div class="eyebrow">This week</div><div class="wv-range">${wvRange(thisMon)}</div>
+      <div class="wv-sub">${paused?"On a break - this week doesn't count":(target&&done>=target?"All done this week ✓":"")}</div></div>
+      <div class="wv-big">${wvRing(done,target,74)}<span><b>${done} / ${target}</b>workouts</span></div></div>${list}`;
+  card.querySelectorAll("[data-wv-start]").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); startSession(rows[+b.dataset.wvStart]); }));
+  card.querySelectorAll(".wv-row.done").forEach(r=>r.addEventListener("click",()=>{ const a=rows[+r.dataset.wvI]; if(a) engDayAction(a,false); }));
+  wrap.appendChild(card);
+  /* one line per week, tap to see its sessions */
+  const weekLine=(mon,label)=>{
+    const rs=byAge(weekRows[mon]||[]), dn=rs.filter(isDone).length, tot=rs.length;
+    const box=document.createElement("div"); box.className="wv-line"; box.dataset.wvWeek=mon;
+    box.innerHTML=`<button type="button" class="wv-line-h">${wvRing(dn,tot,40)}<span class="wv-n">${dn}/${tot}</span><span class="wv-lr">${wvRange(mon)}</span>${label?`<span class="wv-tag">${label}</span>`:""}<span class="wv-chev">›</span></button>
+      <div class="wv-detail">${rs.length?rs.map((a,i)=>`<div class="wv-mini${isDone(a)?" done":""}" data-i="${i}"><span>${isDone(a)?"✓":"○"}</span><span>${escapeHtml(wvName(a))}</span><span>${isDone(a)?(a.due_date?escapeHtml(fmtDay(a.due_date)):"Done"):(mon<thisMon?"Not done":"Any day")}</span></div>`).join(""):`<div class="wv-none">Nothing assigned.</div>`}</div>`;
+    box.querySelector(".wv-line-h").addEventListener("click",()=>box.classList.toggle("open"));
+    box.querySelectorAll(".wv-mini.done").forEach(m=>m.addEventListener("click",()=>{ const a=rs[+m.dataset.i]; if(a) engDayAction(a,false); }));
+    return box;
+  };
+  const past=Object.keys(weekRows).filter(m=>m<thisMon&&(weekRows[m]||[]).length).sort().reverse();
+  if(past.length){
+    const h=document.createElement("div"); h.className="wv-h"; h.innerHTML=`<span>Earlier weeks</span>${past.length>3?`<button type="button" class="wv-all">See all (${past.length})</button>`:""}`;
+    const grp=document.createElement("div"); grp.className="wv-group";
+    past.forEach((m,i)=>{ const l=weekLine(m,""); if(i>=3) l.classList.add("wv-more"); grp.appendChild(l); });
+    const all=h.querySelector(".wv-all"); if(all) all.addEventListener("click",()=>{ grp.classList.toggle("all"); all.textContent=grp.classList.contains("all")?"Show fewer":`See all (${past.length})`; });
+    wrap.appendChild(h); wrap.appendChild(grp);
+  }
+  const nextMon=addDaysISO(thisMon,7);
+  const future=Object.keys(weekRows).filter(m=>m>thisMon&&(weekRows[m]||[]).length).sort();
+  if(!future.includes(nextMon)) future.unshift(nextMon);
+  const h2=document.createElement("div"); h2.className="wv-h"; h2.innerHTML="<span>Upcoming</span>";
+  const g2=document.createElement("div"); g2.className="wv-group";
+  future.forEach(m=>g2.appendChild(weekLine(m,m===nextMon?"Next week":"")));
+  wrap.appendChild(h2); wrap.appendChild(g2);
+  return wrap;
+}
+function calViewSwitch(weeksEl,monthEl){
+  const sw=document.createElement("div"); sw.className="wv-switch"; sw.setAttribute("role","tablist");
+  sw.innerHTML=`<button type="button" data-v="weeks">Weeks</button><button type="button" data-v="month">Month</button>`;
+  const paint=()=>{ sw.querySelectorAll("button").forEach(b=>{ const on=b.dataset.v===calView; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false"); });
+    weeksEl.style.display=calView==="weeks"?"":"none"; monthEl.style.display=calView==="month"?"":"none"; };
+  sw.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ calView=b.dataset.v; try{ localStorage.setItem("ft-cal-view",calView); }catch(e){} paint(); }));
+  paint(); return sw;
+}
 function trainingControlPanel(body){
   try{
     const start=body.querySelector("#wk-card"); if(!start) return;
@@ -8696,7 +8813,13 @@ function trainingControlPanel(body){
       if(scroll&&trPanelOpen) setTimeout(()=>scrollInto(tiles,"start"),40);   /* GL: not scrollIntoView */
     };
     defs.forEach(([k,ic,label])=>{
-      const box=document.createElement("div"); box.className="tr-sec"; box.dataset.sec=k; secs[k].forEach(n=>box.appendChild(n)); host.appendChild(box); boxes[k]=box;
+      const box=document.createElement("div"); box.className="tr-sec"; box.dataset.sec=k;
+      if(k==="calendar"&&traineeMerged&&WEEK_MODEL){   /* IE: Weeks / Month switch on the trainee's calendar */
+        const monthEl=document.createElement("div"); monthEl.className="cal-month-view"; secs[k].forEach(n=>monthEl.appendChild(n));
+        let weeksEl; try{ weeksEl=weeksViewEl(); }catch(e){ console.warn("weeks view (IE)",e); weeksEl=document.createElement("div"); calView="month"; }
+        box.appendChild(calViewSwitch(weeksEl,monthEl)); box.appendChild(weeksEl); box.appendChild(monthEl);
+      } else secs[k].forEach(n=>box.appendChild(n));
+      host.appendChild(box); boxes[k]=box;
       const b=document.createElement("button"); b.type="button"; b.className="tr-tile"; b.dataset.tile=k; b.innerHTML=`<span class="tr-ic">${TR_ICONS[ic]||ic}</span><span class="tr-lab"><span>${label}</span><span class="tr-val" data-tv="${k}"></span></span>`;   /* GK-2: a live value under each label */
       b.addEventListener("click",()=>{ trPanelOpen=(trPanelOpen===k?null:k); paint(true); }); tiles.appendChild(b);
     });
