@@ -5,6 +5,7 @@ When it is time, take this list to openart.ai (PRODUCT_LOG **EW**) and ask for *
 all of it** — not one-off pieces.
 **Keep it current:** whoever builds or changes a visual element or a sound adds or updates its row (rule in CLAUDE.md).
 **Finalised for launch 2026-11-04** — every row has a tier and a deliverable spec.
+**2026-11-23: OpenArt bought for one month - the step-by-step prompts and file names are in `docs/OPENART_BRIEF.md`.**
 
 ## How to read this list
 **Tier** — **L1** = needed before the pilot coaches are invited (the openart month's must-do) ·
