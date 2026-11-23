@@ -45,7 +45,8 @@ rounded square app icon background, subtle gold glow" -> `icon-base.png` 1024.
 the right, plenty of dark space in the middle for a headline" (style reference: the mark). I add the headline text
 ("A real coach for every rep you record") and the wordmark in code. **Name:** `og-base.png` (1200 x 630 or larger, 1.9:1)
 
-## Step 4 - Landing page hero (L1)
+## Step 4 - Landing page: full redesign + hero figure (L1)
+**Owner 2026-11-23: the whole landing page and its squat figure are remade with OpenArt** (the current page and stick figure are placeholders; keep the copy and structure, logo + Montserrat wordmark, deep gold #E8B923, no lime). Items: hero figure, section art for "Why Formtrace is different" and "How it works", background textures if wanted.
 "hero illustration for a fitness coaching website, dark, an athlete mid-squat drawn as glowing gold joint lines and
 dots over a faint silhouette, motion trail, premium and calm, lots of negative space on the left for text"
 **Name:** `landing-hero.png` - 2400 x 1600 (or 3:2). Optional mobile crop `landing-hero-mobile.png` 1080 x 1350.
@@ -80,7 +81,7 @@ blank calendar page) · no friends (two empty chairs) · no notifications (a qui
 | 1 | logo-mark.png (+ wordmark) | mark chosen 2026-11-23: traced-line F, deep gold #E8B923 - files in docs/brand/logo/; wordmark done (Montserrat ExtraBold, outlined SVGs) |
 | 2 | app icons, favicon, badge, Stripe icon | done 2026-11-23 except the Stripe icon (owner uploads icon-512.png in Stripe → Branding) |
 | 3 | og-base.png | to do |
-| 4 | landing-hero.png | to do |
+| 4 | landing page redesign + hero figure (replaces the squat stick figure) | to do |
 | 5 | coin.png, quest-badge.png | to do |
 | 6 | 8 empty states | to do |
 | 7 | tiers, achievement shapes, goal icons | to do |

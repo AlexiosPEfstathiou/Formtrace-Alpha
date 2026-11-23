@@ -33,7 +33,7 @@ landing page look · tab and header icon family (13) · the core workout sounds 
 ## 1. Brand core
 | Asset | Where | Tier | Status | Deliverable spec |
 |---|---|---|---|---|
-| Logo mark + wordmark lock-up ("Formtrace", FORM / TRACE) | Home hero (`.logo`), sign-in, landing, emails, Stripe | **L1** | current (text only) | SVG + PNG; horizontal lock-up, stacked lock-up, mark alone; dark and light versions; legible at 24 px tall |
+| Logo mark + wordmark lock-up ("Formtrace", FORM / TRACE) | Home hero (`.logo`), sign-in, landing, emails, Stripe | **L1** | **done 2026-11-23** (traced-line F + Montserrat; `docs/brand/logo/`) | SVG + PNG; horizontal lock-up, stacked lock-up, mark alone; dark and light versions; legible at 24 px tall |
 | App icons | `icon-192.png`, `icon-512.png`, `icon-512-maskable.png` | **L1** | placeholder | PNG 192 and 512; maskable 512 with the mark inside the central 80% safe zone; no transparency on the maskable one | **Done 2026-11-23 (EW): outline traced-line F, deep gold on #0B0E11 (the solid F is for small sizes only - favicon, badge)**
 | Apple touch icon | `apple-touch-icon.png` | **L1** | placeholder | PNG 180 x 180, no transparency (iOS adds the corners) |
 | Notification bar icon | `badge-96.png` | **L1** | placeholder (DJ) | PNG 96 x 96, **white silhouette on transparent** only (Android tints it) | **Done 2026-11-23 (EW): white solid F**
@@ -115,9 +115,10 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | Asset | Where | Tier | Status | Deliverable spec |
 |---|---|---|---|---|
 | **Landing page — the whole look** (layout, hero, section art, typography, button) | formtrace.ie for signed-out visitors (EX) | **L1** | current (built in code) | Owner 2026-11-04: keep the copy and structure, redesign the look within the theme; hero keeps the "traced form" idea (bodyweight squat, arms forward, hip and knee traces) |
+| **Landing hero figure** (the squat stick figure, `.lp-fig`, lime dots) | landing hero (EX) | **L1** | placeholder | **Owner 2026-11-23: replaced entirely by OpenArt art** (brief step 4); deep gold, no lime |
 | **Stripe branding: icon, logo, brand and accent colours** | Stripe → Settings → Business → Branding (EC, FY) | **L1** | placeholder (interim: icon-512, #F0D231 / #0B0E11) | Square icon PNG ≥ 128 x 128 (works on white), horizontal logo PNG; live account too |
 | **Sign-in / password-reset emails** | Supabase Auth templates (FX) | **L1** | placeholder (Supabase default, no branding) | Logo PNG 2x (max 600 px wide), gold button, footer; must work in every mail client |
-| Landing display typeface: Big Shoulders Display | landing headlines (EX) | L1 | current | Confirm or replace as the brand face across the app |
+| Landing display typeface: ~~Big Shoulders Display~~ **Montserrat 700/800** | landing headlines (EX) | L1 | done 2026-11-23 | Owner chose Montserrat with the wordmark |
 | Email signature | contact@formtrace.ie (Titan, EH) | L2 | future | Logo PNG, small |
 | Social media profile and cover images | Instagram etc. | L2 | future | Profile 1080 x 1080 (round-safe), cover per platform |
 | Onboarding walkthrough art | first-run tours (EV) | Later | future | |
