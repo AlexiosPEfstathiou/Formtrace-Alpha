@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**ID (2026-11-23, owner): Training tab redesign - motion-trace tile icons from OpenArt, gold Start, vertical tiles, slim vacation row - BUILT (ID-T1).**
 **IC (2026-11-23, owner): tab bar icons = OpenArt motion-trace set (style 3) + deep-gold counters - BUILT (IC-T1).**
 **IA (2026-11-23, owner): trainee Home redesign to the OpenArt bento concept (B, dark) - three phases: look, bento grid, "Needs you" list - LOGGED; waits for the concept image attached in chat.** **IB (2026-11-23, owner): daily task list too wide; a gold "Claim" button per completed task where the points show, so points are claimed by hand - LOGGED.**
 **HZ (2026-11-23, owner): lime #C8FF3D is excluded from the brand - black and yellow are the identity. Brief updated; replacing the app's lime (tappable colour, quests, stickers) is to do - LOGGED.** First OpenArt run: three simple logo marks (traced line, joint dots, FT monogram) as SVG with Recraft V4.1 in Personal Project / Formtrace.
@@ -1980,6 +1981,13 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## ID. Training tab redesign: themed icons and better space - BUILT 2026-11-23 (personal account)
+
+**Owner 23:25 (screenshot):** "the training tab redesigned. Better space management, themed icons." OpenArt (Recraft V4.1 vector, image-to-image from the tab bar set, ~80 credits): set 1 chosen; owner asked for Weight and Measurements to be re-drawn and Vacation to be the palm tree - replacements chosen (`docs/brand/icons/training-set-1.svg`, `training-replacements.svg`).
+**Built:** `TR_ICONS` (Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls, Vacation) inline in the tiles, gold on a soft gold chip (darker gold on light). The icons are rebuilt with geometry (`tools/icon-from-openart.py`: paths painted in their original order so cut-outs stay cut, thin replacements thickened to the set's line weight, one even-odd path each - the first conversion filled the plate and lens solid). Tiles stack icon above text (no more "Personal be...", "3 sessions left this w..."), an odd last tile takes the full row, Vacation is a slim dashed full-width row with the palm. Start a session in brand gold with black text, week card tighter, progress bar gold. Calendar value shortened to "3 left this week". Gate passed; checked dark and light at 390 px.
+**Not done:** the Progress tile (shown only with progress data) keeps its emoji - no icon in the set; coach view of the same screen unchanged.
 
 ---
 ## IC. Tab bar icons: the motion-trace set, with deep-gold counters - BUILT 2026-11-23 (personal account)
