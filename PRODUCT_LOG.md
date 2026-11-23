@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IE (2026-11-23, owner): training calendar redesign - the current one is chaotic; 4 OpenArt concepts requested (week tokens, this-week agenda, clean grid + week ring, weekly pass) - LOGGED, concept chosen next.**
 **ID (2026-11-23, owner): Training tab redesign - motion-trace tile icons from OpenArt, gold Start, vertical tiles, slim vacation row - BUILT (ID-T1).**
 **IC (2026-11-23, owner): tab bar icons = OpenArt motion-trace set (style 3) + deep-gold counters - BUILT (IC-T1).**
 **IA (2026-11-23, owner): trainee Home redesign to the OpenArt bento concept (B, dark) - three phases: look, bento grid, "Needs you" list - LOGGED; waits for the concept image attached in chat.** **IB (2026-11-23, owner): daily task list too wide; a gold "Claim" button per completed task where the points show, so points are claimed by hand - LOGGED.**
@@ -1981,6 +1982,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IE. Training calendar redesign - LOGGED 2026-11-23 (personal account)
+
+**Owner 23:40 (screenshot):** the calendar has had bad feedback for being chaotic and hard to follow (month grid of diagonally split day squares, big yellow session cards, red "0/3 incomplete" week boxes, nutrition lines, mixed colours). It must stay intuitive while showing **which and how many workouts are allocated per week without tying them to a day**.
+**Done:** 4 concepts from OpenArt (GPT Image 2.5 Sunburst, ~48 credits): A week rows with session tokens; B this week first, agenda style (Weeks / Month switch); C clean month grid + a week progress ring column; D a swipeable weekly session pass.
+**My advice to the owner (23:42):** the model is "N sessions per week, any day", so the **week, not the day, is the unit** - lead with this week's sessions as a checklist (B), show history as one compact line per week, keep the day only as a record of when a session was done (a dot), and keep a month grid as an optional view, not the default. Drop red for an unfinished current week (it is not late yet); amber only for a week that ended short. Nutrition belongs in Macros, not the calendar. Coach view to follow the same model (assign = add a session to a week).
+**Next:** owner picks a concept; then build (and the coach side).
 
 ---
 ## ID. Training tab redesign: themed icons and better space - BUILT 2026-11-23 (personal account)
