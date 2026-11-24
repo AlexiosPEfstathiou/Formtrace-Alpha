@@ -438,6 +438,36 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .ci2-x{display:none;position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#0B0E11;color:#E8B923;border:1.5px solid #E8B923;font-style:normal;font-size:15px;line-height:19px;text-align:center}
 .ci2-strip.editing .ci2-x{display:block}
 .ci2-note{font-size:14px;color:var(--ink);margin-top:14px;line-height:1.45;text-align:center}
+.pbc-top{padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.pbc-h{font-family:Montserrat,system-ui,sans-serif;font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.pb-q{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:999px;background:rgba(232,185,35,.16);font-size:12.5px;color:var(--ink)}
+.pb-q b{color:#E8B923}
+.pbc-tl-l{text-align:center;font-size:12px;color:var(--muted);margin:14px 0 8px}
+.pbc-tl{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:center}
+.pb-wk{position:relative;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.pb-wk b{display:block;width:100%;height:8px;border-radius:5px;background:var(--line2);margin-top:12px}
+.pb-wk.now b{box-shadow:inset 0 0 0 1.5px #E8B923}
+.pb-cup{position:absolute;top:0;width:28px;height:28px;border-radius:50%;background:var(--line2);display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;filter:grayscale(1)}
+.pb-wk.mine .pb-cup{background:#E8B923;filter:none;box-shadow:0 0 10px rgba(232,185,35,.45)}
+.pb-wk em{position:absolute;top:30px;font-style:normal;font-size:10px;color:var(--muted)}
+.pbc-since{text-align:center;font-size:14px;color:var(--ink);margin-top:10px;font-weight:600}
+.pbc-sh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:16px;font-weight:800;color:var(--ink)}
+.pbc-sort{margin:0;width:190px;flex:0 0 auto}
+.pbc-sort button{height:30px;font-size:12.5px}
+.pbc-row{padding:12px;border-radius:14px;border:1.5px solid transparent;cursor:pointer}
+.pbc-row+.pbc-row{margin-top:4px}
+.pbc-row.sel{border-color:#E8B923;background:rgba(232,185,35,.05)}
+.pbc-r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pbc-r1 b{font-size:15.5px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbc-age{flex:0 0 auto;font-size:12px;font-weight:800;color:#0B0E11;background:#E8B923;border-radius:999px;padding:3px 10px}
+.pbc-best{font-size:12.5px;color:var(--muted);margin:3px 0 8px}
+.pbc-r2{display:flex;align-items:center;gap:10px}
+.pbc-bar{flex:1;display:flex;height:24px}
+.pbc-bar i{flex:0 0 78%;border-radius:8px 0 0 8px;background:#E8B923;color:#0B0E11;font-style:normal;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden}
+.pbc-bar s{flex:1;border:1.5px dashed #E8B923;border-left:0;border-radius:0 8px 8px 0}
+.pbc-go{flex:0 0 auto;height:34px;padding:0 14px;border:0;border-radius:999px;background:#E8B923;color:#0B0E11;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.pbc-r3{display:flex;justify-content:space-between;font-size:11.5px;margin-top:4px;color:var(--muted)}
+.pbc-r3 span:first-child{color:#E8B923}
 .pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
 .pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
@@ -9175,6 +9205,46 @@ function checkinsInspireEl(cis){
   if(!doneThisWeek){ const add=document.createElement("button"); add.type="button"; add.className="ci2-th add"; add.innerHTML=`<span class="ci2-im">+</span><b>This week</b>`; add.addEventListener("click",()=>startCheckin(today)); strip.appendChild(add); }
   return el;
 }
+/* II (owner, 2026-11-24): the trainee's Personal bests card = OpenArt concept C. "Your next PB is waiting", the weekly PB quest,
+   a 12-week timeline with a trophy on every week a PB was set (the selected exercise's weeks in gold), "N weeks since your last
+   <exercise> PB", then every exercise as a row: current best, weeks since, a "room to grow" bar and the next target.
+   Owner: a new PB is MORE REPS OR MORE WEIGHT - the target reads "+1 rep or more kg" (reps-only exercises: "+1 rep").
+   Sort: oldest PB first (most overdue, default) or newest first. History: pb_events (every PB since HK) + each exercise's
+   current best (personal_bests). */
+let pbSort="old", pbSel=null;
+function pbCardEl(pbs,events,quest){
+  const now=new Date(), thisMon=weekStartISO(now);
+  const wkAgo=d=>Math.max(0,Math.round((new Date(thisMon+"T12:00:00")-new Date(weekStartISO(new Date(d))+"T12:00:00"))/604800000));   /* calendar weeks: last Friday is 1 week ago */
+  const norm=s=>String(s||"").trim().toLowerCase();
+  const rows=(pbs||[]).map(p=>({...p, key:norm(p.exercise_name), wk:wkAgo(p.achieved_at)}));
+  rows.sort((a,b)=>pbSort==="old"?(a.achieved_at<b.achieved_at?-1:1):(a.achieved_at<b.achieved_at?1:-1));
+  if(!pbSel||!rows.some(r=>r.key===pbSel)) pbSel=rows[0]&&rows[0].key;
+  const sel=rows.find(r=>r.key===pbSel);
+  /* weeks with PBs: events (not first records) + current-best dates */
+  const allWeeks=new Set(), selWeeks=new Set();
+  (events||[]).filter(e=>!e.first_record).forEach(e=>{ allWeeks.add(e.week_start); if(norm(e.exercise_key)===pbSel) selWeeks.add(e.week_start); });
+  rows.forEach(r=>{ const w=weekStartISO(new Date(r.achieved_at)); allWeeks.add(w); if(r.key===pbSel) selWeeks.add(w); });
+  let tl=""; for(let i=11;i>=0;i--){ const m=addDaysISO(thisMon,-7*i), has=allWeeks.has(m), mine=selWeeks.has(m);
+    tl+=`<div class="pb-wk${has?" has":""}${mine?" mine":""}${i===0?" now":""}" title="${escapeHtml(fmtDay(m))}">${has?`<span class="pb-cup">🏆</span>`:""}<b></b><em>${has?12-i:""}</em></div>`; }
+  const q=quest; const qTxt=q?`<span class="pb-q"><b>Quest: ${q.goal} PB${+q.goal===1?"":"s"} this week</b> - ${q.done?"done ✓":(+q.progress>0?`${q.progress} / ${q.goal}`:"not yet")}</span>`:"";
+  const since=sel?(sel.wk===0?`You set your ${escapeHtml(sel.exercise_name)} PB this week`:`${sel.wk} week${sel.wk===1?"":"s"} since your last ${escapeHtml(sel.exercise_name)} PB`):"";
+  const best=r=>r.weight_kg!=null?`${Number(r.weight_kg)} kg × ${r.reps}`:`${r.reps} reps`;
+  const target=r=>r.weight_kg!=null?`Next: +1 rep or more kg`:`Next: ${Number(r.reps)+1} reps`;
+  const el=document.createElement("div"); el.className="pbc";
+  el.innerHTML=`<div class="pbc-top"><div class="pbc-h">Your next PB is waiting</div>${qTxt}
+      <div class="pbc-tl-l">Last 12 weeks</div><div class="pbc-tl">${tl}</div><div class="pbc-since">${since}</div></div>
+    <div class="pbc-sh"><span>${pbSort==="old"?"Most overdue first":"Newest first"}</span><div class="wv-switch pbc-sort"><button type="button" data-pb-sort="old" class="${pbSort==="old"?"on":""}">Oldest</button><button type="button" data-pb-sort="new" class="${pbSort==="new"?"on":""}">Newest</button></div></div>
+    <div class="pbc-list">${rows.map(r=>`<div class="pbc-row${r.key===pbSel?" sel":""}" data-pb="${escapeHtml(r.key)}" role="button" tabindex="0">
+      <div class="pbc-r1"><b>${escapeHtml(r.exercise_name)}</b><span class="pbc-age">${r.wk===0?"This week":r.wk+" wk"+(r.wk===1?"":"s")}</span></div>
+      <div class="pbc-best">Current best: ${escapeHtml(best(r))} · ${escapeHtml(fmtDay(isoOf(new Date(r.achieved_at))))}</div>
+      <div class="pbc-r2"><div class="pbc-bar"><i>${escapeHtml(best(r))}</i><s></s></div>${r.key===pbSel?`<button type="button" class="pbc-go" data-pb-go>Try tonight</button>`:""}</div>
+      <div class="pbc-r3"><span>Your best</span><span>${escapeHtml(target(r))}</span></div></div>`).join("")}</div>`;
+  const rerender=()=>el.replaceWith(pbCardEl(pbs,events,quest));
+  el.querySelectorAll("[data-pb-sort]").forEach(b=>b.addEventListener("click",()=>{ pbSort=b.dataset.pbSort; pbSel=null; rerender(); }));
+  el.querySelectorAll("[data-pb]").forEach(r=>r.addEventListener("click",ev=>{ if(ev.target.closest("[data-pb-go]")) return; pbSel=r.dataset.pb; rerender(); }));
+  const goBtn=el.querySelector("[data-pb-go]"); if(goBtn) goBtn.addEventListener("click",()=>{ const st=document.querySelector(".tr-start"); if(st){ st.click(); } else go("trainee-home"); toast(`Go for it - beat ${best(sel)} on ${sel.exercise_name}`,3200); });
+  return el;
+}
 let mvSelWeek=null;
 /* IE-3 (owner, 2026-11-24): the Macros and Weight sections log a past day too - the last 7 days as chips (logged = ticked,
    missing = gold outline) and a date picker for older days; all open the same form as the calendar day. */
@@ -10133,6 +10203,12 @@ function renderDashboard(container, iAmCoach){
         { p_trainee:traineeId, p_from:"2000-01-01", p_to:todayISO() });
       if(error) throw error;
       const pbs=data||[];
+      if(traineeMerged&&!iAmCoach&&pbs.length){ try{   /* II: the trainee's "next PB is waiting" card */
+        const evs=await Promise.resolve(store._sb.from("pb_events").select("exercise_key,week_start,first_record").eq("trainee_id",ME.id).gte("week_start",addDaysISO(weekStartISO(new Date()),-7*12))).then(r=>r.data||[],()=>[]);
+        const qd=await Promise.resolve(loadWeeklyQuests()).then(d=>d,()=>null);
+        const quest=((qd&&qd.quests)||[]).find(q=>String(q.key).startsWith("pb")&&+q.goal>0)||null;
+        const card=box.closest(".card"); card.innerHTML=""; card.appendChild(pbCardEl(pbs,evs,quest)); return;
+      }catch(e){ console.warn("PB card (II)",e); } }
       if(!pbs.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">No personal bests yet — they're recorded automatically as you train.</div>`; return; }
       box.innerHTML="";
       for(const pb of pbs){
