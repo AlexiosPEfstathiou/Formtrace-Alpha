@@ -309,6 +309,37 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .wv-mini span:nth-child(2){flex:1;color:var(--ink)}
 .wv-mini.done{cursor:pointer}
 .wv-mini.done span:first-child{color:#E8B923;font-weight:900}
+/* IE-2: Month view */
+.mv-head{display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px}
+.mv-title{font-size:18px;font-weight:800;color:var(--ink)}
+.mv-nav{width:38px;height:38px;border:0;background:none;color:var(--ink);font-size:26px;line-height:1;cursor:pointer}
+.mv-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 46px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.mv-dow{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;padding:8px 0 6px;background:var(--bg)}
+.mv-wk{border-left:1px solid var(--line)}
+.mv-day{position:relative;height:52px;border:0;border-top:1px solid var(--line);border-right:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:15px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:0}
+.mv-day.out{color:var(--faint,var(--muted));opacity:.45}
+.mv-day.paused span{opacity:.5;text-decoration:line-through}
+.mv-day.today{box-shadow:inset 0 0 0 2px #E8B923;border-radius:10px;color:#E8B923}
+.mv-day i{display:flex;gap:3px;height:6px}
+.mv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#E8B923}
+.mv-dot.call{background:var(--muted)}
+.mv-week{position:relative;height:52px;border:0;border-top:1px solid var(--line);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.mv-week em{position:absolute;font-style:normal;font-size:10px;font-weight:800;color:var(--ink)}
+.mv-week.sel{background:rgba(232,185,35,.12)}
+.mv-ring0{width:34px;height:34px;border-radius:50%;border:3.5px solid var(--line2)}
+.mv-panel{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px 4px}
+.mv-ph{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.mv-ph .wv-range{margin-top:0;font-size:18px}
+.mv-pr{position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.mv-pr span{position:absolute;font-size:11px;font-weight:800;color:var(--ink)}
+.mv-done{color:#E8B923;font-size:13px;font-weight:800}
+.mv-miss{color:var(--muted);font-size:12px}
+.mv-start{height:34px;padding:0 16px;border-radius:11px;border:1px solid var(--line2);background:transparent;color:var(--ink);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.mv-start.primary{background:#E8B923;border-color:#E8B923;color:#0B0E11}
+.mv-legend{display:flex;flex-wrap:wrap;gap:14px;margin:12px 2px 4px;font-size:12px;color:var(--muted);align-items:center}
+.mv-legend span{display:flex;align-items:center;gap:6px}
+.mv-today{display:inline-block;width:12px;height:12px;border-radius:4px;box-shadow:inset 0 0 0 2px #E8B923}
+.mv-note{font-size:11.5px;color:var(--muted);margin:0 2px 6px}
 .tr-sec.open{display:block}
 .tr-sec>*:first-child{margin-top:0!important}
 /* EZ-6: cumulative coach notes */
@@ -8778,6 +8809,55 @@ function weeksViewEl(){
   wrap.appendChild(h2); wrap.appendChild(g2);
   return wrap;
 }
+/* IE-2 (owner, 2026-11-24): the Month view, from the owner's chosen concept - a plain month grid (gold dot = a workout done
+   that day, today outlined), a WEEK column with each week's ring (done / set), and under the grid the selected week's
+   sessions with Start. Tapping a day opens the same day options as before (log a past day's weight and macros, calls). */
+let mvSelWeek=null;
+function monthViewEl(){
+  const isDone=a=>a.status==="submitted"||a.status==="reviewed";
+  if(engCalYear==null){ const t=new Date(); engCalYear=t.getFullYear(); engCalMonth=t.getMonth(); }
+  const today=todayISO(), thisMon=weekStartISO(new Date());
+  const first=new Date(engCalYear,engCalMonth,1), last=new Date(engCalYear,engCalMonth+1,0);
+  const row0=weekStartISO(first), lastMon=weekStartISO(last);
+  const weeks=[]; for(let m=row0;m<=lastMon;m=addDaysISO(m,7)) weeks.push(m);
+  if(!mvSelWeek||!weeks.includes(mvSelWeek)) mvSelWeek=weeks.includes(thisMon)?thisMon:weeks[0];
+  const wrap=document.createElement("div"); wrap.className="cal-mv";
+  const mName=first.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+  let html=`<div class="mv-head"><button type="button" class="mv-nav" data-mv="-1" aria-label="Previous month">‹</button><div class="mv-title">${mName}</div><button type="button" class="mv-nav" data-mv="1" aria-label="Next month">›</button></div>
+    <div class="mv-grid"><div class="mv-dow">Mon</div><div class="mv-dow">Tue</div><div class="mv-dow">Wed</div><div class="mv-dow">Thu</div><div class="mv-dow">Fri</div><div class="mv-dow">Sat</div><div class="mv-dow">Sun</div><div class="mv-dow mv-wk">Week</div>`;
+  for(const mon of weeks){
+    for(let i=0;i<7;i++){
+      const iso=addDaysISO(mon,i), d=Number(iso.slice(8)), out=Number(iso.slice(5,7))-1!==engCalMonth;
+      const did=(engAssignedByDate[iso]||[]).some(isDone), call=!!coachingDaysByDate[iso], paused=isPausedOn(iso);
+      html+=`<button type="button" class="mv-day${out?" out":""}${iso===today?" today":""}${paused?" paused":""}" data-mv-day="${iso}" aria-label="${escapeHtml(fmtDay(iso))}${did?", workout done":""}${call?", coaching call":""}"><span>${d}</span><i>${did?'<b class="mv-dot"></b>':""}${call?'<b class="mv-dot call"></b>':""}</i></button>`;
+    }
+    const rs=weekRows[mon]||[], dn=rs.filter(isDone).length;
+    html+=`<button type="button" class="mv-week${mon===mvSelWeek?" sel":""}" data-mv-week="${mon}" aria-label="Week of ${escapeHtml(fmtDay(mon))}: ${dn} of ${rs.length} done">${rs.length?wvRing(dn,rs.length,40):'<span class="mv-ring0"></span>'}<em>${rs.length?`${dn}/${rs.length}`:"-"}</em></button>`;
+  }
+  html+=`</div><div class="mv-panel"></div><div class="mv-legend"><span><b class="mv-dot"></b> Workout done</span><span><b class="mv-dot call"></b> Coaching call</span><span><i class="mv-today"></i> Today</span></div><div class="mv-note">Your coach sets how many workouts a week - do them on any day. Tap a day to log that day's weight and macros.</div>`;
+  wrap.innerHTML=html;
+  const panel=wrap.querySelector(".mv-panel");
+  const paintPanel=()=>{
+    const mon=mvSelWeek, rs=[...(weekRows[mon]||[])].sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
+    const dn=rs.filter(isDone).length, past=mon<thisMon, s=new Date(mon+"T12:00:00"), e=new Date(addDaysISO(mon,6)+"T12:00:00");
+    const range=s.getMonth()===e.getMonth()?`${s.getDate()} - ${e.getDate()} ${e.toLocaleDateString("en-GB",{month:"long"})}`:`${s.toLocaleDateString("en-GB",{day:"numeric",month:"short"})} - ${e.toLocaleDateString("en-GB",{day:"numeric",month:"short"})}`;
+    let firstOpen=true, rows="";
+    rs.forEach((a,i)=>{ const d=isDone(a);
+      let right;
+      if(d) right=`<span class="mv-done">Done ›</span>`;
+      else if(past) right=`<span class="mv-miss">Not done</span>`;
+      else { right=`<button type="button" class="mv-start${firstOpen?" primary":""}" data-mv-start="${i}">Start</button>`; firstOpen=false; }
+      rows+=`<div class="wv-row${d?" done":""}" data-mv-i="${i}"><span class="wv-tick">${d?"✓":""}</span><span class="wv-txt"><b>${escapeHtml(wvName(a))}</b><span>${d?(a.due_date?escapeHtml(fmtDay(a.due_date)):"Done"):(past?"Not done that week":"Any day this week")}</span></span>${right}</div>`; });
+    panel.innerHTML=`<div class="mv-ph"><div><div class="wv-range">${escapeHtml(range)}</div><div class="wv-sub">${rs.length?`${rs.length} workout${rs.length===1?"":"s"} this week`:"Nothing assigned this week"}</div></div><div class="mv-pr">${rs.length?wvRing(dn,rs.length,44):""}<span>${rs.length?`${dn}/${rs.length}`:""}</span></div></div>${rows}`;
+    panel.querySelectorAll("[data-mv-start]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); startSession(rs[+b.dataset.mvStart]); }));
+    panel.querySelectorAll(".wv-row.done").forEach(r=>r.addEventListener("click",()=>{ const a=rs[+r.dataset.mvI]; if(a) engDayAction(a,false); }));
+  };
+  wrap.querySelectorAll("[data-mv-week]").forEach(b=>b.addEventListener("click",()=>{ mvSelWeek=b.dataset.mvWeek; wrap.querySelectorAll(".mv-week").forEach(x=>x.classList.toggle("sel",x===b)); paintPanel(); }));
+  wrap.querySelectorAll("[data-mv-day]").forEach(b=>b.addEventListener("click",()=>openEngDay(b.dataset.mvDay)));
+  wrap.querySelectorAll("[data-mv]").forEach(b=>b.addEventListener("click",()=>{ engCalMonth+=Number(b.dataset.mv); if(engCalMonth<0){ engCalMonth=11; engCalYear--; } if(engCalMonth>11){ engCalMonth=0; engCalYear++; } mvSelWeek=null; renderEngagement(true); }));
+  paintPanel();
+  return wrap;
+}
 function calViewSwitch(weeksEl,monthEl){
   const sw=document.createElement("div"); sw.className="wv-switch"; sw.setAttribute("role","tablist");
   sw.innerHTML=`<button type="button" data-v="weeks">Weeks</button><button type="button" data-v="month">Month</button>`;
@@ -8815,7 +8895,10 @@ function trainingControlPanel(body){
     defs.forEach(([k,ic,label])=>{
       const box=document.createElement("div"); box.className="tr-sec"; box.dataset.sec=k;
       if(k==="calendar"&&traineeMerged&&WEEK_MODEL){   /* IE: Weeks / Month switch on the trainee's calendar */
-        const monthEl=document.createElement("div"); monthEl.className="cal-month-view"; secs[k].forEach(n=>monthEl.appendChild(n));
+        const monthEl=document.createElement("div"); monthEl.className="cal-month-view";
+        const oldGrid=document.createElement("div"); oldGrid.className="cal-old"; oldGrid.style.display="none"; secs[k].forEach(n=>oldGrid.appendChild(n));   /* IE-2: the old grid stays in the page (other code reads it) but is not shown */
+        try{ monthEl.appendChild(monthViewEl()); }catch(e){ console.warn("month view (IE-2)",e); oldGrid.style.display=""; }
+        monthEl.appendChild(oldGrid);
         let weeksEl; try{ weeksEl=weeksViewEl(); }catch(e){ console.warn("weeks view (IE)",e); weeksEl=document.createElement("div"); calView="month"; }
         box.appendChild(calViewSwitch(weeksEl,monthEl)); box.appendChild(weeksEl); box.appendChild(monthEl);
       } else secs[k].forEach(n=>box.appendChild(n));

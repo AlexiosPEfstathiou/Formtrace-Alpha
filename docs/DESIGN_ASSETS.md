@@ -67,6 +67,7 @@ One family, 24 px grid, same stroke weight, **SVG**, an outline and a filled (ac
 | Verified / certification badges | coach cards (`badgeSpans`) | Code | current (text pills) | Theme colours only |
 | Top 1% coach gold frame + label | pitch rows (BY) | Code | current (animated gold frame) | Theme colours only |
 | "Offer accepted" pill, red "to assign" / green "to review" counts, tab badge dots | Trainees list (FD), tab bar | Code | current | Theme colours only; **tab counters: brand gold #E8B923 circle, black number, dark ring, touching the icon's top-right (IC-2, 2026-11-23)** |
+| **Training calendar - Weeks view + Month view** (IE, IE-2) | trainee Training -> Calendar | **L1** | **done 2026-11-24** - concepts `docs/brand/calendar-concept-B.png`, `calendar-concept-month.png` | **Owner: the coach UI reuses these** (weeks list, month grid with week rings, session panel, tile and tab icons, gold counters) when it is redesigned |
 | **Training tab tile icons** (Calendar, Weight, Macros, Check-ins, Personal bests, Measurements, Calls, Vacation) | Training tab (GK) | **L1** | **done 2026-11-23 (ID)** - OpenArt motion-trace, rebuilt as clean single paths | Progress tile icon still to make |
 | **Tab bar icons** (Home, Training, Goal, Notifications, Social; coach: Open goals, Trainees) | bottom bar | **L1** | **done 2026-11-23 (IC)** - OpenArt motion-trace set, inline SVG | Library and Review icons still to make in the same style |
 
