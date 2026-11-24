@@ -12003,6 +12003,7 @@ async function mountReviewReplies(body,review){
   paint();
 }
 async function openReview(assignedId,readonly=false){
+  const revFromMerged=traineeMerged;   /* IE-4: remember where the review was opened from - the trainee's Training tab (merged calendar) or one goal */
   try{ return await _openReview(assignedId,readonly); }
   catch(e){ console.error("openReview",e); reportError("open-review", (e&&e.message)||String(e), e&&e.stack); toast("Couldn't open the review - "+((e&&e.message)||"unknown error"),5000); }
 }
@@ -12114,8 +12115,8 @@ async function _openReview(assignedId,readonly=false){
         if(!ok)return;
       }
     }
-    if(currentEng&&currentEng.id) openEngagement(currentEng.id);
-    else go("trainee-home");
+    if(revFromMerged||!(currentEng&&currentEng.id)){ go("trainee-home"); return; }   /* IE-4 (owner 2026-11-24): back from a review opened on the Training tab returns there (Weeks / Month view), not to the old single-goal calendar */
+    openEngagement(currentEng.id);
   };
   const body=$("#review-body");body.innerHTML="";
   const notedItems=new Set();
