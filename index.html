@@ -9316,16 +9316,8 @@ function openTutorial(key){
    goal (as the weight gauge, IF): fat loss - waist, hips, thighs, neck down are good; muscle gain - chest, biceps, thighs, neck up
    are good; otherwise chest / biceps up and waist down. */
 let msQi=null;
-function bodySvgPath(){
-  const L=[[94,44],[94,53],[72,60],[61,70],[57,100],[54,132],[51,160],[49,172],[57,174],[60,146],[64,108],[67,88],[69,110],[71,128],[66,150],[68,200],[70,250],[67,284],[84,286],[87,250],[91,200],[100,168]];
-  const R=L.slice(0,-1).reverse().map(([x,y])=>[200-x,y]);
-  const pts=[...L,...R];
-  let d=`M${pts[0][0]} ${pts[0][1]}`;
-  for(let i=0;i<pts.length-1;i++){ const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
-    const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6], c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
-    d+=` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0]} ${p2[1]}`; }
-  return d;
-}
+/* IJ-2: the figure traced from the OpenArt concept B (docs/brand/measures-concept.png), absolute coordinates in the 340 x 300 viewBox */
+function bodySvgPath(){ return "M186.0 287.3 182.9 287.4 181.0 286.8 180.0 285.9 179.5 284.4 179.5 280.7 180.2 275.0 179.7 271.2 181.1 264.8 181.1 261.7 180.1 253.7 177.8 241.6 177.1 235.0 177.3 229.1 178.5 219.6 176.0 208.0 174.7 194.0 172.2 179.6 170.9 167.8 170.1 166.8 169.5 167.1 169.1 167.8 167.8 179.1 165.3 193.6 164.5 205.4 163.3 212.0 161.5 219.1 161.5 221.7 162.9 231.4 162.9 235.9 162.2 241.6 159.9 253.4 158.9 261.3 158.9 265.3 160.0 269.8 159.8 275.2 160.5 281.6 160.4 284.2 159.5 286.5 157.1 287.4 146.0 286.9 143.8 286.4 142.9 285.2 143.3 283.5 148.4 276.6 149.4 274.3 149.1 264.1 144.2 238.3 143.7 233.8 143.7 226.9 145.1 216.5 145.1 201.6 142.8 189.5 141.8 181.3 141.4 173.4 141.4 163.3 141.9 156.2 143.8 142.2 147.0 127.8 146.8 124.2 148.0 115.5 147.0 106.7 145.4 98.9 144.8 98.1 144.1 98.2 143.6 99.1 140.5 110.5 139.7 119.5 138.4 126.3 129.1 151.0 129.4 153.1 131.1 155.9 131.9 158.1 132.3 169.2 132.0 169.9 131.3 170.2 129.8 169.7 128.4 165.2 127.5 164.3 126.7 165.2 126.7 168.2 127.5 170.4 130.6 174.9 130.9 176.3 130.4 177.5 129.4 177.8 128.2 177.3 124.9 175.0 123.2 173.2 121.6 170.7 119.6 164.9 123.4 121.8 127.4 106.9 128.1 94.4 129.4 86.6 130.2 84.4 130.2 76.2 131.5 70.0 133.4 65.7 135.2 63.4 137.7 61.2 140.8 59.6 146.2 58.2 150.2 56.6 157.1 53.0 158.5 52.0 159.5 50.6 160.3 48.5 160.4 43.5 158.2 36.9 155.9 34.0 154.9 29.5 155.1 27.6 156.5 25.5 156.3 20.1 156.5 18.2 157.5 15.3 158.7 13.7 160.7 11.7 164.0 9.6 168.0 8.6 172.2 8.6 175.3 9.4 177.5 10.3 181.1 13.4 183.2 17.2 183.7 20.3 183.5 25.5 184.8 27.6 185.1 29.3 184.1 33.8 181.8 36.9 180.9 40.2 179.5 43.5 179.7 48.7 180.5 51.1 182.9 53.0 189.1 56.2 192.8 57.8 197.8 59.1 200.9 60.3 203.5 62.1 205.0 63.6 206.8 66.2 208.0 68.8 209.2 72.9 209.7 76.4 209.8 84.9 212.0 94.6 212.6 107.4 215.8 118.1 216.6 121.8 218.5 146.9 220.4 162.8 220.1 166.1 218.6 170.2 217.2 172.8 215.1 175.0 211.8 177.5 210.6 177.8 209.6 177.5 209.1 176.5 209.4 174.9 212.2 170.8 213.3 167.8 213.3 164.9 212.5 164.1 211.8 164.7 210.9 168.2 210.1 169.7 209.4 170.2 208.5 170.2 207.8 169.7 207.4 168.7 208.1 158.3 208.6 156.6 210.6 153.1 210.9 151.7 209.4 146.7 205.3 136.8 202.0 127.5 200.3 119.5 200.0 113.8 199.5 110.0 196.4 99.1 195.9 98.5 195.2 98.5 194.6 99.4 193.0 106.7 192.0 113.1 192.0 116.4 192.9 123.0 193.0 128.0 195.8 139.6 197.6 151.0 198.4 160.2 198.6 173.0 198.0 183.4 196.7 192.6 194.9 201.6 194.9 216.8 196.3 226.7 196.3 233.6 195.3 240.9 190.6 265.3 190.6 274.3 191.1 275.9 196.4 283.0 197.2 284.9 196.6 286.2 194.5 286.9 186.0 287.3Z"; }
 function measuresMapEl(rows,goalTitle){
   const title=String(goalTitle||"").toLowerCase();
   const dir=/gain|muscle|bulk|mass|build|hypertroph/.test(title)?1:(/loss|lose|fat|cut|lean|slim|weight|tone/.test(title)?-1:0);
@@ -9347,8 +9339,8 @@ function measuresMapEl(rows,goalTitle){
   const fmtP=p=>p==null?"":(p>0?"+":p<0?"-":"")+Math.abs(p).toFixed(1)+"%";
   /* layout (viewBox 340 x 300): figure at x+70; rings; callouts left / right */
   const ox=70;
-  const ring={neck_cm:[100,47,7,2],chest_cm:[100,90,30,4],biceps_cm:[142,102,7,2.5],waist_cm:[100,124,29,4],hips_cm:[100,150,34,4.5],thighs_cm:[118,192,14,3]};
-  const side={neck_cm:["l",44],chest_cm:["l",100],waist_cm:["l",156],biceps_cm:["r",84],hips_cm:["r",146],thighs_cm:["r",208]};
+  const ring={neck_cm:[100,51,9.4,2],chest_cm:[100,86,25.6,4],biceps_cm:[133.6,95.4,7.8,2.5],waist_cm:[100,124,22.5,4],hips_cm:[100,147.5,26.5,4.5],thighs_cm:[115,182,12.1,3]};
+  const side={neck_cm:["l",32],chest_cm:["l",85],waist_cm:["l",139],biceps_cm:["r",70],hips_cm:["r",148],thighs_cm:["r",207]};
   let lines="", rings="", labels="";
   parts.forEach(p=>{ const [cx,cy,rx,ry]=ring[p.k], [s,y]=side[p.k]; const X=ox+cx;
     rings+=`<ellipse cx="${X}" cy="${cy}" rx="${rx}" ry="${ry}" class="msm-ring"/>`;
@@ -9369,7 +9361,7 @@ function measuresMapEl(rows,goalTitle){
     else cmt="A steady quarter. Measurements move slowly - consistency is what shows up next time.";
   }
   el.innerHTML=head+`<div class="msm-sw"><button type="button" class="msm-nav" data-q="-1" ${msQi<=0?"disabled":""} aria-label="Earlier quarter">‹</button><span class="msm-q on">${quarterLabel(qs[msQi])}</span>${prev?`<span class="msm-vs">vs</span><span class="msm-q">${quarterLabel(qs[msQi-1])}</span>`:""}<button type="button" class="msm-nav" data-q="1" ${msQi>=qs.length-1?"disabled":""} aria-label="Later quarter">›</button></div>
-    <div class="msm-map"><svg viewBox="0 0 340 300" aria-hidden="true"><g transform="translate(${ox} 0)"><circle cx="100" cy="24" r="17" class="msm-fig"/><path d="${bodySvgPath()}" class="msm-fig"/></g>${rings}${lines}</svg>${labels}</div>
+    <div class="msm-map"><svg viewBox="0 0 340 300" aria-hidden="true"><path d="${bodySvgPath()}" class="msm-fig"/>${rings}${lines}</svg>${labels}</div>
     <div class="msm-cmt">${escapeHtml(cmt)}</div>
     ${msQi===qs.length-1?`<button type="button" class="msm-log">${loggedThisQ?"Update this quarter":"Log this quarter"}</button>`:""}`;
   el.querySelectorAll("[data-q]").forEach(b=>b.addEventListener("click",()=>{ msQi+=Number(b.dataset.q); el.replaceWith(measuresMapEl(rows,goalTitle)); }));
