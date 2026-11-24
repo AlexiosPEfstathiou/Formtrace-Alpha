@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IM (2026-11-24, owner): trainee Goal tab (accepted goal) redesign - space management, weeks done / pending visualised, old pending / completed / rejected kept but minimal; 3 OpenArt concepts - LOGGED.**
 **IL (2026-11-24, owner): Take a vacation sheet redesign - happy, on brand, reassures that streak, payments and training are paused, with a wish from Formtrace; concept A BUILT.**
 **IK (2026-11-24, owner): Calls card redesign - weekly availability for trainee and coach; overlapping times become "Propose call" options; incoming proposals with Accept / Propose a new time; concept B + Edit availability sheet BUILT (SQL applied).**
 **IJ (2026-11-24, owner): Body measurements card redesign - concept B (body map) BUILT; plus the reusable "How to ..." tutorial button (first: how to measure yourself).**
@@ -1989,6 +1990,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IM. Trainee Goal tab redesign (ongoing goal) - LOGGED 2026-11-24 (personal account)
+
+**Owner 19:38 (two screenshots: the accepted-goal card - coach row, ACCEPTED badge, a large pitch-video player, Length / Sessions / Dates / Price rows, Payment details, the payment stepper Accepted - Deposit - Training wk 4/5 - Complete, Goal achieved / Cancel goal; below: Pending 0, Completed 19 and Rejected 2 folders):** redesign what the trainee sees while the goal is ongoing; focus on **space management**; **visualise the weeks completed / pending**; old pending, completed and rejected goals stay but take **minimal space and attention**.
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits): A goal hero + week track (W1-W5 segments, stat chips, collapsed payment and pitch-video rows, history as three small chips); B progress ring (Week 4 of 5 / sessions done, week pills, "Your plan" three columns, compact payment dots, "Past goals: 19 completed - 2 rejected ›"); C journey path (vertical week nodes with sessions per week, key facts column, Goal achieved + More menu, collapsed History bar).
+**Notes for the build:** sessions done per week come from the trainee's submissions against the plan; the pitch video moves behind a row (it is the biggest space cost today).
+**Next:** owner picks a concept.
 
 ---
 ## IL. Take a vacation sheet redesign - LOGGED 2026-11-24 (personal account)
