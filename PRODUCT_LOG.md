@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IF (2026-11-24, owner): Weight card redesign - missed weigh-ins obvious, weight by week, average change over the goal shown engagingly; 3 OpenArt concepts (weekly averages, goal journey, week cards) - LOGGED.**
 **IE (2026-11-23, owner): training calendar redesign - the current one is chaotic; 4 OpenArt concepts requested (week tokens, this-week agenda, clean grid + week ring, weekly pass) - LOGGED, concept chosen next.**
 **ID (2026-11-23, owner): Training tab redesign - motion-trace tile icons from OpenArt, gold Start, vertical tiles, slim vacation row - BUILT (ID-T1).**
 **IC (2026-11-23, owner): tab bar icons = OpenArt motion-trace set (style 3) + deep-gold counters - BUILT (IC-T1).**
@@ -1982,6 +1983,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IF. Weight card redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 00:17 (screenshot of Training -> Weight: the IE-3 day strip over a pink daily line chart with a sideways scrollbar):** redesign the weight part: (1) easy to see which days were missed ("forgot to log macros" - read as missed weigh-ins on this card; the Macros card gets the same treatment later if wanted), (2) weight shown **by week**, (3) an **average weight change over the goal**, shown in an engaging way.
+**Done:** 3 OpenArt concepts (GPT Image 2.5 Sunburst, ~36 credits): A weekly averages (headline -0.7 kg + avg/week pill, one point per week with week-to-week chips, 4x7 weigh-in grid of filled / hollow days); B goal journey (start-to-now bar with a marker, weekly average bars with change labels, this week's day bubbles with "+" on missed days); C week cards (gauge of avg weekly change, one card per week with average, change pill and 7 day dots, "Log missed days").
+**Notes for the build:** the current chart is per day, pink, and scrolls sideways (a scrollbar shows); weekly averages remove the scroll. Average change = (latest week average - first week average) / weeks between - not first vs last single weigh-in, which swings with water. Missed days = days since the goal started with no weight logged.
+**Next:** owner picks a concept.
 
 ---
 ## IE. Training calendar redesign - LOGGED 2026-11-23 (personal account)
