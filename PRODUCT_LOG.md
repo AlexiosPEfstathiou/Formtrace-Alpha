@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IG (2026-11-24, owner): Macros card redesign - weekly / daily averages, actual vs coach targets at a glance, missed days that draw attention; 3 OpenArt concepts - LOGGED.**
 **IF (2026-11-24, owner): Weight card redesign - goal journey + weekly pace gauge + weekly averages + missed days - BUILT (IF-T1).**
 **IE (2026-11-23, owner): training calendar redesign - the current one is chaotic; 4 OpenArt concepts requested (week tokens, this-week agenda, clean grid + week ring, weekly pass) - LOGGED, concept chosen next.**
 **ID (2026-11-23, owner): Training tab redesign - motion-trace tile icons from OpenArt, gold Start, vertical tiles, slim vacation row - BUILT (ID-T1).**
@@ -1983,6 +1984,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IG. Macros card redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 11:03 (screenshot: the IE-3 day strip over stacked P/C/F daily bars with a dashed protein line and a sideways scrollbar):** review intake averages per week or per day; easy to compare actual intake with the coach's targets; a missed day must be obvious and draw attention so it gets logged after the fact.
+**Done:** 3 concepts in the Weight card's style with the real tab bar (Nano Banana Pro, image-to-image from the chosen weight concept, ~120 credits): A target rings (week-average kcal and protein rings vs target, day columns with a dashed target line, glowing "+ Log" on missed days, "2 days not logged" banner); B actual-vs-target bullets (Calories / Protein / Carbs / Fat bullet rows with the target tick and On target / Under / Over, earlier weeks with logged-day dots, a gold "not logged - add it now" card); C daily comparison (week strip of day circles - full ring on target, half ring off target, pulsing dashed + not logged - and the selected day's kcal bar and P/C/F vs targets, week average line).
+**Notes for the build:** the coach's targets come from the weekly nutrition goal (`goalForWeek`, AX); "on target" = within 10% (the existing rule); "missed" = a day since the goal started with no macros (`macrosLogged`); the daily chart now scrolls sideways - the new design should fit the width.
+**Next:** owner picks a concept.
 
 ---
 ## IF. Weight card redesign - LOGGED 2026-11-24 (personal account)
