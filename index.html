@@ -404,33 +404,40 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 @keyframes mxGlow{0%,100%{box-shadow:0 0 0 0 rgba(232,185,35,0)}50%{box-shadow:0 0 14px 2px rgba(232,185,35,.35)}}
 @media (prefers-reduced-motion:reduce){.mx-plus{animation:none}}
 .tl-cv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.ci2-h{font-family:Montserrat,system-ui,sans-serif;font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.ci2-hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ci2-h{font-family:Montserrat,system-ui,sans-serif;font-size:clamp(19px,6vw,24px);font-weight:800;color:#E8B923;letter-spacing:-.01em;line-height:1.1}
+.ci2-cnt{flex:0 0 auto;font-size:14px;color:#E8B923;font-weight:600;display:flex;align-items:center;gap:5px}
+.ci2-labs{display:flex;justify-content:space-between;margin:10px 2px 0;font-size:14px;color:var(--muted)}
+.ci2-labs b{color:var(--ink);font-weight:800}
 .ci2-sub{font-size:12.5px;color:var(--muted);margin:2px 0 12px}
 .ci2-flame{filter:saturate(1.2)}
 .ci2-cmp{position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;background:#0B0E11;touch-action:pan-y;cursor:ew-resize;user-select:none}
-.ci2-cmp canvas{position:absolute;inset:0;width:100%;height:100%}
+.ci2-cmp canvas{position:absolute;inset:0;width:100%;height:100%;filter:grayscale(1) contrast(1.04)}
 .ci2-cmp.one{cursor:default}
 .ci2-cmp.one .ci2-line,.ci2-cmp.one .ci2-lab.l{display:none}
 .ci2-line{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:#E8B923;pointer-events:none;box-shadow:0 0 12px rgba(232,185,35,.6)}
-.ci2-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:#E8B923;color:#0B0E11;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+.ci2-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26px;height:50px;border-radius:13px;background:#E8B923;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+.ci2-knob i{display:block;width:3px;height:20px;border-radius:2px;background:#0B0E11}
 .ci2-lab{position:absolute;bottom:10px;font-size:11.5px;font-weight:800;color:#fff;background:rgba(11,14,17,.72);padding:4px 9px;border-radius:999px}
 .ci2-lab.l{left:10px}.ci2-lab.r{right:10px}
-.ci2-status{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:#0B0E11;background:#E8B923;padding:3px 10px;border-radius:999px;transition:opacity .6s;white-space:nowrap}
+.ci2-status{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:#fff;background:rgba(11,14,17,.75);padding:3px 10px;border-radius:999px;transition:opacity .6s;white-space:nowrap}
 .ci2-status:empty{display:none}
 .ci2-status.fade{opacity:0}
-.ci2-play{display:block;width:100%;height:50px;margin:12px 0 4px;border:0;border-radius:14px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(232,185,35,.22)}
+.ci2-play{display:block;width:100%;height:54px;margin:16px 0 4px;border:0;border-radius:14px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(232,185,35,.22)}
 .ci2-strip-h{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 8px;font-size:14px;font-weight:800;color:var(--ink)}
 .ci2-edit{background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
-.ci2-strip{display:grid;grid-auto-flow:column;grid-auto-columns:62px;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ci2-strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(40px,1fr);gap:7px;overflow-x:auto;padding:14px 0 4px}
 .ci2-th{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;color:var(--muted);font:inherit;cursor:pointer}
-.ci2-im{width:62px;height:80px;border-radius:12px;background:#0B0E11 center/cover no-repeat;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:22px;color:#E8B923}
+.ci2-im{width:100%;aspect-ratio:1/1;border-radius:12px;background:#0B0E11 center/cover no-repeat;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:24px;color:#E8B923;overflow:hidden}
+.ci2-pic{display:block;width:100%;height:100%;background:center/cover no-repeat;filter:grayscale(1)}   /* IH-2: only the photo is greyscale, so the gold ring on the selected week stays gold */
 .ci2-th.on .ci2-im{border-color:#E8B923}
-.ci2-th b{font-size:11px;color:var(--ink)}
-.ci2-th.add .ci2-im{border:1.5px dashed #E8B923;background:rgba(232,185,35,.08)}
+.ci2-th b{font-size:12px;color:var(--muted);font-weight:600}
+.ci2-th.on b{color:var(--ink);font-weight:800}
+.ci2-th.add .ci2-im{border:1.5px dashed #E8B923;border-radius:50%;background:transparent}
 .ci2-th.add b{color:#E8B923;font-size:10.5px}
 .ci2-x{display:none;position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#0B0E11;color:#E8B923;border:1.5px solid #E8B923;font-style:normal;font-size:15px;line-height:19px;text-align:center}
 .ci2-strip.editing .ci2-x{display:block}
-.ci2-note{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.45}
+.ci2-note{font-size:14px;color:var(--ink);margin-top:14px;line-height:1.45;text-align:center}
 .pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
 .pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
@@ -9121,15 +9128,15 @@ function checkinsInspireEl(cis){
   const nextTxt=doneThisWeek?`This week's photo is in. Next check-in: ${new Date(nextSat+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"})}.`:`Every photo is proof you showed up. Next check-in: ${nextSat===today?"today":new Date(nextSat+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long"})}.`;
   if(!ok.length){ el.innerHTML=`<div class="ci2-h">Your progress starts here</div><div class="ci2-sub">Take your first check-in photo - every week after it builds your before and after.</div><button type="button" class="ci2-play" data-ci-add>📷 Take this week's photo</button>`; el.querySelector("[data-ci-add]").addEventListener("click",()=>startCheckin(today)); return el; }
   let after=ok.length-1;
-  el.innerHTML=`<div class="ci2-h">${span} week${span===1?"":"s"} of progress</div>
-    <div class="ci2-sub"><span class="ci2-flame">🔥</span> ${ok.length} check-in${ok.length===1?"":"s"} · ${short(first.checkin_date)} - ${short(last.checkin_date)}</div>
+  /* IH-2 (owner 11:35 "use the OpenArt design"): gold title with the check-in count on the right, black-and-white photos,
+     a pill handle on the divider, week labels under the photo, square thumbnails (press and hold one to delete), centred note */
+  el.innerHTML=`<div class="ci2-hrow"><div class="ci2-h">${span} week${span===1?"":"s"} of progress</div><span class="ci2-cnt"><span class="ci2-flame">🔥</span>${ok.length} check-in${ok.length===1?"":"s"}</span></div>
     <div class="ci2-cmp${ok.length<2?" one":""}"><canvas class="ci2-a" width="600" height="800"></canvas><canvas class="ci2-b" width="600" height="800"></canvas>
-      <div class="ci2-line"><span class="ci2-knob">‹ ›</span></div>
-      <span class="ci2-lab l">Week 1 · ${short(first.checkin_date)}</span><span class="ci2-lab r"></span><span class="ci2-status">Aligning photos…</span></div>
-    ${ok.length>=2?`<button type="button" class="ci2-play" data-ci-play>▶ Play your ${span}-week timelapse</button>`:`<div class="ci2-sub" style="text-align:center;margin:8px 0">One more check-in and your before and after appears here.</div>`}
-    <div class="ci2-strip-h"><span>Week by week</span>${ME&&ME.id?`<button type="button" class="ci2-edit">Edit</button>`:""}</div>
+      <div class="ci2-line"><span class="ci2-knob"><i></i><i></i></span></div><span class="ci2-status"></span></div>
+    <div class="ci2-labs"><span class="l"><b>Week 1</b> · ${short(first.checkin_date)}</span><span class="r"></span></div>
+    ${ok.length>=2?`<button type="button" class="ci2-play" data-ci-play>Play your ${span}-week timelapse</button>`:`<div class="ci2-note" style="margin:8px 0">One more check-in and your before and after appears here.</div>`}
     <div class="ci2-strip"></div><div class="ci2-note">${escapeHtml(nextTxt)}</div>`;
-  const cmp=el.querySelector(".ci2-cmp"), cA=el.querySelector(".ci2-a"), cB=el.querySelector(".ci2-b"), line=el.querySelector(".ci2-line"), labR=el.querySelector(".ci2-lab.r"), status=el.querySelector(".ci2-status");
+  const cmp=el.querySelector(".ci2-cmp"), cA=el.querySelector(".ci2-a"), cB=el.querySelector(".ci2-b"), line=el.querySelector(".ci2-line"), labR=el.querySelector(".ci2-labs .r"), status=el.querySelector(".ci2-status");
   const setSplit=p=>{ p=Math.max(0,Math.min(100,p)); cB.style.clipPath=`inset(0 ${100-p}% 0 0)`; line.style.left=p+"%"; };
   setSplit(ok.length<2?0:50);
   if(ok.length>=2){
@@ -9148,9 +9155,9 @@ function checkinsInspireEl(cis){
   const paint=async()=>{
     try{
       const A=await getPhoto(ok[after]); drawAligned(cA,A.img,A.info);
-      labR.textContent=ok.length>=2?`Week ${wkOf(ok[after])} · ${short(ok[after].checkin_date)}`:`Week 1 · ${short(first.checkin_date)}`;
+      labR.innerHTML=ok.length>=2?`<b>Week ${wkOf(ok[after])}</b> · ${escapeHtml(short(ok[after].checkin_date))}`:"";
       if(ok.length>=2){ const B=await getPhoto(first); drawAligned(cB,B.img,B.info);
-        status.textContent=(A.info.none||B.info.none)?(A.info.err||B.info.err?"Couldn't line these up - shown as taken":"Body not found in one photo - shown as taken"):"Lined up automatically"; }
+        status.textContent=(A.info.none||B.info.none)?(A.info.err||B.info.err?"Couldn't line these up - shown as taken":"Body not found in one photo - shown as taken"):""; }
       else status.textContent="";
       setTimeout(()=>{ status.classList.add("fade"); },2200);
     }catch(e){ console.warn("check-in compare (IH)",e); status.textContent="Couldn't load the photos"; }
@@ -9158,13 +9165,14 @@ function checkinsInspireEl(cis){
   paint();
   /* week strip */
   const strip=el.querySelector(".ci2-strip");
-  ok.forEach((c,i)=>{ const b=document.createElement("button"); b.type="button"; b.className="ci2-th"+(i===after?" on":""); b.innerHTML=`<span class="ci2-im"></span><b>W${wkOf(c)}</b><i class="ci2-x" aria-label="Delete this photo">×</i>`;
+  ok.forEach((c,i)=>{ const b=document.createElement("button"); b.type="button"; b.className="ci2-th"+(i===after?" on":""); b.innerHTML=`<span class="ci2-im"><i class="ci2-pic"></i></span><b>W${wkOf(c)}</b>`; b.title="Press and hold to delete";
     b.addEventListener("click",ev=>{ if(ev.target.classList.contains("ci2-x")) return; if(i===0&&ok.length>1){ getPhoto(c).then(p=>openPhotoLightbox(p.url)); return; } after=i; strip.querySelectorAll(".ci2-th").forEach((x,j)=>x.classList.toggle("on",j===i)); paint(); });
-    b.querySelector(".ci2-x").addEventListener("click",async ev=>{ ev.stopPropagation(); const okd=await openConfirm({title:"Delete this check-in photo?",body:`The photo from ${fmtDay(c.checkin_date)} will be removed for you and your coach.`,confirmLabel:"Delete",cancelLabel:"Keep",danger:true}); if(!okd) return; try{ await store.checkins.update(c.id,{photo_path:null}); toast("Photo deleted",1500); renderEngagement(); }catch(e){ console.error("delete checkin",e); toast(e.message||"Could not delete",3000); } });
+    let holdT=null, held=false; b.addEventListener("pointerdown",()=>{ held=false; holdT=setTimeout(()=>{ held=true; b.dispatchEvent(new CustomEvent("ci-del")); },650); }); ["pointerup","pointerleave","pointercancel"].forEach(n=>b.addEventListener(n,()=>clearTimeout(holdT))); b.addEventListener("contextmenu",e=>e.preventDefault());
+    b.addEventListener("click",ev=>{ if(held){ ev.stopImmediatePropagation(); held=false; } },true);
+    b.addEventListener("ci-del",async ev=>{ const okd=await openConfirm({title:"Delete this check-in photo?",body:`The photo from ${fmtDay(c.checkin_date)} will be removed for you and your coach.`,confirmLabel:"Delete",cancelLabel:"Keep",danger:true}); if(!okd) return; try{ await store.checkins.update(c.id,{photo_path:null}); toast("Photo deleted",1500); renderEngagement(); }catch(e){ console.error("delete checkin",e); toast(e.message||"Could not delete",3000); } });
     strip.appendChild(b);
-    getPhoto(c).then(p=>{ b.querySelector(".ci2-im").style.backgroundImage=`url("${p.url}")`; }).catch(()=>{}); });
-  if(!doneThisWeek){ const add=document.createElement("button"); add.type="button"; add.className="ci2-th add"; add.innerHTML=`<span class="ci2-im">＋</span><b>This week</b>`; add.addEventListener("click",()=>startCheckin(today)); strip.appendChild(add); }
-  const ed=el.querySelector(".ci2-edit"); if(ed) ed.addEventListener("click",()=>{ const on=strip.classList.toggle("editing"); ed.textContent=on?"Done":"Edit"; });
+    getPhoto(c).then(p=>{ b.querySelector(".ci2-pic").style.backgroundImage=`url("${p.url}")`; }).catch(()=>{}); });
+  if(!doneThisWeek){ const add=document.createElement("button"); add.type="button"; add.className="ci2-th add"; add.innerHTML=`<span class="ci2-im">+</span><b>This week</b>`; add.addEventListener("click",()=>startCheckin(today)); strip.appendChild(add); }
   return el;
 }
 let mvSelWeek=null;
