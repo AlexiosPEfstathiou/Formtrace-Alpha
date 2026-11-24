@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**II (2026-11-24, owner): Personal bests card redesign - show potential (unfilled bars, overdue PBs, next targets), where / when the last PBs were, the weekly PB quest; 3 OpenArt concepts - LOGGED.**
 **IH (2026-11-24, owner): Weekly check-ins card - then and now with automatic photo alignment (one person split half and half), timelapse aligned too - BUILT (IH-T1).**
 **IG (2026-11-24, owner): Macros card redesign - target rings (week average / day) vs coach targets, missed-days banner and glowing + Log columns - BUILT (IG-T1).**
 **IF (2026-11-24, owner): Weight card redesign - goal journey + weekly pace gauge + weekly averages + missed days - BUILT (IF-T1).**
@@ -1985,6 +1986,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## II. Personal bests card redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 11:41 (screenshot: a list of PBs - name, best, date - newest first):** IH-2 accepted ("Good, save it, work on it later"). Redesign the PB card so the trainee sees **potential**: unfilled bars, exercises that can be improved; where and when the last PBs were; a reminder of the **weekly PB quest**; and the thought "I haven't made a PB on this exercise in a while, I should go for it tonight".
+**Done:** 3 concepts (Nano Banana Pro, from the chosen weight concept, ~120 credits): A ready to break (quest strip 0 / 1, three "ready to break" cards with best, weeks since, a "Go for 21 reps" target, a bar of how close recent sets came; all PBs with a freshness bar that empties with age); B trophy shelf (quest banner with an empty trophy, 2-column tiles with a vertical bar and a dashed "next PB" segment, age tag, glowing "Due" outline after 4 weeks); C PB timeline (12-week strip with trophy dots on PB weeks, "most overdue first" list with best + dashed next-target extension, weeks since, "Try tonight").
+**Notes for the build:** data exists - PBs per exercise with date (`personal_bests_in_range`), the weekly PB quest (HK, worth 30, claimed by hand per IB); "how close recent sets came" needs the trainee's recent sets per exercise; next target = +1 rep (reps-only) or +2.5 kg / +1 rep (weighted).
+**Next:** owner picks a concept.
 
 ---
 ## IH. Weekly check-ins card redesign - LOGGED 2026-11-24 (personal account)
