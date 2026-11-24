@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IJ (2026-11-24, owner): Body measurements card redesign - quarterly log; growth / shrinking in percent; a motivational comment on the last quarter; 3 OpenArt concepts - LOGGED.**
 **II (2026-11-24, owner): Personal bests card - "your next PB is waiting": PB quest, 12-week trophy timeline, most overdue first / newest first, next target +1 rep or more kg, Try tonight - BUILT (II-T1).**
 **IH (2026-11-24, owner): Weekly check-ins card - then and now with automatic photo alignment (one person split half and half), timelapse aligned too - BUILT (IH-T1).**
 **IG (2026-11-24, owner): Macros card redesign - target rings (week average / day) vs coach targets, missed-days banner and glowing + Log columns - BUILT (IG-T1).**
@@ -1986,6 +1987,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IJ. Body measurements card redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 19:05 (screenshot: "Body measurements (cm)" - six tiles neck / chest / biceps / waist / hips / thighs with value, a pink line and cm change since the first entry, "+ Log"):** a log of body measurements, traditionally quarterly; emphasise **growth or shrinking by percentage**; give a **motivational comment based on the last quarter**.
+**Done:** 3 concepts (Nano Banana Pro, from the chosen weight concept, ~120 credits): A quarter report (motivational headline, "Log Q4 measurements - due in 12 days", one row per body part with a diverging bar around zero and the %); B body map (gold line figure with callouts per body part and % chips, quarter switcher, coach-style comment, Log this quarter); C percent tiles (headline "4 of 6 moved the right way", big % per tile with cm change and a 4-quarter sparkline, next check date).
+**Notes for the build:** "the right way" depends on the goal (waist down is good for fat loss; chest / arms up for muscle gain) - same goal-direction rule as the weight gauge (IF); the comment is generated from the numbers (no AI text); % = (latest - entry a quarter earlier) / earlier.
+**Next:** owner picks a concept.
 
 ---
 ## II. Personal bests card redesign - LOGGED 2026-11-24 (personal account)
