@@ -438,11 +438,12 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .ci2-x{display:none;position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#0B0E11;color:#E8B923;border:1.5px solid #E8B923;font-style:normal;font-size:15px;line-height:19px;text-align:center}
 .ci2-strip.editing .ci2-x{display:block}
 .ci2-note{font-size:14px;color:var(--ink);margin-top:14px;line-height:1.45;text-align:center}
-.pbc-top{padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.pbc-top{padding-bottom:2px}
+.pbc-stick{position:sticky;top:0;z-index:4;background:var(--panel);margin:0 -16px 12px;padding:4px 16px 12px;border-bottom:1px solid var(--line);box-shadow:0 10px 16px -12px rgba(0,0,0,.55)}
 .pbc-h{font-family:Montserrat,system-ui,sans-serif;font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .pb-q{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:999px;background:rgba(232,185,35,.16);font-size:12.5px;color:var(--ink)}
 .pb-q b{color:#E8B923}
-.pbc-tl-l{text-align:center;font-size:12px;color:var(--muted);margin:14px 0 8px}
+.pbc-tl-l{text-align:center;font-size:12px;color:var(--muted);margin:10px 0 6px}
 .pbc-tl{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:center}
 .pb-wk{position:relative;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
 .pb-wk b{display:block;width:100%;height:8px;border-radius:5px;background:var(--line2);margin-top:12px}
@@ -9231,8 +9232,10 @@ function pbCardEl(pbs,events,quest){
   const best=r=>r.weight_kg!=null?`${Number(r.weight_kg)} kg × ${r.reps}`:`${r.reps} reps`;
   const target=r=>r.weight_kg!=null?`Next: +1 rep or more kg`:`Next: ${Number(r.reps)+1} reps`;
   const el=document.createElement("div"); el.className="pbc";
-  el.innerHTML=`<div class="pbc-top"><div class="pbc-h">Your next PB is waiting</div>${qTxt}
-      <div class="pbc-tl-l">Last 12 weeks</div><div class="pbc-tl">${tl}</div><div class="pbc-since">${since}</div></div>
+  /* II-2 (owner 18:55, option 2): the timeline block is sticky - it stays pinned at the top of the screen while the list
+     scrolls, so tapping an exercise far down updates a timeline that is always in view */
+  el.innerHTML=`<div class="pbc-top"><div class="pbc-h">Your next PB is waiting</div>${qTxt}</div>
+    <div class="pbc-stick"><div class="pbc-tl-l">Last 12 weeks</div><div class="pbc-tl">${tl}</div><div class="pbc-since">${since}</div></div>
     <div class="pbc-sh"><span>${pbSort==="old"?"Most overdue first":"Newest first"}</span><div class="wv-switch pbc-sort"><button type="button" data-pb-sort="old" class="${pbSort==="old"?"on":""}">Oldest</button><button type="button" data-pb-sort="new" class="${pbSort==="new"?"on":""}">Newest</button></div></div>
     <div class="pbc-list">${rows.map(r=>`<div class="pbc-row${r.key===pbSel?" sel":""}" data-pb="${escapeHtml(r.key)}" role="button" tabindex="0">
       <div class="pbc-r1"><b>${escapeHtml(r.exercise_name)}</b><span class="pbc-age">${r.wk===0?"This week":r.wk+" wk"+(r.wk===1?"":"s")}</span></div>
