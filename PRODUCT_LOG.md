@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IN (2026-11-24, owner): trainee Notifications tab redesign - slick, light, no clutter; every notification type inventoried; 3 OpenArt concepts - LOGGED.**
 **IM (2026-11-24, owner): trainee Goal tab (accepted goal) redesign - space management, weeks done / pending visualised, old pending / completed / rejected kept but minimal; concept B (progress ring) BUILT.**
 **IL (2026-11-24, owner): Take a vacation sheet redesign - happy, on brand, reassures that streak, payments and training are paused, with a wish from Formtrace; concept A BUILT.**
 **IK (2026-11-24, owner): Calls card redesign - weekly availability for trainee and coach; overlapping times become "Propose call" options; incoming proposals with Accept / Propose a new time; concept B + Edit availability sheet BUILT (SQL applied).**
@@ -1990,6 +1991,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IN. Trainee Notifications tab redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 19:49 (screenshot: the empty Notifications tab - bell, "Nothing needs you right now"):** give OpenArt examples of every notification type and reimagine the tab - **slick, light, without clutter**.
+**Inventory (from `#notif-body`, trainee side):** daily macros + weight prompt (CQ); earlier days without macros; weekly check-in photo; quarterly measurements; streak at risk / missed session to reschedule; goal paused (vacation) with Resume; call proposal; payments (pay / confirm / refund) and refund notes; coach ended the goal; achievement unlocked; streak milestone; In Touch (connect request, congratulations, friend PB / achievement to congratulate); shared social handles; weekly recap; renewal offer; next goal; goal feedback; postpone status. Coach-only (not in this redesign): certification status, goal ended by trainee, review window closing, offers declined, postpone requests, admin queue.
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits): A grouped feed (Needs you / Celebrate / Updates, slim rows with line icons and one compact action); B focus card + quiet list (the most urgent item as one card, the rest as single lines, a muted Recent list with times); C today checklist + inbox (All / To do / Social filter, Today checklist 0 of 3, message-style inbox with unread dots).
+**Next:** owner picks a concept.
 
 ---
 ## IM. Trainee Goal tab redesign (ongoing goal) - LOGGED 2026-11-24 (personal account)
