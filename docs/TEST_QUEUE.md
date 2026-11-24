@@ -20,6 +20,8 @@ Tip: allow ~10 minutes after a change for the phone to pick up the new version (
 
 - [ ] **IG-T1** Training -> Macros: Week shows the week's average calories and protein in two gold rings against your coach's targets (On target / Under / Over); the daily bars have a dashed target line; a day you didn't log glows with "+ Log" and the gold banner lists missed days - tap to log; tap a bar -> Day shows that day; arrows step back through earlier weeks; dark and light.
 
+- [ ] **IH-T1** Training -> Check-ins: "N weeks of progress"; before / after of week 1 and your latest photo - drag the gold divider; do the two halves line up as one person (same size and height)? Play the timelapse - does the body stay put? Tap a thumbnail to compare that week; Edit -> × deletes (asks first); "+ This week" opens the camera. Report any photo that does not line up (and whether your whole body is in it).
+
 ## First — after the security lock (GD, 2026-11-10)
 - [ ] **GD-T1** Everything still works after the internal functions were locked. As a **trainee** and as a **coach**: sign out and in; open every tab (Home, Goal / Trainees, Training / Library, Social, Profile, Notifications; Review as admin); open a workout and mark a set; submit; as the coach open a review; open the payment tracker on a goal; pause / end pause; Social: congratulate. **If any screen says "permission denied for function …", note the function name** - it is a one-line fix.
 

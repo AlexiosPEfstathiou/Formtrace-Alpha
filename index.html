@@ -403,6 +403,34 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .mx-plus em{font-style:normal;font-size:24px;line-height:1}
 @keyframes mxGlow{0%,100%{box-shadow:0 0 0 0 rgba(232,185,35,0)}50%{box-shadow:0 0 14px 2px rgba(232,185,35,.35)}}
 @media (prefers-reduced-motion:reduce){.mx-plus{animation:none}}
+.tl-cv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.ci2-h{font-family:Montserrat,system-ui,sans-serif;font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.ci2-sub{font-size:12.5px;color:var(--muted);margin:2px 0 12px}
+.ci2-flame{filter:saturate(1.2)}
+.ci2-cmp{position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;background:#0B0E11;touch-action:pan-y;cursor:ew-resize;user-select:none}
+.ci2-cmp canvas{position:absolute;inset:0;width:100%;height:100%}
+.ci2-cmp.one{cursor:default}
+.ci2-cmp.one .ci2-line,.ci2-cmp.one .ci2-lab.l{display:none}
+.ci2-line{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:#E8B923;pointer-events:none;box-shadow:0 0 12px rgba(232,185,35,.6)}
+.ci2-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:#E8B923;color:#0B0E11;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+.ci2-lab{position:absolute;bottom:10px;font-size:11.5px;font-weight:800;color:#fff;background:rgba(11,14,17,.72);padding:4px 9px;border-radius:999px}
+.ci2-lab.l{left:10px}.ci2-lab.r{right:10px}
+.ci2-status{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:#0B0E11;background:#E8B923;padding:3px 10px;border-radius:999px;transition:opacity .6s;white-space:nowrap}
+.ci2-status:empty{display:none}
+.ci2-status.fade{opacity:0}
+.ci2-play{display:block;width:100%;height:50px;margin:12px 0 4px;border:0;border-radius:14px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(232,185,35,.22)}
+.ci2-strip-h{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 8px;font-size:14px;font-weight:800;color:var(--ink)}
+.ci2-edit{background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.ci2-strip{display:grid;grid-auto-flow:column;grid-auto-columns:62px;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ci2-th{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;color:var(--muted);font:inherit;cursor:pointer}
+.ci2-im{width:62px;height:80px;border-radius:12px;background:#0B0E11 center/cover no-repeat;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:22px;color:#E8B923}
+.ci2-th.on .ci2-im{border-color:#E8B923}
+.ci2-th b{font-size:11px;color:var(--ink)}
+.ci2-th.add .ci2-im{border:1.5px dashed #E8B923;background:rgba(232,185,35,.08)}
+.ci2-th.add b{color:#E8B923;font-size:10.5px}
+.ci2-x{display:none;position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#0B0E11;color:#E8B923;border:1.5px solid #E8B923;font-style:normal;font-size:15px;line-height:19px;text-align:center}
+.ci2-strip.editing .ci2-x{display:block}
+.ci2-note{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.45}
 .pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
 .pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
@@ -9039,6 +9067,106 @@ function macrosRingsEl(goalRef){
   el.querySelectorAll("[data-mx-day]").forEach(b=>b.addEventListener("click",()=>{ mxMode="day"; mxDay=b.dataset.mxDay; rerender(); }));
   return el;
 }
+/* IH (owner, 2026-11-24): the trainee's Weekly check-ins card = OpenArt concept A ("then and now"), with automatic photo
+   alignment. Business need (owner): photos taken from the same angle at different distances must line up, so the before /
+   after reads as ONE person divided half and half, and the timelapse does not jump in size or position.
+   How: the pose model (MediaPipe, already used by the camera) runs once per photo in IMAGE mode; the shoulder and hip mid-points
+   give the torso's length and centre; every photo is drawn scaled and shifted so the torso has the same size and place.
+   The result is cached per photo on the device (localStorage "ft-align:<path>"). A photo where no body is found is shown
+   unaligned (cover-fit). */
+let photoPose=null, photoPoseLoading=null;
+async function ensurePhotoPose(){
+  if(photoPose) return photoPose;
+  if(!photoPoseLoading) photoPoseLoading=(async()=>{
+    const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    photoPose=await PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"CPU"},runningMode:"IMAGE",numPoses:1});
+    return photoPose;
+  })().catch(e=>{ photoPoseLoading=null; throw e; });
+  return photoPoseLoading;
+}
+function loadCorsImg(url){ return new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin="anonymous"; im.onload=()=>res(im); im.onerror=rej; im.src=url; }); }
+async function photoAlign(path,img){
+  const key="ft-align:"+path;
+  try{ const c=localStorage.getItem(key); if(c) return JSON.parse(c); }catch(e){}
+  let info={none:true};
+  try{
+    const pl=await ensurePhotoPose(); const r=pl.detect(img); const L=r&&r.landmarks&&r.landmarks[0];
+    if(L&&L[11]&&L[12]&&L[23]&&L[24]){
+      const sx=(L[11].x+L[12].x)/2, sy=(L[11].y+L[12].y)/2, hx=(L[23].x+L[24].x)/2, hy=(L[23].y+L[24].y)/2;
+      const t=hy-sy; if(t>0.04) info={cx:(sx+hx)/2, cy:(sy+hy)/2, t};
+    }
+  }catch(e){ console.warn("photo align (IH)",e); return {none:true,err:true}; }   /* not cached: try again next time */
+  try{ localStorage.setItem(key,JSON.stringify(info)); }catch(e){}
+  return info;
+}
+/* draw a photo into a 3:4 canvas, aligned: torso length = 22% of the height, torso centre at (50%, 40%) - whole body in frame */
+function drawAligned(cv,img,info){
+  const W=cv.width, H=cv.height, x=cv.getContext("2d"); x.fillStyle="#0B0E11"; x.fillRect(0,0,W,H);
+  const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height; if(!iw||!ih) return;
+  let s,dx,dy;
+  if(info&&!info.none){ s=(0.22*H)/(info.t*ih); dx=0.5*W-info.cx*iw*s; dy=0.40*H-info.cy*ih*s; }
+  else { s=Math.max(W/iw,H/ih); dx=(W-iw*s)/2; dy=(H-ih*s)/2; }
+  x.drawImage(img,dx,dy,iw*s,ih*s);
+}
+function checkinsInspireEl(cis){
+  const el=document.createElement("div"); el.className="ci2";
+  const ok=cis.filter(c=>c.photo_path);
+  const today=todayISO(), thisMon=weekStartISO(new Date());
+  const first=ok[0], last=ok[ok.length-1];
+  const wkOf=c=>Math.round((new Date(weekStartISO(new Date(c.checkin_date+"T12:00:00")))-new Date(weekStartISO(new Date(first.checkin_date+"T12:00:00"))))/604800000)+1;
+  const span=ok.length?wkOf(last):0;
+  const short=iso=>new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+  const doneThisWeek=cis.some(c=>c.photo_path&&c.checkin_date>=thisMon);
+  const sat=addDaysISO(thisMon,5), nextSat=doneThisWeek||today>sat?addDaysISO(sat,7):sat;
+  const nextTxt=doneThisWeek?`This week's photo is in. Next check-in: ${new Date(nextSat+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"})}.`:`Every photo is proof you showed up. Next check-in: ${nextSat===today?"today":new Date(nextSat+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long"})}.`;
+  if(!ok.length){ el.innerHTML=`<div class="ci2-h">Your progress starts here</div><div class="ci2-sub">Take your first check-in photo - every week after it builds your before and after.</div><button type="button" class="ci2-play" data-ci-add>📷 Take this week's photo</button>`; el.querySelector("[data-ci-add]").addEventListener("click",()=>startCheckin(today)); return el; }
+  let after=ok.length-1;
+  el.innerHTML=`<div class="ci2-h">${span} week${span===1?"":"s"} of progress</div>
+    <div class="ci2-sub"><span class="ci2-flame">🔥</span> ${ok.length} check-in${ok.length===1?"":"s"} · ${short(first.checkin_date)} - ${short(last.checkin_date)}</div>
+    <div class="ci2-cmp${ok.length<2?" one":""}"><canvas class="ci2-a" width="600" height="800"></canvas><canvas class="ci2-b" width="600" height="800"></canvas>
+      <div class="ci2-line"><span class="ci2-knob">‹ ›</span></div>
+      <span class="ci2-lab l">Week 1 · ${short(first.checkin_date)}</span><span class="ci2-lab r"></span><span class="ci2-status">Aligning photos…</span></div>
+    ${ok.length>=2?`<button type="button" class="ci2-play" data-ci-play>▶ Play your ${span}-week timelapse</button>`:`<div class="ci2-sub" style="text-align:center;margin:8px 0">One more check-in and your before and after appears here.</div>`}
+    <div class="ci2-strip-h"><span>Week by week</span>${ME&&ME.id?`<button type="button" class="ci2-edit">Edit</button>`:""}</div>
+    <div class="ci2-strip"></div><div class="ci2-note">${escapeHtml(nextTxt)}</div>`;
+  const cmp=el.querySelector(".ci2-cmp"), cA=el.querySelector(".ci2-a"), cB=el.querySelector(".ci2-b"), line=el.querySelector(".ci2-line"), labR=el.querySelector(".ci2-lab.r"), status=el.querySelector(".ci2-status");
+  const setSplit=p=>{ p=Math.max(0,Math.min(100,p)); cB.style.clipPath=`inset(0 ${100-p}% 0 0)`; line.style.left=p+"%"; };
+  setSplit(ok.length<2?0:50);
+  if(ok.length>=2){
+    const move=ev=>{ const r=cmp.getBoundingClientRect(); const x=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left; setSplit(x/r.width*100); };
+    let drag=false;
+    cmp.addEventListener("pointerdown",e=>{ drag=true; cmp.setPointerCapture&&cmp.setPointerCapture(e.pointerId); move(e); });
+    cmp.addEventListener("pointermove",e=>{ if(drag) move(e); });
+    cmp.addEventListener("pointerup",()=>{ drag=false; }); cmp.addEventListener("pointercancel",()=>{ drag=false; });
+    el.querySelector("[data-ci-play]").addEventListener("click",()=>openTimelapse(ME.id,{intro:`${ok.length} check-ins over ${span} weeks, lined up and played back in order.`}));
+  }
+  /* photos: signed URL -> CORS image -> alignment -> canvases */
+  const cache={};
+  const getPhoto=async c=>{ if(cache[c.photo_path]) return cache[c.photo_path];
+    cache[c.photo_path]=(async()=>{ const url=await playable(c.photo_path); const img=await loadCorsImg(url); const info=await photoAlign(c.photo_path,img); return {url,img,info}; })();
+    return cache[c.photo_path]; };
+  const paint=async()=>{
+    try{
+      const A=await getPhoto(ok[after]); drawAligned(cA,A.img,A.info);
+      labR.textContent=ok.length>=2?`Week ${wkOf(ok[after])} · ${short(ok[after].checkin_date)}`:`Week 1 · ${short(first.checkin_date)}`;
+      if(ok.length>=2){ const B=await getPhoto(first); drawAligned(cB,B.img,B.info);
+        status.textContent=(A.info.none||B.info.none)?(A.info.err||B.info.err?"Couldn't line these up - shown as taken":"Body not found in one photo - shown as taken"):"Lined up automatically"; }
+      else status.textContent="";
+      setTimeout(()=>{ status.classList.add("fade"); },2200);
+    }catch(e){ console.warn("check-in compare (IH)",e); status.textContent="Couldn't load the photos"; }
+  };
+  paint();
+  /* week strip */
+  const strip=el.querySelector(".ci2-strip");
+  ok.forEach((c,i)=>{ const b=document.createElement("button"); b.type="button"; b.className="ci2-th"+(i===after?" on":""); b.innerHTML=`<span class="ci2-im"></span><b>W${wkOf(c)}</b><i class="ci2-x" aria-label="Delete this photo">×</i>`;
+    b.addEventListener("click",ev=>{ if(ev.target.classList.contains("ci2-x")) return; if(i===0&&ok.length>1){ getPhoto(c).then(p=>openPhotoLightbox(p.url)); return; } after=i; strip.querySelectorAll(".ci2-th").forEach((x,j)=>x.classList.toggle("on",j===i)); paint(); });
+    b.querySelector(".ci2-x").addEventListener("click",async ev=>{ ev.stopPropagation(); const okd=await openConfirm({title:"Delete this check-in photo?",body:`The photo from ${fmtDay(c.checkin_date)} will be removed for you and your coach.`,confirmLabel:"Delete",cancelLabel:"Keep",danger:true}); if(!okd) return; try{ await store.checkins.update(c.id,{photo_path:null}); toast("Photo deleted",1500); renderEngagement(); }catch(e){ console.error("delete checkin",e); toast(e.message||"Could not delete",3000); } });
+    strip.appendChild(b);
+    getPhoto(c).then(p=>{ b.querySelector(".ci2-im").style.backgroundImage=`url("${p.url}")`; }).catch(()=>{}); });
+  if(!doneThisWeek){ const add=document.createElement("button"); add.type="button"; add.className="ci2-th add"; add.innerHTML=`<span class="ci2-im">＋</span><b>This week</b>`; add.addEventListener("click",()=>startCheckin(today)); strip.appendChild(add); }
+  const ed=el.querySelector(".ci2-edit"); if(ed) ed.addEventListener("click",()=>{ const on=strip.classList.toggle("editing"); ed.textContent=on?"Done":"Edit"; });
+  return el;
+}
 let mvSelWeek=null;
 /* IE-3 (owner, 2026-11-24): the Macros and Weight sections log a past day too - the last 7 days as chips (logged = ticked,
    missing = gold outline) and a date picker for older days; all open the same form as the calendar day. */
@@ -10017,6 +10145,7 @@ function renderDashboard(container, iAmCoach){
       const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
       const cis=(await store.checkins.list({trainee_id:traineeId})).sort((a,b)=>a.checkin_date<b.checkin_date?-1:1);
       const box=$("#dash-checkins"); if(!box)return;
+      if(traineeMerged&&!iAmCoach){ try{ const card=box.closest(".card"); card.innerHTML=""; card.appendChild(checkinsInspireEl(cis)); return; }catch(e){ console.warn("check-ins card (IH)",e); } }   /* IH: the trainee's inspirational check-ins card */
       if(!cis.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">${iAmCoach?"No check-in photos yet.":"Your Saturday check-in photos will appear here as a timelapse."}</div>`; return; }
       // a timelapse only makes sense with at least two frames
       const playBtn=$("#dash-tl-play");
@@ -13344,6 +13473,8 @@ async function openTimelapse(traineeId,{intro,onDone,fromDate,toDate}={}){
     fr.className="tl-frame"+(i===0?" on":"");
     fr.setAttribute("data-i",i);
     fr.style.backgroundImage=`url("${f.url}")`;
+    /* IH: line the frames up (same torso size and place) once the alignment is known */
+    (async()=>{ try{ const im=await loadCorsImg(f.url); const info=await photoAlign(f.ci.photo_path,im); if(info&&!info.none){ const cv=document.createElement("canvas"); cv.width=600; cv.height=800; cv.className="tl-cv"; drawAligned(cv,im,info); fr.style.backgroundImage="none"; fr.insertBefore(cv,fr.firstChild); } }catch(e){} })();
     fr.innerHTML=`<div class="tl-meta"><span class="tl-date">${d}/${m}/${String(y).slice(2)}</span><span class="tl-wt">${i+1}/${usable.length}</span></div>`;
     wrap.appendChild(fr);
     bar.insertAdjacentHTML("beforeend",`<i data-i="${i}"${i===0?' class="on"':''}></i>`);
