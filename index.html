@@ -471,6 +471,66 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .pbc-r3 span:first-child{color:#E8B923}
 .tut-btn{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px 0 4px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
 .tut-btn span{width:16px;height:16px;border-radius:50%;border:1.5px solid #E8B923;color:#E8B923;font-size:10px;font-weight:900;font-style:italic;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center}
+.cav{padding:16px}
+.cav-k{font-size:13px;font-weight:800;color:#E8B923}
+.cav-v{font-size:15px;font-weight:700;margin-top:6px;color:var(--ink)}
+.cav-h2{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 10px}
+.cav-in{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line2);border-radius:16px;padding:12px}
+.cav-av{flex:0 0 46px;height:46px;border-radius:50%;background:rgba(232,185,35,.22);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:17px}
+.cav-who{flex:1 1 140px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.cav-who b{font-size:15px;color:var(--ink)}
+.cav-who span{font-size:13px;color:var(--muted);line-height:1.35}
+.cav-acts{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cav-acc,.cav-new-t{height:40px;border-radius:999px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.cav-acc{border:0;background:#E8B923;color:#0B0E11}
+.cav-new-t{border:1.5px solid #E8B923;background:transparent;color:#E8B923}
+.cav-dec{grid-column:1/-1;height:26px;border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}
+.cav-wait{font-size:13px;color:var(--muted)}
+.cav-wait b{display:block;font-size:15px;color:var(--ink);margin-top:5px}
+.cav-times{margin-top:16px}
+.cav-in+.cav-times,div+div>.cav-times{margin-top:18px}
+.cav-h1{font-family:Montserrat,system-ui,sans-serif;font-size:21px;font-weight:800;color:var(--ink);letter-spacing:-.01em;margin-bottom:10px}
+.cav-dayrow{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:10px 12px}
+.cav-dayrow+.cav-dayrow{margin-top:8px}
+.cav-dl{flex:0 0 94px;font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap}
+.cav-chips{display:flex;flex-wrap:wrap;gap:6px}
+.cav-chip{height:34px;padding:0 10px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.cav-chip.on{background:#E8B923;border-color:#E8B923;color:#0B0E11;font-weight:800}
+.cav-prow{display:flex;align-items:center;gap:10px;margin:12px 0 0;font-size:12.5px;color:var(--muted)}
+.cav-wk{height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.cav-wk.on{border-color:#E8B923;color:#E8B923}
+.cav-prop{display:block;width:100%;height:50px;margin-top:10px;border:0;border-radius:999px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer}
+.cav-prop:disabled{opacity:.45;cursor:default}
+.cav-any{display:block;margin:8px auto 0;border:0;background:none;color:#E8B923;font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:6px}
+.cav-empty{font-size:13px;color:var(--muted);line-height:1.45;background:var(--bg);border-radius:14px;padding:12px}
+.cav-my{margin-top:16px;padding:14px;border-radius:16px;background:var(--bg)}
+.cav-myh{display:flex;align-items:center;justify-content:space-between}
+.cav-myh b{font-size:16px;color:var(--ink)}
+.cav-edit{border:0;background:none;color:#E8B923;font:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:4px}
+.cav-pills{display:flex;justify-content:space-between;gap:4px;margin-top:10px}
+.cav-pills span{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;background:var(--line);color:#E8B923}
+.cav-pills span.on{background:#E8B923;color:#0B0E11}
+.cav-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.4}
+.cav-sheet{padding-top:8px}
+.cav-grab{width:44px;height:5px;border-radius:3px;background:var(--line2);margin:0 auto 12px}
+.cav-sh{font-size:19px;font-weight:800;color:var(--ink)}
+.cav-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0}
+.cav-day{flex:0 0 86px;font-size:14.5px;color:var(--ink);padding-top:5px}
+.cav-tg{flex:0 0 42px;height:24px;margin-top:3px;border-radius:999px;border:0;background:var(--line2);position:relative;cursor:pointer;padding:0}
+.cav-tg i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#9aa3ad;transition:left .15s}
+.cav-tg.on{background:#E8B923}.cav-tg.on i{left:21px;background:#fff}
+.cav-rg{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cav-tp{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 4px 0 11px;border-radius:999px;background:#E8B923;color:#0B0E11;font-size:13px;font-weight:700}
+.cav-tp button{width:22px;height:22px;border:0;background:none;color:#0B0E11;font-size:16px;cursor:pointer;padding:0}
+.cav-add{border:0;background:none;color:#E8B923;font:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 2px}
+.cav-na{font-size:13.5px;color:var(--muted);padding-top:5px}
+.cav-new{flex-basis:100%;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.cav-new .sel{height:36px;flex:1;min-width:0;background:var(--bg);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:0 8px;font:inherit}
+.cav-ok{height:36px;padding:0 14px;border:0;border-radius:10px;background:#E8B923;color:#0B0E11;font:inherit;font-weight:800;cursor:pointer}
+.cav-quick{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.cav-quick button{height:32px;padding:0 12px;border-radius:999px;border:1.5px solid #E8B923;background:transparent;color:#E8B923;font:inherit;font-size:13px;cursor:pointer}
+.cav-save{display:block;width:100%;height:50px;border:0;border-radius:999px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer}
+.cav-cancel{display:block;margin:8px auto 0;border:0;background:none;color:#E8B923;font:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:6px}
 .tut-ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
 .tut-box{width:100%;max-width:520px;max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom))}
 .tut-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -10433,6 +10493,128 @@ function nextOccurrence(p, fromISO){
   let g=0; while(d<fromISO && g++<2000) d=addDaysISO(d,p.recur_every_days);
   return d;
 }
+/* IK (owner, 2026-11-24): Calls = OpenArt concept B. Both people keep weekly free hours (availability_blocks, 0 = Sunday,
+   written only through set_my_availability); the times both share in the next 7 days become "Propose" chips (30 min). Proposing
+   any other time still works ("or pick any time"). Incoming proposals sit on top with Accept / Propose a new time.
+   The other person's hours are converted from their time zone. Coaches get the "My availability" card on their call card. */
+const AV_ORDER=[1,2,3,4,5,6,0], AV_NAME={0:"Sunday",1:"Monday",2:"Tuesday",3:"Wednesday",4:"Thursday",5:"Friday",6:"Saturday"};
+const avHM=t=>String(t||"").slice(0,5);
+const avTimes=(()=>{ const a=[]; for(let m=0;m<24*60;m+=30) a.push(`${pad2(Math.floor(m/60))}:${pad2(m%60)}`); a.push("23:59"); return a; })();
+async function loadAvailability(ids){
+  const { data, error }=await store._sb.from("availability_blocks").select("user_id,day_of_week,start_time,end_time,tz").in("user_id",ids);
+  if(error) throw error; return data||[];
+}
+function sharedTimes(mine,theirs){
+  const now=Date.now(), today=todayISO(), out=[];
+  const span=(b,iso)=>[zonedToUTC(iso,avHM(b.start_time),b.tz||MY_TZ||"UTC"), b.end_time>="23:59"?zonedToUTC(addDaysISO(iso,1),"00:00",b.tz||MY_TZ||"UTC"):zonedToUTC(iso,avHM(b.end_time),b.tz||MY_TZ||"UTC")];
+  const dow=iso=>new Date(iso+"T12:00:00").getDay();
+  for(let i=0;i<7;i++){ const iso=addDaysISO(today,i);
+    const A=mine.filter(b=>b.day_of_week===dow(iso)).map(b=>span(b,iso));
+    const B=[]; [-1,0,1].forEach(k=>{ const d=addDaysISO(iso,k); theirs.filter(b=>b.day_of_week===dow(d)).forEach(b=>B.push(span(b,d))); });
+    const chips=[];
+    A.forEach(([a1,a2])=>B.forEach(([b1,b2])=>{ const s=Math.max(a1,b1), e=Math.min(a2,b2);
+      for(let t=Math.ceil(s/1800000)*1800000; t+1800000<=e && chips.length<3; t+=3600000){ if(t<now+30*60000) continue;
+        const d=new Date(t); if(isoOf(d)!==iso) continue; const hm=`${pad2(d.getHours())}:${pad2(d.getMinutes())}`; if(!chips.includes(hm)) chips.push(hm); } }));
+    chips.sort(); if(chips.length) out.push({iso,chips:chips.slice(0,3)}); }
+  return out;
+}
+function availCardEl(mine,onSaved,coachSide){
+  const el=document.createElement("div"); el.className="cav-my";
+  const on=new Set(mine.map(b=>b.day_of_week));
+  el.innerHTML=`<div class="cav-myh"><b>My availability</b><button type="button" class="cav-edit">Edit</button></div>
+    <div class="cav-pills">${AV_ORDER.map(d=>`<span class="${on.has(d)?"on":""}" title="${AV_NAME[d]}">${AV_NAME[d][0]}</span>`).join("")}</div>
+    ${mine.length?"":`<div class="cav-note">Set the hours you're free - times you share with your ${coachSide?"trainee":"coach"} become call options.</div>`}`;
+  el.querySelector(".cav-edit").addEventListener("click",()=>openAvailabilitySheet(mine,onSaved,coachSide));
+  return el;
+}
+function openAvailabilitySheet(mine,onSaved,coachSide){
+  const st={}; AV_ORDER.forEach(d=>st[d]=mine.filter(b=>b.day_of_week===d).map(b=>[avHM(b.start_time),b.end_time>="23:59"?"23:59":avHM(b.end_time)]).sort());
+  const ov=document.createElement("div"); ov.className="tut-ov";
+  const opts=(v,from)=>avTimes.filter(t=>!from||t>from).map(t=>`<option value="${t}"${t===v?" selected":""}>${t==="23:59"?"24:00":t}</option>`).join("");
+  let adding=null;
+  const draw=()=>{
+    ov.innerHTML=`<div class="tut-box cav-sheet" role="dialog" aria-modal="true" aria-label="My availability"><div class="cav-grab"></div>
+      <div class="cav-sh">My availability</div><div class="tut-i">Your ${coachSide?"trainees see":"coach sees"} these times. Times you both share become call options.</div>
+      ${AV_ORDER.map(d=>`<div class="cav-row"><div class="cav-day">${AV_NAME[d]}</div><button type="button" class="cav-tg${st[d].length?" on":""}" data-tg="${d}" aria-label="${AV_NAME[d]} available" aria-pressed="${st[d].length?"true":"false"}"><i></i></button>
+        <div class="cav-rg">${st[d].length?st[d].map(([s,e],i)=>`<span class="cav-tp">${s} - ${e==="23:59"?"24:00":e}<button type="button" data-rm="${d}:${i}" aria-label="Remove">×</button></span>`).join("")+(adding===d?"":`<button type="button" class="cav-add" data-add="${d}">+ Add time</button>`):`<span class="cav-na">Not available</span>`}
+        ${adding===d?`<div class="cav-new"><select class="sel" data-ns>${opts("18:00")}</select><span>to</span><select class="sel" data-ne>${opts("21:00","")}</select><button type="button" class="cav-ok" data-ok="${d}">Add</button></div>`:""}</div></div>`).join("")}
+      <div class="cav-quick"><button type="button" data-q="07:00-09:00">Mornings</button><button type="button" data-q="12:00-14:00">Lunchtime</button><button type="button" data-q="18:00-21:00">Evenings</button><button type="button" data-copy>Copy Monday to all</button></div>
+      <button type="button" class="cav-save">Save availability</button><button type="button" class="cav-cancel">Cancel</button></div>`;
+    const q=s=>ov.querySelectorAll(s);
+    q("[data-tg]").forEach(b=>b.addEventListener("click",()=>{ const d=+b.dataset.tg; st[d]=st[d].length?[]:[["18:00","21:00"]]; adding=null; draw(); }));
+    q("[data-rm]").forEach(b=>b.addEventListener("click",()=>{ const [d,i]=b.dataset.rm.split(":").map(Number); st[d].splice(i,1); draw(); }));
+    q("[data-add]").forEach(b=>b.addEventListener("click",()=>{ adding=+b.dataset.add; draw(); }));
+    q("[data-ok]").forEach(b=>b.addEventListener("click",()=>{ const d=+b.dataset.ok, s=ov.querySelector("[data-ns]").value, e=ov.querySelector("[data-ne]").value;
+      if(e<=s){ toast("The end must be after the start"); return; }
+      const merged=[...st[d],[s,e]].sort(), m=[]; merged.forEach(r=>{ const l=m[m.length-1]; if(l&&r[0]<=l[1]){ if(r[1]>l[1]) l[1]=r[1]; } else m.push([...r]); });
+      st[d]=m; adding=null; draw(); }));
+    q("[data-q]").forEach(b=>b.addEventListener("click",()=>{ const [s,e]=b.dataset.q.split("-"); let days=AV_ORDER.filter(d=>st[d].length); if(!days.length) days=[1,2,3,4,5];
+      days.forEach(d=>{ if(!st[d].some(r=>r[0]===s&&r[1]===e)){ const m=[]; [...st[d],[s,e]].sort().forEach(r=>{ const l=m[m.length-1]; if(l&&r[0]<=l[1]){ if(r[1]>l[1]) l[1]=r[1]; } else m.push([...r]); }); st[d]=m; } }); draw(); }));
+    ov.querySelector("[data-copy]").addEventListener("click",()=>{ if(!st[1].length){ toast("Set Monday first"); return; } AV_ORDER.forEach(d=>{ if(d!==1) st[d]=st[1].map(r=>[...r]); }); draw(); });
+    ov.querySelector(".cav-cancel").addEventListener("click",()=>ov.remove());
+    ov.querySelector(".cav-save").addEventListener("click",async ev=>{ const btn=ev.currentTarget; btn.disabled=true; btn.textContent="Saving…";
+      const blocks=[]; AV_ORDER.forEach(d=>st[d].forEach(([s,e])=>blocks.push({d,s,e:e==="23:59"?"23:59":e})));
+      try{ const { error }=await store._sb.rpc("set_my_availability",{p_blocks:blocks,p_tz:MY_TZ}); if(error) throw error; toast("Availability saved ✓",1800); ov.remove(); onSaved&&onSaved(); }
+      catch(err){ console.error("save availability (IK)",err); toast(err.message||"Couldn't save",4000); btn.disabled=false; btn.textContent="Save availability"; } });
+  };
+  ov.addEventListener("click",e=>{ if(e.target===ov) ov.remove(); });
+  draw(); document.body.appendChild(ov);
+}
+async function proposeAt(eng,iso,hm,recur,counterOfId){
+  const [hh,mm]=hm.split(":").map(Number), em=hh*60+mm+30; if(em>=24*60) throw new Error("That runs past midnight - pick an earlier time");
+  const end=`${pad2(Math.floor(em/60))}:${pad2(em%60)}`;
+  const r=counterOfId?await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:counterOfId,p_action:"counter",p_counter_date:iso,p_counter_start:hm,p_counter_end:end,p_counter_recur:recur})
+    :await store._sb.rpc("propose_call",{p_engagement_id:eng.id,p_date:iso,p_start_time:hm,p_end_time:end,p_recur_every_days:recur});
+  if(r.error) throw r.error;
+  try{ if(MY_TZ){ const { data:mineP }=await store._sb.from("call_proposals").select("id").eq("engagement_id",eng.id).eq("proposed_by",ME.id).order("created_at",{ascending:false}).limit(1); if(mineP&&mineP[0]) await store._sb.rpc("set_call_tz",{p_id:mineP[0].id,p_tz:MY_TZ}); } }catch(e){ console.error("set call tz (IK)",e); }
+}
+let cavPick=null, cavWeekly=false;
+async function renderCallsB(el,body,eng,other,ctx){
+  const {series,oneTime,proposal,isExpired,cancelBtn,rerender}=ctx;
+  const name=(other&&other.display_name)||"your coach", first=String(name).split(" ")[0];
+  let blocks=[]; try{ blocks=await loadAvailability([ME.id,other&&other.id||eng.coach_id].filter(Boolean)); }catch(e){ console.error("availability (IK)",e); }
+  const otherId=eng.coach_id===ME.id?eng.trainee_id:eng.coach_id;
+  const mine=blocks.filter(b=>b.user_id===ME.id), theirs=blocks.filter(b=>b.user_id===otherId);
+  body.innerHTML=""; body.classList.add("cav");
+  const add=h=>{ const d=document.createElement("div"); d.innerHTML=h; body.appendChild(d); return d; };
+  const when=p=>`${escapeHtml(fmtDay(callLocal(p).date))}, ${callTimeRange(p)}${p.recur_every_days?`, ${recurLabel(p.recur_every_days)}`:""}`;
+  if(series){ const d=add(`<div class="cav-k">Recurring call · ${recurLabel(series.recur_every_days)}</div><div class="cav-v">${callTimeRange(series)} · next ${escapeHtml(fmtDay(nextOccurrence(series,todayISO())))}</div>`); d.appendChild(meetingLinkBlock(series,()=>renderEngagement(true))); d.appendChild(cancelBtn(series,"Stop recurring")); }
+  if(oneTime){ const d=add(`<div class="cav-k"${series?' style="margin-top:14px"':""}>Call scheduled</div><div class="cav-v">${escapeHtml(fmtDay(callLocal(oneTime).date))} · ${callTimeRange(oneTime)}</div>`); d.appendChild(meetingLinkBlock(oneTime,()=>renderEngagement(true))); d.appendChild(cancelBtn(oneTime,"Cancel call")); }
+  const live=proposal&&!isExpired?proposal:null, incoming=live&&live.proposed_by!==ME.id?live:null, sent=live&&live.proposed_by===ME.id?live:null;
+  if(incoming){
+    const ini=String(name).split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+    const d=add(`<div class="cav-h2">Incoming proposals (1)</div><div class="cav-in"><div class="cav-av">${escapeHtml(ini)}</div>
+      <div class="cav-who"><b>${escapeHtml(name)}</b><span>${when(incoming)}</span></div>
+      <div class="cav-acts"><button type="button" class="cav-acc">Accept</button><button type="button" class="cav-new-t">Propose a new time</button><button type="button" class="cav-dec">Decline</button></div></div>`);
+    d.querySelector(".cav-acc").addEventListener("click",async ev=>{ ev.currentTarget.disabled=true;
+      try{ const { error }=await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:incoming.id,p_action:"accept"}); if(error) throw error; toast(incoming.recur_every_days?"Recurring call confirmed ✓":"Call confirmed ✓"); rerender(); renderEngagement(true); }
+      catch(err){ console.error("accept call",err); toast(err.message||"Couldn't accept",4000); ev.currentTarget.disabled=false; } });
+    d.querySelector(".cav-dec").addEventListener("click",async()=>{ try{ const { error }=await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:incoming.id,p_action:"decline"}); if(error) throw error; toast("Declined",1500); rerender(); }catch(err){ console.error("decline call",err); toast(err.message||"Couldn't decline",4000); } });
+    d.querySelector(".cav-new-t").addEventListener("click",()=>{ const t=body.querySelector(".cav-times"); if(t) t.scrollIntoView({behavior:"smooth",block:"center"}); else openProposeCallSheet(true,incoming.id,el,null,eng,other); });
+  }
+  if(sent){ const d=add(`<div class="cav-wait">Waiting for ${escapeHtml(first)} to reply<b>${when(sent)}</b></div>`); d.firstElementChild.appendChild(cancelBtn(sent,"Withdraw proposal")); }
+  if(!sent){
+    const shared=mine.length&&theirs.length?sharedTimes(mine,theirs):[];
+    if(cavPick&&!shared.some(s=>s.iso===cavPick.iso&&s.chips.includes(cavPick.hm))) cavPick=null;
+    let inner;
+    if(!mine.length) inner=`<div class="cav-empty">Set your availability below to see times that work for both of you.</div>`;
+    else if(!theirs.length) inner=`<div class="cav-empty">${escapeHtml(first)} hasn't set their availability yet.</div>`;
+    else if(!shared.length) inner=`<div class="cav-empty">No shared free time in the next 7 days.</div>`;
+    else inner=shared.map(s=>`<div class="cav-dayrow"><div class="cav-dl">${escapeHtml(new Date(s.iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))}</div><div class="cav-chips">${s.chips.map(h=>`<button type="button" class="cav-chip${cavPick&&cavPick.iso===s.iso&&cavPick.hm===h?" on":""}" data-pick="${s.iso}|${h}">${h}</button>`).join("")}</div></div>`).join("");
+    const pickLbl=cavPick?`${new Date(cavPick.iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"})} ${cavPick.hm}`:"";
+    const d=add(`<div class="cav-times"><div class="cav-h1">Times that work for both of you</div>${inner}
+      ${shared.length?`<div class="cav-prow"><button type="button" class="cav-wk${cavWeekly?" on":""}" aria-pressed="${cavWeekly}">Every week</button><span>30 min</span></div>
+      <button type="button" class="cav-prop" ${cavPick?"":"disabled"}>${cavPick?`${incoming?"Suggest":"Propose"} ${escapeHtml(pickLbl)}`:"Pick a time"}</button>`:""}
+      <button type="button" class="cav-any">${shared.length?"or pick any time":"Propose any time"}</button></div>`);
+    d.querySelectorAll("[data-pick]").forEach(b=>b.addEventListener("click",()=>{ const [iso,hm]=b.dataset.pick.split("|"); cavPick=cavPick&&cavPick.iso===iso&&cavPick.hm===hm?null:{iso,hm}; rerender(); }));
+    const wk=d.querySelector(".cav-wk"); if(wk) wk.addEventListener("click",()=>{ cavWeekly=!cavWeekly; rerender(); });
+    const pb=d.querySelector(".cav-prop"); if(pb) pb.addEventListener("click",async()=>{ if(!cavPick) return; pb.disabled=true; pb.textContent="Sending…";
+      try{ await proposeAt(eng,cavPick.iso,cavPick.hm,cavWeekly?7:null,incoming&&incoming.id); toast(incoming?"Suggestion sent ✓":"Proposal sent ✓"); cavPick=null; rerender(); renderEngagement(true); }
+      catch(err){ console.error("propose (IK)",err); toast(err.message||"Couldn't send that proposal",4000); pb.disabled=false; pb.textContent="Try again"; } });
+    d.querySelector(".cav-any").addEventListener("click",()=>openProposeCallSheet(!!incoming,incoming&&incoming.id,el,null,eng,other));
+  }
+  body.appendChild(availCardEl(mine,rerender,false));
+}
 async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
   el.innerHTML=`<div class="section-h"><div class="eyebrow">Video call${other&&other.display_name?` · ${escapeHtml(other.display_name)}`:""}</div></div>
     <div class="card" data-call-body><div style="font-size:12.5px;color:var(--faint)">Loading…</div></div>`;
@@ -10461,6 +10643,8 @@ async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
     b.addEventListener("click",async()=>{ const ok=await openConfirm({title:label+"?",body:row.recur_every_days?"This ends the recurring call for both of you.":"This cancels the call for both of you.",confirmLabel:label,cancelLabel:"Keep",danger:true}); if(!ok) return;
       try{ const { error }=await store._sb.rpc("respond_to_call_proposal",{p_proposal_id:row.id,p_action:"cancel"}); if(error) throw error; toast("Cancelled",1800); renderCallScheduling(el,eng,other); renderEngagement(true); }
       catch(err){ console.error("cancel call",err); toast(err.message||"Couldn't cancel",4000); } }); return b; };
+  if(traineeMerged&&!iAmCoachHere){ await renderCallsB(el,body,eng,other,{series,oneTime,proposal,isExpired,cancelBtn,rerender:()=>renderCallScheduling(el,eng,other)}); return; }
+  if(iAmCoachHere){ loadAvailability([ME.id]).then(mine=>el.appendChild(availCardEl(mine,()=>renderCallScheduling(el,eng,other),true)),e=>console.error("availability (IK)",e)); }
   if(series){
     const nxt=nextOccurrence(series,today);
     const d=add(`<div style="font-size:13px;font-weight:700;color:var(--lime)">🔁 Recurring call · ${recurLabel(series.recur_every_days)}</div>
