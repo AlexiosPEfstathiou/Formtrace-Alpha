@@ -1991,7 +1991,8 @@ duplicates (two wiring copies) and reverted before anything was written.
 **Owner 11:03 (screenshot: the IE-3 day strip over stacked P/C/F daily bars with a dashed protein line and a sideways scrollbar):** review intake averages per week or per day; easy to compare actual intake with the coach's targets; a missed day must be obvious and draw attention so it gets logged after the fact.
 **Done:** 3 concepts in the Weight card's style with the real tab bar (Nano Banana Pro, image-to-image from the chosen weight concept, ~120 credits): A target rings (week-average kcal and protein rings vs target, day columns with a dashed target line, glowing "+ Log" on missed days, "2 days not logged" banner); B actual-vs-target bullets (Calories / Protein / Carbs / Fat bullet rows with the target tick and On target / Under / Over, earlier weeks with logged-day dots, a gold "not logged - add it now" card); C daily comparison (week strip of day circles - full ring on target, half ring off target, pulsing dashed + not logged - and the selected day's kcal bar and P/C/F vs targets, week average line).
 **Notes for the build:** the coach's targets come from the weekly nutrition goal (`goalForWeek`, AX); "on target" = within 10% (the existing rule); "missed" = a day since the goal started with no macros (`macrosLogged`); the daily chart now scrolls sideways - the new design should fit the width.
-**Next:** owner picks a concept.
+**Owner 11:09: concept A (target rings) adopted as it is** for the Week tab (`docs/brand/macros-concept-week.png`); asked OpenArt for the matching **Day** tab (same style: week day pills with missed days marked, the selected day's calorie and protein rings, protein / carbs / fat bars with the target tick, "Edit this day's log"; ~40 credits).
+**Next:** owner confirms the Day design; then build both tabs.
 
 ---
 ## IF. Weight card redesign - LOGGED 2026-11-24 (personal account)
