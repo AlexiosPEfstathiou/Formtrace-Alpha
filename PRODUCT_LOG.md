@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IL (2026-11-24, owner): Take a vacation sheet redesign - happy, on brand, reassures that streak, payments and training are paused, with a wish from Formtrace; 3 OpenArt concepts - LOGGED.**
 **IK (2026-11-24, owner): Calls card redesign - weekly availability for trainee and coach; overlapping times become "Propose call" options; incoming proposals with Accept / Propose a new time; concept B + Edit availability sheet BUILT (SQL applied).**
 **IJ (2026-11-24, owner): Body measurements card redesign - concept B (body map) BUILT; plus the reusable "How to ..." tutorial button (first: how to measure yourself).**
 **II (2026-11-24, owner): Personal bests card - "your next PB is waiting": PB quest, 12-week trophy timeline, most overdue first / newest first, next target +1 rep or more kg, Try tonight - BUILT (II-T1).**
@@ -1988,6 +1989,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IL. Take a vacation sheet redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 19:28 (screenshot: the current "Take a vacation" sheet - explanation, message, end date, button):** reimagine it - engaging, happy, on theme; reassure the user that **everything is on pause (streaks, payments, training)**; a wish from Formtrace to the user such as **"Enjoy a well-deserved vacation"**.
+**Fact check for the copy:** vacation pauses every active goal; the streak freezes (HN / streak grace); a paused week is a neutral week - **no weekly release is paid out of the deposit for it** (DY, `queue_weekly_releases`), so "no weekly payments are taken" is accurate; nothing is due.
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits): A sunset postcard (gold line-art palm / sunset / deck chair, "Enjoy a well-deserved vacation - from all of us at Formtrace", three reassurance rows, message, Back on, "Start my vacation"); B boarding pass ("Formtrace Airlines", Training -> Vacation mode, return date or open return, stamp with the wish, "Paused while you're away" checks, "Check in for vacation"); C pause everything (gold palm badge, "Time to recharge", three pause tiles - streak frozen at N days / payments on hold / training paused, Back on chips 1 week / 2 weeks / pick a date / resume manually, "Pause and enjoy").
+**Next:** owner picks a concept; the illustration can then be requested as SVG.
 
 ---
 ## IK. Calls card redesign - LOGGED 2026-11-24 (personal account)
