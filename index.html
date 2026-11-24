@@ -366,6 +366,43 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .wj-day.fut .wj-b{background:var(--line2)}
 .wj-day.fut{cursor:default;opacity:.7}
 .wj-day.today b{color:#E8B923}
+.mx-top{display:flex;justify-content:center;margin-bottom:12px}
+.mx-sw{margin:0;width:220px}
+.mx-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#E8B923;color:#0B0E11;border-radius:16px;padding:12px 12px 12px 16px;margin-bottom:12px;box-shadow:0 6px 22px rgba(232,185,35,.25)}
+.mx-banner b{font-size:14.5px}
+.mx-banner button{flex:0 0 auto;height:36px;padding:0 14px;border-radius:999px;border:1.5px solid rgba(11,14,17,.35);background:transparent;color:#0B0E11;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.mx-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:12px 14px 14px}
+.mx-h{display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:800;color:var(--ink)}
+.mx-nav{width:36px;height:36px;border:0;background:none;color:var(--ink);font-size:24px;cursor:pointer}
+.mx-nav:disabled{opacity:.25;cursor:default}
+.mx-rings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 6px}
+.mx-ring{position:relative;aspect-ratio:1/1}
+.mx-ring svg{position:absolute;inset:0;width:100%;height:100%}
+.mx-in{position:absolute;inset:14%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px}
+.mx-l{font-size:14px;color:var(--ink)}
+.mx-s{font-size:10.5px;color:#E8B923}
+.mx-v{font-size:11px;color:var(--muted)}
+.mx-v em{font-style:normal;font-family:Montserrat,system-ui,sans-serif;font-size:19px;font-weight:800;color:#E8B923}
+.mx-p{font-size:10.5px;color:#E8B923}
+.mx-chip{margin-top:3px;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;border:1px solid #E8B923;color:#E8B923}
+.mx-chip.ok{background:#E8B923;color:#0B0E11}
+.mx-sec{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;font-weight:800;color:var(--ink);margin:10px 0 6px;padding-top:10px;border-top:1px solid var(--line)}
+.mx-sec span{font-size:11.5px;color:#E8B923;font-weight:700}
+.mx-chart{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:end;gap:4px;padding-top:18px}
+.mx-target{position:absolute;left:0;right:0;border-top:2px dashed rgba(232,185,35,.7);pointer-events:none}
+.mx-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;background:none;border:0;padding:0;color:var(--muted);font:inherit;cursor:pointer;min-width:0}
+.mx-col i{display:block;width:12px;border-radius:7px;background:#E8B923}
+.mx-col.fut i{background:var(--line2);opacity:.6}
+.mx-col.fut{cursor:default}
+.mx-col.sel i{width:16px;box-shadow:0 0 0 3px rgba(232,185,35,.3)}
+.mx-col.sel b{color:#E8B923}
+.mx-n{font-size:10.5px;color:var(--ink);min-height:14px;white-space:nowrap}
+.mx-col b{font-size:12px;color:var(--ink);font-weight:700;margin-top:2px}
+.mx-col.fut b{color:var(--muted)}
+.mx-plus{height:150px;width:100%;max-width:42px;border:1.5px dashed #E8B923;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#E8B923;font-size:12px;font-weight:800;background:radial-gradient(circle at 50% 50%,rgba(232,185,35,.22),transparent 65%);animation:mxGlow 2.2s ease-in-out infinite}
+.mx-plus em{font-style:normal;font-size:24px;line-height:1}
+@keyframes mxGlow{0%,100%{box-shadow:0 0 0 0 rgba(232,185,35,0)}50%{box-shadow:0 0 14px 2px rgba(232,185,35,.35)}}
+@media (prefers-reduced-motion:reduce){.mx-plus{animation:none}}
 .pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
 .pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
@@ -8943,6 +8980,65 @@ function weightJourneyEl(logs,goalRef){
   const di=el.querySelector(".pd-older input"); if(di) di.addEventListener("change",e=>{ const v=e.target.value; if(v&&v<=today) openMacroLog(v); });
   return el;
 }
+/* IG (owner, 2026-11-24): the trainee's Macros card = the owner's "target rings" concept, used for both Week and Day.
+   Week: the rings show the week's daily averages (logged days) against the coach's targets; Day: the same rings for the day
+   tapped in the chart. Chart: the week's days as bars with the calorie target as a dashed line; a missed day is a glowing
+   dashed "+ Log" column; a gold banner names the missed days. Week arrows step back through the goal. */
+let mxMode="week", mxWeek=null, mxDay=null;
+function mxKcal(l){ if(!l) return null; if(l.kcal!=null) return Number(l.kcal); if(l.protein_g==null&&l.carbs_g==null&&l.fat_g==null) return null; return Math.round((+l.protein_g||0)*4+(+l.carbs_g||0)*4+(+l.fat_g||0)*9); }
+function mxRing(label,val,target,unit,sub){
+  const r=46, c=2*Math.PI*r, f=target?Math.min(1,(val||0)/target):0, pct=target&&val!=null?Math.round(val/target*100):null;
+  const st=pct==null?"":(Math.abs(pct-100)<=10?'<span class="mx-chip ok">On target</span>':pct<100?'<span class="mx-chip">Under</span>':'<span class="mx-chip">Over</span>');
+  return `<div class="mx-ring"><svg viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="${r}" fill="none" stroke="rgba(232,185,35,.16)" stroke-width="9"/>${f>0?`<circle cx="55" cy="55" r="${r}" fill="none" stroke="#E8B923" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(c*f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 55 55)"/>`:""}</svg>
+    <div class="mx-in"><b class="mx-l">${label}</b>${sub?`<span class="mx-s">${sub}</span>`:""}<span class="mx-v"><em>${val==null?"-":Math.round(val).toLocaleString("en-GB")}</em>${target?` / ${Number(target).toLocaleString("en-GB")} ${unit}`:` ${unit}`}</span>${pct!=null?`<span class="mx-p">(${pct}%)</span>`:target?"":'<span class="mx-p">No target set</span>'}${st}</div></div>`;
+}
+function macrosRingsEl(goalRef){
+  const today=todayISO(), thisMon=weekStartISO(new Date());
+  const gStart=goalRef&&goalRef.started_at?isoOf(new Date(goalRef.started_at)):null;
+  const firstMon=gStart?weekStartISO(new Date(gStart+"T12:00:00")):addDaysISO(thisMon,-7*11);
+  if(!mxWeek||mxWeek>thisMon||mxWeek<firstMon) mxWeek=thisMon;
+  const goal=typeof goalForWeek==="function"?goalForWeek(mxWeek):null;
+  const tK=goal&&goal.kcal?Number(goal.kcal):null, tP=goal&&goal.protein_g?Number(goal.protein_g):null;
+  const days=[]; for(let i=0;i<7;i++){ const iso=addDaysISO(mxWeek,i), l=logsByDate[iso], k=mxKcal(l);
+    days.push({iso,l,k,p:l&&l.protein_g!=null?Number(l.protein_g):null,fut:iso>today,isToday:iso===today,miss:k==null&&iso<today&&(!gStart||iso>=gStart)}); }
+  const logged=days.filter(d=>d.k!=null);
+  if(mxMode==="day"&&(!mxDay||mxDay<mxWeek||mxDay>addDaysISO(mxWeek,6))) mxDay=(logged.find(d=>d.iso===today)||logged[logged.length-1]||{}).iso||null;
+  const missed=days.filter(d=>d.miss);
+  const nm=iso=>new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"});
+  const s=new Date(mxWeek+"T12:00:00"), e=new Date(addDaysISO(mxWeek,6)+"T12:00:00");
+  const range=mxWeek===thisMon?"This week":`${s.getDate()} ${s.toLocaleDateString("en-GB",{month:"short"})} - ${e.getDate()} ${e.toLocaleDateString("en-GB",{month:"short"})}`;
+  let rings;
+  if(mxMode==="week"){
+    const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+    const aK=avg(logged.map(d=>d.k)), aP=avg(days.filter(d=>d.p!=null).map(d=>d.p));
+    rings=mxRing("Calories",aK,tK,"kcal","week average")+mxRing("Protein",aP,tP,"g","week average");
+  }else{
+    const d=days.find(x=>x.iso===mxDay);
+    const lab=mxDay?new Date(mxDay+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):"";
+    rings=d?mxRing("Calories",d.k,tK,"kcal",escapeHtml(lab))+mxRing("Protein",d.p,tP,"g",escapeHtml(lab)):`<div class="wv-none">No day logged this week yet.</div>`;
+  }
+  const maxV=Math.max(tK||0, ...logged.map(d=>d.k))*1.12||1;
+  const bars=days.map(d=>{
+    if(d.k!=null){ const h=Math.max(6,Math.round(d.k/maxV*150)); const sel=mxMode==="day"&&d.iso===mxDay;
+      return `<button type="button" class="mx-col${sel?" sel":""}${d.fut?" fut":""}" data-mx-day="${d.iso}" aria-label="${escapeHtml(fmtDay(d.iso))}: ${d.k} kcal"><span class="mx-n">${d.k.toLocaleString("en-GB")}</span><i style="height:${h}px"></i><b>${nm(d.iso)}</b></button>`; }
+    if(d.miss||(d.isToday&&d.k==null)) return `<button type="button" class="mx-col miss" data-mx-log="${d.iso}" aria-label="${escapeHtml(fmtDay(d.iso))}: not logged - log it"><span class="mx-n"></span><span class="mx-plus"><em>+</em>Log</span><b>${nm(d.iso)}</b></button>`;
+    return `<div class="mx-col fut"><span class="mx-n"></span><i style="height:150px"></i><b>${nm(d.iso)}</b></div>`;
+  }).join("");
+  const tY=tK?Math.round(tK/maxV*150):null;
+  const el=document.createElement("div"); el.className="mx";
+  el.innerHTML=`<div class="mx-top"><div class="wv-switch mx-sw"><button type="button" data-mx-mode="day" class="${mxMode==="day"?"on":""}">Day</button><button type="button" data-mx-mode="week" class="${mxMode==="week"?"on":""}">Week</button></div></div>
+    ${missed.length?`<div class="mx-banner"><b>${missed.length} day${missed.length===1?"":"s"} not logged - ${missed.map(d=>nm(d.iso)).join(", ")}</b><button type="button" data-mx-log="${missed[0].iso}">Log now</button></div>`:""}
+    <div class="mx-card"><div class="mx-h"><button type="button" class="mx-nav" data-mx-wk="-1" ${mxWeek<=firstMon?"disabled":""} aria-label="Previous week">‹</button><span>${escapeHtml(range)}</span><button type="button" class="mx-nav" data-mx-wk="1" ${mxWeek>=thisMon?"disabled":""} aria-label="Next week">›</button></div>
+      <div class="mx-rings">${rings}</div>
+      <div class="mx-sec">${mxMode==="day"?"Tap a day":"Daily calories"}${tK?`<span>${tK.toLocaleString("en-GB")} kcal target</span>`:""}</div>
+      <div class="mx-chart">${tY!=null?`<div class="mx-target" style="bottom:${tY+22}px"></div>`:""}${bars}</div></div>`;
+  const rerender=()=>{ const n=macrosRingsEl(goalRef); el.replaceWith(n); };
+  el.querySelectorAll("[data-mx-mode]").forEach(b=>b.addEventListener("click",()=>{ mxMode=b.dataset.mxMode; rerender(); }));
+  el.querySelectorAll("[data-mx-wk]").forEach(b=>b.addEventListener("click",()=>{ mxWeek=addDaysISO(mxWeek,7*Number(b.dataset.mxWk)); mxDay=null; rerender(); }));
+  el.querySelectorAll("[data-mx-log]").forEach(b=>b.addEventListener("click",()=>openMacroLog(b.dataset.mxLog)));
+  el.querySelectorAll("[data-mx-day]").forEach(b=>b.addEventListener("click",()=>{ mxMode="day"; mxDay=b.dataset.mxDay; rerender(); }));
+  return el;
+}
 let mvSelWeek=null;
 /* IE-3 (owner, 2026-11-24): the Macros and Weight sections log a past day too - the last 7 days as chips (logged = ticked,
    missing = gold outline) and a date picker for older days; all open the same form as the calendar day. */
@@ -9034,7 +9130,7 @@ function trainingControlPanel(body){
     const paint=scroll=>{
       tiles.querySelectorAll("[data-tile]").forEach(b=>{ const on=b.dataset.tile===trPanelOpen; b.classList.toggle("on",on); b.setAttribute("aria-expanded",on?"true":"false"); });
       Object.keys(boxes).forEach(k=>boxes[k].classList.toggle("open",k===trPanelOpen));
-      if(dashHead&&(trPanelOpen==="macros"||(trPanelOpen==="weight"&&!traineeMerged))) boxes[trPanelOpen].insertBefore(dashHead,boxes[trPanelOpen].firstChild);   /* IF: the trainee's Weight card does not use Goal / Week / Day */   // the Goal / Week / Day switch goes with the charts
+      if(dashHead&&!traineeMerged&&(trPanelOpen==="macros"||trPanelOpen==="weight")) boxes[trPanelOpen].insertBefore(dashHead,boxes[trPanelOpen].firstChild);   /* IF / IG: the trainee's Weight and Macros cards have their own controls */   // the Goal / Week / Day switch goes with the charts
       if(scroll&&trPanelOpen) setTimeout(()=>scrollInto(tiles,"start"),40);   /* GL: not scrollIntoView */
     };
     defs.forEach(([k,ic,label])=>{
@@ -9054,7 +9150,7 @@ function trainingControlPanel(body){
     const vacWrap=secs.vacation&&secs.vacation[0], vac=vacWrap?vacWrap.querySelector("button"):null;
     if(vac){ const b=document.createElement("button"); b.type="button"; b.className="tr-tile tr-vac"; b.innerHTML=`<span class="tr-ic">${TR_ICONS.vacation}</span><span>${escapeHtml(vac.textContent||"Vacation")}</span>`;   /* ID: a slim full-width row */
       b.addEventListener("click",()=>vac.click()); tiles.appendChild(b); vacWrap.style.display="none"; }
-    ["macros"].forEach(k=>{ if(boxes[k]&&traineeMerged){   /* IF: Weight has its own day bubbles + earlier-day picker */ try{ boxes[k].insertBefore(pastDayStrip(k),boxes[k].firstChild); }catch(e){ console.warn("past day strip (IE-3)",e); } } });   /* IE-3 */
+    [].forEach(k=>{ if(boxes[k]&&traineeMerged){   /* IF / IG: Weight and Macros now show missed days themselves */ try{ boxes[k].insertBefore(pastDayStrip(k),boxes[k].firstChild); }catch(e){ console.warn("past day strip (IE-3)",e); } } });   /* IE-3 */
     start.after(tiles); tiles.after(host);
     if(dash) dash.style.display="none";                       // its cards now live in the sections
     paint(false);
@@ -9749,6 +9845,7 @@ function renderDashboard(container, iAmCoach){
   });
   svg+=`</svg></div>`;
   macroCard.innerHTML=`<div class="eyebrow" style="margin-bottom:4px">Macros (g)</div><div style="font-size:11.5px;color:var(--faint);margin-bottom:${goal?"4px":"12px"}">${dashMode==="week"?"Weekly daily-average":"Daily"} · total kcal above each bar</div>`+goalLine+svg;
+  if(traineeMerged&&!iAmCoach){ try{ const mx=macrosRingsEl(goalRef); macroCard.innerHTML=""; macroCard.style.cssText="padding:0;background:transparent;border:0;box-shadow:none"; macroCard.appendChild(mx); }catch(e){ console.warn("macros rings (IG)",e); } }   /* IG: the trainee's target-rings card; coaches keep the chart */
   macroCard.dataset.trSec="macros"; wrap.appendChild(macroCard);
 
   // ---- weight line chart (SVG) with area fill + themed color + date axis ----
