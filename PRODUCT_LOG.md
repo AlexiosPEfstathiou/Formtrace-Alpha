@@ -46,7 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
-**IK (2026-11-24, owner): Calls card redesign - weekly availability for trainee and coach; overlapping times become "Propose call" options; incoming proposals with Accept / Propose a new time; 3 OpenArt concepts - LOGGED.**
+**IK (2026-11-24, owner): Calls card redesign - weekly availability for trainee and coach; overlapping times become "Propose call" options; incoming proposals with Accept / Propose a new time; concept B chosen; Edit availability preview requested - LOGGED.**
 **IJ (2026-11-24, owner): Body measurements card redesign - concept B (body map) BUILT; plus the reusable "How to ..." tutorial button (first: how to measure yourself).**
 **II (2026-11-24, owner): Personal bests card - "your next PB is waiting": PB quest, 12-week trophy timeline, most overdue first / newest first, next target +1 rep or more kg, Try tonight - BUILT (II-T1).**
 **IH (2026-11-24, owner): Weekly check-ins card - then and now with automatic photo alignment (one person split half and half), timelapse aligned too - BUILT (IH-T1).**
@@ -1996,7 +1996,7 @@ duplicates (two wiring copies) and reverted before anything was written.
 **Done:** 3 concepts (Nano Banana Pro, ~120 credits): A shared week grid (7 days x morning / afternoon / evening; yours, the coach's, both-free cells glowing with "Propose"); B "Times that work for both of you" (time chips grouped by day, "Propose Thu 18:30", day-pill availability card); C two-lane day timeline (You / coach lanes, overlap band "Both free 18:00-20:00 - Propose call", Waiting for you / Sent). Each has the incoming proposal with Accept / Propose a new time.
 **SVG note:** screen concepts stay raster (Nano Banana is far better with layout and text); SVG (Recraft V4.1 vector) is worth it for single assets we embed - figures, icons, illustrations (e.g. the IJ body would have come straight from an SVG).
 **Notes for the build:** needs an availability table per user (weekday, start, end) with RLS and a security-definer function returning the overlap for a coach-trainee pair; existing call proposals (one-time / recurring, accept / decline / suggest another, expiry) are reused.
-**Next:** owner picks a concept.
+**Owner 19:21: concept B chosen** (`docs/brand/calls-concept.png`) - incoming proposals on top, "Times that work for both of you" chips by day, "Propose Thu 18:30", My availability day pills + Edit. Next preview requested: the **Edit availability** screen (bottom sheet: per-day toggle, time-range pills, + Add time, quick-fill chips, Save availability) - generated, owner to review.
 
 ---
 ## IJ. Body measurements card redesign - LOGGED 2026-11-24 (personal account)
