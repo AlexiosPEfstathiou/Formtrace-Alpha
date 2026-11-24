@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IH (2026-11-24, owner): Weekly check-ins card redesign - inspirational, shows how many weeks it spans, motivates more photos; 3 OpenArt concepts (then and now, 12-week story grid, milestone timeline) - LOGGED.**
 **IG (2026-11-24, owner): Macros card redesign - target rings (week average / day) vs coach targets, missed-days banner and glowing + Log columns - BUILT (IG-T1).**
 **IF (2026-11-24, owner): Weight card redesign - goal journey + weekly pace gauge + weekly averages + missed days - BUILT (IF-T1).**
 **IE (2026-11-23, owner): training calendar redesign - the current one is chaotic; 4 OpenArt concepts requested (week tokens, this-week agenda, clean grid + week ring, weekly pass) - LOGGED, concept chosen next.**
@@ -1984,6 +1985,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IH. Weekly check-ins card redesign - LOGGED 2026-11-24 (personal account)
+
+**Owner 11:21 (screenshot: "Weekly check-ins" - a sideways-scrolling row of photos with Delete under each and a "Play timelapse" button):** make it inspirational; say how many weeks it spans; seeing it should motivate the trainee to keep working and keep taking photos.
+**Owner 11:15 (y/n):** the two yellows now visible (old #F0D231 vs the new deep gold #E8B923) are temporary - HZ replaces the colour everywhere.
+**Done:** 3 concepts (Nano Banana Pro, from the chosen weight concept for style and tab bar, ~120 credits; placeholder silhouettes, no real photos sent): A then and now (before / after slider week 1 vs latest, "12 weeks of progress", big timelapse button, thumbnail strip with "+ This week"); B your 12-week story (latest photo hero with play, week grid with dashed "+" for missed weeks, % of weeks captured, "Next: Week 13"); C milestone timeline (shown-up banner with week dots, milestones at weeks 1 / 4 / 8 / 12 with captions, timelapse button, "This week's photo is waiting").
+**Next:** owner picks a concept.
 
 ---
 ## IG. Macros card redesign - LOGGED 2026-11-24 (personal account)
