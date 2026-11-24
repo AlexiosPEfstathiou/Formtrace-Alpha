@@ -549,6 +549,60 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .vac-go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;margin-top:14px;border:0;border-radius:14px;background:#E8B923;color:#0B0E11;font:inherit;font-size:17px;font-weight:700;cursor:pointer}
 .vac-go:disabled{opacity:.6}
 .vac-palm{width:22px;height:24px;color:#0B0E11}
+.gh{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:18px 16px 16px;margin-bottom:8px}
+.gh-top{display:flex;align-items:center;gap:16px}
+.gh-ring{position:relative;flex:0 0 136px;height:136px}
+.gh-ring svg{width:100%;height:100%}
+.gh-trk{fill:none;stroke:rgba(232,185,35,.22);stroke-width:7}
+.gh-arc{fill:none;stroke:#E8B923;stroke-width:7;stroke-linecap:round;transition:stroke-dasharray .6s}
+.gh-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.15}
+.gh-pc{font-size:11.5px;color:#E8B923}
+.gh-in b{font-size:14.5px;font-weight:800;color:var(--ink);margin:2px 0;white-space:nowrap}
+.gh-in span:last-child:not(.gh-pc){font-size:11.5px;color:var(--muted)}
+.gh-who{flex:1;min-width:0}
+.gh-t{font-family:Montserrat,system-ui,sans-serif;font-size:25px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.1;overflow-wrap:anywhere}
+.gh-coach{display:flex;align-items:center;gap:10px;margin-top:12px;text-decoration:none!important}
+.gh-coach .avatar{width:44px;height:44px;flex:0 0 44px;border-radius:50%}
+.gh-cn{font-size:15px;color:var(--ink)}
+.gh-rt{font-size:14px;color:var(--ink);margin-top:2px}
+.gh-rt i{font-style:normal;color:#E8B923}
+.gh-rt span{color:var(--muted)}
+.gh-wk{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px;margin-top:18px}
+.gh-w{height:52px;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--line);color:var(--muted);line-height:1.1}
+.gh-w b{font-size:15px;font-weight:800}
+.gh-w span{font-size:12px}
+.gh-w.done{background:#E8B923;color:#0B0E11}
+.gh-w.now{background:transparent;border:2px solid #E8B923;color:#E8B923}
+.gh-grid{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:5px;margin-top:26px}
+.gh-c{position:relative;aspect-ratio:1/1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--line);color:var(--muted);line-height:1}
+.gh-c b{font-size:12.5px;font-weight:700}
+.gh-c span{font-size:9px;margin-top:1px}
+.gh-c.done{background:#E8B923;color:#0B0E11}
+.gh-c.now{background:transparent;border:2px solid #E8B923;color:#E8B923;box-shadow:0 0 10px rgba(232,185,35,.45)}
+.gh-c em{position:absolute;top:-17px;font-style:normal;font-size:11px;color:#E8B923}
+.gh-dates{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:8px;font-size:13px;color:var(--muted)}
+.gh-dates b{font-weight:600;color:var(--ink);text-align:center}
+.gh-dates i{font-style:normal;color:var(--muted)}
+.gh-plan{margin-top:16px;border:1px solid var(--line2);border-radius:18px;padding:14px}
+.gh-ph{font-size:17px;font-weight:800;color:var(--ink)}
+.gh-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
+.gh-cols div{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.gh-cols div+div{border-left:1px solid var(--line2)}
+.gh-cols span{font-size:13px;color:var(--muted)}
+.gh-cols b{font-size:17px;font-weight:800;color:var(--ink)}
+.gh-pay .card{background:none!important;border:0!important;padding:0!important;margin:8px 0 0!important;box-shadow:none!important}
+.gh-pay .card>div:first-child{display:none}
+.gh-pay .pt-step.done::before,.gh-pay .pt-step.now::before{background:#E8B923}
+.gh-pay .pt-step.done .pt-dot{background:#E8B923;border-color:#E8B923;color:#0B0E11}
+.gh-pay .pt-step.now .pt-dot{border-color:#E8B923;box-shadow:0 0 0 4px rgba(232,185,35,.2)}
+.gh-pay .pt-step.now .pt-lbl{color:#E8B923}
+.gh-pay .pt-now{font-size:12.5px;color:var(--muted);text-align:center;line-height:1.45}
+.gh-acts{display:flex;align-items:center;gap:6px;margin-top:16px}
+.gh-b{flex:1 1 auto;min-width:0;height:44px;padding:0 8px;border:0;border-radius:999px;background:#E8B923;color:#0B0E11;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gh-x{flex:0 0 auto;height:44px;padding:0 4px;border:0;background:none;color:#B8860B;font:inherit;font-size:13.5px;white-space:nowrap;font-weight:700;cursor:pointer}
+.gh-past{display:block;width:100%;margin:10px 0 6px;padding:12px 6px;border:0;border-top:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:14px;text-align:center;cursor:pointer}
+.gh-past b{font-weight:400;color:#E8B923}
+.gh-past span{margin-left:4px}
 .tut-ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
 .tut-box{width:100%;max-width:520px;max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom))}
 .tut-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -7683,6 +7737,51 @@ let offersCompletedOpen=false;  // Completed folder, closed by default
    finishes. Goal chips (grouping) apply only within Pending: an accepted
    offer is already 1:1 with its goal by construction (accepting
    auto-declines every sibling), so there is nothing to disambiguate there. */
+/* IM (owner, 2026-11-24): the trainee's ongoing goal on the Goal tab = OpenArt concept B "progress ring" (20-week variant approved):
+   ring = sessions done of the plan, "Week N of W"; a week strip - one row of W1..W8 pills for short goals, a grid of numbered
+   squares (10 a row) for longer ones - done weeks gold with a tick, this week outlined; "Your plan" (length, sessions / week, price
+   incl. the service fee) with the existing payment tracker inside; Watch pitch video, Goal achieved, Cancel goal. Past goals
+   collapse into one muted line. */
+let pastGoalsOpen=false;
+function goalHeroEl(o,c,eng){
+  const el=document.createElement("div"); el.className="gh";
+  const coachName=c.display_name||"Coach", p=c._pub||{};
+  const weeks=o.length_weeks||eng.committed_weeks||0, cap=o.workouts_per_week_cap||0;
+  const startISO=o.start_date||String(eng.started_at||eng.created_at||"").slice(0,10)||todayISO();
+  const wNow=weeks?Math.min(weeks,Math.max(1,Math.floor((new Date(todayISO()+"T12:00:00")-new Date(startISO+"T12:00:00"))/604800000)+1)):0;
+  const endISO=weeks?addDaysISO(startISO,7*weeks-1):null;
+  const cur=((o.price_text||"").match(/^[^\d\s]+/)||["€"])[0], weekly=o.rate_per_workout_cents!=null?o.rate_per_workout_cents/100:null;
+  const gross=(weekly!=null&&weeks)?weekly*weeks+serviceFeeFor(weekly,weeks):null;
+  const money=v=>cur+(Math.round(v)).toLocaleString("en-GB");
+  const R=46, C=2*Math.PI*R;
+  const drawRing=(pct,done,total)=>{ const ring=el.querySelector(".gh-ring");
+    ring.innerHTML=`<svg viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="${R}" class="gh-trk"/><circle cx="55" cy="55" r="${R}" class="gh-arc" stroke-dasharray="${(C*pct/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>
+      <div class="gh-in"><span class="gh-pc">${Math.round(pct)}%</span><b>${weeks?`Week ${wNow} of ${weeks}`:"Ongoing"}</b>${total?`<span>${done} of ${total} sessions</span>`:""}</div>`; };
+  let cells="";
+  for(let i=1;i<=weeks;i++){ const st=i<wNow?"done":i===wNow?"now":"";
+    cells+=weeks<=8?`<div class="gh-w ${st}"><b>W${i}</b><span>${st==="done"?"✓":st==="now"?"now":""}</span></div>`
+      :`<div class="gh-c ${st}">${i===wNow?`<em>now</em>`:""}<b>${i}</b>${st==="done"?"<span>✓</span>":""}</div>`; }
+  const done=Math.max(0,wNow-1), left=Math.max(0,weeks-wNow);
+  el.innerHTML=`<div class="gh-top"><div class="gh-ring"></div>
+      <div class="gh-who"><div class="gh-t">${escapeHtml(o.title||eng.goal_title||"Your goal")}</div>
+        <div class="gh-coach coach-link" data-coach="${escapeHtml(o.coach_id)}"><div class="avatar" data-avatar="${escapeHtml(c.avatar_path||"")}" data-avatar-fallback="whistle">${escapeHtml(c.avatar_initials||initials(coachName))}</div>
+          <div><div class="gh-cn">${escapeHtml(coachName)}</div><div class="gh-rt">${p.rating_count?`<i>★</i> ${Number(p.rating_avg).toFixed(1)} <span>(${p.rating_count})</span>`:`<span>No ratings yet</span>`}</div></div></div></div></div>
+    ${weeks?`<div class="${weeks<=8?"gh-wk":"gh-grid"}" style="--n:${weeks<=8?weeks:Math.min(10,weeks)}">${cells}</div>
+      <div class="gh-dates"><span>${escapeHtml(fmtDay(startISO))}</span>${weeks>8?`<b>${done} week${done===1?"":"s"} done <i>- ${left} to go</i></b>`:""}<span>${escapeHtml(fmtDay(endISO))}</span></div>`:""}
+    <div class="gh-plan"><div class="gh-ph">Your plan</div>
+      <div class="gh-cols"><div><span>Length</span><b>${weeks?`${weeks} week${weeks===1?"":"s"}`:escapeHtml(o.length_text||"-")}</b></div><div><span>Sessions</span><b>${cap?`${cap} / week`:escapeHtml(o.sessions_text||"-")}</b></div><div><span>Price</span><b>${gross!=null?money(gross):escapeHtml(o.price_text||"-")}</b></div></div>
+      <div class="gh-pay"></div></div>
+    <div class="gh-acts">${o.pitch_video_path?`<button type="button" class="gh-b" data-gh="video">Pitch video</button>`:""}<button type="button" class="gh-b" data-gh="achieved">Goal achieved</button><button type="button" class="gh-x" data-gh="cancelled">Cancel goal</button></div>`;
+  drawRing(weeks?((wNow-1)/weeks*100):0,0,weeks*cap);
+  if(weeks&&cap) Promise.resolve(store._sb.from("assigned_workouts").select("id",{count:"exact",head:true}).eq("engagement_id",eng.id).in("status",["submitted","reviewed"]))
+    .then(r=>{ if(r&&r.error) throw r.error; const n=r&&r.count||0, tot=weeks*cap; drawRing(Math.min(100,n/tot*100),n,tot); },e=>console.warn("goal hero sessions (IM)",e));
+  renderPaymentTracker(el.querySelector(".gh-pay"),eng,"trainee",o);
+  el.querySelectorAll("[data-gh]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); const k=b.dataset.gh;
+    if(k==="video"){ const ov=document.createElement("div"); ov.className="tut-ov"; ov.innerHTML=`<div class="tut-box"><div class="tut-h"><b>${escapeHtml(coachName)}'s pitch</b><button type="button" class="tut-x" aria-label="Close">×</button></div><div class="video-card" data-video="${escapeHtml(o.pitch_video_path)}"></div></div>`;
+      const close=()=>ov.remove(); ov.addEventListener("click",e=>{ if(e.target===ov) close(); }); ov.querySelector(".tut-x").addEventListener("click",close); document.body.appendChild(ov); hydrateVideos(ov); return; }
+    endGoalEarly(eng,k); }));
+  return el;
+}
 async function renderOffersTab(body){
   try{ await store._sb.rpc("expire_counters"); }catch(e){}   // Item CK: unanswered counters resolve as kept
   const offers=await store.offers.list({trainee_id:ME.id});
@@ -7735,16 +7834,17 @@ async function renderOffersTab(body){
   };
 
   // ---- Accepted: shown fully expanded, no collapse-by-default ----
-  body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Accepted</div><div class="eyebrow">${acceptedLive.length}</div></div>`);
+  const heroOf=o=>{ const e=engByOffer[o.id]; return e&&e.status==="active"; };   /* IM: an ongoing goal is the progress-ring hero */
+  if(!(acceptedLive.length&&acceptedLive.every(heroOf))) body.insertAdjacentHTML("beforeend",`<div class="section-h"><div class="eyebrow">Accepted</div><div class="eyebrow">${acceptedLive.length}</div></div>`);
   if(!acceptedLive.length){
     body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:24px 20px"><p>No accepted offers yet.</p></div>`);
   }else{
-    for(const o of acceptedLive) body.appendChild(mkRow(o,true));
+    for(const o of acceptedLive) body.appendChild(heroOf(o)?goalHeroEl(o,coaches[o.coach_id]||{},engByOffer[o.id]):mkRow(o,true));
   }
 
   // ---- Pending: flashing, grouped by goal (the only bucket where several
   // offers can share one goal — accepted/completed are 1:1 by construction) ----
-  body.insertAdjacentHTML("beforeend",`<div class="section-h" style="margin-top:18px"><div class="eyebrow">Pending</div><div class="eyebrow">${pending.length}</div></div>`);
+  if(pending.length) body.insertAdjacentHTML("beforeend",`<div class="section-h" style="margin-top:18px"><div class="eyebrow">Pending</div><div class="eyebrow">${pending.length}</div></div>`);   /* IM: no header when empty */
   if(!pending.length){
     /* CQ-1: minimised - header only when empty */
   }else{
@@ -7778,8 +7878,16 @@ async function renderOffersTab(body){
       for(const o of items) f.appendChild(mkRow(o,false));
     }
   };
-  folder("Completed",completed,offersCompletedOpen,v=>offersCompletedOpen=v);   // CQ-1 order: Accepted, Pending, Completed, Rejected
-  folder("Rejected",rejected,offersRejectedOpen,v=>offersRejectedOpen=v);
+  /* IM: past goals take one muted line; tapping it shows the two folders */
+  if(completed.length||rejected.length){
+    const pl=document.createElement("button"); pl.type="button"; pl.className="gh-past";
+    pl.innerHTML=`Past goals: <b>${completed.length} completed</b> · ${rejected.length} rejected <span>${pastGoalsOpen?"⌃":"›"}</span>`;
+    pl.addEventListener("click",()=>{ pastGoalsOpen=!pastGoalsOpen; renderOffersTab(body); }); body.appendChild(pl);
+    if(pastGoalsOpen){
+      folder("Completed",completed,offersCompletedOpen,v=>offersCompletedOpen=v);   // CQ-1 order: Accepted, Pending, Completed, Rejected
+      folder("Rejected",rejected,offersRejectedOpen,v=>offersRejectedOpen=v);
+    }
+  }
 
   hydrateVideos(body);
   hydrateAvatars(body);
