@@ -1997,7 +1997,7 @@ duplicates (two wiring copies) and reverted before anything was written.
 **Owner 19:38 (two screenshots: the accepted-goal card - coach row, ACCEPTED badge, a large pitch-video player, Length / Sessions / Dates / Price rows, Payment details, the payment stepper Accepted - Deposit - Training wk 4/5 - Complete, Goal achieved / Cancel goal; below: Pending 0, Completed 19 and Rejected 2 folders):** redesign what the trainee sees while the goal is ongoing; focus on **space management**; **visualise the weeks completed / pending**; old pending, completed and rejected goals stay but take **minimal space and attention**.
 **Done:** 3 concepts (Nano Banana Pro, ~120 credits): A goal hero + week track (W1-W5 segments, stat chips, collapsed payment and pitch-video rows, history as three small chips); B progress ring (Week 4 of 5 / sessions done, week pills, "Your plan" three columns, compact payment dots, "Past goals: 19 completed - 2 rejected ›"); C journey path (vertical week nodes with sessions per week, key facts column, Goal achieved + More menu, collapsed History bar).
 **Notes for the build:** sessions done per week come from the trainee's submissions against the plan; the pitch video moves behind a row (it is the biggest space cost today).
-**Next:** owner picks a concept.
+**Owner 19:40: likes concept B (progress ring)**; asked how it looks with a long goal (e.g. 20 weeks). Requested a 20-week variant: the 5 week pills become a two-row grid of 10 (weeks done gold, this week glowing outline, rest grey), dates at the ends, "12 weeks done - 7 to go". Owner to review.
 
 ---
 ## IL. Take a vacation sheet redesign - LOGGED 2026-11-24 (personal account)
