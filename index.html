@@ -469,6 +469,39 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .pbc-go{flex:0 0 auto;height:34px;padding:0 14px;border:0;border-radius:999px;background:#E8B923;color:#0B0E11;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .pbc-r3{display:flex;justify-content:space-between;font-size:11.5px;margin-top:4px;color:var(--muted)}
 .pbc-r3 span:first-child{color:#E8B923}
+.tut-btn{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px 0 4px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.tut-btn span{width:16px;height:16px;border-radius:50%;border:1.5px solid #E8B923;color:#E8B923;font-size:10px;font-weight:900;font-style:italic;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center}
+.tut-ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.tut-box{width:100%;max-width:520px;max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:16px 18px calc(18px + env(safe-area-inset-bottom))}
+.tut-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tut-h b{font-size:18px;color:#E8B923}
+.tut-x{width:34px;height:34px;border:0;background:none;color:var(--muted);font-size:24px;cursor:pointer}
+.tut-i{font-size:13px;color:var(--muted);margin:2px 0 10px}
+.tut-s{margin:0;padding-left:22px}
+.tut-s li{margin:0 0 9px;font-size:13.5px;color:var(--ink);line-height:1.4}
+.tut-s li::marker{color:#E8B923;font-weight:800}
+.tut-s b{display:block;font-size:13.5px}
+.tut-s span{color:var(--muted)}
+.tut-ok{display:block;width:100%;height:46px;margin-top:8px;border:0;border-radius:14px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.msm-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.msm-sw{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 auto 6px}
+.msm-q{font-size:14px;font-weight:700;color:var(--muted);padding:5px 12px;border-radius:999px}
+.msm-q.on{background:#E8B923;color:#0B0E11}
+.msm-vs{font-size:12px;color:var(--muted)}
+.msm-nav{width:30px;height:30px;border:0;background:none;color:var(--ink);font-size:20px;cursor:pointer}
+.msm-nav:disabled{opacity:.25;cursor:default}
+.msm-map{position:relative;width:100%;aspect-ratio:340/300;margin:4px 0 8px}
+.msm-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.msm-fig{fill:none;stroke:#E8B923;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.msm-ring{fill:none;stroke:#E8B923;stroke-width:1.2;opacity:.55}
+.msm-ld{fill:none;stroke:#E8B923;stroke-width:.9;opacity:.7}
+.msm-lab{position:absolute;transform:translateY(-12px);display:flex;flex-direction:column;align-items:center;gap:2px;width:31%}
+.msm-lab.l{left:0}.msm-lab.r{right:0}
+.msm-pill{background:#E8B923;color:#0B0E11;font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.msm-pct{font-size:12px;font-weight:700;color:var(--muted)}
+.msm-pct.good{color:#E8B923}
+.msm-cmt{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:14px;line-height:1.45;color:var(--ink);margin:6px 0 12px}
+.msm-log{display:block;width:100%;height:50px;border:0;border-radius:999px;background:#E8B923;color:#0B0E11;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer}
 .pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
 .pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
@@ -9248,6 +9281,102 @@ function pbCardEl(pbs,events,quest){
   const goBtn=el.querySelector("[data-pb-go]"); if(goBtn) goBtn.addEventListener("click",()=>{ const st=document.querySelector(".tr-start"); if(st){ st.click(); } else go("trainee-home"); toast(`Go for it - beat ${best(sel)} on ${sel.exercise_name}`,3200); });
   return el;
 }
+/* IJ-T (owner, 2026-11-24): TUTORIALS - a small, discreet but visible "How to ..." button opens a short how-to sheet.
+   Owner: this concept will be added to other areas too (how to log macros, how to weigh yourself, ...). Add an entry here
+   and place tutorialBtn("key") next to the area's title. */
+const TUTORIALS={
+  measure:{title:"How to measure yourself",intro:"Measure the same way every quarter, so the changes you see are real.",steps:[
+    ["Get ready","Use a soft tape measure. Measure in the morning, before eating, in underwear or light clothing - the same time and conditions each quarter."],
+    ["Stand and breathe","Stand tall and relaxed with your feet together. Breathe normally and measure after a gentle breath out - don't suck in or flex."],
+    ["Tape position","Keep the tape flat against the skin, level with the floor, snug but not squeezing. Read it where the end meets the tape."],
+    ["Neck","Just below the Adam's apple, around the narrowest part of the neck."],
+    ["Chest","Around the fullest part of the chest, across the nipples and under the armpits, arms relaxed by your sides."],
+    ["Biceps","Around the widest part of the upper arm, halfway between shoulder and elbow, arm relaxed. Always use the same arm."],
+    ["Waist","Around the belly button, relaxed, after breathing out."],
+    ["Hips","Around the widest part of your buttocks, feet together."],
+    ["Thighs","Around the widest part of the thigh, just below the buttocks, weight on both feet. Always use the same leg."],
+    ["Tip","Measure each spot twice and log the average. If someone helps you, ask the same person each time."]]}
+};
+function tutorialBtn(key,label){ return `<button type="button" class="tut-btn" data-tut="${key}" aria-label="${escapeHtml(TUTORIALS[key]?TUTORIALS[key].title:"How to")}"><span>i</span>${escapeHtml(label||"How to")}</button>`; }
+function wireTutorials(root){ (root||document).querySelectorAll("[data-tut]").forEach(b=>{ if(b._tw) return; b._tw=1; b.addEventListener("click",ev=>{ ev.stopPropagation(); openTutorial(b.dataset.tut); }); }); }
+function openTutorial(key){
+  const t=TUTORIALS[key]; if(!t) return;
+  const ov=document.createElement("div"); ov.className="tut-ov";
+  ov.innerHTML=`<div class="tut-box" role="dialog" aria-modal="true" aria-label="${escapeHtml(t.title)}"><div class="tut-h"><b>${escapeHtml(t.title)}</b><button type="button" class="tut-x" aria-label="Close">×</button></div>
+    <div class="tut-i">${escapeHtml(t.intro)}</div><ol class="tut-s">${t.steps.map(([h,s])=>`<li><b>${escapeHtml(h)}</b><span>${escapeHtml(s)}</span></li>`).join("")}</ol>
+    <button type="button" class="tut-ok">Got it</button></div>`;
+  const close=()=>ov.remove();
+  ov.addEventListener("click",e=>{ if(e.target===ov) close(); });
+  ov.querySelector(".tut-x").addEventListener("click",close); ov.querySelector(".tut-ok").addEventListener("click",close);
+  document.body.appendChild(ov);
+}
+/* IJ (owner, 2026-11-24): the trainee's Body measurements card = OpenArt concept B ("body map"): a gold line figure with a
+   callout per body part (value + % change vs the previous quarter that has measurements, arrow), a "Q3 2026 vs Q2 2026"
+   switcher, a motivational comment written from the numbers, and "Log this quarter". Good / not-so-good direction follows the
+   goal (as the weight gauge, IF): fat loss - waist, hips, thighs, neck down are good; muscle gain - chest, biceps, thighs, neck up
+   are good; otherwise chest / biceps up and waist down. */
+let msQi=null;
+function bodySvgPath(){
+  const L=[[94,44],[94,53],[72,60],[61,70],[57,100],[54,132],[51,160],[49,172],[57,174],[60,146],[64,108],[67,88],[69,110],[71,128],[66,150],[68,200],[70,250],[67,284],[84,286],[87,250],[91,200],[100,168]];
+  const R=L.slice(0,-1).reverse().map(([x,y])=>[200-x,y]);
+  const pts=[...L,...R];
+  let d=`M${pts[0][0]} ${pts[0][1]}`;
+  for(let i=0;i<pts.length-1;i++){ const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+    const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6], c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+    d+=` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0]} ${p2[1]}`; }
+  return d;
+}
+function measuresMapEl(rows,goalTitle){
+  const title=String(goalTitle||"").toLowerCase();
+  const dir=/gain|muscle|bulk|mass|build|hypertroph/.test(title)?1:(/loss|lose|fat|cut|lean|slim|weight|tone/.test(title)?-1:0);
+  const good=(k,ch)=>{ if(!ch) return null; const up=ch>0;
+    if(dir<0) return ({waist_cm:!up,hips_cm:!up,thighs_cm:!up,neck_cm:!up,chest_cm:up,biceps_cm:up})[k];
+    if(dir>0) return ({chest_cm:up,biceps_cm:up,thighs_cm:up,neck_cm:up,waist_cm:!up,hips_cm:null})[k];
+    return ({chest_cm:up,biceps_cm:up,waist_cm:!up})[k]??null; };
+  /* one row per quarter (the latest entry in it) */
+  const byQ={}; (rows||[]).forEach(r=>{ const q=quarterStartISO(new Date(r.measured_on+"T12:00:00")); if(!byQ[q]||r.measured_on>byQ[q].measured_on) byQ[q]=r; });
+  const qs=Object.keys(byQ).sort();
+  const curQ=quarterStartISO(), loggedThisQ=!!byQ[curQ];
+  if(msQi==null||msQi>=qs.length) msQi=qs.length-1;
+  const el=document.createElement("div"); el.className="msm";
+  const head=`<div class="msm-top"><span class="eyebrow" style="margin:0">Body measurements</span>${tutorialBtn("measure","How to measure")}</div>`;
+  if(!qs.length){ el.innerHTML=head+`<div class="msm-cmt">Log your first measurements - next quarter you'll see exactly how your body has changed.</div><button type="button" class="msm-log">Log this quarter</button>`; el.querySelector(".msm-log").addEventListener("click",()=>openMeasureSheet()); wireTutorials(el); return el; }
+  const cur=byQ[qs[msQi]], prev=msQi>0?byQ[qs[msQi-1]]:null;
+  const parts=MEASURES.map(m=>{ const v=cur[m.k]!=null?Number(cur[m.k]):null, pv=prev&&prev[m.k]!=null?Number(prev[m.k]):null;
+    const pct=v!=null&&pv?((v-pv)/pv*100):null; return {...m,v,pct,good:pct==null?null:good(m.k,pct)}; });
+  const fmtP=p=>p==null?"":(p>0?"+":p<0?"-":"")+Math.abs(p).toFixed(1)+"%";
+  /* layout (viewBox 340 x 300): figure at x+70; rings; callouts left / right */
+  const ox=70;
+  const ring={neck_cm:[100,47,7,2],chest_cm:[100,90,30,4],biceps_cm:[142,102,7,2.5],waist_cm:[100,124,29,4],hips_cm:[100,150,34,4.5],thighs_cm:[118,192,14,3]};
+  const side={neck_cm:["l",44],chest_cm:["l",100],waist_cm:["l",156],biceps_cm:["r",84],hips_cm:["r",146],thighs_cm:["r",208]};
+  let lines="", rings="", labels="";
+  parts.forEach(p=>{ const [cx,cy,rx,ry]=ring[p.k], [s,y]=side[p.k]; const X=ox+cx;
+    rings+=`<ellipse cx="${X}" cy="${cy}" rx="${rx}" ry="${ry}" class="msm-ring"/>`;
+    lines+=s==="l"?`<polyline points="104,${y} ${X-rx},${cy}" class="msm-ld"/>`:`<polyline points="236,${y} ${X+rx},${cy}" class="msm-ld"/>`;
+    const arrow=p.pct==null||Math.abs(p.pct)<0.05?"":(p.pct>0?" ↑":" ↓");
+    labels+=`<div class="msm-lab ${s}" style="top:${(y/300*100).toFixed(2)}%"><span class="msm-pill">${escapeHtml(p.label)} ${p.v!=null?(Math.round(p.v*10)/10):"-"} cm</span><span class="msm-pct${p.good===true?" good":""}">${p.pct==null?(prev?"":"first entry"):fmtP(p.pct)+arrow}</span></div>`; });
+  /* comment from the numbers */
+  let cmt;
+  if(!prev) cmt=msQi===qs.length-1?"Your first measurements are in. Next quarter you'll see exactly how far you've come.":"Your first measurements.";
+  else{
+    const g=parts.filter(p=>p.good===true), bad=parts.filter(p=>p.good===false);
+    const ups=g.filter(p=>p.pct>0).map(p=>p.label.toLowerCase()), downs=g.filter(p=>p.pct<0).map(p=>p.label.toLowerCase());
+    const join=a=>a.length>1?a.slice(0,-1).join(", ")+" and "+a[a.length-1]:a[0];
+    const hl=(ups.length?`your ${join(ups)} ${ups.length>1?"grew":"grew"}`:"")+(ups.length&&downs.length?" while ":"")+(downs.length?`your ${join(downs)} came in`:"");
+    if(g.length>=3) cmt=`Strong quarter - ${hl}. Keep it up.`;
+    else if(g.length>=1) cmt=`Solid progress - ${hl}. Stay consistent and the rest will follow.`;
+    else if(bad.length) cmt="A tougher quarter - it happens. Stick with your plan and talk it through with your coach.";
+    else cmt="A steady quarter. Measurements move slowly - consistency is what shows up next time.";
+  }
+  el.innerHTML=head+`<div class="msm-sw"><button type="button" class="msm-nav" data-q="-1" ${msQi<=0?"disabled":""} aria-label="Earlier quarter">‹</button><span class="msm-q on">${quarterLabel(qs[msQi])}</span>${prev?`<span class="msm-vs">vs</span><span class="msm-q">${quarterLabel(qs[msQi-1])}</span>`:""}<button type="button" class="msm-nav" data-q="1" ${msQi>=qs.length-1?"disabled":""} aria-label="Later quarter">›</button></div>
+    <div class="msm-map"><svg viewBox="0 0 340 300" aria-hidden="true"><g transform="translate(${ox} 0)"><circle cx="100" cy="24" r="17" class="msm-fig"/><path d="${bodySvgPath()}" class="msm-fig"/></g>${rings}${lines}</svg>${labels}</div>
+    <div class="msm-cmt">${escapeHtml(cmt)}</div>
+    ${msQi===qs.length-1?`<button type="button" class="msm-log">${loggedThisQ?"Update this quarter":"Log this quarter"}</button>`:""}`;
+  el.querySelectorAll("[data-q]").forEach(b=>b.addEventListener("click",()=>{ msQi+=Number(b.dataset.q); el.replaceWith(measuresMapEl(rows,goalTitle)); }));
+  const lg=el.querySelector(".msm-log"); if(lg) lg.addEventListener("click",()=>openMeasureSheet(loggedThisQ?byQ[curQ].measured_on:undefined));
+  wireTutorials(el);
+  return el;
+}
 let mvSelWeek=null;
 /* IE-3 (owner, 2026-11-24): the Macros and Weight sections log a past day too - the last 7 days as chips (logged = ticked,
    missing = gold outline) and a date picker for older days; all open the same form as the calendar day. */
@@ -10181,6 +10310,7 @@ function renderDashboard(container, iAmCoach){
     try{
       const traineeId = iAmCoach ? currentEng.trainee_id : ME.id;
       const rows=(await store.measurements.list({trainee_id:traineeId})).sort((a,b)=>a.measured_on<b.measured_on?-1:1);
+      if(traineeMerged&&!iAmCoach){ try{ const card=box.closest(".card"); card.innerHTML=""; card.appendChild(measuresMapEl(rows,goalRef&&goalRef.goal_title)); return; }catch(e){ console.warn("measurements map (IJ)",e); } }   /* IJ: the trainee's body-map card */
       if(!rows.length){ box.innerHTML=`<div style="font-size:12px;color:var(--faint)">${iAmCoach?"No measurements logged yet.":"Nothing logged yet — tap ＋ Log to add this quarter's."}</div>`; return; }
       box.innerHTML="";
       const grid=document.createElement("div");grid.className="ms-grid";
