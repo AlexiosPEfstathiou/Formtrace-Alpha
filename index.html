@@ -328,6 +328,44 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .wv-rv{color:#E8B923;font-weight:800}
 .mv-wait{color:var(--muted);font-size:12px;font-weight:700;text-align:right}
 .wv-mini.waiting span:first-child{color:var(--muted)}
+.wj-title{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:800;color:var(--ink);margin-bottom:14px}
+.wj-title span{font-size:12px;color:var(--muted);font-weight:700}
+.wj-journey{display:flex;align-items:center;gap:12px}
+.wj-end{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted);line-height:1.35;flex:0 0 auto}
+.wj-end b{font-size:15px;color:var(--ink)}
+.wj-end.r{text-align:right}
+.wj-track{position:relative;flex:1;height:10px;border-radius:6px;background:var(--line2);margin-top:6px}
+.wj-track i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:#E8B923}
+.wj-track em{position:absolute;top:-24px;transform:translateX(-50%);width:26px;height:26px;color:#E8B923;display:block}
+.wj-track em svg{width:26px;height:26px;fill:currentColor}
+.wj-head{text-align:center;font-family:Montserrat,system-ui,sans-serif;font-size:30px;font-weight:800;color:#E8B923;margin:18px 0 4px;letter-spacing:-.01em}
+.wj-gauge{text-align:center;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.wj-gl{font-size:13px;color:var(--muted);font-weight:700}
+.wj-gauge svg{width:220px;max-width:100%;height:auto;display:block;margin:4px auto 0}
+.wj-t{font-size:10px;fill:var(--muted);font-weight:700}
+.wj-pace{font-size:13px;color:var(--muted);margin-top:-4px}
+.wj-pace b{font-size:20px;color:#E8B923;font-family:Montserrat,system-ui,sans-serif}
+.wj-cap{font-size:13.5px;color:var(--ink);font-weight:700;margin-top:4px}
+.wj-sec{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:16px;font-weight:800;color:var(--ink);margin:16px 0 10px}
+.wj-sec span{font-size:12px;color:var(--muted);font-weight:600;text-align:right}
+.wj-bars{display:flex;justify-content:space-around;align-items:flex-end;gap:6px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.wj-bar{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;font-size:10.5px;color:var(--muted)}
+.wj-bar i{display:block;width:70%;max-width:44px;border-radius:9px;background:var(--line2);margin:3px 0 6px}
+.wj-bar.cur i{background:#E8B923}
+.wj-bar .wj-ch{min-height:14px}
+.wj-bar.cur .wj-ch{color:#E8B923;font-weight:800}
+.wj-bar .wj-v{font-size:12.5px;font-weight:800;color:var(--ink)}
+.wj-bar b{font-size:12px;color:var(--ink)}
+.wj-bar .wj-d{font-size:10px;white-space:nowrap}
+.wj-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wj-day{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:var(--muted);font:inherit;font-size:10px;padding:0;cursor:pointer}
+.wj-day b{font-size:12px;color:var(--ink)}
+.wj-b{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;margin-bottom:3px}
+.wj-day.ok .wj-b{background:#E8B923;color:#0B0E11}
+.wj-day.miss .wj-b{border:2px dashed #E8B923;color:#E8B923}
+.wj-day.fut .wj-b{background:var(--line2)}
+.wj-day.fut{cursor:default;opacity:.7}
+.wj-day.today b{color:#E8B923}
 .pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
 .pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
 .pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
@@ -8827,6 +8865,84 @@ function weeksViewEl(){
 /* IE-2 (owner, 2026-11-24): the Month view, from the owner's chosen concept - a plain month grid (gold dot = a workout done
    that day, today outlined), a WEEK column with each week's ring (done / set), and under the grid the selected week's
    sessions with Start. Tapping a day opens the same day options as before (log a past day's weight and macros, calls). */
+/* IF (owner, 2026-11-24): the trainee's Weight card as a goal journey (owner's chosen OpenArt concept): start -> now with a
+   runner along the goal's weeks, the change since the start in large gold type, a weekly-pace gauge (average change per week,
+   steady zone by goal direction), one bar per week (weekly average + change from the week before) and this week's days
+   (tick = weighed, dashed + = missed, tap to log; an older day through the date picker). */
+function weightJourneyEl(logs,goalRef){
+  const today=todayISO();
+  const pts=(logs||[]).filter(l=>l.weight_kg!=null).map(l=>({d:l.log_date,w:Number(l.weight_kg)})).sort((a,b)=>a.d<b.d?-1:1);
+  const gStart=goalRef&&goalRef.started_at?isoOf(new Date(goalRef.started_at)):(pts[0]?pts[0].d:today);
+  const gWeeks=Number(goalRef&&goalRef.committed_weeks)||0;
+  const gEnd=goalRef&&goalRef.committed_end_date?String(goalRef.committed_end_date).slice(0,10):(gWeeks?addDaysISO(gStart,gWeeks*7):null);
+  const title=String((goalRef&&goalRef.goal_title)||"").toLowerCase();
+  const dir=/gain|muscle|bulk|mass|build|hypertroph/.test(title)?1:(/loss|lose|fat|cut|lean|slim|weight|tone/.test(title)?-1:0);
+  /* weeks of the goal (Monday-based), weekly averages */
+  const firstMon=weekStartISO(new Date(gStart+"T12:00:00")), thisMon=weekStartISO(new Date());
+  const weeks=[]; for(let m=firstMon;m<=thisMon;m=addDaysISO(m,7)){ const ws=pts.filter(p=>p.d>=m&&p.d<=addDaysISO(m,6)); weeks.push({mon:m,n:ws.length,avg:ws.length?ws.reduce((s,p)=>s+p.w,0)/ws.length:null}); }
+  const wk=weeks.filter(w=>w.avg!=null);
+  const startPt=pts.filter(p=>p.d<=gStart).slice(-1)[0]||pts.find(p=>p.d>=gStart)||null, nowPt=pts[pts.length-1]||null;
+  const f1=v=>(v>0?"+":v<0?"-":"")+Math.abs(v).toFixed(1), f2=v=>(v>0?"+":v<0?"-":"")+Math.abs(v).toFixed(2);
+  const kg=v=>v.toFixed(1).replace(/\.0$/,".0");
+  const el=document.createElement("div"); el.className="wj";
+  if(!pts.length){ el.innerHTML=`<div class="wj-title">Weight</div><div class="wv-none">No weigh-ins yet - tap a day below to log one.</div>`; }
+  let html="";
+  if(pts.length){
+    const total=wk.length>=2?wk[wk.length-1].avg-wk[0].avg:(nowPt&&startPt?nowPt.w-startPt.w:0);
+    const spanW=Math.max(1,Math.round((new Date(today)-new Date(gStart))/604800000));
+    const elapsed=gEnd?Math.max(0,Math.min(1,(new Date(today)-new Date(gStart))/(new Date(gEnd)-new Date(gStart)||1))):Math.min(1,spanW/12);
+    html+=`<div class="wj-title">Weight <span>${gEnd?`Week ${Math.min(Math.ceil((weeks.length)),gWeeks||weeks.length)}${gWeeks?` of ${gWeeks}`:""}`:""}</span></div>
+      <div class="wj-journey"><div class="wj-end"><span>Start</span><b>${startPt?kg(startPt.w)+" kg":"-"}</b><span>${escapeHtml(new Date(gStart+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}))}</span></div>
+        <div class="wj-track"><i style="width:${(elapsed*100).toFixed(0)}%"></i><em style="left:${(elapsed*100).toFixed(0)}%">${typeof TAB_ICONS!=="undefined"?TAB_ICONS.training:"🏃"}</em></div>
+        <div class="wj-end r"><span>Now</span><b>${nowPt?kg(nowPt.w)+" kg":"-"}</b><span>${nowPt&&nowPt.d===today?"Today":escapeHtml(nowPt?fmtDay(nowPt.d):"")}</span></div></div>
+      <div class="wj-head">${f1(total)} kg in ${spanW} week${spanW===1?"":"s"}</div>`;
+    /* pace gauge: average change per week, first to latest weekly average */
+    if(wk.length>=2){
+      const wks=Math.max(1,Math.round((new Date(wk[wk.length-1].mon)-new Date(wk[0].mon))/604800000));
+      const pace=(wk[wk.length-1].avg-wk[0].avg)/wks;
+      const zone=dir<0?[-0.5,-0.2]:dir>0?[0.1,0.3]:[-0.1,0.1];
+      const R=1.0, ang=v=>Math.PI*(1-(Math.max(-R,Math.min(R,v))+R)/(2*R));   /* -1 kg left ... +1 kg right */
+      const cx=110, cy=104, r=82, P=a=>[cx+r*Math.cos(a), cy-r*Math.sin(a)];
+      const arc=(a0,a1)=>{ const [x0,y0]=P(a0),[x1,y1]=P(a1); return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+      const na=ang(pace), [nx,ny]=[cx+(r-18)*Math.cos(na), cy-(r-18)*Math.sin(na)];
+      const inZone=pace>=zone[0]&&pace<=zone[1];
+      const cap=inZone?(dir===0?"Holding steady":"Steady and sustainable"):(dir<0?(pace<zone[0]?"Faster than recommended - talk to your coach":(pace>0?"Moving up this period - keep at it":"Slower than planned - keep going")):dir>0?(pace>zone[1]?"Faster than recommended - talk to your coach":(pace<0?"Moving down this period - keep at it":"Slower than planned - keep going")):"Changing - check in with your coach");
+      html+=`<div class="wj-gauge"><div class="wj-gl">Your weekly pace</div>
+        <svg viewBox="-6 -6 232 128" aria-hidden="true"><path d="${arc(Math.PI,0)}" stroke="var(--line2)" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="${arc(ang(zone[0]),ang(zone[1]))}" stroke="#E8B923" stroke-width="14" fill="none" stroke-linecap="round" opacity=".9"/>
+        <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="6" fill="var(--ink)"/>
+        <text x="${P(Math.PI)[0]}" y="${cy+16}" text-anchor="middle" class="wj-t">-1.0</text><text x="${P(0)[0]}" y="${cy+16}" text-anchor="middle" class="wj-t">+1.0</text>
+        ${zone.map(z=>{ const a=ang(z), lx=cx+(r+15)*Math.cos(a), ly=cy-(r+15)*Math.sin(a); return `<text x="${lx.toFixed(0)}" y="${(ly+3).toFixed(0)}" text-anchor="middle" class="wj-t">${z>0?"+":""}${z}</text>`; }).join("")}</svg>
+        <div class="wj-pace"><b>${f2(pace)} kg</b> / week</div><div class="wj-cap${inZone?" ok":""}">${escapeHtml(cap)}</div></div>`;
+    }
+    /* weekly average bars (last 6 weeks with data) */
+    const show=weeks.slice(-6);
+    const vals=show.filter(w=>w.avg!=null).map(w=>w.avg);
+    if(vals.length){
+      const lo=Math.min(...vals)-0.6, hi=Math.max(...vals)+0.2;
+      html+=`<div class="wj-sec">Weekly average <span>kg</span></div><div class="wj-bars">`+show.map((w,i)=>{
+        const prev=i>0?show[i-1].avg:(weeks[weeks.length-show.length-1]||{}).avg;
+        const ch=(w.avg!=null&&prev!=null)?w.avg-prev:null, cur=w.mon===thisMon, h=w.avg==null?0:Math.round(18+((w.avg-lo)/(hi-lo||1))*82);
+        const s=new Date(w.mon+"T12:00:00"), e=new Date(addDaysISO(w.mon,6)+"T12:00:00");
+        const lab=s.getMonth()===e.getMonth()?`${s.getDate()}-${e.getDate()} ${e.toLocaleDateString("en-GB",{month:"short"})}`:`${s.getDate()} ${s.toLocaleDateString("en-GB",{month:"short"})}`;
+        const wn=weeks.indexOf(w)+1;
+        return `<div class="wj-bar${cur?" cur":""}"><span class="wj-ch">${ch!=null?f1(ch)+" kg":""}</span><span class="wj-v">${w.avg!=null?w.avg.toFixed(1):"-"}</span><i style="height:${h}px"></i><b>W${wn}</b><span class="wj-d">${lab}</span></div>`; }).join("")+`</div>`;
+    }
+  }
+  /* this week's days */
+  const days=[], missed=[];
+  for(let i=0;i<7;i++){ const iso=addDaysISO(thisMon,i), has=pts.some(p=>p.d===iso), fut=iso>today, dt=new Date(iso+"T12:00:00");
+    const name=dt.toLocaleDateString("en-GB",{weekday:"short"});
+    if(!has&&!fut&&iso<today&&iso>=gStart) missed.push(name);
+    days.push(`<button type="button" class="wj-day${has?" ok":fut?" fut":" miss"}${iso===today?" today":""}" ${fut?"disabled":""} data-wj="${iso}" aria-label="${escapeHtml(fmtDay(iso))}${has?", weighed in":fut?"":", not logged - tap to log"}"><span class="wj-b">${has?"✓":fut?"":"+"}</span><b>${name}</b><span>${dt.getDate()} ${dt.toLocaleDateString("en-GB",{month:"short"})}</span></button>`); }
+  const ml=missed.length?`You missed ${missed.length>1?missed.slice(0,-1).join(", ")+" and "+missed[missed.length-1]:missed[0]}.`:"No missed weigh-ins this week.";
+  html+=`<div class="wj-sec">This week <span>${escapeHtml(ml)}</span></div><div class="wj-days">${days.join("")}</div>
+    <label class="pd-older">Log an earlier day <input type="date" max="${today}" aria-label="Pick an earlier day"></label>`;
+  el.innerHTML+=html;
+  el.querySelectorAll("[data-wj]").forEach(b=>b.addEventListener("click",()=>{ if(!b.disabled) openMacroLog(b.dataset.wj); }));
+  const di=el.querySelector(".pd-older input"); if(di) di.addEventListener("change",e=>{ const v=e.target.value; if(v&&v<=today) openMacroLog(v); });
+  return el;
+}
 let mvSelWeek=null;
 /* IE-3 (owner, 2026-11-24): the Macros and Weight sections log a past day too - the last 7 days as chips (logged = ticked,
    missing = gold outline) and a date picker for older days; all open the same form as the calendar day. */
@@ -8918,7 +9034,7 @@ function trainingControlPanel(body){
     const paint=scroll=>{
       tiles.querySelectorAll("[data-tile]").forEach(b=>{ const on=b.dataset.tile===trPanelOpen; b.classList.toggle("on",on); b.setAttribute("aria-expanded",on?"true":"false"); });
       Object.keys(boxes).forEach(k=>boxes[k].classList.toggle("open",k===trPanelOpen));
-      if(dashHead&&(trPanelOpen==="macros"||trPanelOpen==="weight")) boxes[trPanelOpen].insertBefore(dashHead,boxes[trPanelOpen].firstChild);   // the Goal / Week / Day switch goes with the charts
+      if(dashHead&&(trPanelOpen==="macros"||(trPanelOpen==="weight"&&!traineeMerged))) boxes[trPanelOpen].insertBefore(dashHead,boxes[trPanelOpen].firstChild);   /* IF: the trainee's Weight card does not use Goal / Week / Day */   // the Goal / Week / Day switch goes with the charts
       if(scroll&&trPanelOpen) setTimeout(()=>scrollInto(tiles,"start"),40);   /* GL: not scrollIntoView */
     };
     defs.forEach(([k,ic,label])=>{
@@ -8938,7 +9054,7 @@ function trainingControlPanel(body){
     const vacWrap=secs.vacation&&secs.vacation[0], vac=vacWrap?vacWrap.querySelector("button"):null;
     if(vac){ const b=document.createElement("button"); b.type="button"; b.className="tr-tile tr-vac"; b.innerHTML=`<span class="tr-ic">${TR_ICONS.vacation}</span><span>${escapeHtml(vac.textContent||"Vacation")}</span>`;   /* ID: a slim full-width row */
       b.addEventListener("click",()=>vac.click()); tiles.appendChild(b); vacWrap.style.display="none"; }
-    ["macros","weight"].forEach(k=>{ if(boxes[k]&&traineeMerged){ try{ boxes[k].insertBefore(pastDayStrip(k),boxes[k].firstChild); }catch(e){ console.warn("past day strip (IE-3)",e); } } });   /* IE-3 */
+    ["macros"].forEach(k=>{ if(boxes[k]&&traineeMerged){   /* IF: Weight has its own day bubbles + earlier-day picker */ try{ boxes[k].insertBefore(pastDayStrip(k),boxes[k].firstChild); }catch(e){ console.warn("past day strip (IE-3)",e); } } });   /* IE-3 */
     start.after(tiles); tiles.after(host);
     if(dash) dash.style.display="none";                       // its cards now live in the sections
     paint(false);
@@ -9726,6 +9842,7 @@ function renderDashboard(container, iAmCoach){
   }else{
     wCard.innerHTML=`<div class="eyebrow" style="margin-bottom:10px">Weight (kg)</div><div style="font-size:12.5px;color:var(--faint);padding:6px 4px 14px">No weight entries yet.</div>`;
   }
+  if(traineeMerged&&!iAmCoach){ try{ const wj=weightJourneyEl(logs,goalRef); wCard.innerHTML=""; wCard.style.padding="18px 16px 14px"; wCard.appendChild(wj); }catch(e){ console.warn("weight journey (IF)",e); } }   /* IF: the trainee's goal-journey card; coaches keep the chart */
   wCard.dataset.trSec="weight"; wrap.appendChild(wCard);
 
   // ---- check-in photo timelapse ----
