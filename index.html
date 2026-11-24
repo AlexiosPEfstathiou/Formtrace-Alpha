@@ -323,6 +323,21 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .mv-day i{display:flex;gap:3px;height:6px}
 .mv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#E8B923}
 .mv-dot.call{background:var(--muted)}
+.mv-dot.waiting{background:transparent;box-shadow:inset 0 0 0 1.5px #E8B923}   /* IE-3 */
+.wv-row.waiting .wv-tick{background:transparent;border-color:#E8B923;color:#E8B923}
+.wv-rv{color:#E8B923;font-weight:800}
+.mv-wait{color:var(--muted);font-size:12px;font-weight:700;text-align:right}
+.wv-mini.waiting span:first-child{color:var(--muted)}
+.pd-strip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 10px;margin-bottom:12px}
+.pd-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
+.pd-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.pd-chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:10px;border:1.5px solid #E8B923;background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.pd-chip span{font-size:10px;color:var(--muted);font-weight:700}
+.pd-chip b{font-size:14px}
+.pd-chip.ok{border-color:var(--line);background:rgba(232,185,35,.10)}
+.pd-chip.ok b{color:#E8B923}
+.pd-older{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12.5px;color:var(--muted);font-weight:700}
+.pd-older input{flex:0 0 auto;height:34px;border-radius:10px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);padding:0 8px;font:inherit}
 .mv-week{position:relative;height:52px;border:0;border-top:1px solid var(--line);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .mv-week em{position:absolute;font-style:normal;font-size:10px;font-weight:800;color:var(--ink)}
 .mv-week.sel{background:rgba(232,185,35,.12)}
@@ -8767,10 +8782,10 @@ function weeksViewEl(){
   const card=document.createElement("div"); card.className="wv-card"; card.dataset.wvWeek=thisMon;
   let list="";
   rows.forEach((a,i)=>{
-    const d=isDone(a), isNext=a===next;
-    list+=`<div class="wv-row${d?" done":""}" data-wv-i="${i}"><span class="wv-tick">${d?"✓":""}</span>
+    const d=isDone(a), isNext=a===next, rv=a.status==="reviewed";   /* IE-3: reviewed = solid gold tick; done but not reviewed yet = gold outline */
+    list+=`<div class="wv-row${d?" done":""}${d&&!rv?" waiting":""}" data-wv-i="${i}"><span class="wv-tick">${d?"✓":""}</span>
       <span class="wv-txt"><b>Session ${i+1}</b><span>${escapeHtml(wvName(a))}</span></span>
-      ${d?`<span class="wv-when">Done<br>${a.due_date?escapeHtml(fmtDay(a.due_date)):""}</span>`
+      ${d?`<span class="wv-when">${rv?'<b class="wv-rv">Reviewed</b>':"Awaiting review"}<br>${a.due_date?escapeHtml(fmtDay(a.due_date)):""}</span>`
          :isNext&&!paused?`<span class="wv-when">Up next</span><button type="button" class="wv-start" data-wv-start="${i}">Start</button>`
          :`<span class="wv-when">Any day<br>this week</span>`}</div>`;
   });
@@ -8787,7 +8802,7 @@ function weeksViewEl(){
     const rs=byAge(weekRows[mon]||[]), dn=rs.filter(isDone).length, tot=rs.length;
     const box=document.createElement("div"); box.className="wv-line"; box.dataset.wvWeek=mon;
     box.innerHTML=`<button type="button" class="wv-line-h">${wvRing(dn,tot,40)}<span class="wv-n">${dn}/${tot}</span><span class="wv-lr">${wvRange(mon)}</span>${label?`<span class="wv-tag">${label}</span>`:""}<span class="wv-chev">›</span></button>
-      <div class="wv-detail">${rs.length?rs.map((a,i)=>`<div class="wv-mini${isDone(a)?" done":""}" data-i="${i}"><span>${isDone(a)?"✓":"○"}</span><span>${escapeHtml(wvName(a))}</span><span>${isDone(a)?(a.due_date?escapeHtml(fmtDay(a.due_date)):"Done"):(mon<thisMon?"Not done":"Any day")}</span></div>`).join(""):`<div class="wv-none">Nothing assigned.</div>`}</div>`;
+      <div class="wv-detail">${rs.length?rs.map((a,i)=>`<div class="wv-mini${isDone(a)?" done":""}${a.status==="submitted"?" waiting":""}" data-i="${i}"><span>${isDone(a)?"✓":"○"}</span><span>${escapeHtml(wvName(a))}</span><span>${isDone(a)?(a.status==="reviewed"?"Reviewed · ":"Awaiting review · ")+(a.due_date?escapeHtml(fmtDay(a.due_date)):""):(mon<thisMon?"Not done":"Any day")}</span></div>`).join(""):`<div class="wv-none">Nothing assigned.</div>`}</div>`;
     box.querySelector(".wv-line-h").addEventListener("click",()=>box.classList.toggle("open"));
     box.querySelectorAll(".wv-mini.done").forEach(m=>m.addEventListener("click",()=>{ const a=rs[+m.dataset.i]; if(a) engDayAction(a,false); }));
     return box;
@@ -8813,6 +8828,20 @@ function weeksViewEl(){
    that day, today outlined), a WEEK column with each week's ring (done / set), and under the grid the selected week's
    sessions with Start. Tapping a day opens the same day options as before (log a past day's weight and macros, calls). */
 let mvSelWeek=null;
+/* IE-3 (owner, 2026-11-24): the Macros and Weight sections log a past day too - the last 7 days as chips (logged = ticked,
+   missing = gold outline) and a date picker for older days; all open the same form as the calendar day. */
+function pastDayStrip(kind){
+  const has=l=>kind==="weight"?!!(l&&l.weight_kg!=null):macrosLogged(l);
+  const today=todayISO(), el=document.createElement("div"); el.className="pd-strip";
+  let chips="";
+  for(let i=0;i<7;i++){ const iso=addDaysISO(today,-i), ok=has(logsByDate[iso]), dt=new Date(iso+"T12:00:00");
+    chips+=`<button type="button" class="pd-chip${ok?" ok":""}" data-pd="${iso}" aria-label="${escapeHtml(fmtDay(iso))}${ok?", logged":", not logged"}"><span>${i===0?"Today":dt.toLocaleDateString("en-GB",{weekday:"short"})}</span><b>${ok?"✓":dt.getDate()}</b></button>`; }
+  el.innerHTML=`<div class="pd-h">Log ${kind==="weight"?"weight":"macros"} for a day</div><div class="pd-row">${chips}</div>
+    <label class="pd-older">Older day <input type="date" max="${today}" aria-label="Pick an older day"></label>`;
+  el.querySelectorAll("[data-pd]").forEach(b=>b.addEventListener("click",()=>openMacroLog(b.dataset.pd)));
+  el.querySelector("input").addEventListener("change",e=>{ const v=e.target.value; if(v&&v<=today) openMacroLog(v); });
+  return el;
+}
 function monthViewEl(){
   const isDone=a=>a.status==="submitted"||a.status==="reviewed";
   if(engCalYear==null){ const t=new Date(); engCalYear=t.getFullYear(); engCalMonth=t.getMonth(); }
@@ -8828,13 +8857,13 @@ function monthViewEl(){
   for(const mon of weeks){
     for(let i=0;i<7;i++){
       const iso=addDaysISO(mon,i), d=Number(iso.slice(8)), out=Number(iso.slice(5,7))-1!==engCalMonth;
-      const did=(engAssignedByDate[iso]||[]).some(isDone), call=!!coachingDaysByDate[iso], paused=isPausedOn(iso);
-      html+=`<button type="button" class="mv-day${out?" out":""}${iso===today?" today":""}${paused?" paused":""}" data-mv-day="${iso}" aria-label="${escapeHtml(fmtDay(iso))}${did?", workout done":""}${call?", coaching call":""}"><span>${d}</span><i>${did?'<b class="mv-dot"></b>':""}${call?'<b class="mv-dot call"></b>':""}</i></button>`;
+      const dl=(engAssignedByDate[iso]||[]).filter(isDone), did=dl.length>0, waiting=dl.some(a=>a.status==="submitted"), call=!!coachingDaysByDate[iso], paused=isPausedOn(iso);   /* IE-3: hollow dot while any is awaiting review */
+      html+=`<button type="button" class="mv-day${out?" out":""}${iso===today?" today":""}${paused?" paused":""}" data-mv-day="${iso}" aria-label="${escapeHtml(fmtDay(iso))}${did?", workout done":""}${call?", coaching call":""}"><span>${d}</span><i>${did?`<b class="mv-dot${waiting?" waiting":""}"></b>`:""}${call?'<b class="mv-dot call"></b>':""}</i></button>`;
     }
     const rs=weekRows[mon]||[], dn=rs.filter(isDone).length;
     html+=`<button type="button" class="mv-week${mon===mvSelWeek?" sel":""}" data-mv-week="${mon}" aria-label="Week of ${escapeHtml(fmtDay(mon))}: ${dn} of ${rs.length} done">${rs.length?wvRing(dn,rs.length,40):'<span class="mv-ring0"></span>'}<em>${rs.length?`${dn}/${rs.length}`:"-"}</em></button>`;
   }
-  html+=`</div><div class="mv-panel"></div><div class="mv-legend"><span><b class="mv-dot"></b> Workout done</span><span><b class="mv-dot call"></b> Coaching call</span><span><i class="mv-today"></i> Today</span></div><div class="mv-note">Your coach sets how many workouts a week - do them on any day. Tap a day to log that day's weight and macros.</div>`;
+  html+=`</div><div class="mv-panel"></div><div class="mv-legend"><span><b class="mv-dot"></b> Reviewed</span><span><b class="mv-dot waiting"></b> Awaiting review</span><span><b class="mv-dot call"></b> Coaching call</span><span><i class="mv-today"></i> Today</span></div><div class="mv-note">Your coach sets how many workouts a week - do them on any day. Tap a day to log that day's weight and macros.</div>`;
   wrap.innerHTML=html;
   const panel=wrap.querySelector(".mv-panel");
   const paintPanel=()=>{
@@ -8844,10 +8873,10 @@ function monthViewEl(){
     let firstOpen=true, rows="";
     rs.forEach((a,i)=>{ const d=isDone(a);
       let right;
-      if(d) right=`<span class="mv-done">Done ›</span>`;
+      if(d) right=a.status==="reviewed"?`<span class="mv-done">Reviewed ›</span>`:`<span class="mv-wait">Awaiting review ›</span>`;
       else if(past) right=`<span class="mv-miss">Not done</span>`;
       else { right=`<button type="button" class="mv-start${firstOpen?" primary":""}" data-mv-start="${i}">Start</button>`; firstOpen=false; }
-      rows+=`<div class="wv-row${d?" done":""}" data-mv-i="${i}"><span class="wv-tick">${d?"✓":""}</span><span class="wv-txt"><b>${escapeHtml(wvName(a))}</b><span>${d?(a.due_date?escapeHtml(fmtDay(a.due_date)):"Done"):(past?"Not done that week":"Any day this week")}</span></span>${right}</div>`; });
+      rows+=`<div class="wv-row${d?" done":""}${d&&a.status!=="reviewed"?" waiting":""}" data-mv-i="${i}"><span class="wv-tick">${d?"✓":""}</span><span class="wv-txt"><b>${escapeHtml(wvName(a))}</b><span>${d?(a.due_date?escapeHtml(fmtDay(a.due_date)):"Done"):(past?"Not done that week":"Any day this week")}</span></span>${right}</div>`; });
     panel.innerHTML=`<div class="mv-ph"><div><div class="wv-range">${escapeHtml(range)}</div><div class="wv-sub">${rs.length?`${rs.length} workout${rs.length===1?"":"s"} this week`:"Nothing assigned this week"}</div></div><div class="mv-pr">${rs.length?wvRing(dn,rs.length,44):""}<span>${rs.length?`${dn}/${rs.length}`:""}</span></div></div>${rows}`;
     panel.querySelectorAll("[data-mv-start]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); startSession(rs[+b.dataset.mvStart]); }));
     panel.querySelectorAll(".wv-row.done").forEach(r=>r.addEventListener("click",()=>{ const a=rs[+r.dataset.mvI]; if(a) engDayAction(a,false); }));
@@ -8909,6 +8938,7 @@ function trainingControlPanel(body){
     const vacWrap=secs.vacation&&secs.vacation[0], vac=vacWrap?vacWrap.querySelector("button"):null;
     if(vac){ const b=document.createElement("button"); b.type="button"; b.className="tr-tile tr-vac"; b.innerHTML=`<span class="tr-ic">${TR_ICONS.vacation}</span><span>${escapeHtml(vac.textContent||"Vacation")}</span>`;   /* ID: a slim full-width row */
       b.addEventListener("click",()=>vac.click()); tiles.appendChild(b); vacWrap.style.display="none"; }
+    ["macros","weight"].forEach(k=>{ if(boxes[k]&&traineeMerged){ try{ boxes[k].insertBefore(pastDayStrip(k),boxes[k].firstChild); }catch(e){ console.warn("past day strip (IE-3)",e); } } });   /* IE-3 */
     start.after(tiles); tiles.after(host);
     if(dash) dash.style.display="none";                       // its cards now live in the sections
     paint(false);
