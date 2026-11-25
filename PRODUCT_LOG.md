@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IP (2026-11-25, owner): Profile redesign - space preservation and UX, on theme with the Social artwork; 3 OpenArt concepts - LOGGED.**
 **IO (2026-11-25, owner): Social tab (In Touch) redesign - knock is the main attraction; congratulating friends' small wins; space for Formtrace events; concept B BUILT with every pressed state; events SQL applied.**
 **IN (2026-11-24, owner): trainee Notifications tab redesign - slick, light, no clutter; every notification type inventoried; 3 OpenArt concepts - LOGGED.**
 **IM (2026-11-24, owner): trainee Goal tab (accepted goal) redesign - space management, weeks done / pending visualised, old pending / completed / rejected kept but minimal; concept B (progress ring) BUILT.**
@@ -1992,6 +1993,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IP. Profile redesign - LOGGED 2026-11-25 (personal account)
+
+**Owner 22:12 (six screenshots of today's Profile - one long scroll):** reimagine the Profile area; **focus on space preservation and user experience; on theme with the Social artwork.**
+**Inventory (today, top to bottom):** avatar, name, Trainee / Admin badges, rating, Shop, Sign out; Level + exp bar; Display name / City / Bio form + Save; Your handles (WhatsApp, Instagram, Snapchat); Consistency badge; Achievements 16 of 27; Notifications (push + morning summary, offers, coach reviews, video calls, friend requests, congratulations, shared handles); Invite a friend (QR, Recruiter / Ambassador / Partner tiers, Share, Copy link, stats); Points 367 + recent rewards; Credit and refunds (balance + ledger, Show all); Completed goals list.
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits, style = the chosen IO Social design): A hero + 2x3 tiles (points, credit, achievements, goals, badge, invite) + settings rows, each opening a sheet; B identity card (level ring, Edit profile, Shop) + tabs Overview / Wallet / Invite / Settings; C line-art Cork banner + points / credit cards + invite card + accordion rows.
+**Next:** owner picks a concept.
 
 ---
 ## IO. Social tab (In Touch) redesign - LOGGED 2026-11-25 (personal account)
