@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IO (2026-11-25, owner): Social tab (In Touch) redesign - knock is the main attraction; congratulating friends' small wins; space for Formtrace events; 3 OpenArt concepts - LOGGED.**
 **IN (2026-11-24, owner): trainee Notifications tab redesign - slick, light, no clutter; every notification type inventoried; 3 OpenArt concepts - LOGGED.**
 **IM (2026-11-24, owner): trainee Goal tab (accepted goal) redesign - space management, weeks done / pending visualised, old pending / completed / rejected kept but minimal; concept B (progress ring) BUILT.**
 **IL (2026-11-24, owner): Take a vacation sheet redesign - happy, on brand, reassures that streak, payments and training are paused, with a wish from Formtrace; concept A BUILT.**
@@ -1991,6 +1992,15 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IO. Social tab (In Touch) redesign - LOGGED 2026-11-25 (personal account)
+
+**Owner 2026-11-25 19:25 (screenshot: In Touch - Add friends button, Friends list with Kimia, Connect, win count):** brief OpenArt on the functions and redesign the Social tab. **The knock is the main attraction.** People should spend time here **congratulating friends for small achievements and getting motivated by them**. Reserve space for **Formtrace events** (e.g. "Formtrace meetup at Marina Walk, Sunday 10:00 - knock to make friends and drink coffee, share feedback with the dev team, get limited edition Formtrace swag").
+**Functions briefed (verified in code, CM and later):** friends only in person by knocking phones (motion jolt + location pairing, then both confirm faces; 60-second code fallback); friends' wins (PBs, achievements - friends-only, finished goals, weekly progress) with Congratulate / Congratulate all; congratulations received; sharing Instagram / Snapchat handles; disconnect.
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits, style = the chosen IN variation 3): A knock hero + event card + friends' wins feed with Congratulate pills; B friends ring (stories-style avatars, "+ Knock" first) + one-friend-at-a-time cheer card ("Congratulate all") + event banner; C squad board (friends ranked by wins this week, clap buttons, "your squad trained 23 times") + ticket-style event card.
+**Notes for the build:** events need a small table (title, place, time, perks, RSVP) - new SQL; IN (notifications) is still waiting for the icon sheet.
+**Next:** owner picks a concept.
 
 ---
 ## IN. Trainee Notifications tab redesign - LOGGED 2026-11-24 (personal account)
