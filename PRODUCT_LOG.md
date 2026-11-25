@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IQ (2026-11-25, owner): Settings redesign; 3 OpenArt concepts - LOGGED. Finding: country and language names show in the device language (Greek) in an English app.**
 **IP (2026-11-25, owner): Profile redesign - space preservation and UX, on theme with the Social artwork; concept C chosen; Cork / Dublin photos requested - LOGGED.**
 **IO (2026-11-25, owner): Social tab (In Touch) redesign - knock is the main attraction; congratulating friends' small wins; space for Formtrace events; concept B BUILT with every pressed state; events SQL applied.**
 **IN (2026-11-24, owner): trainee Notifications tab redesign - slick, light, no clutter; every notification type inventoried; 3 OpenArt concepts - LOGGED.**
@@ -1993,6 +1994,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IQ. Settings redesign - LOGGED 2026-11-25 (personal account)
+
+**Owner 23:58:** Dublin photo postponed (IP builds with Cork; other cities get the line-art skyline). **Reimagine the Settings section** (two screenshots: Social profile - community feed toggle, name display Full / Initial / First only, signed-in email, profile photo Change / Remove, Country, Languages you speak; Appearance - theme Light / Dark / Auto, colourblind-safe colours, sounds, workout sounds; Install Formtrace help; Danger zone - delete account, see what's stored; coaches also have trainees' streaks and certifications).
+**Finding (from the screenshot):** Country reads "Ιρλανδία" and the language chips "Αγγλικά", "Ελληνικά" - `Intl.DisplayNames` uses `navigator.language` (the phone is Greek) while the app is in English. Fix with the Settings build: use "en" for display names.
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits, Social style): A grouped list (Profile / Appearance / App / Account rows with icon, value, chevron or toggle); B category tiles (Profile, Privacy, Appearance, App) + "how others see you" preview + quick toggles; C profile card as others see you (camera badge, name chooser, feed toggle) + "Look and sound" with phone-thumbnail theme picker + install banner + quiet account links.
+**Next:** owner picks a concept.
 
 ---
 ## IP. Profile redesign - LOGGED 2026-11-25 (personal account)
