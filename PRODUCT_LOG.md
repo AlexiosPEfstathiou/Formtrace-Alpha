@@ -2007,6 +2007,7 @@ duplicates (two wiring copies) and reverted before anything was written.
 Both takes finished (~240 credits; balance 8,563 on 2026-11-26).
 **Owner 09:54 - second idea ("night park"):** a young man doing push-ups in a park at night, filmed from the side; mid-animation his body gets the Formtrace lines; the camera tilts up to the sky where constellations show; our F logo forms by connecting the stars, then fades into the original logo frame. Palette dark blue + dark green, gold lines as the contrast. Step 1: start frame (night park, side view, blue / green, starry upper half; Nano Banana Pro ~40) - generating; step 2: Veo 3.1 image-to-video, 8 s, end frame = the logo frame.
 **Owner 09:57: "Proceed"** - submitted Veo 3.1 (lite, 1080p, 9:16, 8 s, no audio, 1 take, ~120 credits): push-ups -> gold lines and joint dots on his body -> tilt up to the stars -> stars connect into the F -> settles into the logo frame (end frame).
+**Owner 10:00 feedback:** (1) push-ups need full range of motion - way up to way down; (2) the constellation must be real stars in a real sky, not animated yellow stars. Re-submitted (Veo 3.1, 8 s, ~120 credits): arms locked out to chest almost on the grass; photographic starfield (natural white / pale-blue stars, faint Milky Way), gold lines drawn between existing stars as a chart overlay, stars stay white.
 
 ---
 ## IR. Landing page redesign - LOGGED 2026-11-26 (personal account)
