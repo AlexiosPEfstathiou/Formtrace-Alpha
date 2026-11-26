@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IS (2026-11-26, owner): app launch animation - 5 s, logo, Formtrace lines, social-fitness feel; start frame generated, video next - LOGGED.**
 **IR (2026-11-26, owner): formtrace.ie landing page redesign - engaging, theme colours, the Try Formtrace button draws attention, space for 1-3 videos of the camera in use; A (mobile) + C (desktop) chosen; logo / traced lines to be ours - LOGGED.**
 **IQ (2026-11-25, owner): Settings redesign = concept C BUILT. Finding: country and language names show in the device language (Greek) in an English app.**
 **IP (2026-11-25, owner): Profile redesign - space preservation and UX, on theme with the Social artwork; concept C chosen; Cork / Dublin photos requested - LOGGED.**
@@ -1995,6 +1996,14 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IS. App launch animation - LOGGED 2026-11-26 (personal account)
+
+**Owner 00:33:** the loading animation when the app is opened on a phone, from tapping the app icon to the homepage: **5 seconds, our logo, our Formtrace lines, a "social fitness" feeling.**
+**Plan:** step 1 a start frame from our real logo (OpenArt resource of the original traced-line F, recoloured to #E8B923, centred on #0B0E11, 9:16; Nano Banana Pro ~40 credits) - generated. Step 2, after the owner approves the frame, image-to-video 5 s 9:16 (Veo 3.1 ~120 credits, or Kling 3 ~175): the F draws itself as a gold traced line, the line flows into motion trails of several people training side by side (squat, run, high-five), trails converge back into the F, wordmark fades in.
+**Notes for the build:** a PWA cannot replace the phone's own splash (Android shows the manifest icon on #0B0E11 for a moment; iOS a static image); our animation plays as the first in-app screen. 5 s on every launch would delay the homepage - suggested: full 5 s on first launch / after an update, a 1-1.5 s cut on normal launches, always skippable with a tap, and still for reduced motion. Video kept small (muted MP4 / WebM, ~1 MB).
+**Next:** owner approves the start frame.
 
 ---
 ## IR. Landing page redesign - LOGGED 2026-11-26 (personal account)
