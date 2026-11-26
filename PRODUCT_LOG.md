@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IW (2026-11-26, owner): Post-recording edit screen redesign (trim, mute, replay, retake, use) - OpenArt concepts requested - LOGGED.**
 **IV (2026-11-26, owner): Camera (recorder) UI = concept B (right-edge gold rail, gold record button, title pill) - BUILT.**
 **IU (2026-11-26, owner): Workout session screen = concept B1 'trace line' with muscle-group icons; "Can't train today" removed - BUILT.**
 **IT (2026-11-26, owner): Start a session sheet redesign = concept B (carousel + numbered week list) - BUILT.**
@@ -2001,6 +2002,11 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## IW. Post-recording edit screen redesign - LOGGED 2026-11-26 (personal account)
+
+**Owner 12:04 (screenshot of the review after recording: two grey range sliders Start/End, Use this take, Retake, Replay):** remake the post-recording edit UI - very smooth and intuitively easy: cropping the video, muting the video, etc.
+Today (`#rreview`, BC): trim = start/end offsets on two range inputs (not a recut); no mute (sets are recorded with audio). Requested one Nano Banana Pro sheet (~36 credits): filmstrip trimmer with gold handles, mute toggle, play / scrub, Retake, gold Use this take, optional Lines toggle. A: glass toolbar under the preview; B: full-bleed with a right rail like the camera; C: bottom sheet with large rows and switches. **Open question for the build:** "cropping" read as trimming the start / end; framing crop (cutting the picture) not included unless the owner wants it. Mute is new - needs the audio dropped or flagged before upload. Waiting for the owner's pick.
+
 ## IV. Camera (recorder) UI redesign - BUILT 2026-11-26 (personal account)
 
 **Owner 11:54 (screenshot of the recorder):** ask OpenArt to redesign the camera UI and make it more on theme (today: orange record button, lime Mirror chip, chips 3s timer / Portrait / Mirror / Touchless, Flip and Lines beside Record).
