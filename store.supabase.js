@@ -215,11 +215,15 @@
     const list = (paths || []).filter(Boolean);
     if (!list.length) return {};
     const { data, error } = await sb.from("video_orientation")
-      .select("path,rotation,trim_in,trim_out").in("path", list);
+      .select("path,rotation,trim_in,trim_out,muted").in("path", list);
     if (error) throw error;
     const out = {};
-    for (const r of (data || [])) out[r.path] = { rotation: r.rotation || 0, trim_in: r.trim_in, trim_out: r.trim_out };
+    for (const r of (data || [])) out[r.path] = { rotation: r.rotation || 0, trim_in: r.trim_in, trim_out: r.trim_out, muted: !!r.muted };
     return out;
+  },
+  async setVideoMuted(path, muted) {   // IW: only the recorder of the clip can set it (security definer)
+    const { error } = await sb.rpc("set_my_video_muted", { p_path: path, p_muted: !!muted });
+    if (error) throw error;
   },
   async setVideoTrim(path, trim_in, trim_out) {
     const u = await auth.currentUser();

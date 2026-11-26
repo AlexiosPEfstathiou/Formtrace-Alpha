@@ -1997,6 +1997,38 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   #r-tools .captool.rail.on{background:#E8B923;color:#0B0E11;box-shadow:0 0 14px rgba(232,185,35,.45)}
   body.rec-ui-90 #r-tools svg{transform:rotate(90deg)}
   body.rec-ui-270 #r-tools svg{transform:rotate(-90deg)}
+  /* IW: review after recording = concept B */
+  #rreview{background:linear-gradient(#0B0E1100,#0B0E11D9 30%,#0B0E11);border-top:0;padding:34px 16px calc(env(safe-area-inset-bottom) + 14px);gap:12px}
+  #rec .rv-rail{position:absolute;right:12px;bottom:calc(100% + 10px);display:flex;flex-direction:column;gap:14px;align-items:center}
+  .rv-rb{background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#fff;font:inherit}
+  .rv-ic{width:52px;height:52px;border-radius:50%;background:#E8B923;color:#0B0E11;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(232,185,35,.4)}
+  .rv-ic svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .rv-lab{font-size:13px;font-weight:700;text-shadow:0 1px 4px #000}
+  #r-mute .rv-off{display:none} #r-mute.on .rv-off{display:inline} #r-mute.on .rv-on{display:none}
+  #r-mute.on .rv-ic{background:#0B0E11;color:#E8B923;border:2px solid #E8B923;box-sizing:border-box}
+  .rv-play{position:absolute;left:50%;bottom:calc(100% + 40vh);transform:translateX(-50%);width:68px;height:68px;border-radius:50%;background:rgba(11,14,17,.55);display:none;align-items:center;justify-content:center;pointer-events:none}
+  .rv-play svg{width:30px;height:30px;fill:#E8B923;margin-left:4px}
+  #rreview.paused .rv-play{display:flex}
+  #r-trim{width:100%}
+  .rv-times{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:rgba(255,255,255,.75);margin:0 2px 7px}
+  .rv-times b{color:#fff;font-weight:700} #r-trim-len{font-size:12px;color:#E8B923;font-weight:700}
+  .rv-strip{position:relative;height:56px;border-radius:12px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+  .rv-thumbs{position:absolute;inset:0 0;border-radius:12px;overflow:hidden;display:flex;background:#1A1F25}
+  .rv-thumbs canvas{flex:1 1 0;min-width:0;height:100%;object-fit:cover;display:block}
+  .rv-dim{position:absolute;top:0;bottom:0;background:rgba(11,14,17,.68);pointer-events:none}
+  .rv-dim-l{left:0;border-radius:12px 0 0 12px}.rv-dim-r{right:0;border-radius:0 12px 12px 0}
+  .rv-frame{position:absolute;top:-3px;bottom:-3px;border:3px solid #E8B923;border-left-width:16px;border-right-width:16px;border-radius:12px;box-sizing:border-box;pointer-events:none;box-shadow:0 0 14px rgba(232,185,35,.35)}
+  .rv-h{position:absolute;top:-3px;bottom:-3px;width:34px;pointer-events:auto;cursor:ew-resize;display:flex;align-items:center;justify-content:center;touch-action:none}
+  .rv-hl{left:-25px}.rv-hr{right:-25px}
+  .rv-h i{width:3px;height:18px;border-radius:2px;background:#0B0E11}
+  .rv-head{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1.5px;border-radius:2px;background:#fff;box-shadow:0 0 6px #000;pointer-events:none}
+  .rv-bottom{display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px}
+  .rv-retake,.rv-spacer{flex:1 1 0;text-align:left}
+  .rv-retake{background:none;border:0;font:inherit;font-size:17px;font-weight:700;color:#E8B923;padding:0 0 26px;cursor:pointer}
+  .rv-use{background:none;border:0;padding:0;font:inherit;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;color:#fff}
+  .rv-check{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 40% 35%,#F5D46A,#E8B923 60%,#D49B17);box-shadow:0 0 0 6px rgba(232,185,35,.14),0 0 26px rgba(232,185,35,.45)}
+  .rv-check svg{width:36px;height:36px;fill:none;stroke:#0B0E11;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+  .rv-uselab{font-size:14px;font-weight:700}
   .captools{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 118px);z-index:4;display:flex;gap:8px;justify-content:center;padding:0 18px;}
   .captool{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px);}
   .captool:active{transform:scale(.96);}
@@ -2754,15 +2786,29 @@ T(fade,9000);
       <button class="captool rail" id="r-mirror" aria-label="Mirror" title="Mirror"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 2.2"/><path d="M9 7L4 12l5 5zM15 7l5 5-5 5z"/></svg></button>
       <button class="captool rail" id="r-hand" aria-label="Touchless" title="Touchless"><svg viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.6 7-6.3 7-2.4 0-3.7-1.2-5-3.2L3.6 14a1.5 1.5 0 0 1 2.4-1.7L8 14.5"/></svg></button>
     </div>
+    <!-- IW (owner, 2026-11-26): the review after recording = concept B. Tap the video to play / pause; a filmstrip with
+         gold start / end handles trims (offsets, not a recut - BC); drag on the strip to scrub; Mute and Replay in a right
+         rail; Retake bottom left; a round gold check "Use this take" bottom centre. -->
     <div id="rreview">
-          <!-- Item BC: trim the start and end before using the clip. Offsets, not a recut. -->
-          <div id="r-trim" style="width:100%;padding:0 4px 6px">
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px"><span>Start <b id="r-trim-in-l">0.0s</b></span><span id="r-trim-len"></span><span>End <b id="r-trim-out-l">–</b></span></div>
-            <input id="r-trim-in" type="range" min="0" max="100" step="0.1" value="0" style="width:100%">
-            <input id="r-trim-out" type="range" min="0" max="100" step="0.1" value="100" style="width:100%">
-          </div>
-          <div class="row"><button class="btn primary" id="r-use">✓ Use this trace</button></div>
-      <div class="row"><button class="btn sm" id="r-retake" style="flex:1">↺ Retake</button><button class="btn sm" id="r-preview" style="flex:1">▶ Replay</button></div>
+      <div class="rv-rail">
+        <button type="button" class="rv-rb" id="r-mute" aria-pressed="false"><span class="rv-ic"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="rv-on" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="rv-off" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></span><span class="rv-lab">Mute</span></button>
+        <button type="button" class="rv-rb" id="r-preview"><span class="rv-ic"><svg viewBox="0 0 24 24"><path d="M5.5 12a6.5 6.5 0 1 0 2-4.7"/><path d="M5 4.5v3.6h3.6"/></svg></span><span class="rv-lab">Replay</span></button>
+      </div>
+      <div class="rv-play" id="rv-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></div>
+      <div id="r-trim">
+        <div class="rv-times"><span>Start <b id="r-trim-in-l">0.0 s</b></span><span id="r-trim-len"></span><span>End <b id="r-trim-out-l">-</b></span></div>
+        <div class="rv-strip" id="rv-strip">
+          <div class="rv-thumbs" id="rv-thumbs"></div>
+          <div class="rv-dim rv-dim-l" id="rv-dim-l"></div><div class="rv-dim rv-dim-r" id="rv-dim-r"></div>
+          <div class="rv-frame" id="rv-frame"><span class="rv-h rv-hl" id="rv-hl" aria-label="Start"><i></i></span><span class="rv-h rv-hr" id="rv-hr" aria-label="End"><i></i></span></div>
+          <div class="rv-head" id="rv-head"></div>
+        </div>
+      </div>
+      <div class="rv-bottom">
+        <button type="button" class="rv-retake" id="r-retake">Retake</button>
+        <button type="button" class="rv-use" id="r-use"><span class="rv-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="rv-uselab" id="r-use-lab">Use this take</span></button>
+        <span class="rv-spacer"></span>
+      </div>
     </div>
   </div>
 
@@ -3762,7 +3808,7 @@ async function hydrateVideos(root){
     const paths=[...scope.querySelectorAll("[data-video]:not([data-hydrated])")]
       .map(n=>n.getAttribute("data-video")).filter(Boolean);
     if(paths.length&&store.videoRotations) rots=await store.videoRotations(paths);
-    try{ if(paths.length&&store.videoMeta){ const meta=await store.videoMeta(paths); for(const p in meta){ if(meta[p].trim_in!=null||meta[p].trim_out!=null) trims[p]=meta[p]; } } }catch(e){ console.error("video trims",e); }   // Item BC
+    try{ if(paths.length&&store.videoMeta){ const meta=await store.videoMeta(paths); for(const p in meta){ if(meta[p].trim_in!=null||meta[p].trim_out!=null||meta[p].muted) trims[p]=meta[p]; } } }catch(e){ console.error("video trims",e); }   // Item BC
   }catch(e){ console.error("video rotations (run migrations_video_rotation.sql)",e); }
   /* Latency: signed-URL requests used to run one at a time, awaited in series
      per element - a screen with N videos paid N sequential round trips before
@@ -13934,6 +13980,7 @@ async function saveCoachGrades(){
    at trim_out and rewind to trim_in. Offsets only; the file is untouched. */
 function wireTrim(vid,t){
   if(!vid||!t) return;
+  if(t.muted){ vid.muted=true; vid.addEventListener("volumechange",()=>{ if(!vid.muted) vid.muted=true; }); }   /* IW: the trainee muted this clip */
   const tin=Number(t.trim_in)||0, tout=Number(t.trim_out)||0;
   const seekIn=()=>{ try{ if(tin>0 && vid.currentTime<tin-0.05) vid.currentTime=tin; }catch(e){} };
   if(vid.readyState>=1) seekIn(); else vid.addEventListener("loadedmetadata",seekIn,{once:true});
@@ -13961,7 +14008,7 @@ function applyRotationToBox(box,vid,rot){
 }
 function wireRotation(box,vid,path){
   if(!box||!vid||!path)return;
-  if(store.videoMeta) store.videoMeta([path]).then(m=>{ const t=m&&m[path]; if(t&&(t.trim_in!=null||t.trim_out!=null)) wireTrim(vid,t); }).catch(()=>{});   // Item BC
+  if(store.videoMeta) store.videoMeta([path]).then(m=>{ const t=m&&m[path]; if(t&&(t.trim_in!=null||t.trim_out!=null||t.muted)) wireTrim(vid,t); }).catch(()=>{});   // Item BC
   store.videoRotations([path]).then(rots=>{
     const rot=(rots&&rots[path])||0;
     if(!rot)return;   // nothing to correct — don't touch layout for an unrotated clip
@@ -16316,7 +16363,7 @@ async function openRecorder(opts){ lastRecorderOpts=opts; try{ if(typeof DeviceM
     rn.classList.toggle("on",!!note);
   }
   if(recOpts.mode==="preview"){ $("#r-note")?.classList.remove("on"); return; }
-  $("#r-use").textContent=recOpts.useLabel||"✓ Use this trace";
+  $("#r-use-lab").textContent=(recOpts.useLabel||"Use this take").replace(/^✓\s*/,"");   /* IW */
   $("#r-title").innerHTML=`${escapeHtml(recOpts.title||"Reference")}<small>${escapeHtml(recOpts.subtitle||"")}</small>`;
   try{
     try{
@@ -16339,7 +16386,7 @@ async function openRecorder(opts){ lastRecorderOpts=opts; try{ if(typeof DeviceM
     $("#r-statmsg").innerHTML=(err&&(err.name==="NotAllowedError"||err.name==="PermissionDeniedError"))?permHelpHtml("camera","retryRecorderCamera"):"Camera needs HTTPS (or localhost). Open this over https and retry.";}
 window.retryRecorderCamera=function(){ try{ if(lastRecorderOpts) openRecorder(lastRecorderOpts); }catch(e){} };   // Item CU
 }
-function closeRecorder(){document.body.classList.remove("rec-open");cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");hidePoseWarn();
+function closeRecorder(){rvEnd();document.body.classList.remove("rec-open");cancelCountdown();cancelAnimationFrame(rRAF);if(rRecording)stopRec(true);if(rStream){rStream.getTracks().forEach(t=>t.stop());rStream=null;}rvideo.srcObject=null;rplay.pause();$("#rec").classList.remove("on");hidePoseWarn();
   /* Undo the landscape turn on the way out, or the rotated box and its
      explicit width/height leak onto whatever opens the recorder next. */
   const rc=$("#rec");
@@ -16499,22 +16546,62 @@ function startRec(){
    at a known fps, so this is a slice, and every consumer - rep counting, the
    form comparison - then sees only the kept part), and the offsets travel with
    the capture as cap.trim so the uploader can persist them for playback. */
-let trimState=null;
+let trimState=null, rvMuted=false, rvOn=false;
+/* IW: concept B review. Same trimState / applyTrimToCapture contract as BC; the range inputs became a filmstrip with
+   two gold handles. MediaRecorder WebM often reports duration Infinity until the end is read - forced here so the
+   trimmer can show. */
 function setupTrimHandles(){
-  const box=$("#r-trim"), inR=$("#r-trim-in"), outR=$("#r-trim-out"); if(!box||!inR||!outR) return;
-  trimState=null; box.style.display="none";
+  const box=$("#r-trim"); if(!box) return;
+  trimState=null; rvOn=true; rvMuted=false; rplay.muted=false; rplay.controls=false; rplay.loop=false;
+  const mb=$("#r-mute"); if(mb){ mb.classList.remove("on"); mb.setAttribute("aria-pressed","false"); mb.querySelector(".rv-lab").textContent="Mute"; }
+  box.style.visibility="hidden"; $("#rv-thumbs").innerHTML="";
+  const rv=$("#rreview"); rv.classList.add("paused");
+  const strip=$("#rv-strip"), head=$("#rv-head");
+  const pct=t=>trimState?Math.max(0,Math.min(100,t/trimState.dur*100)):0;
+  const paint=()=>{ if(!trimState) return;
+    $("#rv-frame").style.left=pct(trimState.in)+"%"; $("#rv-frame").style.right=(100-pct(trimState.out))+"%";
+    $("#rv-dim-l").style.width=pct(trimState.in)+"%"; $("#rv-dim-r").style.width=(100-pct(trimState.out))+"%";
+    $("#r-trim-in-l").textContent=trimState.in.toFixed(1)+" s"; $("#r-trim-out-l").textContent=trimState.out.toFixed(1)+" s";
+    $("#r-trim-len").textContent=`Clip ${(trimState.out-trimState.in).toFixed(1)} s`; };
+  const paintHead=()=>{ if(trimState) head.style.left=pct(rplay.currentTime||0)+"%"; };
+  const tAt=x=>{ const r=strip.getBoundingClientRect(); return Math.max(0,Math.min(1,(x-r.left)/r.width))*trimState.dur; };
+  const drag=(el,fn)=>{ el.onpointerdown=e=>{ e.preventDefault(); e.stopPropagation(); rplay.pause(); try{ el.setPointerCapture(e.pointerId); }catch(_){}
+      const mv=ev=>fn(tAt(ev.clientX)); const up=()=>{ el.removeEventListener("pointermove",mv); el.removeEventListener("pointerup",up); el.removeEventListener("pointercancel",up); };
+      el.addEventListener("pointermove",mv); el.addEventListener("pointerup",up); el.addEventListener("pointercancel",up); }; };
   const init=()=>{
-    const dur=rplay.duration; if(!isFinite(dur)||dur<=0.5){ box.style.display="none"; return; }
-    inR.max=outR.max=dur.toFixed(1); inR.value=0; outR.value=dur.toFixed(1);
-    trimState={in:0,out:dur,dur};
-    box.style.display="";
-    const paint=()=>{ $("#r-trim-in-l").textContent=trimState.in.toFixed(1)+"s"; $("#r-trim-out-l").textContent=trimState.out.toFixed(1)+"s"; $("#r-trim-len").textContent=(trimState.out-trimState.in)<trimState.dur-0.05?`keeping ${(trimState.out-trimState.in).toFixed(1)}s of ${trimState.dur.toFixed(1)}s`:"full clip"; };
-    inR.oninput=()=>{ let v=Number(inR.value); if(v>trimState.out-0.5){ v=Math.max(0,trimState.out-0.5); inR.value=v; } trimState.in=v; rplay.pause(); rplay.currentTime=v; paint(); };
-    outR.oninput=()=>{ let v=Number(outR.value); if(v<trimState.in+0.5){ v=Math.min(trimState.dur,trimState.in+0.5); outR.value=v; } trimState.out=v; rplay.pause(); rplay.currentTime=Math.max(0,v-0.05); paint(); };
-    paint();
+    const dur=rplay.duration; if(!isFinite(dur)||dur<=0.5){ return; }
+    trimState={in:0,out:dur,dur}; box.style.visibility="visible"; paint(); paintHead();
+    drag($("#rv-hl"),t=>{ trimState.in=Math.max(0,Math.min(t,trimState.out-0.5)); rplay.currentTime=trimState.in; paint(); paintHead(); });
+    drag($("#rv-hr"),t=>{ trimState.out=Math.min(trimState.dur,Math.max(t,trimState.in+0.5)); rplay.currentTime=Math.max(trimState.in,trimState.out-0.05); paint(); paintHead(); });
+    drag(strip,t=>{ rplay.currentTime=Math.max(trimState.in,Math.min(trimState.out,t)); paintHead(); });
+    rvThumbs(dur);
   };
-  if(isFinite(rplay.duration)&&rplay.duration>0) init(); else rplay.addEventListener("loadedmetadata",init,{once:true});
+  const tryInit=()=>{ if(isFinite(rplay.duration)&&rplay.duration>0){ try{ rplay.currentTime=0; }catch(_){} init(); return true; } return false; };
+  if(!tryInit()){
+    const onMeta=()=>{ if(tryInit()) return;
+      const fix=()=>{ if(isFinite(rplay.duration)){ rplay.removeEventListener("durationchange",fix); tryInit(); } };
+      rplay.addEventListener("durationchange",fix); try{ rplay.currentTime=1e7; }catch(_){} };
+    if(rplay.readyState>=1) onMeta(); else rplay.addEventListener("loadedmetadata",onMeta,{once:true});
+  }
+  rplay.ontimeupdate=()=>{ if(!rvOn||!trimState) return; if(rplay.currentTime>=trimState.out){ rplay.pause(); rplay.currentTime=trimState.in; } paintHead(); };
+  rplay.onplay=()=>{ if(rvOn){ rv.classList.remove("paused"); if(trimState&&(rplay.currentTime<trimState.in||rplay.currentTime>=trimState.out-0.05)) rplay.currentTime=trimState.in; } };
+  rplay.onpause=()=>{ if(rvOn) rv.classList.add("paused"); };
+  rplay.onclick=()=>{ if(!rvOn) return; if(rplay.paused) rplay.play().catch(()=>{}); else rplay.pause(); };
 }
+/* IW: eight frames for the filmstrip, drawn from a hidden copy of the clip */
+async function rvThumbs(dur){
+  const host=$("#rv-thumbs"); if(!host) return; const src=rplay.src; host.innerHTML="";
+  const v=document.createElement("video"); v.muted=true; v.playsInline=true; v.preload="auto"; v.src=src;
+  const N=8, cvs=[]; for(let k=0;k<N;k++){ const c=document.createElement("canvas"); c.width=90; c.height=120; host.appendChild(c); cvs.push(c); }
+  const seek=t=>new Promise(res=>{ let done=false; const fin=()=>{ if(done) return; done=true; v.removeEventListener("seeked",fin); res(); }; v.addEventListener("seeked",fin); setTimeout(fin,1500); try{ v.currentTime=t; }catch(_){ fin(); } });
+  try{ await new Promise((res,rej)=>{ if(v.readyState>=1) res(); else { v.addEventListener("loadeddata",res,{once:true}); v.addEventListener("error",rej,{once:true}); setTimeout(res,3000); } });
+    for(let k=0;k<N;k++){ if(rplay.src!==src) return; await seek(Math.min(dur-0.05,(k+0.5)*dur/N));
+      const c=cvs[k], ctx=c.getContext("2d"), vw=v.videoWidth||16, vh=v.videoHeight||9; const sc=Math.max(c.width/vw,c.height/vh);
+      ctx.drawImage(v,(c.width-vw*sc)/2,(c.height-vh*sc)/2,vw*sc,vh*sc); }
+  }catch(e){ console.warn("IW thumbs",e); }
+  finally{ try{ v.removeAttribute("src"); v.load(); }catch(_){} }
+}
+function rvEnd(){ rvOn=false; rplay.ontimeupdate=rplay.onplay=rplay.onpause=rplay.onclick=null; rplay.controls=true; rplay.muted=false; }
 function applyTrimToCapture(){
   if(!lastCapture||!trimState) return;
   const {in:tin,out:tout,dur}=trimState;
@@ -16526,6 +16613,7 @@ function applyTrimToCapture(){
 }
 /* Persist a capture's trim for its uploaded path, if it has one. Fire-and-forget. */
 function persistTrim(path,cap){
+  if(path&&cap&&cap.muted&&store.setVideoMuted) store.setVideoMuted(path,true).catch(e=>console.error("setVideoMuted (IW)",e));   /* IW */
   if(!path||!cap||!cap.trim||!store.setVideoTrim) return;
   store.setVideoTrim(path,cap.trim.in,cap.trim.out).catch(e=>console.error("setVideoTrim (run migrations_video_trim.sql)",e));
 }
@@ -16574,10 +16662,11 @@ $("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"enviro
 $("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").classList.toggle("on",rShow);if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);
   else if(Date.now()-poseLastHit>3000&&!poseRebuilding){ toast("Restarting the pose lines…",2200); resetPoseEngine(); }   /* HD: Lines on with no figure seen - rebuild the engine */
 });
-$("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
-$("#r-preview").addEventListener("click",()=>{rplay.currentTime=0;rplay.play();});
+$("#r-retake").addEventListener("click",()=>{rplay.pause();rvEnd();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
+$("#r-preview").addEventListener("click",()=>{rplay.currentTime=(trimState?trimState.in:0);rplay.play().catch(()=>{});});
+$("#r-mute").addEventListener("click",()=>{ rvMuted=!rvMuted; rplay.muted=rvMuted; const b=$("#r-mute"); b.classList.toggle("on",rvMuted); b.setAttribute("aria-pressed",String(rvMuted)); b.querySelector(".rv-lab").textContent=rvMuted?"Muted":"Mute"; toast(rvMuted?"Sound off - your coach will not hear this clip":"Sound on",1800); });   /* IW */
 $("#r-posewarn-retry")?.addEventListener("click",()=>{ $("#r-posewarn-retry").disabled=true; resetPoseEngine().finally(()=>{ $("#r-posewarn-retry").disabled=false; }); });   // Item AH
-$("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;applyTrimToCapture();closeRecorder();cb&&cb(lastCapture);});   // Item BC: trim first
+$("#r-use").addEventListener("click",()=>{const cb=recOpts.onComplete;applyTrimToCapture();if(lastCapture)lastCapture.muted=!!rvMuted;rvEnd();closeRecorder();cb&&cb(lastCapture);});   /* IW: mute travels with the capture */   // Item BC: trim first
 
 /* =========================================================================
    19. Boot — auth gate decides what shows first
