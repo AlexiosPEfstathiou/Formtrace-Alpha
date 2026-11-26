@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IV (2026-11-26, owner): Camera (recorder) UI redesign to theme - OpenArt concepts A/B/C requested - LOGGED.**
 **IU (2026-11-26, owner): Workout session screen = concept B1 'trace line' with muscle-group icons; "Can't train today" removed - BUILT.**
 **IT (2026-11-26, owner): Start a session sheet redesign = concept B (carousel + numbered week list) - BUILT.**
 **IS (2026-11-26, owner): app launch animation - night-park push-up clip -> fade to black -> gold F drawn (in code) - BUILT (installed app only; ?launch=1 to preview).**
@@ -2000,6 +2001,11 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## IV. Camera (recorder) UI redesign - LOGGED 2026-11-26 (personal account)
+
+**Owner 11:54 (screenshot of the recorder):** ask OpenArt to redesign the camera UI and make it more on theme (today: orange record button, lime Mirror chip, chips 3s timer / Portrait / Mirror / Touchless, Flip and Lines beside Record).
+Requested one Nano Banana Pro sheet (2K, ~36 credits) with every control kept: close, title + set/aim, gold Record, Flip, Lines, 3 s timer, Portrait/Landscape, Mirror, Touchless; gold traced-line pose overlay; live rep counter and recording time. A: frosted bottom tray with chips; B: right-edge rail, record ring fills with reps; C: record button inside F-logo lines, toggles behind one settings chip. Waiting for the owner's pick.
+
 ## IU. Workout session screen redesign - BUILT 2026-11-26 (personal account)
 
 **Owner 11:24 (screenshots: Set complete, workout list with PB callout, Can't train today):** remake the workout session UI - the most important part of the app; easy to understand and comfortable for trainees. Explain to OpenArt the stopwatch, the coach example video, and that **"Can't train today" is no longer needed** (sessions are flexible within the week).
