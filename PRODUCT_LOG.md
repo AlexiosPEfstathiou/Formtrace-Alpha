@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IT (2026-11-26, owner): Start a session sheet redesign (up to 7 sessions a week) - OpenArt concepts A/B/C requested - LOGGED.**
 **IS (2026-11-26, owner): app launch animation - night-park push-up clip -> fade to black -> gold F drawn (in code) - BUILT (installed app only; ?launch=1 to preview).**
 **IR (2026-11-26, owner): formtrace.ie landing page redesign - engaging, theme colours, the Try Formtrace button draws attention, space for 1-3 videos of the camera in use; A (mobile) + C (desktop) chosen; logo / traced lines to be ours - LOGGED.**
 **IQ (2026-11-25, owner): Settings redesign = concept C BUILT. Finding: country and language names show in the device language (Greek) in an English app.**
@@ -1998,6 +1999,11 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## IT. Start a session sheet redesign - LOGGED 2026-11-26 (personal account)
+
+**Owner 11:08:** ask OpenArt to redesign the Start a session sheet; it can hold up to 7 sessions, the whole week's.
+Today (`openWeekPool`): one row per remaining session - name, exercise count, goal; unfinished first with a lime border and "Unfinished · x of y sets saved - tap to continue"; carried-from-last-week tag. Requested one Nano Banana Pro sheet (2K, ~36 credits after discount): A numbered compact list, B carousel + list, C 2-column tiles with a recommended-next Start button; all with the unfinished session on top, the carried tag, done sessions dimmed with a tick, header "This week · 2 of 7 done". Waiting for the owner's pick.
+
 ## IS. App launch animation - BUILT 2026-11-26 (personal account)
 
 **Owner 00:33:** the loading animation when the app is opened on a phone, from tapping the app icon to the homepage: **5 seconds, our logo, our Formtrace lines, a "social fitness" feeling.**
