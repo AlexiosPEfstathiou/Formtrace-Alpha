@@ -1905,6 +1905,20 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
     background:linear-gradient(135deg,#F5C542,#E0A81E);color:#3a2c00;font-weight:800;font-size:14px;padding:6px 12px 6px 10px;border-radius:20px;
     box-shadow:0 4px 14px rgba(245,197,66,.4);font-variant-numeric:tabular-nums;pointer-events:auto;}
   #streak-badge .sflame{font-size:15px;line-height:1;}
+  /* Top bar (owner 2026-11-25, saved from the OpenArt Social concept; built 2026-11-26): gold-ringed avatar, a plain gold
+     gear, and the streak as a gold flame on a dark-gold tile. Traced: docs/brand/social/topbar-*.svg */
+  #hdr-profile{width:44px;height:44px;border:2px solid #E8B923;box-shadow:0 0 12px rgba(232,185,35,.4);background:var(--bg);}
+  #hdr-profile .avatar{width:38px!important;height:38px!important;}
+  #hdr-settings{background:transparent;border:0;color:#E8B923;width:42px;height:42px;}
+  #hdr-settings:active{transform:scale(.92);}
+  #streak-badge{background:linear-gradient(160deg,#5A4512,#3B2E0C)!important;color:#F2CC55!important;border:1px solid rgba(232,185,35,.4);border-radius:14px!important;
+    box-shadow:0 4px 14px rgba(0,0,0,.35)!important;padding:8px 11px 8px 9px!important;}
+  #streak-badge .sflame{display:flex;color:#F5B83A;filter:drop-shadow(0 0 6px rgba(245,184,58,.5));}
+  #streak-badge.zero .sflame{color:var(--faint);filter:none;}
+  #streak-badge.danger{background:linear-gradient(135deg,#ff7676,#e03b3b)!important;color:#fff!important;}
+  #streak-badge.danger .sflame{color:#fff;}
+  html[data-theme="light"] #hdr-settings{color:#B8960A;}
+  html[data-theme="light"] #streak-badge{background:linear-gradient(160deg,#F7E7B0,#EBD27A)!important;color:#5A4512!important;}
   #streak-badge.danger{background:linear-gradient(135deg,#ff7676,#e03b3b);color:#fff;animation:caldanger 1s ease-in-out infinite;}
   #streak-badge.zero{background:var(--panel2);color:var(--faint);box-shadow:none;}
   /* generic confirm dialog */
@@ -2345,7 +2359,7 @@ T(fade,9000);
 <div id="frame"><div id="phone">
 
   <!-- persistent discipline-streak badge (trainee) -->
-  <div id="streak-badge" class="hidden"><span class="sflame">🔥</span><span id="streak-count">0</span></div>
+  <div id="streak-badge" class="hidden"><span class="sflame"><svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M61.2 91.2 58.6 91.0 58.2 89.5 60.3 86.8 62.9 80.3 62.9 65.8 58.6 58.6 57.2 57.6 54.6 57.9 52.9 56.6 49.7 47.4 45.4 41.8 43.9 42.1 39.2 53.9 29.2 68.4 29.0 82.9 31.3 86.8 30.9 89.7 29.6 89.8 24.3 87.2 16.4 79.5 10.8 69.7 9.2 63.2 9.2 57.9 10.5 53.9 10.6 50.0 11.0 48.7 12.8 47.4 16.7 38.2 21.7 36.8 24.3 37.5 27.2 36.8 37.9 21.1 38.4 18.4 41.8 14.5 42.4 11.8 46.7 7.7 49.9 9.2 55.3 14.5 59.7 21.1 60.8 26.3 62.9 30.3 63.8 35.7 65.1 35.9 67.8 33.4 71.4 25.0 73.0 23.7 78.3 27.4 81.3 31.6 82.0 34.2 83.8 35.5 86.6 40.8 87.5 46.1 88.8 55.3 88.1 60.5 86.6 68.4 84.5 71.1 83.9 73.7 80.3 78.9 74.9 84.2 70.4 87.2 61.2 91.2Z"/></svg></span><span id="streak-count">0</span></div>
 
   <!-- ============ APP LOADING ============ -->
   <div class="loading-screen" id="app-loading">
@@ -2679,7 +2693,7 @@ T(fade,9000);
   <div id="app-header" style="display:none">
     <button id="hdr-profile" class="hdr-btn" aria-label="Profile"><div class="avatar" id="hdr-avatar" data-nolightbox="1" style="width:34px;height:34px;font-size:13px;pointer-events:none"></div></button>
     <div class="hdr-right">
-      <button id="hdr-settings" class="hdr-btn hdr-gear" aria-label="Settings">⚙</button>
+      <button id="hdr-settings" class="hdr-btn hdr-gear" aria-label="Settings"><svg viewBox="0 0 100 100" width="28" height="28" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M55.7 91.2 43.2 91.7 42.0 88.8 40.7 87.5 41.2 85.2 36.4 80.9 30.7 80.7 28.4 82.7 20.5 81.2 16.5 76.1 16.7 70.5 18.7 67.0 18.5 63.6 16.4 60.2 8.0 56.6 7.4 54.5 7.8 43.2 10.2 42.2 11.4 40.7 14.8 40.9 15.9 40.3 18.5 37.5 19.3 34.1 15.9 27.3 17.6 21.6 22.7 17.0 28.4 16.5 31.8 18.5 36.4 18.5 40.1 15.9 40.9 11.2 42.0 11.5 42.9 9.1 48.9 6.4 52.3 8.3 56.8 8.9 57.8 11.4 59.3 12.5 59.9 15.9 63.6 18.5 68.2 18.7 73.9 16.0 75.0 16.1 77.3 18.5 79.5 19.1 82.8 23.9 83.0 26.1 83.0 28.4 80.4 33.0 80.4 35.2 83.0 40.0 88.6 40.6 90.7 42.0 90.6 44.3 91.5 46.6 91.2 55.7 89.8 57.2 83.0 60.0 80.4 64.8 80.4 67.0 82.2 69.3 83.1 72.7 84.1 73.9 80.9 78.4 76.1 82.8 71.6 83.0 65.9 80.7 61.4 82.6 59.9 84.1 59.3 88.6 55.7 91.2ZM52.7 87.5 55.5 84.1 55.4 81.8 58.0 78.2 64.8 75.8 69.3 76.1 72.7 77.8 75.0 77.6 76.7 76.1 77.6 75.0 77.8 72.7 75.2 67.0 75.8 62.5 78.4 56.4 86.6 53.4 86.9 47.7 86.4 46.4 84.1 45.8 78.6 42.0 75.8 37.5 75.0 31.8 77.8 26.1 77.6 25.0 75.0 22.2 72.7 21.3 70.5 22.7 67.0 23.3 61.4 23.1 55.9 19.3 53.4 12.3 47.7 12.0 44.3 13.8 43.8 15.9 44.3 18.2 40.9 21.9 38.6 23.0 36.4 22.9 34.1 24.4 30.7 23.9 27.3 21.3 26.1 21.3 22.2 25.0 21.3 27.3 23.3 29.5 24.8 33.0 23.1 38.6 19.8 43.2 15.9 45.8 12.3 46.6 12.0 51.1 13.6 53.7 20.5 56.4 23.1 61.4 23.8 68.2 21.3 72.7 21.3 73.9 23.9 76.7 26.1 77.8 31.8 75.8 36.4 75.8 42.5 78.4 44.0 84.1 47.3 87.5 50.0 88.1 52.7 87.5ZM52.3 65.1 46.6 64.8 40.9 62.8 37.2 59.1 34.7 53.4 34.9 45.5 37.2 40.9 39.8 38.1 46.6 34.7 53.4 35.0 58.0 37.7 59.1 39.5 60.3 39.8 62.1 43.2 63.8 44.3 63.1 48.9 63.9 51.1 63.8 55.7 61.9 59.1 59.1 61.9 52.3 65.1ZM54.0 59.1 57.4 56.8 59.4 53.4 59.4 46.6 57.8 43.2 53.4 40.6 46.6 40.6 43.9 42.0 40.6 45.5 39.2 50.0 40.6 54.5 45.5 59.4 52.3 59.6 54.0 59.1Z"/></svg></button>
       <div id="hdr-streak-slot"></div>
     </div>
   </div>
