@@ -137,6 +137,8 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | **Muscle-group icons (IU)** | Workout screen nodes | **L1** | built: 15 traced line icons (14 groups + other) from OpenArt | docs/brand/muscles/*.svg, viewBox 100, currentColor |
 | **Camera rail icons (IV)** | Recorder | **Code** | built: 6 inline line SVGs (flip, lines, timer, orientation, mirror, touchless) + gold record button | docs/brand/camera/ |
 | **Review after recording (IW)** | Recorder review | **Code** | built: filmstrip trimmer, mute / replay rail, gold check | docs/brand/camera/review-* |
+| **Asset pack (IX)** | app-wide | **L1/L2** | built: achievements (27), empty states (8), goal (8) + shop (8) icons, video placeholders - SVG; consistency / referral / founding badges and celebrations - WebP; og-image 1200x630; email header + templates | docs/brand/pack/, img/badges, img/celebrate |
+| **Profile concept C (IP)** | Profile | **L1** | built: Cork banner photo, gold ring, gold tiles, accordion rows | docs/brand/profile/ |
 | **Sign-in / password-reset emails** | Supabase Auth templates (FX) | **L1** | placeholder (Supabase default, no branding) | Logo PNG 2x (max 600 px wide), gold button, footer; must work in every mail client |
 | Landing display typeface: ~~Big Shoulders Display~~ **Montserrat 700/800** | landing headlines (EX) | L1 | done 2026-11-23 | Owner chose Montserrat with the wordmark |
 | Email signature | contact@formtrace.ie (Titan, EH) | L2 | future | Logo PNG, small |

@@ -1638,6 +1638,41 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .avatar{width:46px;height:46px;border-radius:13px;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:var(--lime);flex-shrink:0;letter-spacing:.02em;}
   .avatar.lg{width:66px;height:66px;border-radius:18px;font-size:23px;}
   .prof-head{display:flex;align-items:center;gap:15px;margin-bottom:6px;}
+  /* IP: Profile = concept C */
+  .pfc-hero{position:relative;margin:-6px -16px 8px;text-align:center;padding-bottom:4px}
+  .pfc-banner{position:relative;height:150px;background-size:cover;background-position:center 40%;border-bottom:1px solid rgba(232,185,35,.45)}
+  .pfc-banner.pfc-lines{background:radial-gradient(120% 80% at 50% 100%,rgba(232,185,35,.16),transparent 60%),repeating-linear-gradient(180deg,transparent 0 22px,rgba(232,185,35,.14) 22px 23px),linear-gradient(180deg,#14171C,var(--bg))}
+  .pfc-ttl{padding-top:14px;font-family:Montserrat,system-ui,sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#E8B923;font-size:19px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+  .pfc-shop{position:absolute;right:14px;top:12px;display:flex;align-items:center;gap:6px;background:rgba(11,14,17,.6);color:#E8B923;border:1px solid rgba(232,185,35,.55);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px)}
+  .pfc-ring{width:118px;height:118px;margin:-62px auto 0;border-radius:50%;padding:5px;box-sizing:border-box;background:conic-gradient(#F5D46A,#E8B923,#B8901A,#E8B923,#F5D46A);box-shadow:0 0 22px rgba(232,185,35,.45);position:relative}
+  .pfc-ring .avatar{width:108px!important;height:108px!important;border-radius:50%!important;font-size:34px;border:3px solid var(--bg);box-sizing:border-box}
+  .pfc-name{margin-top:10px;font-family:Montserrat,system-ui,sans-serif;font-size:27px;font-weight:800;color:#E8B923;line-height:1.15}
+  .pfc-sub{font-size:16px;margin-top:3px;color:var(--ink)}
+  .pfc-bio{font-size:14px;color:var(--muted);margin:6px 22px 0;line-height:1.4}
+  .pfc-rate{font-size:14px;color:var(--muted);margin-top:6px}
+  .pfc-level{margin:12px 0 14px!important;padding:12px 14px;border-radius:16px;border:1.5px solid rgba(232,185,35,.55);background:rgba(232,185,35,.06)}
+  .pfc-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .pfc-tile,.pfc-invite{display:flex;align-items:center;gap:10px;text-align:left;border:0;border-radius:16px;padding:13px 12px;cursor:pointer;font:inherit;color:#0B0E11;
+    background:linear-gradient(135deg,#F5D46A,#E8B923 55%,#D49B17);box-shadow:0 6px 18px rgba(232,185,35,.22)}
+  .pfc-tile b,.pfc-invite b{display:block;font-size:16px;font-weight:800}
+  .pfc-tile small,.pfc-invite small{display:block;font-size:12px;font-weight:600;opacity:.8;margin-top:2px;line-height:1.3}
+  .pfc-ti,.pfc-qr{flex:0 0 auto;display:flex;color:#0B0E11}
+  .pfc-tile:active,.pfc-invite:active{filter:brightness(.9);transform:scale(.98)}
+  .pfc-invite{width:100%;box-sizing:border-box;margin-bottom:10px;padding:14px}
+  .pfc-it{flex:1;min-width:0}
+  .pfc-share{display:flex;align-items:center;gap:6px;border:0;border-radius:99px;padding:8px 14px;font:inherit;font-size:14px;font-weight:800;color:#0B0E11;background:rgba(255,255,255,.55);cursor:pointer}
+  .pfc-panel{margin:0 0 12px}
+  .pfc-rows{margin-top:6px}
+  .pfc-row{border-bottom:1px solid rgba(232,185,35,.35)}
+  .pfc-rh{display:flex;align-items:center;gap:14px;width:100%;padding:15px 2px;background:none;border:0;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
+  .pfc-ri{display:flex;color:#E8B923;flex:0 0 28px}
+  .pfc-rl{flex:1;font-size:17px;font-weight:600}
+  .pfc-rl em{font-style:normal;color:var(--muted);font-weight:500}
+  .pfc-chev{display:flex;color:#E8B923;transition:transform .2s}
+  .pfc-row.open .pfc-chev{transform:rotate(180deg)}
+  .pfc-row .pfc-panel{margin:0 0 14px}
+  html[data-theme="light"] .pfc-name,html[data-theme="light"] .pfc-ttl,html[data-theme="light"] .pfc-ri,html[data-theme="light"] .pfc-chev{color:#B8960A}
+
   .prof-head .nm{font-size:21px;font-weight:800;letter-spacing:-.01em;}
   .prof-head .ct{font-size:13px;color:var(--muted);margin-top:3px;}
   .stars{display:inline-flex;gap:2px;color:var(--amber);font-size:14px;}
@@ -4479,7 +4514,7 @@ function go(name){
   if(name==="trainee-home")R(renderTraineeHome);
   if(name==="trainee-workout")R(renderAssignedWorkout);
   if(name==="listings")R(async()=>{ if(listingsTab==="goals"&&!window.__ftStayOnGoals&&tabBadgeCache&&Number(tabBadgeCache.d.to_answer)>0) listingsTab="offers"; window.__ftStayOnGoals=false; await renderListings(); markOffersSeen(); });   /* Item FJ: offers waiting -> land on Offers */   /* Item EQ: opening the Goal tab marks pitches seen */
-  if(name==="profile")R(async()=>{ await renderProfile(); moveSettingsSections(); });   // CQ-6
+  if(name==="profile")R(async()=>{ await renderProfile(); moveSettingsSections(); try{ styleProfileC(); }catch(e){ console.error("profile layout (IP)",e); } });   // CQ-6
   if(name==="settings")R(async()=>{ if(!$("#settings-body").children.length){ await renderProfile(); } moveSettingsSections(); });   // CQ-6
   if(name==="admin")R(renderAdmin);
   renderAppTabs(name);
@@ -15271,6 +15306,78 @@ async function openShop(){
       wireLevelAndShop(); }
     openShop();
   }));
+}
+/* ---- IP (owner, 2026-11-25/26): Profile = concept C. A city banner behind a gold-ringed photo (Cork has its photo;
+   other cities get gold horizon lines - Dublin postponed by the owner), name, role and city, bio, rating; the level bar;
+   Points and Credit as two gold tiles and Invite a friend as a gold card (tap = open the full card); everything else as
+   accordion rows (Edit profile, Social handles, Achievements, Consistency badge, Notifications, Completed goals, ... ,
+   Sign out). Existing nodes are MOVED, never rebuilt, so every handler keeps working. ---- */
+const PF_IC={"edit":["0 0 88 88","M13.0 79.1 10.0 78.8 9.6 74.0 11.8 63.0 13.9 58.0 16.5 55.0 45.8 25.0 63.0 8.9 69.0 8.8 75.0 12.8 79.2 18.0 79.8 22.0 79.1 26.0 75.0 30.9 35.0 72.1 28.0 76.4 21.0 78.4 13.0 79.1ZM69.7 30.0 75.0 24.7 75.4 20.0 71.0 14.6 68.0 12.6 65.0 12.7 60.0 17.0 58.7 20.0 68.0 29.8 69.7 30.0ZM15.6 75.0 24.0 73.4 31.0 70.4 65.0 35.5 65.0 32.4 56.0 23.1 53.7 23.0 18.0 59.2 15.6 64.0 13.6 74.0 14.0 75.2 15.6 75.0Z"],"chev":["0 0 74 57","M38.0 45.2 34.0 43.1 11.0 21.1 9.2 18.0 10.0 16.0 14.0 15.7 37.0 37.3 39.0 36.5 60.0 15.7 62.0 14.7 64.0 15.0 65.2 17.0 64.1 20.0 38.0 45.2Z"],"target":["0 0 88 87","M47.0 56.1 41.0 56.5 37.5 54.0 35.5 50.0 36.8 45.0 41.0 41.6 44.0 41.5 46.0 43.3 47.7 42.0 61.3 28.0 62.0 19.6 70.0 11.0 72.9 11.0 74.0 17.7 80.0 18.6 80.8 20.0 71.0 29.8 64.5 30.0 50.5 44.0 49.5 46.0 50.8 50.0 50.3 52.0 47.0 56.1ZM45.0 83.0 35.0 82.4 29.0 80.2 22.0 76.0 13.9 67.0 9.6 57.0 8.9 48.0 9.5 41.0 13.8 31.0 23.0 21.0 31.0 16.7 38.0 14.6 49.0 14.7 55.0 16.7 56.0 18.0 55.0 19.5 44.0 17.7 36.0 18.8 30.0 21.0 20.6 28.0 15.6 35.0 13.6 40.0 12.5 52.0 13.8 58.0 18.0 66.5 25.4 74.0 34.0 78.4 39.0 79.5 48.0 79.4 59.0 75.4 67.4 68.0 73.4 56.0 73.4 42.0 71.5 37.0 72.0 34.8 73.7 35.0 75.2 37.0 77.4 44.0 77.3 55.0 75.2 62.0 71.0 69.1 64.0 76.3 58.0 80.1 52.0 82.3 45.0 83.0ZM66.7 23.0 69.4 20.0 69.0 17.9 64.7 22.0 65.0 23.2 66.7 23.0ZM69.8 26.0 72.4 24.0 73.0 22.0 69.9 23.0 68.5 25.0 68.8 26.0 69.8 26.0ZM47.0 69.1 41.0 69.5 35.0 68.2 28.1 63.0 23.5 55.0 23.0 47.0 23.8 42.0 25.8 38.0 28.0 34.9 33.0 30.9 39.0 28.6 49.0 28.6 52.2 31.0 51.0 32.4 42.0 31.5 37.0 32.8 33.0 35.2 28.0 41.0 26.2 47.0 26.7 54.0 30.0 59.9 34.0 63.4 43.0 66.4 51.0 64.4 56.0 60.5 59.4 55.0 60.5 49.0 59.3 41.0 61.0 40.5 63.4 45.0 63.2 54.0 59.2 62.0 53.0 67.1 47.0 69.1ZM44.6 53.0 47.0 51.4 47.5 50.0 47.0 48.8 44.0 49.6 43.1 49.0 44.2 45.0 43.0 44.6 39.7 47.0 39.4 50.0 41.0 52.4 43.0 53.4 44.6 53.0Z"],"points":["0 0 96 96","M54.0 84.3 42.0 84.3 32.0 81.3 25.0 77.3 16.5 69.0 13.7 65.0 10.7 59.0 8.5 50.0 8.5 41.0 9.7 35.0 14.7 24.0 18.0 19.6 28.0 11.7 34.0 8.7 43.0 6.5 53.0 6.5 58.0 7.7 69.0 12.7 73.4 16.0 81.3 26.0 86.5 41.0 86.5 50.0 85.3 55.0 83.3 61.0 79.3 68.0 71.0 76.5 67.0 79.3 61.0 82.3 54.0 84.3ZM53.5 79.0 64.0 75.3 75.3 65.0 80.3 55.0 81.5 49.0 81.3 41.0 77.3 29.0 67.0 17.7 60.0 13.7 54.0 11.7 41.0 11.7 35.0 13.7 28.0 17.7 19.7 26.0 14.7 36.0 13.5 42.0 13.7 50.0 14.7 55.0 17.7 62.0 28.0 73.3 36.0 77.3 43.0 79.3 53.5 79.0ZM41.0 64.3 35.7 64.0 35.3 46.0 29.0 45.3 27.7 44.0 28.0 42.7 35.3 42.0 35.0 39.7 29.0 39.5 27.8 39.0 27.7 38.0 29.0 36.7 35.3 36.0 35.7 29.0 52.0 28.7 57.4 31.0 62.0 36.3 67.0 36.7 67.0 39.3 62.0 39.7 61.7 41.0 63.0 42.3 67.0 42.7 67.0 45.3 61.0 45.7 57.4 50.0 53.0 52.3 41.7 53.0 41.0 64.3ZM54.0 36.0 52.0 34.5 41.8 35.0 41.8 36.0 43.0 36.5 54.0 36.0ZM55.4 42.0 56.1 41.0 54.0 39.5 43.0 39.5 41.5 41.0 43.0 42.5 55.4 42.0ZM52.5 47.0 53.7 46.0 41.8 46.0 41.8 47.0 43.0 47.5 52.5 47.0Z"],"badge":["0 0 88 88","M57.0 83.3 53.9 81.0 49.4 70.0 46.0 64.7 43.7 65.0 37.2 79.0 34.0 83.3 31.8 82.0 28.0 75.5 20.0 75.7 18.2 75.0 25.5 57.0 21.8 51.0 19.6 45.0 18.8 36.0 19.9 29.0 23.7 22.0 27.5 18.0 33.0 13.8 38.0 11.6 45.0 10.7 52.0 11.6 61.0 16.0 67.3 23.0 71.3 32.0 71.4 44.0 69.2 50.0 64.9 57.0 71.2 71.0 72.0 74.7 70.0 76.0 62.0 75.6 57.0 83.3ZM48.8 61.0 58.0 57.4 64.5 51.0 67.4 45.0 67.4 32.0 64.4 25.0 57.0 17.6 49.0 14.6 41.0 14.6 32.0 18.5 25.6 25.0 22.5 33.0 22.6 43.0 24.6 49.0 31.0 56.4 36.0 59.4 42.0 61.2 48.8 61.0ZM42.0 47.2 40.0 47.0 36.0 43.0 32.8 39.0 33.0 38.0 35.0 37.4 40.2 42.0 42.0 42.4 55.8 29.0 58.0 29.2 58.5 30.0 57.5 32.0 42.0 47.2ZM34.9 76.0 39.3 65.0 29.0 59.8 27.6 61.0 23.7 71.0 30.0 71.4 34.0 76.9 34.9 76.0ZM57.3 76.0 60.0 71.5 67.1 71.0 62.0 59.7 52.0 63.7 50.9 65.0 55.7 76.0 57.3 76.0Z"],"signout":["0 0 88 90","M45.0 87.2 39.0 86.4 13.0 78.4 9.8 76.0 9.0 20.0 9.9 15.0 12.0 12.9 57.0 12.1 61.0 12.8 63.2 15.0 64.5 34.0 64.2 36.0 63.0 37.1 61.6 36.0 61.1 18.0 60.0 15.6 57.0 15.0 28.0 15.0 24.0 16.0 45.0 22.6 47.2 25.0 47.3 83.0 47.0 85.0 45.0 87.2ZM43.3 83.0 43.3 26.0 35.0 22.6 14.0 16.8 12.7 18.0 12.3 20.0 12.7 74.0 17.0 76.1 37.0 82.4 42.0 83.6 43.3 83.0ZM73.0 55.4 72.0 56.0 70.6 55.0 74.0 48.9 55.0 48.4 53.0 47.9 52.2 46.0 54.0 44.6 74.0 44.4 75.0 44.0 74.5 43.0 70.6 38.0 71.1 37.0 73.0 36.9 81.4 46.0 73.0 55.4ZM38.0 53.1 37.0 53.6 35.0 52.7 34.6 51.0 36.0 49.3 38.9 51.0 38.0 53.1ZM61.0 78.2 52.0 78.4 50.9 77.0 52.0 75.7 59.0 75.4 61.3 74.0 61.5 56.0 62.0 54.5 63.0 54.4 64.3 58.0 64.1 73.0 63.3 76.0 61.0 78.2Z"],"card":["0 0 90 69","M76.0 61.3 15.0 61.5 12.0 60.3 7.7 56.0 6.5 53.0 6.5 14.0 7.7 11.0 12.0 6.7 18.0 4.5 71.0 4.5 78.0 6.7 81.3 10.0 83.5 15.0 83.5 52.0 81.0 57.4 76.0 61.3ZM78.4 19.0 79.1 18.0 77.3 12.0 72.0 9.5 17.0 9.5 13.0 11.6 10.5 17.0 11.0 18.4 13.0 19.5 78.4 19.0ZM72.5 57.0 75.0 56.3 78.3 53.0 78.0 30.7 13.0 30.5 10.7 32.0 10.7 51.0 13.0 55.3 17.0 57.3 72.5 57.0ZM48.0 49.3 20.0 49.5 18.7 49.0 18.5 46.0 20.0 44.5 47.0 44.5 48.5 46.0 48.0 49.3Z"],"handles":["0 0 88 87","M76.0 40.4 57.0 40.5 51.9 37.0 50.9 32.0 50.9 17.0 51.8 13.0 54.0 10.6 59.0 8.7 74.0 8.9 79.0 10.8 80.9 13.0 81.7 20.0 81.5 35.0 79.4 38.0 76.0 40.4ZM28.0 10.4 22.7 10.0 28.0 10.4ZM11.0 30.7 9.5 28.0 10.0 20.0 15.0 12.9 18.0 10.8 21.0 10.4 21.9 11.0 17.0 13.3 12.0 19.0 11.0 30.7ZM37.0 17.4 33.0 13.4 28.1 11.0 29.0 10.2 31.0 10.5 35.0 12.8 37.1 15.0 37.7 17.0 37.0 17.4ZM75.0 38.0 78.0 35.8 79.4 33.0 79.5 17.0 78.5 14.0 74.0 11.4 57.0 11.7 53.6 15.0 54.0 35.7 56.0 37.4 59.0 38.2 75.0 38.0ZM75.0 17.6 73.3 17.0 74.0 14.9 75.6 16.0 75.0 17.6ZM27.0 40.2 22.2 40.0 23.4 32.0 22.5 30.0 20.0 28.8 19.6 27.0 23.2 24.0 24.1 18.0 26.0 16.6 30.0 16.6 31.0 17.1 31.0 18.9 28.0 20.5 27.2 23.0 27.7 25.0 30.4 26.0 31.1 28.0 26.7 30.0 26.5 37.0 27.6 40.0 27.0 40.2ZM39.0 22.2 37.6 20.0 38.0 17.1 39.4 19.0 39.0 22.2ZM69.0 32.1 63.0 32.0 60.0 30.0 58.9 28.0 58.1 24.0 60.0 20.2 62.0 18.7 66.0 18.0 70.0 18.8 73.3 22.0 73.3 28.0 69.0 32.1ZM67.4 30.0 71.4 27.0 71.2 23.0 68.0 20.6 64.0 20.6 61.7 22.0 60.8 25.0 62.0 27.9 64.0 29.5 67.4 30.0ZM38.0 32.9 37.2 32.0 39.0 27.0 39.4 31.0 38.0 32.9ZM13.0 34.6 11.7 33.0 12.0 31.1 13.8 34.0 13.0 34.6ZM31.0 39.2 30.0 39.7 29.2 39.0 34.0 35.8 37.0 32.2 37.8 33.0 33.7 38.0 31.0 39.2ZM18.0 38.4 15.3 37.0 16.0 36.2 17.0 36.6 18.6 38.0 18.0 38.4ZM21.0 40.3 19.0 39.0 21.5 39.0 21.8 40.0 21.0 40.3ZM63.0 81.2 58.0 80.5 55.0 77.9 53.5 75.0 53.8 69.0 57.0 64.9 62.0 64.0 63.1 65.0 63.2 67.0 58.0 70.4 57.6 74.0 60.0 76.4 65.0 75.7 66.5 73.0 67.0 53.0 68.0 51.5 70.0 51.5 73.3 56.0 78.9 60.0 78.3 62.0 77.0 62.7 73.0 61.5 71.5 62.0 70.0 76.0 67.9 79.0 63.0 81.2ZM25.0 80.3 14.0 80.5 9.7 78.0 9.7 76.0 14.0 75.3 15.2 74.0 11.8 70.0 9.7 65.0 10.0 55.0 12.0 54.1 16.9 58.0 16.0 59.0 12.0 56.9 11.5 58.0 13.5 62.0 11.9 64.0 12.4 65.0 15.2 68.0 16.0 71.6 19.5 74.0 18.3 76.0 14.9 78.0 24.0 78.5 30.0 75.6 35.0 70.0 37.4 64.0 37.5 58.0 34.0 54.6 29.0 54.6 26.2 57.0 25.0 61.1 22.2 61.0 22.2 60.0 28.0 52.8 34.0 52.6 37.0 54.3 41.0 53.0 41.2 58.0 38.3 63.0 37.0 69.8 32.0 76.2 25.0 80.3ZM20.0 60.4 18.0 60.4 16.0 59.0 17.0 58.1 19.0 58.6 21.0 60.0 20.0 60.4Z"],"bell":["0 0 88 87","M75.0 70.3 16.0 70.4 12.9 69.0 13.0 66.0 19.4 59.0 22.4 52.0 23.6 34.0 25.8 28.0 31.0 21.6 37.0 17.5 38.0 14.0 41.0 9.9 45.0 8.8 49.0 10.0 51.0 12.2 52.5 17.0 60.1 22.0 65.2 29.0 67.2 38.0 67.6 53.0 70.5 59.0 77.1 66.0 77.2 69.0 75.0 70.3ZM48.3 16.0 48.0 14.4 46.0 12.6 43.0 12.7 41.7 14.0 41.7 16.0 43.0 16.7 48.3 16.0ZM70.0 67.0 72.0 66.0 65.9 59.0 63.6 53.0 63.1 36.0 61.4 30.0 59.0 26.2 53.0 21.6 46.0 20.1 40.0 20.6 33.0 24.6 29.6 29.0 27.6 34.0 27.1 46.0 25.3 56.0 23.1 60.0 18.0 66.1 22.0 67.1 70.0 67.0ZM49.0 82.2 45.0 82.9 39.0 81.2 35.7 78.0 35.0 74.3 37.0 74.0 40.0 77.4 45.0 79.5 49.0 78.4 53.0 73.9 55.0 73.7 55.1 77.0 52.7 80.0 49.0 82.2Z"],"trophy":["0 0 88 88","M63.0 83.5 30.0 83.9 27.2 83.0 27.1 80.0 29.7 76.0 39.0 70.7 39.3 62.0 30.7 55.0 25.0 46.1 19.0 43.3 13.8 39.0 9.5 31.0 8.6 23.0 9.5 20.0 22.0 19.4 23.4 18.0 23.7 13.0 25.0 11.8 47.0 11.6 65.0 11.7 67.2 13.0 67.6 18.0 69.0 19.4 81.3 20.0 81.4 29.0 77.1 38.0 73.0 42.0 65.0 46.6 61.3 54.0 51.2 63.0 50.7 70.0 61.2 76.0 64.0 81.0 63.0 83.5ZM47.6 59.0 53.0 57.0 55.7 55.0 58.4 52.0 61.4 46.0 63.5 38.0 63.3 16.0 27.0 15.7 26.6 32.0 27.6 40.0 30.0 47.0 34.0 53.5 38.3 57.0 41.0 58.4 47.6 59.0ZM24.3 41.0 22.3 23.0 13.0 22.7 12.2 25.0 12.5 28.0 14.6 34.0 17.5 38.0 21.5 41.0 24.3 41.0ZM68.5 41.0 74.4 36.0 77.1 31.0 78.5 25.0 78.0 22.7 70.0 22.5 68.1 24.0 67.4 37.0 66.5 40.0 67.0 41.3 68.5 41.0ZM59.3 80.0 58.0 77.6 47.7 73.0 47.3 63.0 45.0 62.1 43.6 63.0 43.0 72.7 36.0 75.9 31.6 79.0 33.0 80.6 59.3 80.0Z"],"share":["0 0 59 64","M30.0 41.3 28.0 41.3 27.5 40.0 27.3 15.0 25.6 15.0 22.0 19.3 20.0 19.3 18.7 18.0 24.5 10.0 29.0 6.5 36.5 13.0 39.3 17.0 38.4 19.0 37.0 19.3 32.0 14.7 30.7 15.0 30.5 26.0 31.5 30.0 30.7 33.0 31.5 38.0 30.0 41.3ZM45.0 60.3 14.0 60.5 10.6 59.0 7.5 52.0 7.5 32.0 9.5 27.0 13.0 24.5 19.0 24.5 20.5 26.0 20.0 28.3 13.0 28.7 11.7 31.0 11.5 52.0 13.6 56.0 43.0 56.5 45.0 55.5 46.5 53.0 46.3 30.0 45.0 28.7 38.0 28.3 37.5 26.0 39.0 24.5 45.0 24.5 47.0 25.5 49.3 28.0 50.5 31.0 50.5 53.0 49.3 57.0 45.0 60.3Z"]};
+function pfIc(k,px){ const v=PF_IC[k]; if(!v) return ""; return `<svg viewBox="${v[0]}" width="${px}" height="${px}" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${v[1]}"/></svg>`; }
+const PF_CITY_IMG=[[/cork/i,"img/city-cork.jpg"]];
+function styleProfileC(){
+  const body=$("#profile-body"); if(!body||body.querySelector(".pfc-hero")) return;
+  const head=body.querySelector(".prof-head"); if(!head) return;
+  const av=$("#pf-avatar"), shop=$("#pf-shop"), badges=$("#pf-badges");
+  const city=(ME.city||"").trim(), img=(PF_CITY_IMG.find(([re])=>re.test(city))||[])[1];
+  const r=roleOf(); const ct=head.querySelector(".ct");
+  const hero=document.createElement("div"); hero.className="pfc-hero";
+  hero.innerHTML=`<div class="pfc-banner ${img?"":"pfc-lines"}" ${img?`style="background-image:linear-gradient(180deg,rgba(11,14,17,.15),rgba(11,14,17,.55) 70%,var(--bg)),url('${img}')"`:""}><div class="pfc-ttl">Profile</div></div>
+    <div class="pfc-ring"></div>
+    <div class="pfc-name">${escapeHtml(ME.display_name||"-")}</div>
+    <div class="pfc-sub">${escapeHtml(r==="coach"?"Coach":"Trainee")}${city?` - ${escapeHtml(city)}`:""}${isAdmin()?' <span class="badge admin">admin</span>':""}</div>
+    ${ME.bio?`<div class="pfc-bio">${escapeHtml(ME.bio)}</div>`:""}
+    <div class="pfc-rate">${ct?ct.innerHTML:""}</div>`;
+  if(av) hero.querySelector(".pfc-ring").appendChild(av);
+  if(badges){ badges.style.justifyContent="center"; hero.appendChild(badges); }
+  if(shop){ shop.className="pfc-shop"; shop.innerHTML=packSvg("icons-goal-shop","shop",18)+"<span>Shop</span>"; hero.querySelector(".pfc-banner").appendChild(shop); }
+  head.replaceWith(hero);
+  const lvl=$("#pf-level"); if(lvl){ lvl.classList.add("pfc-level"); hero.after(lvl); }
+  /* sections into groups: [header-eyebrow-text, nodes[]] */
+  const kids=[...body.children].filter(k=>k!==hero&&k!==lvl);
+  const groups=[]; let cur=null;
+  for(const k of kids){ if(k.classList.contains("section-h")){ const ebs=k.querySelectorAll(".eyebrow"); cur={name:(ebs[0]&&ebs[0].textContent.trim())||"",count:(ebs[1]&&ebs[1].textContent.trim())||"",nodes:[]}; groups.push(cur); k.remove(); continue; }
+    if(!cur){ groups.push({name:"",nodes:[k],loose:true}); continue; } cur.nodes.push(k); }
+  const after=lvl||hero; let anchor=after;
+  const put=el=>{ anchor.after(el); anchor=el; };
+  const panel=(nodes)=>{ const p=document.createElement("div"); p.className="pfc-panel"; p.hidden=true; nodes.forEach(n=>p.appendChild(n)); return p; };
+  /* tiles */
+  const take=name=>{ const i=groups.findIndex(g=>g.name.startsWith(name)); return i<0?null:groups.splice(i,1)[0]; };
+  const gP=take("Points"), gC=take("Credit"), gI=take("Invite");
+  if(gP||gC){ const row=document.createElement("div"); row.className="pfc-tiles"; const panels=[];
+    [[gP,"points","Points","Spend in Shop"],[gC,"card","Credit","used at checkout"]].forEach(([g,ik,lab,hint])=>{ if(!g) return;
+      const first=g.nodes[0]; const val=first?(first.firstElementChild||first).textContent.trim():"";
+      const t=document.createElement("button"); t.type="button"; t.className="pfc-tile"; t.innerHTML=`<span class="pfc-ti">${pfIc(ik,30)}</span><span><b>${lab}</b><small>${escapeHtml(val)} - ${hint}</small></span>`;
+      const pn=panel(g.nodes); panels.push(pn); t.addEventListener("click",()=>{ panels.forEach(x=>{ if(x!==pn) x.hidden=true; }); pn.hidden=!pn.hidden; }); row.appendChild(t); });
+    put(row); panels.forEach(put); }
+  if(gI){ const card=document.createElement("div"); card.className="pfc-invite";
+    card.innerHTML=`<span class="pfc-qr">${pfIc("share",26)}</span><span class="pfc-it"><b>Invite a friend</b><small>Share your link - see your tier inside</small></span><button type="button" class="pfc-share">${pfIc("share",16)} Share</button>`;
+    const pn=panel(gI.nodes); card.addEventListener("click",e=>{ if(e.target.closest(".pfc-share")){ e.stopPropagation(); const b=$("#ref-share"); if(b) b.click(); else pn.hidden=false; return; } pn.hidden=!pn.hidden; });
+    put(card); put(pn); }
+  /* accordion rows */
+  const rows=document.createElement("div"); rows.className="pfc-rows"; put(rows);
+  const addRow=(icon,label,count,nodes,onOpen)=>{ const w=document.createElement("div"); w.className="pfc-row";
+    const h=document.createElement("button"); h.type="button"; h.className="pfc-rh"; h.setAttribute("aria-expanded","false");
+    h.innerHTML=`<span class="pfc-ri">${pfIc(icon,26)}</span><span class="pfc-rl">${escapeHtml(label)}${count?` <em>${escapeHtml(count)}</em>`:""}</span><span class="pfc-chev">${pfIc("chev",18)}</span>`;
+    w.appendChild(h); const pn=nodes?panel(nodes):null; if(pn) w.appendChild(pn);
+    h.addEventListener("click",()=>{ if(!pn){ onOpen&&onOpen(); return; } pn.hidden=!pn.hidden; h.setAttribute("aria-expanded",String(!pn.hidden)); w.classList.toggle("open",!pn.hidden); if(!pn.hidden&&onOpen) onOpen(pn); });
+    rows.appendChild(w); return {w,h,pn}; };
+  const loose=groups.filter(g=>g.loose); const named=groups.filter(g=>!g.loose);
+  for(const g of loose){ const n=g.nodes[0];
+    if(n.querySelector&&n.querySelector("#pf-name")) addRow("edit","Edit profile","",[n]);
+    else if(n.id==="sp-handles") addRow("handles","Social handles","",[n]);
+    else if(n.id==="pf-payouts") addRow("card","Payouts","",[n]);
+    else if(n.querySelector&&(n.querySelector("#pf-achievements")||!n.children.length)){
+      const a=addRow("trophy","Achievements","",[n]); const b=addRow("badge","Consistency badge","",[]);
+      const sweep=()=>{ [...n.children].forEach(c=>{ if(c.id!=="pf-achievements"&&!c.contains($("#pf-achievements")||document.createElement("i"))&&!b.pn.contains(c)) b.pn.appendChild(c); });
+        const ac=$("#pf-achievements"); if(ac){ const m=(ac.textContent.match(/(\d+) of (\d+) earned/)||[]); if(m[1]) a.h.querySelector(".pfc-rl").innerHTML=`Achievements <em>${m[1]}/${m[2]}</em>`; } };
+      sweep(); try{ new MutationObserver(sweep).observe(n,{childList:true,subtree:true}); }catch(e){}
+    }
+    else addRow("badge","More","",[n]);
+  }
+  const ICN={"Notifications":"bell","Completed goals":"target","Vacation":"edit","Your trainees":"trophy","Certifications":"badge"};
+  for(const g of named){ const k=Object.keys(ICN).find(x=>g.name.startsWith(x)); addRow(k?ICN[k]:"badge",g.name,g.count,g.nodes); }
+  addRow("signout","Sign out","",null,()=>{ const so=$("#prof-signout"); if(so) so.click(); });
 }
 async function renderProfile(){
   const body=$("#profile-body");
