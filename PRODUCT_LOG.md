@@ -2006,7 +2006,7 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
-## IX. Asset pack for the app-wide restyle - LOGGED 2026-11-26 (personal account)
+## IX. Asset pack for the app-wide restyle - BUILT (logged 2026-11-26) (personal account)
 
 **Owner 12:13:** the trainee tabs redesign is done; next, apply it to the whole app. Before that: which OpenArt assets would make the restyle complete (pressed buttons, animations, sounds)? I proposed 8 groups; **owner 12:20: items 1-8 approved except 5** (5 = the notifications icon sheet, already generated - owner to attach).
 Submitted one batch of 7 Nano Banana Pro sheets (2K, ~36 credits each, ~252): (1) component states - primary / secondary / text / icon buttons, toggle, chip, input, tab bar, card in default / pressed / disabled / loading; (2) 27 achievement badges, one frame shape per family (names and families from the `achievements` table); (3) Consistency badge Bronze-Diamond + referral tiers (Ambassador, Partner) + Founding coach seal; (4) celebration artwork - streak, achievement unlocked, level up, personal best, quest complete, day complete, points coin + confetti pieces (animated in code, not video: video cannot be transparent and is too heavy); (6) 8 empty-state spot illustrations; (7) goal-category icons, shop icons (shop_items is empty, so generic: bag, voucher, t-shirt, cap, bottle, streak freeze, profile frame, gift), video placeholders; (8) share preview image 1200x630 and a branded email header + button (with the real logo as reference).
@@ -2089,7 +2089,7 @@ Both takes finished (~240 credits; balance 8,563 on 2026-11-26).
 **Not done:** the owner's videos (slots ready); "For coaches" scrolls to the end section (no separate coach page).
 
 ---
-## IQ. Settings redesign - LOGGED 2026-11-25 (personal account)
+## IQ. Settings redesign - BUILT (logged 2026-11-25) (personal account)
 
 **Owner 23:58:** Dublin photo postponed (IP builds with Cork; other cities get the line-art skyline). **Reimagine the Settings section** (two screenshots: Social profile - community feed toggle, name display Full / Initial / First only, signed-in email, profile photo Change / Remove, Country, Languages you speak; Appearance - theme Light / Dark / Auto, colourblind-safe colours, sounds, workout sounds; Install Formtrace help; Danger zone - delete account, see what's stored; coaches also have trainees' streaks and certifications).
 **Finding (from the screenshot):** Country reads "Ιρλανδία" and the language chips "Αγγλικά", "Ελληνικά" - `Intl.DisplayNames` uses `navigator.language` (the phone is Greek) while the app is in English. Fix with the Settings build: use "en" for display names.
@@ -2102,7 +2102,7 @@ Checked in a mock (dark / light, pencil panel, theme switching, every button's h
 **Not done:** the top bar (profile photo / gold gear / gold flame) - with HZ; coach-only sections (streaks ranking, certifications) stay on Profile.
 
 ---
-## IP. Profile redesign - LOGGED 2026-11-25 (personal account)
+## IP. Profile redesign - BUILT (logged 2026-11-25) (personal account)
 
 **Owner 22:12 (six screenshots of today's Profile - one long scroll):** reimagine the Profile area; **focus on space preservation and user experience; on theme with the Social artwork.**
 **Inventory (today, top to bottom):** avatar, name, Trainee / Admin badges, rating, Shop, Sign out; Level + exp bar; Display name / City / Bio form + Save; Your handles (WhatsApp, Instagram, Snapchat); Consistency badge; Achievements 16 of 27; Notifications (push + morning summary, offers, coach reviews, video calls, friend requests, congratulations, shared handles); Invite a friend (QR, Recruiter / Ambassador / Partner tiers, Share, Copy link, stats); Points 367 + recent rewards; Credit and refunds (balance + ledger, Show all); Completed goals list.
@@ -2110,7 +2110,7 @@ Checked in a mock (dark / light, pencil panel, theme switching, every button's h
 **Owner 23:51: concept C chosen** (`docs/brand/profile/concept-c.png`). The banner behind the photo should be **a photo of the member's city, like Kiwi.com's app** - for now **Cork and Dublin only**. Requested from OpenArt (Nano Banana Pro, 2 options each, 21:9, ~160 credits): original photographic dusk scenes - Cork: River Lee, quays, Shandon bell tower; Dublin: River Liffey, Ha'penny Bridge - dark with gold lights so the title and gold ring read on top. (Original generated scenes, not copies of any real photographer's picture.) Icons traced from the concept (`docs/brand/profile/*.svg`: edit, trophy, badge, bell, target, sign-out, chevron, points, card, share); the concept's handles icon shows Facebook / Twitter / TikTok logos, which the app does not use - the build uses the Instagram / phone icons already traced. The sandbox cannot download from OpenArt: the owner attaches the chosen Cork and Dublin photos, then the build. Other cities fall back to a gold line-art skyline (the concept's).
 
 ---
-## IO. Social tab (In Touch) redesign - LOGGED 2026-11-25 (personal account)
+## IO. Social tab (In Touch) redesign - BUILT (logged 2026-11-25) (personal account)
 
 **Owner 2026-11-25 19:25 (screenshot: In Touch - Add friends button, Friends list with Kimia, Connect, win count):** brief OpenArt on the functions and redesign the Social tab. **The knock is the main attraction.** People should spend time here **congratulating friends for small achievements and getting motivated by them**. Reserve space for **Formtrace events** (e.g. "Formtrace meetup at Marina Walk, Sunday 10:00 - knock to make friends and drink coffee, share feedback with the dev team, get limited edition Formtrace swag").
 **Functions briefed (verified in code, CM and later):** friends only in person by knocking phones (motion jolt + location pairing, then both confirm faces; 60-second code fallback); friends' wins (PBs, achievements - friends-only, finished goals, weekly progress) with Congratulate / Congratulate all; congratulations received; sharing Instagram / Snapchat handles; disconnect.
@@ -2137,7 +2137,7 @@ Checked in a mock (dark / light, every pressed state, RPC payloads). Gate passed
 **Not done:** "unread" is not tracked per card (the dot marks Needs you); per-card times shown only where the card already had one.
 
 ---
-## IM. Trainee Goal tab redesign (ongoing goal) - LOGGED 2026-11-24 (personal account)
+## IM. Trainee Goal tab redesign (ongoing goal) - BUILT (logged 2026-11-24) (personal account)
 
 **Owner 19:38 (two screenshots: the accepted-goal card - coach row, ACCEPTED badge, a large pitch-video player, Length / Sessions / Dates / Price rows, Payment details, the payment stepper Accepted - Deposit - Training wk 4/5 - Complete, Goal achieved / Cancel goal; below: Pending 0, Completed 19 and Rejected 2 folders):** redesign what the trainee sees while the goal is ongoing; focus on **space management**; **visualise the weeks completed / pending**; old pending, completed and rejected goals stay but take **minimal space and attention**.
 **Done:** 3 concepts (Nano Banana Pro, ~120 credits): A goal hero + week track (W1-W5 segments, stat chips, collapsed payment and pitch-video rows, history as three small chips); B progress ring (Week 4 of 5 / sessions done, week pills, "Your plan" three columns, compact payment dots, "Past goals: 19 completed - 2 rejected ›"); C journey path (vertical week nodes with sessions per week, key facts column, Goal achieved + More menu, collapsed History bar).
@@ -2147,7 +2147,7 @@ Checked in a mock (dark / light, every pressed state, RPC payloads). Gate passed
 **Not done:** coach view; the concept's 20-week image numbered some squares wrongly - built with correct numbering.
 
 ---
-## IL. Take a vacation sheet redesign - LOGGED 2026-11-24 (personal account)
+## IL. Take a vacation sheet redesign - BUILT (logged 2026-11-24) (personal account)
 
 **Owner 19:28 (screenshot: the current "Take a vacation" sheet - explanation, message, end date, button):** reimagine it - engaging, happy, on theme; reassure the user that **everything is on pause (streaks, payments, training)**; a wish from Formtrace to the user such as **"Enjoy a well-deserved vacation"**.
 **Fact check for the copy:** vacation pauses every active goal; the streak freezes (HN / streak grace); a paused week is a neutral week - **no weekly release is paid out of the deposit for it** (DY, `queue_weekly_releases`), so "no weekly payments are taken" is accurate; nothing is due.
@@ -2157,7 +2157,7 @@ Checked in a mock (dark / light, every pressed state, RPC payloads). Gate passed
 **Not done:** the "Resume training" state keeps the old button; gold-on-white contrast in the light theme waits for HZ (#B8960A).
 
 ---
-## IK. Calls card redesign - LOGGED 2026-11-24 (personal account)
+## IK. Calls card redesign - BUILT (logged 2026-11-24) (personal account)
 
 **Owner 19:18 (screenshot: "Video call - Harvey Specter": "The last proposal expired without a response. No call scheduled." and a "Propose a call" button):** reimagine the card as a place where **trainees and coaches declare their availability in the week**; the times that work become options for either of them to tap **"Propose call"**; the other is notified, and the card has a **landing area for incoming proposals** with **Accept** or **"Propose a new time"**. Owner: request OpenArt items directly in SVG if it helps.
 **Done:** 3 concepts (Nano Banana Pro, ~120 credits): A shared week grid (7 days x morning / afternoon / evening; yours, the coach's, both-free cells glowing with "Propose"); B "Times that work for both of you" (time chips grouped by day, "Propose Thu 18:30", day-pill availability card); C two-lane day timeline (You / coach lanes, overlap band "Both free 18:00-20:00 - Propose call", Waiting for you / Sent). Each has the incoming proposal with Accept / Propose a new time.
@@ -2171,7 +2171,7 @@ Checked with mock data dark / light, sheet add / toggle / save (RPC payload chec
 **Not done:** coach-side redesign of the rest of the call card; "Propose a new time" picks from shared times, not free entry (the "or pick any time" link covers that); old 4 availability rows left as they were.
 
 ---
-## IJ. Body measurements card redesign - LOGGED 2026-11-24 (personal account)
+## IJ. Body measurements card redesign - BUILT (logged 2026-11-24) (personal account)
 
 **Owner 19:05 (screenshot: "Body measurements (cm)" - six tiles neck / chest / biceps / waist / hips / thighs with value, a pink line and cm change since the first entry, "+ Log"):** a log of body measurements, traditionally quarterly; emphasise **growth or shrinking by percentage**; give a **motivational comment based on the last quarter**.
 **Done:** 3 concepts (Nano Banana Pro, from the chosen weight concept, ~120 credits): A quarter report (motivational headline, "Log Q4 measurements - due in 12 days", one row per body part with a diverging bar around zero and the %); B body map (gold line figure with callouts per body part and % chips, quarter switcher, coach-style comment, Log this quarter); C percent tiles (headline "4 of 6 moved the right way", big % per tile with cm change and a 4-quarter sparkline, next check date).
@@ -2183,7 +2183,7 @@ Checked with mock data dark / light, sheet add / toggle / save (RPC payload chec
 **Not done:** tutorials for macros and weighing (next, on the owner's word); illustrations inside the tutorial (text only for now); coach view.
 
 ---
-## II. Personal bests card redesign - LOGGED 2026-11-24 (personal account)
+## II. Personal bests card redesign - BUILT (logged 2026-11-24) (personal account)
 
 **Owner 11:41 (screenshot: a list of PBs - name, best, date - newest first):** IH-2 accepted ("Good, save it, work on it later"). Redesign the PB card so the trainee sees **potential**: unfilled bars, exercises that can be improved; where and when the last PBs were; a reminder of the **weekly PB quest**; and the thought "I haven't made a PB on this exercise in a while, I should go for it tonight".
 **Done:** 3 concepts (Nano Banana Pro, from the chosen weight concept, ~120 credits): A ready to break (quest strip 0 / 1, three "ready to break" cards with best, weeks since, a "Go for 21 reps" target, a bar of how close recent sets came; all PBs with a freshness bar that empties with age); B trophy shelf (quest banner with an empty trophy, 2-column tiles with a vertical bar and a dashed "next PB" segment, age tag, glowing "Due" outline after 4 weeks); C PB timeline (12-week strip with trophy dots on PB weeks, "most overdue first" list with best + dashed next-target extension, weeks since, "Try tonight").
@@ -2216,7 +2216,7 @@ Checked with mock data dark / light, sheet add / toggle / save (RPC payload chec
 **Not done:** carbs / fat (the coach's goal has only kcal and protein); coach view of the same card. Test IG-T1.
 
 ---
-## IF. Weight card redesign - LOGGED 2026-11-24 (personal account)
+## IF. Weight card redesign - BUILT (logged 2026-11-24) (personal account)
 
 **Owner 00:17 (screenshot of Training -> Weight: the IE-3 day strip over a pink daily line chart with a sideways scrollbar):** redesign the weight part: (1) easy to see which days were missed ("forgot to log macros" - read as missed weigh-ins on this card; the Macros card gets the same treatment later if wanted), (2) weight shown **by week**, (3) an **average weight change over the goal**, shown in an engaging way.
 **Done:** 3 OpenArt concepts (GPT Image 2.5 Sunburst, ~36 credits): A weekly averages (headline -0.7 kg + avg/week pill, one point per week with week-to-week chips, 4x7 weigh-in grid of filled / hollow days); B goal journey (start-to-now bar with a marker, weekly average bars with change labels, this week's day bubbles with "+" on missed days); C week cards (gauge of avg weekly change, one card per week with average, change pill and 7 day dots, "Log missed days").
@@ -2226,7 +2226,7 @@ Checked with mock data dark / light, sheet add / toggle / save (RPC payload chec
 **Not done / limits:** goal direction is a guess from the goal title (no focus on the engagement row; offers.focus would need a join) - unknown titles get a "holding" zone; no projection ("at this pace by ..."); the "Last 4 weeks" picker from the concept not built (last 6 weeks shown). Test IF-T1.
 
 ---
-## IE. Training calendar redesign - LOGGED 2026-11-23 (personal account)
+## IE. Training calendar redesign - BUILT (logged 2026-11-23) (personal account)
 
 **Owner 23:40 (screenshot):** the calendar has had bad feedback for being chaotic and hard to follow (month grid of diagonally split day squares, big yellow session cards, red "0/3 incomplete" week boxes, nutrition lines, mixed colours). It must stay intuitive while showing **which and how many workouts are allocated per week without tying them to a day**.
 **Done:** 4 concepts from OpenArt (GPT Image 2.5 Sunburst, ~48 credits): A week rows with session tokens; B this week first, agenda style (Weeks / Month switch); C clean month grid + a week progress ring column; D a swipeable weekly session pass.
@@ -2264,7 +2264,7 @@ Checked with mock data dark / light, sheet add / toggle / save (RPC payload chec
 **IB-2 BUILT the same evening:** the **day bonus** (+10) is a gold Claim +10 in the Today header once every task is done, and the Day complete celebration plays on the claim; **weekly quests** - `weekly_quests_sync` no longer pays (SQL `migrations_claim_rewards.sql`, applied via MCP: it pays only the quest named in the transaction setting `ft.quest_claim`), new `claim_weekly_quest(key)` sets it and returns the week; a done, unpaid quest shows a gold **Claim +N** (trainee and coach), the cheer plays on the claim. The coach's per-trainee "streaks" quest (+10 each) still pays as earned. Rewards earned before tonight were already paid.
 
 ---
-## IA. Trainee Home redesign to the OpenArt bento concept - LOGGED 2026-11-23 (personal account)
+## IA. Trainee Home redesign to the OpenArt bento concept - IN PROGRESS (logged 2026-11-23; toggle + rows built 2026-11-26) (personal account)
 
 **Owner 22:52-23:04:** OpenArt was given screenshots of the trainee Home tab (dark and light) and asked for three redesigns (A Focus, B Bento dashboard, C Timeline), dark and light (GPT Image 2.5 Sunburst, ~72 credits, Personal Project / Formtrace). The owner chose **B, dark** (OpenArt resource h6V4OHhZhkHOtCy5atV6) and asked: "Can we bring our homepage UI to these standards?" - yes, in code, no credits.
 **Plan (three phases, each gated and screenshotted in dark and light before push):**
