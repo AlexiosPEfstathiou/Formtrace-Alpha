@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IR (2026-11-26, owner): Landing = A on phones / C on desktop, real logo, video slots - BUILT.**
 **IN (2026-11-24/26, owner): Notifications = variation 3 (groups, gold icon tiles, medal) - BUILT.**
 **IX (2026-11-26, owner): asset pack - 7 OpenArt sheets cut and wired (achievements, tiers, celebrations, empty states, icons, og-image, email templates); HZ lime -> gold + component states; IP Profile concept C - BUILT.**
 **IW (2026-11-26, owner): Post-recording edit screen = concept B (filmstrip trimmer, mute, replay, gold check) - BUILT; SQL applied via MCP.**
@@ -2074,7 +2075,7 @@ Both takes finished (~240 credits; balance 8,563 on 2026-11-26).
 **Not done:** the push-up form is still not deep enough (owner accepted sample_0 as it is); the phone's own splash (manifest icon on #0B0E11) still shows for a moment before ours.
 
 ---
-## IR. Landing page redesign - LOGGED 2026-11-26 (personal account)
+## IR. Landing page redesign - BUILT 2026-11-26 (personal account)
 
 **Owner 00:13:** redesign the formtrace.ie landing page in our theme colours; make it engaging; **draw attention to the "Try Formtrace" (or equivalent) button**; **reserve space for 1-3 videos of users using our camera software**, showing the audience how it looks. (This is the landing redesign queued in the OpenArt list on 2026-11-23 - the figure is remade too.)
 **Today's copy reused in the brief:** "A real coach for every rep you record"; Try Formtrace; "Free to join. You only pay for a goal when you accept a coach's offer"; the five feature cards; How it works 1-2-3; "Are you a coach?".
@@ -2083,6 +2084,8 @@ Both takes finished (~240 credits; balance 8,563 on 2026-11-26).
 **Owner 00:21: A (mobile) and C (desktop) liked** (`docs/brand/landing-concept-a-mobile.png`, `landing-concept-c-desktop.png`) - one responsive page: A's layout on phones, C's split hero + video wall on wide screens.
 **Note (owner): OpenArt did not use our logo, nor our traced lines, on the desktop version (C)** - its "F" mark is a generic outline and the figures carry a generic glowing skeleton. **Adjust in the build:** the real logo and wordmark from `docs/brand/logo/` (traced-line F, Montserrat ExtraBold wordmark) on both widths, and the video frames show our own camera's tracing (the owner's recordings, or our animated figure until then) - never the concept's skeleton art. Also from C: its "How it works" body text is garbled - use today's copy (Post your goal / Choose your coach / Train, record, improve).
 **Next:** owner's go to build; videos to be supplied.
+**Owner 19:38: "proceed with product log - no tests, build only".** **BUILT (`#landing`, one responsive page):** header with OUR wordmark (wordmark.svg), desktop nav How it works / For coaches / Sign in / gold Try Formtrace; hero H1 in a gold gradient, lead, a pulsing glowing CTA "Try Formtrace - it's free ->" and the pay-only-on-accept note; **"See the camera in action"** - three gold-framed phones (C's video wall on wide screens, beside the copy; A's row under the hero on phones): left the real workout screen (IU), centre our own animated traced squat (the EX figure, never the concept's skeleton art), right the real notifications screen (IN); **video slots** - `LP_VIDEOS=[null,null,null]` in the landing script: add the owner's recordings and they replace the stills (muted, looped, playsinline, loaded only when on screen); gold-framed feature band (5 features with line icons; one column on phones); How it works with gold step circles joined by a gold line (horizontal on desktop, vertical on phones) and today's copy; end CTA + "Are you a coach? Apply"; on phones a sticky Try Formtrace bar appears once the hero button scrolls away. Reduced motion stops the pulse. Previews: docs/brand/landing-desktop-preview.png, landing-mobile-preview.png.
+**Not done:** the owner's videos (slots ready); "For coaches" scrolls to the end section (no separate coach page).
 
 ---
 ## IQ. Settings redesign - LOGGED 2026-11-25 (personal account)

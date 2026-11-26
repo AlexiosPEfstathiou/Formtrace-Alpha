@@ -66,47 +66,96 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
 <link rel="preconnect" href="https://fonts.bunny.net" />
 <link rel="stylesheet" href="https://fonts.bunny.net/css?family=montserrat:700,800&display=swap" />
 <style>
-  /* ---- EX landing page (signed-out visitors). Brand tokens; display face Montserrat (EW 2026-11-23, was Big Shoulders Display) via Bunny Fonts (EU, no tracking). ---- */
+  /* ---- EX landing page (signed-out visitors), IR redesign 2026-11-26: concept A on phones, C on wide screens. Montserrat via Bunny Fonts. ---- */
   html.lp-off #landing{display:none!important}
   html:not(.lp-off) body{overflow:hidden}
-  #landing{--lp-display:"Montserrat",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  #landing{--lp-display:"Montserrat",system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--g:#E8B923;--g2:#F5D46A;--g3:#C99A1A;position:fixed;inset:0;z-index:2147483000;overflow-y:auto;-webkit-overflow-scrolling:touch;
     background:#0B0E11;color:#EEF3F6;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;
-    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);scroll-behavior:smooth}
   #landing *{box-sizing:border-box}
-  #landing .lp-wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  #landing .lp-glow{position:absolute;left:0;right:0;top:0;height:720px;pointer-events:none;background:radial-gradient(60% 55% at 70% 30%,rgba(232,185,35,.13),transparent 70%),radial-gradient(40% 40% at 10% 0%,rgba(232,185,35,.10),transparent 70%)}
+  #landing .lp-wrap{position:relative;max-width:1180px;margin:0 auto;padding:0 22px}
   #landing .lp-top{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
   #landing .lp-logo{margin:0;line-height:0}
-  #landing .lp-logo img{height:30px;width:auto;display:block}
-  #landing .lp-signin{color:#A9B5BF;font:inherit;font-size:15px;text-decoration:underline;text-underline-offset:3px;background:none;border:0;cursor:pointer;padding:8px 4px}
-  #landing .lp-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:32px;align-items:center;padding:22px 0 60px}
-  #landing h1{font-family:var(--lp-display);font-weight:800;font-size:clamp(36px,5.8vw,66px);line-height:1.04;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance}
-  #landing .lp-lead{font-size:18.5px;color:#C9D3DA;max-width:32em;margin:0 0 28px}
-  #landing .lp-cta{display:inline-block;font-family:var(--lp-display);font-weight:800;font-size:20px;letter-spacing:.01em;line-height:1;color:#2c2400;background:#E8B923;
-    border:0;border-radius:999px;padding:20px 46px 21px;cursor:pointer;box-shadow:0 10px 34px rgba(232,185,35,.28)}
-  #landing .lp-cta:hover{background:#F2CC55}
-  #landing .lp-cta:focus-visible,#landing .lp-signin:focus-visible,#landing .lp-link:focus-visible,#landing .lp-foot a:focus-visible{outline:3px solid #E8B923;outline-offset:3px}
+  #landing .lp-logo img{height:34px;width:auto;display:block}
+  #landing .lp-nav{display:flex;align-items:center;gap:26px}
+  #landing .lp-navl{color:#C9D3DA;text-decoration:none;font-size:15.5px}
+  #landing .lp-navl:hover{color:var(--g)}
+  #landing .lp-signin{color:#C9D3DA;font:inherit;font-size:15.5px;background:none;border:0;cursor:pointer;padding:8px 4px}
+  #landing .lp-signin:hover{color:var(--g)}
+  #landing .lp-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:40px;align-items:center;padding:34px 0 56px}
+  #landing h1{font-family:var(--lp-display);font-weight:800;font-size:clamp(38px,5.4vw,70px);line-height:1.04;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance;
+    background:linear-gradient(180deg,#F7DC7A,#E8B923 55%,#C99A1A);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #landing .lp-lead{font-size:18.5px;color:#C9D3DA;max-width:31em;margin:0 0 30px}
+  #landing .lp-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:var(--lp-display);font-weight:800;font-size:20px;letter-spacing:.01em;line-height:1;color:#0B0E11;
+    background:linear-gradient(180deg,var(--g2),var(--g) 55%,var(--g3));border:0;border-radius:999px;padding:20px 40px 21px;cursor:pointer;box-shadow:0 0 0 1px rgba(255,236,170,.35) inset,0 10px 34px rgba(232,185,35,.35);transition:transform .15s,filter .15s}
+  #landing .lp-cta:hover{filter:brightness(1.06)}
+  #landing .lp-cta:active{transform:scale(.97);filter:brightness(.9)}
+  #landing .lp-cta-sm{font-size:15.5px;padding:12px 22px}
+  #landing .lp-pulse{animation:lppulse 2.6s ease-in-out infinite}
+  @keyframes lppulse{0%,100%{box-shadow:0 0 0 1px rgba(255,236,170,.35) inset,0 10px 34px rgba(232,185,35,.35),0 0 0 0 rgba(232,185,35,.45)}50%{box-shadow:0 0 0 1px rgba(255,236,170,.35) inset,0 10px 40px rgba(232,185,35,.5),0 0 0 14px rgba(232,185,35,0)}}
+  #landing .lp-cta:focus-visible,#landing .lp-signin:focus-visible,#landing .lp-link:focus-visible,#landing .lp-foot a:focus-visible,#landing .lp-navl:focus-visible{outline:3px solid var(--g);outline-offset:3px}
   #landing .lp-note{font-size:14px;color:#8593A0;margin:14px 0 0}
-  #landing .lp-fig{display:block;width:100%;max-width:400px;height:auto;justify-self:center}
-  #landing .lp-sec{padding:54px 0;border-top:1px solid #232C35}
+  #landing .lp-show-h{font-family:var(--lp-display);font-size:22px;font-weight:800;text-align:center;margin:0 0 18px;color:#EEF3F6;display:none}
+  #landing .lp-phones{display:flex;justify-content:center;align-items:center;gap:16px}
+  #landing .lp-phone{margin:0;flex:0 0 auto;width:28%;max-width:200px;text-align:center}
+  #landing .lp-phone.lp-main{width:36%;max-width:250px}
+  #landing .lp-scr{position:relative;aspect-ratio:9/19.5;border-radius:26px;overflow:hidden;background:#10151A;border:3px solid #1A1F25;outline:2px solid rgba(232,185,35,.7);outline-offset:0;
+    box-shadow:0 0 28px rgba(232,185,35,.28),0 20px 50px rgba(0,0,0,.5)}
+  #landing .lp-main .lp-scr{outline-color:var(--g);box-shadow:0 0 44px rgba(232,185,35,.45),0 24px 60px rgba(0,0,0,.55)}
+  #landing .lp-scr img,#landing .lp-scr video{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+  #landing .lp-scr .lp-fig{display:block;width:100%;height:100%;object-fit:cover}
+  #landing .lp-phone figcaption{margin-top:12px;font-size:14.5px;color:#C9D3DA;font-weight:600}
+  #landing .lp-main figcaption{color:var(--g)}
+  #landing .lp-side{transform:translateY(18px)}
+  #landing .lp-band{margin:0 0 10px;border:1.5px solid rgba(232,185,35,.6);border-radius:22px;padding:22px 26px;background:linear-gradient(160deg,rgba(232,185,35,.10),rgba(232,185,35,.02) 60%);box-shadow:0 0 30px rgba(232,185,35,.12)}
+  #landing .lp-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   #landing h2{font-family:var(--lp-display);font-weight:800;font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.015em;margin:0 0 30px}
-  #landing h3{font-size:19px;line-height:1.3;margin:0 0 6px;color:#EEF3F6}
-  #landing .lp-why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 48px;margin:0;padding:0;list-style:none}
-  #landing .lp-why li{border-left:3px solid #E8B923;padding:2px 0 2px 18px}
-  #landing .lp-why p,#landing .lp-steps p{margin:0;color:#A9B5BF;max-width:34em}
-  #landing .lp-steps{counter-reset:lps;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px}
-  #landing .lp-steps li{counter-increment:lps}
-  #landing .lp-steps li::before{content:counter(lps);display:block;font-family:var(--lp-display);font-weight:800;font-size:52px;line-height:1;color:#E8B923;margin-bottom:6px}
-  #landing .lp-end{text-align:center;padding:70px 0 64px;border-top:1px solid #232C35}
+  #landing h3{font-size:17px;line-height:1.3;margin:0 0 4px;color:#EEF3F6}
+  #landing .lp-why{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px;margin:0;padding:0;list-style:none}
+  #landing .lp-why li{display:flex;gap:12px;align-items:flex-start}
+  #landing .lp-why li+li{border-left:1px solid rgba(232,185,35,.25);padding-left:18px}
+  #landing .lp-ic svg,#landing .lp-step svg{fill:none;stroke:var(--g);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  #landing .lp-ic svg{width:34px;height:34px;flex:0 0 34px;filter:drop-shadow(0 0 6px rgba(232,185,35,.35))}
+  #landing .lp-why p,#landing .lp-steps p{margin:0;color:#A9B5BF;font-size:14.5px}
+  #landing .lp-sec{padding:60px 0 40px;text-align:center}
+  #landing .lp-sec h2{color:var(--g)}
+  #landing .lp-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;position:relative}
+  #landing .lp-steps::before{content:"";position:absolute;left:16.6%;right:16.6%;top:34px;height:2px;background:linear-gradient(90deg,var(--g3),var(--g),var(--g3));opacity:.8}
+  #landing .lp-steps li{position:relative}
+  #landing .lp-step{position:relative;z-index:1;display:inline-flex;width:68px;height:68px;border-radius:50%;align-items:center;justify-content:center;background:#0B0E11;border:2px solid var(--g);box-shadow:0 0 18px rgba(232,185,35,.35);margin-bottom:14px}
+  #landing .lp-step svg{width:32px;height:32px}
+  #landing .lp-steps p{max-width:22em;margin:0 auto}
+  #landing .lp-end{text-align:center;padding:60px 0 64px;border-top:1px solid #232C35}
   #landing .lp-end h2{margin-bottom:26px}
   #landing .lp-coach{margin:26px auto 0;color:#A9B5BF;font-size:15.5px;max-width:32em}
-  #landing .lp-link{color:#E8B923;background:none;border:0;padding:0;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  #landing .lp-link{color:var(--g);background:none;border:0;padding:0;font:inherit;font-weight:700;cursor:pointer}
   #landing .lp-foot{border-top:1px solid #232C35;padding:22px 0 36px;color:#5B6773;font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px 24px}
   #landing .lp-foot a{color:#8593A0}
-  @media (max-width:780px){
-    #landing .lp-hero{grid-template-columns:1fr;gap:26px;padding:6px 0 48px}
-    #landing .lp-fig{max-width:280px}
-    #landing .lp-cta{display:block;width:100%;text-align:center}
-    #landing .lp-why,#landing .lp-steps{grid-template-columns:1fr}
+  #landing .lp-sticky{position:fixed;left:0;right:0;bottom:0;z-index:2;padding:12px 22px calc(env(safe-area-inset-bottom,0px) + 14px);background:linear-gradient(rgba(11,14,17,0),#0B0E11 40%);display:none;justify-content:center;transform:translateY(110%);transition:transform .3s}
+  #landing .lp-sticky.on{transform:none}
+  @media (prefers-reduced-motion:reduce){#landing .lp-pulse{animation:none}#landing{scroll-behavior:auto}}
+  @media (max-width:860px){
+    #landing .lp-nav .lp-navl,#landing .lp-nav .lp-cta-sm{display:none}
+    #landing .lp-top{justify-content:center;position:relative}
+    #landing .lp-signin{position:absolute;right:0;color:var(--g);text-decoration:underline;text-underline-offset:3px}
+    #landing .lp-hero{grid-template-columns:1fr;gap:34px;padding:16px 0 40px;text-align:center}
+    #landing .lp-lead{margin-left:auto;margin-right:auto;font-size:17px}
+    #landing .lp-show-h{display:block}
+    #landing .lp-phones{gap:10px}
+    #landing .lp-side{transform:translateY(14px)}
+    #landing .lp-phone figcaption{font-size:12.5px}
+    #landing .lp-band{padding:16px}
+    #landing .lp-why{grid-template-columns:1fr;gap:16px;text-align:left}
+    #landing .lp-why li+li{border-left:0;padding-left:0;border-top:1px solid rgba(232,185,35,.2);padding-top:16px}
+    #landing .lp-cta{font-size:18px;padding:18px 26px;white-space:nowrap}
+    #landing .lp-copy .lp-cta{width:100%;max-width:420px}
+    #landing .lp-steps{grid-template-columns:1fr;gap:22px}
+    #landing .lp-steps::before{left:50%;right:auto;top:34px;bottom:60px;width:2px;height:auto;background:linear-gradient(180deg,var(--g),var(--g3))}
+    #landing .lp-steps li{background:#0B0E11;padding-bottom:4px}
+    #landing .lp-sticky{display:flex}
+    #landing .lp-sticky .lp-cta{width:100%;max-width:420px}
+    #landing .lp-end{padding-bottom:110px}
   }
 </style>
 <style>
@@ -2274,22 +2323,34 @@ T(fade,9000);
 <!-- Item EX (owner, 2026-11-04): landing page - a short advertisement and one bright button. Plain HTML so search engines
      read it without running the app; hidden before drawing for the installed app and signed-in visitors (script in <head>). -->
 <div id="landing">
+  <!-- IR (owner, 2026-11-26): landing = concept A on phones, concept C on wide screens - with OUR logo and wordmark and
+       our own tracing (never the concept's skeleton art). Video slots: put files in LP_VIDEOS below (muted, lazy). -->
+  <div class="lp-glow" aria-hidden="true"></div>
   <div class="lp-wrap">
     <header class="lp-top">
-      <p class="lp-logo"><img src="wordmark.svg" alt="Formtrace" width="150" height="30"></p>
-      <button type="button" class="lp-signin" data-lp-go="signin">Sign in</button>
+      <p class="lp-logo"><img src="wordmark.svg" alt="Formtrace" width="170" height="34"></p>
+      <nav class="lp-nav" aria-label="Formtrace">
+        <a href="#lp-how-h" class="lp-navl">How it works</a>
+        <a href="#lp-end-h" class="lp-navl">For coaches</a>
+        <button type="button" class="lp-signin" data-lp-go="signin">Sign in</button>
+        <button type="button" class="lp-cta lp-cta-sm" data-lp-go="signup">Try Formtrace</button>
+      </nav>
     </header>
     <main>
       <section class="lp-hero" aria-labelledby="lp-h1">
-        <div>
+        <div class="lp-copy">
           <h1 id="lp-h1">A real coach for every rep you record</h1>
-          <p class="lp-lead">Post your fitness goal and coaches pitch you their plan. You record your sets on your phone, Formtrace traces your form, and your coach reviews every session.</p>
-          <button type="button" class="lp-cta" data-lp-go="signup">Try Formtrace</button>
-          <p class="lp-note">Free to join. You only pay for a goal when you accept a coach's offer.</p>
+          <p class="lp-lead">Post your goal and coaches pitch you their plan. You record your sets on your phone, Formtrace traces your form in gold, and your coach reviews every session.</p>
+          <button type="button" class="lp-cta lp-pulse" id="lp-main-cta" data-lp-go="signup">Try Formtrace - it's free <span aria-hidden="true">&rarr;</span></button>
+          <p class="lp-note">You only pay for a goal when you accept a coach's offer.</p>
         </div>
-        <svg class="lp-fig" id="lp-fig" viewBox="0 0 320 380" role="img" aria-labelledby="lp-fig-t">
+        <div class="lp-show" aria-labelledby="lp-show-h">
+          <h2 id="lp-show-h" class="lp-show-h">See the camera in action</h2>
+          <div class="lp-phones">
+            <figure class="lp-phone lp-side" data-lp-slot="0"><div class="lp-scr"><img src="img/lp-workout.webp" alt="The Formtrace workout screen: exercises on a gold line, the coach's example video and a Record button" loading="lazy" width="360" height="779"></div><figcaption>Your plan, set by set</figcaption></figure>
+            <figure class="lp-phone lp-main" data-lp-slot="1"><div class="lp-scr"><svg class="lp-fig" id="lp-fig" viewBox="0 0 320 380" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="lp-fig-t">
           <title id="lp-fig-t">A squat traced by Formtrace: arms held out in front, the joints are marked and the paths of the hips and knees are drawn in gold</title>
-          <rect x="0" y="0" width="320" height="380" rx="28" fill="#10151A"/>
+          <rect x="0" y="0" width="320" height="380" fill="#10151A"/>
           <line x1="36" y1="352" x2="284" y2="352" stroke="#232C35" stroke-width="2"/>
           <path d="M146 190 C 136 210, 122 236, 112 256" fill="none" stroke="#E8B923" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
           <path d="M154 270 C 166 273, 179 278, 190 282" fill="none" stroke="#E8B923" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
@@ -2336,30 +2397,33 @@ T(fade,9000);
             <circle cx="186" cy="94" r="6.5"><animate attributeName="cx" values="186;201;201;186" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/><animate attributeName="cy" values="94;176.5;176.5;94" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/></circle>
             <circle cx="222" cy="96" r="6.5"><animate attributeName="cx" values="222;237;237;222" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/><animate attributeName="cy" values="96;178;178;96" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/></circle>
           </g>
-        </svg>
+        </svg></div><figcaption>Your form, traced</figcaption></figure>
+            <figure class="lp-phone lp-side" data-lp-slot="2"><div class="lp-scr"><img src="img/lp-notify.webp" alt="Formtrace notifications: a call from your coach, today's log and your weekly check-in" loading="lazy" width="360" height="720"></div><figcaption>Your coach, in touch</figcaption></figure>
+          </div>
+        </div>
       </section>
-      <section class="lp-sec" aria-labelledby="lp-why-h">
-        <h2 id="lp-why-h">Why Formtrace is different</h2>
+      <section class="lp-band" aria-labelledby="lp-why-h">
+        <h2 id="lp-why-h" class="lp-vh">Why Formtrace is different</h2>
         <ul class="lp-why">
-          <li><h3>Your form, traced</h3><p>Every set you record is checked against your coach's reference movement, rep by rep, so you see what to fix straight away.</p></li>
-          <li><h3>A coach who actually watches</h3><p>Your coach reviews each session with voice notes and drawings on your video, plans your weeks and books calls with you.</p></li>
-          <li><h3>Optimize results</h3><p>Weekly check-in photos, your weight, macros and progress charts show what is working, so your coach can adjust your plan every week.</p></li>
-          <li><h3>Pay for progress, not promises</h3><p>Formtrace holds your payment and releases it to your coach one delivered week at a time. Weeks you don't use come back to you.</p></li>
-          <li><h3>Better with friends</h3><p>Streaks, achievements and friends cheering you on keep you showing up week after week.</p></li>
+          <li><span class="lp-ic"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="10" cy="16" r="1.4"/><path d="M10.2 9.6l3.6 1.8M14 13.2l-3 2"/></svg></span><div><h3>Your form, traced</h3><p>Every set is checked against your coach's reference movement, rep by rep.</p></div></li>
+          <li><span class="lp-ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M3 20c.6-3.6 3-5.6 6-5.6 1.4 0 2.6.4 3.6 1.1"/><circle cx="17" cy="17" r="4"/><path d="M17 15v2.2l1.4 1"/></svg></span><div><h3>A coach who actually watches</h3><p>Voice notes and drawings on your video, weekly plans and calls.</p></div></li>
+          <li><span class="lp-ic"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16v-4M12 16V8M17 16v-7"/><path d="M5 9l5-4 4 3 5-4"/></svg></span><div><h3>Results you can see</h3><p>Check-in photos, weight, macros and charts show what is working.</p></div></li>
+          <li><span class="lp-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M14.8 8.6a3.6 3.6 0 1 0 0 6.8M8 11h5M8 13h5"/></svg></span><div><h3>Pay for progress, not promises</h3><p>Your payment is released to your coach one delivered week at a time.</p></div></li>
+          <li><span class="lp-ic"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="8.5" r="2.6"/><path d="M2.8 19c.5-3.2 2.6-5 5.2-5s4.7 1.8 5.2 5M13.4 14.4c.9-.6 2-.9 3.1-.9 2.3 0 4.1 1.6 4.6 4.5"/></svg></span><div><h3>Better with friends</h3><p>Streaks, achievements and friends cheering you on.</p></div></li>
         </ul>
       </section>
       <section class="lp-sec" aria-labelledby="lp-how-h">
         <h2 id="lp-how-h">How it works</h2>
         <ol class="lp-steps">
-          <li><h3>Post your goal</h3><p>Say what you want to achieve, for how long, and how often you can train.</p></li>
-          <li><h3>Choose your coach</h3><p>Coaches send you their plan and price. Compare them and accept the one that fits you.</p></li>
-          <li><h3>Train, record, improve</h3><p>Do your workouts, record your sets and get your coach's review after every session.</p></li>
+          <li><span class="lp-step"><svg viewBox="0 0 24 24"><circle cx="11" cy="13" r="7.5"/><circle cx="11" cy="13" r="3.6"/><path d="M11 13l8-8M16.5 5H19v2.5"/></svg></span><h3>1. Post your goal</h3><p>Say what you want to achieve, for how long, and how often you can train.</p></li>
+          <li><span class="lp-step"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="13" height="17" rx="2"/><path d="M7.5 8h6M7.5 11.5h6M7.5 15h3.5"/><path d="M15.5 17.5l4-4 1.5 1.5-4 4H15.5z"/></svg></span><h3>2. Choose your coach</h3><p>Coaches send you their plan and price. Compare them and accept the one that fits you.</p></li>
+          <li><span class="lp-step"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/><circle cx="9.5" cy="12" r="2.2"/></svg></span><h3>3. Train, record, improve</h3><p>Do your workouts, record your sets and get your coach's review after every session.</p></li>
         </ol>
       </section>
       <section class="lp-end" aria-labelledby="lp-end-h">
         <h2 id="lp-end-h">Start with your goal</h2>
-        <button type="button" class="lp-cta" data-lp-go="signup">Try Formtrace</button>
-        <p class="lp-coach">Are you a coach? <button type="button" class="lp-link" data-lp-go="signup">Create an account</button> and apply to coach on Formtrace.</p>
+        <button type="button" class="lp-cta lp-pulse" data-lp-go="signup">Try Formtrace <span aria-hidden="true">&rarr;</span></button>
+        <p class="lp-coach">Are you a coach? <button type="button" class="lp-link" data-lp-go="signup">Apply</button> - create an account and apply to coach on Formtrace.</p>
       </section>
     </main>
     <footer class="lp-foot">
@@ -2368,12 +2432,26 @@ T(fade,9000);
       <a href="mailto:contact@formtrace.ie">contact@formtrace.ie</a>
     </footer>
   </div>
+  <div class="lp-sticky" id="lp-sticky" aria-hidden="true"><button type="button" class="lp-cta" data-lp-go="signup" tabindex="-1">Try Formtrace <span aria-hidden="true">&rarr;</span></button></div>
 </div>
 <script>/* EX: the buttons open the app's sign-up (or sign-in) screen; the figure stays still for reduced motion */
 (function(){var R=document.documentElement;function open(m){R.classList.add('lp-off');try{sessionStorage.setItem('ft-lp-off','1');sessionStorage.setItem('ft-lp-mode',m);}catch(e){}
   var n=0;(function w(){if(typeof window.setAuthMode==='function'){try{window.setAuthMode(m);}catch(e){}}else if(n++<50){setTimeout(w,100);}})();try{window.scrollTo(0,0);}catch(e){}}
   var b=document.querySelectorAll('[data-lp-go]');for(var i=0;i<b.length;i++){b[i].addEventListener('click',function(e){e.preventDefault();open(this.getAttribute('data-lp-go'));});}
   var s=document.getElementById('lp-fig');try{if(s&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches&&s.pauseAnimations){s.pauseAnimations();s.setCurrentTime(1.7);}}catch(e){}})();</script>
+<script>/* IR: video slots (owner's recordings of the app - add the file names here; they replace the stills, muted and lazy),
+   and the sticky Try button on phones once the hero button has scrolled away */
+(function(){var LP_VIDEOS=[null,null,null];
+  try{var slots=document.querySelectorAll('#landing [data-lp-slot]');
+    for(var i=0;i<slots.length;i++){var src=LP_VIDEOS[+slots[i].getAttribute('data-lp-slot')];if(!src)continue;
+      var v=document.createElement('video');v.muted=true;v.loop=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='none';v.setAttribute('data-src',src);
+      var scr=slots[i].querySelector('.lp-scr');scr.innerHTML='';scr.appendChild(v);}
+    var vids=document.querySelectorAll('#landing video[data-src]');
+    if(vids.length&&'IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){var v=e.target;if(e.isIntersecting){if(!v.src)v.src=v.getAttribute('data-src');var p=v.play();if(p&&p.catch)p.catch(function(){});}else v.pause();});},{root:document.getElementById('landing'),threshold:.4});
+      for(var k=0;k<vids.length;k++)io.observe(vids[k]);}
+    var cta=document.getElementById('lp-main-cta'),st=document.getElementById('lp-sticky');
+    if(cta&&st&&'IntersectionObserver' in window){new IntersectionObserver(function(es){var off=!es[0].isIntersecting&&es[0].boundingClientRect.top<0;st.classList.toggle('on',off);st.setAttribute('aria-hidden',off?'false':'true');st.querySelector('button').tabIndex=off?0:-1;},{root:document.getElementById('landing'),threshold:0}).observe(cta);}
+  }catch(e){}})();</script>
 <div id="frame"><div id="phone">
 
   <!-- persistent discipline-streak badge (trainee) -->
