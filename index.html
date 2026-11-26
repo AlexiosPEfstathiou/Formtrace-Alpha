@@ -79,25 +79,25 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
   #landing .lp-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:32px;align-items:center;padding:22px 0 60px}
   #landing h1{font-family:var(--lp-display);font-weight:800;font-size:clamp(36px,5.8vw,66px);line-height:1.04;letter-spacing:-.02em;margin:0 0 20px;text-wrap:balance}
   #landing .lp-lead{font-size:18.5px;color:#C9D3DA;max-width:32em;margin:0 0 28px}
-  #landing .lp-cta{display:inline-block;font-family:var(--lp-display);font-weight:800;font-size:20px;letter-spacing:.01em;line-height:1;color:#2c2400;background:#F0D231;
-    border:0;border-radius:999px;padding:20px 46px 21px;cursor:pointer;box-shadow:0 10px 34px rgba(240,210,49,.28)}
-  #landing .lp-cta:hover{background:#FBE577}
-  #landing .lp-cta:focus-visible,#landing .lp-signin:focus-visible,#landing .lp-link:focus-visible,#landing .lp-foot a:focus-visible{outline:3px solid #C8FF3D;outline-offset:3px}
+  #landing .lp-cta{display:inline-block;font-family:var(--lp-display);font-weight:800;font-size:20px;letter-spacing:.01em;line-height:1;color:#2c2400;background:#E8B923;
+    border:0;border-radius:999px;padding:20px 46px 21px;cursor:pointer;box-shadow:0 10px 34px rgba(232,185,35,.28)}
+  #landing .lp-cta:hover{background:#F2CC55}
+  #landing .lp-cta:focus-visible,#landing .lp-signin:focus-visible,#landing .lp-link:focus-visible,#landing .lp-foot a:focus-visible{outline:3px solid #E8B923;outline-offset:3px}
   #landing .lp-note{font-size:14px;color:#8593A0;margin:14px 0 0}
   #landing .lp-fig{display:block;width:100%;max-width:400px;height:auto;justify-self:center}
   #landing .lp-sec{padding:54px 0;border-top:1px solid #232C35}
   #landing h2{font-family:var(--lp-display);font-weight:800;font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.015em;margin:0 0 30px}
   #landing h3{font-size:19px;line-height:1.3;margin:0 0 6px;color:#EEF3F6}
   #landing .lp-why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 48px;margin:0;padding:0;list-style:none}
-  #landing .lp-why li{border-left:3px solid #F0D231;padding:2px 0 2px 18px}
+  #landing .lp-why li{border-left:3px solid #E8B923;padding:2px 0 2px 18px}
   #landing .lp-why p,#landing .lp-steps p{margin:0;color:#A9B5BF;max-width:34em}
   #landing .lp-steps{counter-reset:lps;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px}
   #landing .lp-steps li{counter-increment:lps}
-  #landing .lp-steps li::before{content:counter(lps);display:block;font-family:var(--lp-display);font-weight:800;font-size:52px;line-height:1;color:#F0D231;margin-bottom:6px}
+  #landing .lp-steps li::before{content:counter(lps);display:block;font-family:var(--lp-display);font-weight:800;font-size:52px;line-height:1;color:#E8B923;margin-bottom:6px}
   #landing .lp-end{text-align:center;padding:70px 0 64px;border-top:1px solid #232C35}
   #landing .lp-end h2{margin-bottom:26px}
   #landing .lp-coach{margin:26px auto 0;color:#A9B5BF;font-size:15.5px;max-width:32em}
-  #landing .lp-link{color:#F0D231;background:none;border:0;padding:0;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  #landing .lp-link{color:#E8B923;background:none;border:0;padding:0;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   #landing .lp-foot{border-top:1px solid #232C35;padding:22px 0 36px;color:#5B6773;font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px 24px}
   #landing .lp-foot a{color:#8593A0}
   @media (max-width:780px){
@@ -121,7 +121,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
        treatment — kept as a real variable (not a hardcoded hex in .btn)
        specifically so colorblind mode's override further below still
        correctly reaches every place this gradient is used. */
-    --lime:#F0D231; --lime-light:#FBE577; --lime-dim:#B8A030; --lime-ink:#2c2400;
+    --lime:#E8B923; --lime-light:#F2CC55; --lime-dim:#B8901A; --lime-ink:#0B0E11;
     /* Dedicated "look at this" attention color for glisten (unseen review,
        pending-offer flash, new-goal CTA) — kept as its own historic
        lime-green, deliberately NOT tied to --lime anymore now that --lime
@@ -129,7 +129,7 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
        yellow). Before this, glisten silently inherited whatever --lime
        happened to be, which is how it briefly became yellow by accident
        during the accent color swap. */
-    --attn:#C8FF3D;
+    --attn:#FFE08A;   /* HZ: glisten is a light gold shine now - lime is out of the brand */
     --red:#FF5A5A; --amber:#FFC24A; --blue:#5AB0FF; --violet:#B79CFF;
     --shadow:0 12px 40px rgba(0,0,0,.5);
     --frame-outer:#0d1116; --frame-ring:#1c242c; --frame-bg:#05070A;
@@ -145,16 +145,16 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
     --ch-1:#F0655C; --ch-2:#6FC94A; --ch-3:#F5A03C; --ch-4:#B79CFF; --ch-weight:#B79CFF;
     --ch-1-ink:#2b0505; --ch-2-ink:#0E1206; --ch-3-ink:#241a00; --ch-4-ink:#160a2b;
     /* tinted "accent" surface (lime-highlighted cards) */
-    --accent-surface:linear-gradient(120deg,#241f0a,#1a1608); --accent-border:#4a3f14;
+    --accent-surface:linear-gradient(120deg,#231C08,#16130A); --accent-border:#4D3D10;
     /* goal/offer status accents — active = green (dark), inactive = grey */
-    --goal-active:#F0D231; --goal-active-tint:rgba(240,210,49,.09); --goal-inactive:#5B6773; --goal-inactive-tint:rgba(91,103,115,.10);
+    --goal-active:#E8B923; --goal-active-tint:rgba(232,185,35,.09); --goal-inactive:#5B6773; --goal-inactive-tint:rgba(91,103,115,.10);
   }
   html[data-theme="light"]{
     --bg:#F4F6F8; --bg2:#EBEEF1; --panel:#FFFFFF; --panel2:#EEF1F4;
     --line:#DDE3E8; --line2:#C6CFD6;
     --ink:#131A20; --muted:#5A6672; --faint:#8C98A3;
     --lime:#B8960A; --lime-light:#D4AF1F; --lime-dim:#8f7508; --lime-ink:#FFFFFF;
-    --attn:#8FB82C;
+    --attn:#8A6D00;
     --red:#D64545; --amber:#B7791F; --blue:#0072B2; --violet:#7A5CC4;
     --shadow:0 12px 36px rgba(20,30,40,.18);
     --frame-outer:#d5dde3; --frame-ring:#c0cad2; --frame-bg:#E4E9ED;
@@ -215,14 +215,14 @@ if(!off&&sessionStorage.getItem('ft-lp-off'))off=true;if(off)R.classList.add('lp
   opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;max-width:calc(100vw - 32px)}
 #wo-undo.on{opacity:1;pointer-events:auto;transform:translateX(-50%)}
 #wo-undo span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#wo-undo button{background:none;border:0;color:#F0D231;font:inherit;font-weight:800;padding:4px 6px;cursor:pointer}
+#wo-undo button{background:none;border:0;color:#E8B923;font:inherit;font-weight:800;padding:4px 6px;cursor:pointer}
 .mini-stepper button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* GA: phone held sideways - the countdown, timer, message and side-button icons turn to face the user; the picture does not */
 #countdown,#rtimer,#r-statmsg,#r-deck .rside .i{transition:transform .25s}
 #countdown,#rtimer,#r-statmsg,#r-deck .rside .i{transition:transform .38s cubic-bezier(.3,1.2,.4,1)}   /* GA-2: icons turn in place like a native camera */
 body.rec-ui-90 #countdown,body.rec-ui-90 #rtimer,body.rec-ui-90 #r-statmsg,body.rec-ui-90 #r-deck .rside .i{transform:rotate(90deg)}
 body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,body.rec-ui-270 #r-deck .rside .i{transform:rotate(-90deg)}
-#r-mirror.on{border-color:#F0D231;color:#F0D231}
+#r-mirror.on{border-color:#E8B923;color:#E8B923}
 /* GK: the trainee's Training tab as a control panel */
 .tr-start{width:100%;height:54px;font-size:16.5px;font-weight:800;border-radius:16px;margin:0;background:#E8B923!important;color:#0B0E11!important;box-shadow:0 8px 24px rgba(232,185,35,.22)!important}   /* ID: brand gold */
 #wk-card .wk-card[style*="column"]{gap:12px!important;margin-bottom:0}   /* ID: the trainee's week card, tighter */
@@ -232,7 +232,7 @@ body.rec-ui-270 #countdown,body.rec-ui-270 #rtimer,body.rec-ui-270 #r-statmsg,bo
 .of-req{font-size:12px;color:var(--amber);margin-top:6px;line-height:1.4}
 .of-req::before{content:"ⓘ ";font-weight:800}   /* HX: its own card after the goals - never over them */
 .goal-bar{border-radius:16px;background:var(--panel);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
-.goal-bar.is-new{border-color:var(--lime-dim,var(--lime));box-shadow:0 0 0 1px rgba(198,244,50,.18),0 6px 18px rgba(198,244,50,.08)}
+.goal-bar.is-new{border-color:var(--lime-dim,var(--lime));box-shadow:0 0 0 1px rgba(232,185,35,.18),0 6px 18px rgba(232,185,35,.08)}
 .goal-bar .gb-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1.25fr);align-items:center;gap:10px;width:100%;padding:10px 12px;background:none;border:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .goal-bar .gb-av{width:38px;height:38px;font-size:13px}
 .goal-bar .gb-left{display:flex;flex-direction:column;min-width:0}
@@ -873,7 +873,7 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .exn .exn-row{display:flex;gap:10px;margin-top:7px;font-size:13px;line-height:1.45}
 .exn .exn-d{flex:0 0 auto;min-width:54px;color:var(--faint);font-size:11.5px;padding-top:1px;line-height:1.35}
 .exn .exn-t{flex:1;min-width:0;overflow-wrap:anywhere}
-.exn .exn-all{background:none;border:0;color:#F0D231;font:inherit;font-size:12.5px;font-weight:700;padding:8px 0 0;cursor:pointer}
+.exn .exn-all{background:none;border:0;color:#E8B923;font:inherit;font-size:12.5px;font-weight:700;padding:8px 0 0;cursor:pointer}
 .exn .exn-d i{font-style:normal;color:var(--faint);opacity:.85}
 .exn .exn-ed{flex:0 0 auto;align-self:flex-start;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;font-weight:700;padding:0 0 0 6px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .exn .exn-edit{flex:1;min-width:0}
@@ -1138,12 +1138,12 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   /* Theme refresh: pill shape + a gradient fill with a subtle glow, instead
      of the old flat single-color fill with no shadow at all. */
   .btn.primary{background:linear-gradient(180deg,var(--lime-light),var(--lime));color:var(--lime-ink);
-    border:none;box-shadow:0 4px 14px rgba(240,210,49,.28);}
+    border:none;box-shadow:0 4px 14px rgba(232,185,35,.28);}
   .btn.ghost{background:transparent;}
   /* Secondary/ghost buttons stay quiet at rest — all the accent energy is
      reserved for primary — but get a subtle lime border+glow specifically
      on press, so a tap still gets a moment of feedback. */
-  .btn.ghost:active{border-color:var(--lime);background:rgba(240,210,49,.06);box-shadow:0 0 12px rgba(240,210,49,.22);}
+  .btn.ghost:active{border-color:var(--lime);background:rgba(232,185,35,.06);box-shadow:0 0 12px rgba(232,185,35,.22);}
   .btn.sm{height:44px;font-size:14px;border-radius:22px;}
   .btn:disabled{opacity:.4;cursor:default;}
   /* "glisten" — attention shine for the Submit-new-Goal CTA */
@@ -1155,7 +1155,7 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
     animation:glisten-sweep 2.6s ease-in-out infinite;}
   .btn.glisten > *{position:relative;z-index:2;}
   @keyframes glisten-sweep{0%{left:-70%;}55%{left:130%;}100%{left:130%;}}
-  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}50%{box-shadow:0 0 22px 1px rgba(200,255,61,.55);}}
+  @keyframes glisten-pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,185,35,0);}50%{box-shadow:0 0 22px 1px rgba(232,185,35,.55);}}
   html[data-theme="light"] .btn.glisten{animation:glisten-pulse-lt 2.6s ease-in-out infinite;}
   @keyframes glisten-pulse-lt{0%,100%{box-shadow:0 0 0 0 rgba(143,184,44,0);}50%{box-shadow:0 0 20px 1px rgba(143,184,44,.4);}}
   @media(prefers-reduced-motion:reduce){.btn.glisten,.btn.glisten::after,.role.glisten,.role.glisten::after{animation:none;}}
@@ -1488,7 +1488,7 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   #app-tabbar button{position:relative;}  .tab-dot{position:absolute;top:0;left:calc(50% + 11px);right:auto;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#E8B923;color:#05070A;font-family:Montserrat,system-ui,sans-serif;font-size:10px;font-weight:800;line-height:16px;text-align:center;box-shadow:0 0 0 2.5px var(--bg,#0B0E11);}   /* CN-4; IC-2: the owner's OpenArt counter - small bronze-gold circle, black number, a dark ring that keeps it off the icon; sits on the icon's top-right corner, touching it */
   @keyframes clap{0%,100%{transform:scale(1) rotate(-6deg);}50%{transform:scale(1.25) rotate(6deg);}}  #clap-overlay{display:none;}  #clap-overlay.on{display:flex;}  #clap-overlay.on #clap-hands{animation:clap .28s ease-in-out 7;}  #clap-overlay.on #clap-avatar{animation:top1-pulse 1.4s ease-in-out infinite;}   /* Item CM */
   /* Item DA: achievement unlock. Family colours are PLACEHOLDERS until branding (BJ) - one variable per family. */
-  :root{--fam-start:#C8FF3D;--fam-discipline:#F0D231;--fam-effort:#FF8A3D;--fam-body:#5AB0FF;--fam-journey:#B48CFF;--fam-social:#FF7AB6;}
+  :root{--fam-start:#E8B923;--fam-discipline:#E8B923;--fam-effort:#FF8A3D;--fam-body:#5AB0FF;--fam-journey:#B48CFF;--fam-social:#FF7AB6;}
   #ach-overlay{display:none;position:fixed;inset:0;z-index:260;background:rgba(11,14,17,.94);align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px;cursor:pointer;}
   #ach-overlay.on{display:flex;}
   .ach-badge{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:64px;animation:ach-drop .6s cubic-bezier(.2,1.4,.4,1) both;}
@@ -1520,14 +1520,14 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   /* Item DG: referral QR - dark modules on white inside the card (scans on every phone), Formtrace mark in the centre */
   .ref-qr-wrap{position:relative;width:204px;height:204px;margin:4px auto 10px;padding:14px;background:#fff;border-radius:16px;border:2px solid var(--lime);box-sizing:border-box;}
   .ref-qr{width:172px;height:172px;} .ref-qr canvas,.ref-qr img{width:172px!important;height:172px!important;display:block;}
-  .ref-qr-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:10px;background:#0B0E11;color:#C8FF3D;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;}
+  .ref-qr-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:10px;background:#0B0E11;color:#E8B923;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;}
   .ref-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;} .ref-tier{border:1px solid var(--line2);border-radius:11px;padding:8px 6px;text-align:center;font-size:11px;color:var(--muted);line-height:1.35;display:flex;flex-direction:column;gap:2px;} .ref-tier b{color:var(--ink);font-size:12px;} .ref-tier .rn{color:var(--faint);}
   .ref-tier.next{border-color:var(--lime);background:var(--panel2);} .ref-tier.done{border-color:var(--lime);} .ref-tier.done b::after{content:" ✓";color:var(--lime);}
   /* Item DL: payment tracker - an order-tracking steps map */
   .pt-steps{display:flex;align-items:flex-start;margin:10px 0 4px;}  .pt-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:0;}
   .pt-step::before{content:"";position:absolute;top:9px;left:-50%;right:50%;height:3px;background:var(--line2);z-index:0;}  .pt-step:first-child::before{display:none;}  .pt-step.done::before,.pt-step.now::before{background:var(--lime);}  .pt-step.skip::before{background:repeating-linear-gradient(90deg,var(--line2) 0 4px,transparent 4px 8px);}
   .pt-dot{position:relative;z-index:1;width:20px;height:20px;border-radius:50%;background:var(--panel);border:2px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#0B0E11;}
-  .pt-step.done .pt-dot{background:var(--lime);border-color:var(--lime);}  .pt-step.now .pt-dot{border-color:var(--lime);box-shadow:0 0 0 4px rgba(200,255,61,.18);}  .pt-step.skip .pt-dot{border-style:dashed;color:var(--faint);}  .pt-step.warn .pt-dot{background:var(--amber);border-color:var(--amber);}
+  .pt-step.done .pt-dot{background:var(--lime);border-color:var(--lime);}  .pt-step.now .pt-dot{border-color:var(--lime);box-shadow:0 0 0 4px rgba(232,185,35,.18);}  .pt-step.skip .pt-dot{border-style:dashed;color:var(--faint);}  .pt-step.warn .pt-dot{background:var(--amber);border-color:var(--amber);}
   .pt-lbl{margin-top:6px;font-size:10.5px;font-weight:700;text-align:center;color:var(--muted);line-height:1.2;}  .pt-step.done .pt-lbl,.pt-step.now .pt-lbl{color:var(--ink);}  .pt-step.skip .pt-lbl{color:var(--faint);text-decoration:line-through;}  .pt-date{font-size:9.5px;color:var(--faint);text-align:center;margin-top:2px;}
   .pt-now{margin-top:10px;border-top:1px solid var(--line2);padding-top:10px;font-size:12.5px;line-height:1.5;color:var(--muted);}
   .top1-pitch{position:relative;border-radius:18px;padding:2px;margin-bottom:10px;background:linear-gradient(120deg,#FFD23F,#FFB300,#FFF3B0,#FFB300,#FFD23F);background-size:300% 100%;animation:top1-frame 6s linear infinite;}
@@ -1723,8 +1723,8 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .offer-row.unviewed::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--faint);}
   /* Pending flashes regardless of viewed state — per spec, "pending" itself
      is the signal, not whether it's been glanced at. */
-  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--attn);box-shadow:0 0 0 0 rgba(200,255,61,.6);animation:glisten 1.8s ease-out infinite;}
-  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(200,255,61,.55);}70%{box-shadow:0 0 0 9px rgba(200,255,61,0);}100%{box-shadow:0 0 0 0 rgba(200,255,61,0);}}
+  .offer-row.pending-flash::before{content:"";position:absolute;top:13px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--attn);box-shadow:0 0 0 0 rgba(232,185,35,.6);animation:glisten 1.8s ease-out infinite;}
+  @keyframes glisten{0%{box-shadow:0 0 0 0 rgba(232,185,35,.55);}70%{box-shadow:0 0 0 9px rgba(232,185,35,0);}100%{box-shadow:0 0 0 0 rgba(232,185,35,0);}}
   .offer-expanded{position:relative;background:var(--panel);border:1px solid var(--lime-dim);border-radius:16px;padding:16px;margin-bottom:12px;}
   /* collapse control lives top-right on the card itself, not a button at
      the bottom — reachable the instant the card opens, no scrolling needed */
@@ -1807,7 +1807,7 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .cal-tap:active{transform:scale(.95);}
   .cal-add-plus{font-size:14px;font-weight:700;color:var(--faint);line-height:1;opacity:.45;}
   .cal-log-dot{position:absolute;left:4px;bottom:4px;width:6px;height:6px;border-radius:50%;background:var(--violet);}
-  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--attn),0 0 12px rgba(200,255,61,.35);}
+  .cal-glisten{overflow:hidden;box-shadow:0 0 0 1px var(--attn),0 0 12px rgba(232,185,35,.35);}
   .cal-glisten::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.7) 50%,transparent 68%);background-size:230% 100%;animation:calglisten 2.2s linear infinite;pointer-events:none;}
   @keyframes calglisten{0%{background-position:130% 0;}100%{background-position:-130% 0;}}
   /* split day: two triangles (top=macros, bottom=workout) */
@@ -1836,7 +1836,7 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
      This combined selector wins the cascade back for the ring, keeping the
      gold FILL (background/border, untouched, still !important) but making
      the attention signal unmistakable rather than accidentally diluted. */
-  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--attn),0 0 16px rgba(200,255,61,.5);}
+  .cal-gold.cal-glisten{box-shadow:0 0 0 2px var(--attn),0 0 16px rgba(232,185,35,.5);}
   /* Item: completed-workout-awaiting-review — same gold family, visibly
      quieter than a fully resolved day, since nobody's looked at it yet
      but it's also not something the TRAINEE needs to act on right now. */
@@ -2123,6 +2123,28 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .switch .track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--faint);transition:transform .2s,background .2s;}
   .switch input:checked + .track{background:var(--lime);border-color:var(--lime);}
   .switch input:checked + .track::after{transform:translateX(18px);background:var(--lime-ink);}
+  /* HZ / IX (owner, 2026-11-26): component states from the OpenArt state sheet (docs/brand/pack/component-states.png).
+     Primary = solid gold pill with a soft glow; pressed = darker, tighter glow, 3% smaller; disabled = 35%; loading = spinner.
+     Secondary = gold outline, pressed = faint gold fill. Ghost = quiet. Inputs focus gold. Tab bar active = gold on a gold pill. */
+  .btn{background:transparent;border:1.5px solid rgba(232,185,35,.55);color:var(--lime);}
+  .btn:active{transform:scale(.97);background:rgba(232,185,35,.14);}
+  .btn.ghost{border-color:var(--line2);color:var(--ink);}
+  .btn.ghost:active{border-color:var(--lime);background:rgba(232,185,35,.06);box-shadow:none;}
+  .btn.primary{background:linear-gradient(180deg,var(--lime-light),var(--lime));color:var(--lime-ink);border:none;box-shadow:0 4px 16px rgba(232,185,35,.32);}
+  .btn.primary:active{filter:brightness(.86);box-shadow:0 2px 8px rgba(232,185,35,.22);background:linear-gradient(180deg,var(--lime-light),var(--lime));}
+  .btn:disabled,.btn.primary:disabled{opacity:.35;box-shadow:none;filter:none;transform:none;}
+  .btn.loading{position:relative;color:transparent!important;pointer-events:none;}
+  .btn.loading::after{content:"";position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2.5px solid rgba(11,14,17,.25);border-top-color:#0B0E11;animation:hzspin .8s linear infinite;}
+  .btn:not(.primary).loading::after{border-color:rgba(232,185,35,.25);border-top-color:#E8B923;}
+  @keyframes hzspin{to{transform:rotate(360deg)}}
+  .field input:focus,.field textarea:focus,.field select:focus,input.inp:focus,textarea:focus{border-color:var(--lime)!important;box-shadow:0 0 0 1px var(--lime);outline:none;}
+  .field input:invalid:not(:placeholder-shown){border-color:var(--red);}
+  .tabbar.home-nav button.on{background:rgba(232,185,35,.16);border-radius:16px;}
+  .switch input:checked + .track{box-shadow:0 0 10px rgba(232,185,35,.35);}
+  .switch input:disabled + .track{opacity:.35;}
+  html[data-theme="light"] .btn{border-color:rgba(184,150,10,.6);}
+  html[data-theme="light"] .btn.ghost{border-color:var(--line2);}
+  html[data-theme="light"] .tabbar.home-nav button.on{background:rgba(184,150,10,.14);}
 </style>
 <script>
   // Apply saved theme + colorblind mode before first paint (no flash).
@@ -2197,8 +2219,8 @@ T(fade,9000);
           <title id="lp-fig-t">A squat traced by Formtrace: arms held out in front, the joints are marked and the paths of the hips and knees are drawn in gold</title>
           <rect x="0" y="0" width="320" height="380" rx="28" fill="#10151A"/>
           <line x1="36" y1="352" x2="284" y2="352" stroke="#232C35" stroke-width="2"/>
-          <path d="M146 190 C 136 210, 122 236, 112 256" fill="none" stroke="#F0D231" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
-          <path d="M154 270 C 166 273, 179 278, 190 282" fill="none" stroke="#F0D231" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
+          <path d="M146 190 C 136 210, 122 236, 112 256" fill="none" stroke="#E8B923" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
+          <path d="M154 270 C 166 273, 179 278, 190 282" fill="none" stroke="#E8B923" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8"/>
           <g stroke="#EEF3F6" stroke-width="7" stroke-linecap="round" opacity=".92">
             <line x1="150" y1="92" x2="146" y2="190">
               <animate attributeName="x1" values="150;165;165;150" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
@@ -2225,7 +2247,7 @@ T(fade,9000);
               <animate attributeName="cy" values="57;142;142;57" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
             </circle>
           </g>
-          <g fill="#C8FF3D">
+          <g fill="#E8B923">
             <circle cx="150" cy="92" r="6.5">
               <animate attributeName="cx" values="150;165;165;150" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
               <animate attributeName="cy" values="92;175;175;92" keyTimes="0;.45;.6;1" calcMode="spline" keySplines=".45 0 .55 1;0 0 1 1;.45 0 .55 1" dur="3.4s" repeatCount="indefinite"/>
@@ -2816,7 +2838,7 @@ T(fade,9000);
   <div id="analyze">
     <svg class="ring" viewBox="0 0 100 100">
       <circle cx="50" cy="50" r="42" fill="none" stroke="#232C35" stroke-width="6"/>
-      <circle id="an-ring" cx="50" cy="50" r="42" fill="none" stroke="#F0D231" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/>
+      <circle id="an-ring" cx="50" cy="50" r="42" fill="none" stroke="#E8B923" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 50 50)"/>
     </svg>
     <div><div class="m" id="an-msg">Analyzing your set…</div><div class="s" id="an-sub">Counting repetitions</div></div>
   </div>
@@ -3105,7 +3127,7 @@ window.addEventListener("unhandledrejection",e=>{
   };
 })();
 function fmt(sec){const m=Math.floor(sec/60),s=Math.floor(sec%60);return m+":"+String(s).padStart(2,"0");}
-function gradeColor(g){ if(g>=8)return "#F0D231"; if(g>=6)return "#B6E84A"; if(g>=4)return "#FFC24A"; return "#FF5A5A"; }
+function gradeColor(g){ if(g>=8)return "#E8B923"; if(g>=6)return "#B6E84A"; if(g>=4)return "#FFC24A"; return "#FF5A5A"; }
 function gradeWord(g){ return ["","Way off","Needs work","Rough","Getting there","Halfway","Decent","Solid","Strong","Great","Textbook"][g]||""; }
 function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -3342,7 +3364,7 @@ function streakDates(){
 function sbConfetti(){
   const box=$("#sb-confetti"); if(!box)return;
   box.innerHTML="";
-  const cols=["#FFC24A","#FF7A2F","#F0D231","#FF5A5A","#FFFFFF"];
+  const cols=["#FFC24A","#FF7A2F","#E8B923","#FF5A5A","#FFFFFF"];
   for(let i=0;i<70;i++){
     const c=document.createElement("i");
     c.style.left=(Math.random()*100)+"%";
@@ -4070,7 +4092,7 @@ function countingDown(){ return !!cdTimer; }
    - a torso panel with a soft gradient; limbs nearer the camera are drawn a little thicker (BlazePose depth);
    - points fade in and out with their visibility instead of popping;
    - smoothed between frames (One Euro filter) so the figure glides instead of jittering. */
-const STROKE="#F0D231",GLOW="240,210,49",MIN_VIS=0.5;
+const STROKE="#E8B923",GLOW="240,210,49",MIN_VIS=0.5;
 const Vec={add:(a,b)=>({x:a.x+b.x,y:a.y+b.y}),sub:(a,b)=>({x:a.x-b.x,y:a.y-b.y}),mul:(a,s)=>({x:a.x*s,y:a.y*s}),
   mid:(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2}),len:a=>Math.hypot(a.x,a.y),norm:a=>{const l=Math.hypot(a.x,a.y)||1;return{x:a.x/l,y:a.y/l};},perp:a=>({x:-a.y,y:a.x}),dist:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)};
 const P={nose:0,Leye:2,Reye:5,Lear:7,Rear:8,Lsh:11,Rsh:12,Lel:13,Rel:14,Lwr:15,Rwr:16,
@@ -4389,7 +4411,7 @@ const PTR_SCREENS=new Set(["home","notifications","intouch","coach","market","tr
 const PTR_TRIGGER=70, PTR_MAX=110;
 let ptrSt=null, ptrBusy=false;
 function ptrEl(){ let el=document.getElementById("ptr"); if(!el){ el=document.createElement("div"); el.id="ptr"; el.setAttribute("aria-hidden","true");
-  el.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#F0D231" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/><path d="M6 12l6 6 6-6"/></svg>'; document.body.appendChild(el); } return el; }
+  el.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#E8B923" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/><path d="M6 12l6 6 6-6"/></svg>'; document.body.appendChild(el); } return el; }
 function ptrScreen(){ const s=document.querySelector(".screen.active"); return s&&s.id?s.id.replace(/^s-/,""):""; }
 function ptrBlocked(){
   if(!document.documentElement.classList.contains("lp-off")) return true;                          // landing page showing
@@ -5431,7 +5453,7 @@ function showQuestCheer(q,done){
     const [head,line]=QUEST_CHEER[q.key]||["Quest complete",q.name||""];
     const ov=document.createElement("div");
     ov.style.cssText="position:fixed;inset:0;z-index:9998;background:rgba(5,7,9,.78);display:flex;align-items:center;justify-content:center;padding:24px;overflow:hidden";
-    let conf=""; if(!reduce){ const cols=["#C6F432","#fff","#7CE0FF","#FFB547"]; for(let i=0;i<34;i++){ conf+=`<i style="position:absolute;top:-12px;left:${Math.random()*100}%;width:7px;height:12px;border-radius:2px;background:${cols[i%4]};--dx:${(Math.random()*120-60).toFixed(0)}px;--r:${(Math.random()*720-360).toFixed(0)}deg;animation:dcFall ${(1.6+Math.random()*1.2).toFixed(2)}s ${(Math.random()*0.5).toFixed(2)}s ease-in forwards"></i>`; } }
+    let conf=""; if(!reduce){ const cols=["#E8B923","#fff","#7CE0FF","#FFB547"]; for(let i=0;i<34;i++){ conf+=`<i style="position:absolute;top:-12px;left:${Math.random()*100}%;width:7px;height:12px;border-radius:2px;background:${cols[i%4]};--dx:${(Math.random()*120-60).toFixed(0)}px;--r:${(Math.random()*720-360).toFixed(0)}deg;animation:dcFall ${(1.6+Math.random()*1.2).toFixed(2)}s ${(Math.random()*0.5).toFixed(2)}s ease-in forwards"></i>`; } }
     ov.innerHTML=`${conf}<div class="card" style="position:relative;max-width:330px;width:100%;text-align:center;padding:24px 20px 18px;${reduce?"":"animation:dcPop .55s cubic-bezier(.2,1.4,.4,1) both"}">
         <div class="eyebrow" style="margin:0 0 10px;color:var(--lime)">Weekly quest complete</div>
         <div style="width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:var(--lime);color:var(--lime-ink,#0B0E11);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900">✓</div>
@@ -5454,13 +5476,13 @@ async function shareQuestCheer(q,head,line,btn){
     const W=1080,H=1920,c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
     const g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#0B0E11"); g.addColorStop(1,"#1A2210"); x.fillStyle=g; x.fillRect(0,0,W,H);
     x.textAlign="center";
-    x.fillStyle="#C6F432"; x.font="800 40px system-ui, sans-serif"; x.fillText("WEEKLY QUEST COMPLETE",W/2,H*0.30);
+    x.fillStyle="#E8B923"; x.font="800 40px system-ui, sans-serif"; x.fillText("WEEKLY QUEST COMPLETE",W/2,H*0.30);
     x.beginPath(); x.arc(W/2,H*0.40,110,0,Math.PI*2); x.fill();
     x.fillStyle="#0B0E11"; x.font="900 130px system-ui, sans-serif"; x.fillText("✓",W/2,H*0.40+46);
     x.fillStyle="#fff"; x.font="800 84px system-ui, sans-serif"; x.fillText(head,W/2,H*0.55);
     x.fillStyle="rgba(255,255,255,.75)"; x.font="500 42px system-ui, sans-serif";
     const words=String(line).split(" "); let ln="", y=H*0.61; for(const w of words){ const t=ln?ln+" "+w:w; if(x.measureText(t).width>W-200){ x.fillText(ln,W/2,y); y+=58; ln=w; } else ln=t; } if(ln) x.fillText(ln,W/2,y);
-    x.fillStyle="#C6F432"; x.font="900 64px system-ui, sans-serif"; x.fillText(`+${q.points} points`,W/2,y+120);
+    x.fillStyle="#E8B923"; x.font="900 64px system-ui, sans-serif"; x.fillText(`+${q.points} points`,W/2,y+120);
     x.fillStyle="rgba(255,255,255,.4)"; x.font="400 36px system-ui, sans-serif"; x.fillText("formtrace.ie",W/2,H-110);
     const blob=await new Promise(r=>c.toBlob(r,"image/png")); if(!blob) throw new Error("Couldn't render the image");
     const file=new File([blob],"formtrace-quest.png",{type:"image/png"});
@@ -6250,7 +6272,7 @@ async function renderHomePayments(el){
   }catch(x){}
 }
 /* ---- Item BW: the Consistency badge - one badge, a level per 13 complete weeks, highest kept, friends-only ---- */
-const SB_TIERS=[null,["🥉","Bronze","#CD7F32"],["🥈","Silver","#C0C7CF"],["🥇","Gold","#F0D231"],["🏆","Platinum","#9FE7F5"],["💎","Diamond","#7FD3FF"]];
+const SB_TIERS=[null,["🥉","Bronze","#CD7F32"],["🥈","Silver","#C0C7CF"],["🥇","Gold","#E8B923"],["🏆","Platinum","#9FE7F5"],["💎","Diamond","#7FD3FF"]];
 function sbTier(l){ if(!(l>0)) return null; if(l<=5) return SB_TIERS[l]; return ["💎",`Diamond ×${l-4}`,"#7FD3FF"]; }
 async function renderStreakBadgeRow(holder,uid,isFriend){
   if(!holder) return;
@@ -7617,7 +7639,7 @@ function woTypeValue(sp,field,i){
   const cur=field==="rest_seconds"?fmtRest(it.rest_seconds):(it[field]==null?"":String(it[field]));
   const inp=document.createElement("input"); inp.value=cur; inp.setAttribute("aria-label","Type a value");
   inp.inputMode=field==="weight_kg"?"decimal":(field==="rest_seconds"?"text":"numeric");
-  inp.style.cssText="width:58px;text-align:center;font:inherit;padding:2px 4px;border-radius:6px;border:1px solid #F0D231;background:var(--panel);color:var(--ink)";
+  inp.style.cssText="width:58px;text-align:center;font:inherit;padding:2px 4px;border-radius:6px;border:1px solid #E8B923;background:var(--panel);color:var(--ink)";
   sp.textContent=""; sp.appendChild(inp); inp.focus(); try{ inp.select(); }catch(e){}
   let done=false;
   const commit=save=>{ if(done) return; done=true;
@@ -10884,7 +10906,7 @@ function renderDashboard(container, iAmCoach){
 
   // theme-aware chart colors (read once from CSS vars)
   const cs=getComputedStyle(document.documentElement);
-  const C={ p:(cs.getPropertyValue("--ch-1")||"#5AB0FF").trim(), c:(cs.getPropertyValue("--ch-2")||"#F0D231").trim(), f:(cs.getPropertyValue("--ch-3")||"#FFC24A").trim(),
+  const C={ p:(cs.getPropertyValue("--ch-1")||"#5AB0FF").trim(), c:(cs.getPropertyValue("--ch-2")||"#E8B923").trim(), f:(cs.getPropertyValue("--ch-3")||"#FFC24A").trim(),
     pInk:(cs.getPropertyValue("--ch-1-ink")||"#fff").trim(), cInk:(cs.getPropertyValue("--ch-2-ink")||"#000").trim(), fInk:(cs.getPropertyValue("--ch-3-ink")||"#000").trim(),
     weight:(cs.getPropertyValue("--ch-weight")||"#B79CFF").trim(),
     ink:(cs.getPropertyValue("--ink")||"#eee").trim(), faint:(cs.getPropertyValue("--faint")||"#5B6773").trim(),
@@ -11400,7 +11422,7 @@ async function renderCallScheduling(el, eng=currentEng, other=currentEngOther){
     }else{
       /* HV (owner, 2026-11-22): the proposal card redesigned - a date tile, the time, one clear Accept and two quiet options */
       const lc=callLocal(proposal), dd=new Date(lc.date+"T12:00:00");
-      const tile=`<div style="flex:0 0 54px;height:58px;border-radius:14px;background:var(--accent-surface,rgba(198,244,50,.08));border:1px solid var(--accent-border,var(--line2));display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">
+      const tile=`<div style="flex:0 0 54px;height:58px;border-radius:14px;background:var(--accent-surface,rgba(232,185,35,.08));border:1px solid var(--accent-border,var(--line2));display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">
           <div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--lime)">${dd.toLocaleDateString("en-GB",{month:"short"})}</div>
           <div style="font-size:22px;font-weight:900;margin-top:3px">${dd.getDate()}</div></div>`;
       const qb="flex:1;margin:0;height:42px;border-radius:12px;background:transparent;border:1px solid var(--line2);color:var(--ink);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer";
@@ -11502,7 +11524,7 @@ function openProposeCallSheet(isCounter,counterOfId,refreshEl,presetDate,eng=cur
    calendar the rest of this week glistens; tapping a day makes "Propose a coaching call" glisten; tapping it ends the guide. */
 function callGuideOn(){ const g=window.__ftCallGuide; return !!(g&&currentEng&&g.eng===currentEng.id&&Date.now()-g.t<20*60*1000); }
 function callGuideDay(iso){ if(!callGuideOn()) return false; const mon=weekStartISO(new Date()); return iso>=todayISO()&&iso<=addDaysISO(mon,6); }
-function ensureGuideCss(){ if(document.getElementById("ft-guide-css")) return; const st=document.createElement("style"); st.id="ft-guide-css"; st.textContent="@keyframes ftGuide{0%,100%{box-shadow:0 0 0 0 rgba(240,210,49,.55)}50%{box-shadow:0 0 0 8px rgba(240,210,49,0)}}.ft-guide{animation:ftGuide 1.4s ease-in-out infinite;border-color:var(--lime)!important}@media (prefers-reduced-motion: reduce){.ft-guide{animation:none;box-shadow:0 0 0 2px var(--lime)}}"; document.head.appendChild(st); }
+function ensureGuideCss(){ if(document.getElementById("ft-guide-css")) return; const st=document.createElement("style"); st.id="ft-guide-css"; st.textContent="@keyframes ftGuide{0%,100%{box-shadow:0 0 0 0 rgba(232,185,35,.55)}50%{box-shadow:0 0 0 8px rgba(232,185,35,0)}}.ft-guide{animation:ftGuide 1.4s ease-in-out infinite;border-color:var(--lime)!important}@media (prefers-reduced-motion: reduce){.ft-guide{animation:none;box-shadow:0 0 0 2px var(--lime)}}"; document.head.appendChild(st); }
 function openCoachDayChoice(iso){
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent=fmtDay(iso);
@@ -12905,7 +12927,7 @@ function showQuestStep(q){
     if(q.completed){
       setTimeout(()=>{ const d=el.querySelector("#qp-done"); if(!d) return; d.style.display="block"; if(!reduce){ d.style.animation="qpop .5s ease-out";
           for(let i=0;i<14;i++){ const sp=document.createElement("span"); const a=(i/14)*Math.PI*2, r=60+Math.random()*30;
-            sp.style.cssText=`position:absolute;left:50%;top:10px;width:7px;height:7px;border-radius:50%;background:${i%2?"var(--lime)":"#F0D231"};--dx:${Math.round(Math.cos(a)*r)}px;--dy:${Math.round(Math.sin(a)*r*.6)}px;animation:qspark .8s ease-out forwards`;
+            sp.style.cssText=`position:absolute;left:50%;top:10px;width:7px;height:7px;border-radius:50%;background:${i%2?"var(--lime)":"#E8B923"};--dx:${Math.round(Math.cos(a)*r)}px;--dy:${Math.round(Math.sin(a)*r*.6)}px;animation:qspark .8s ease-out forwards`;
             d.appendChild(sp); } }
         try{ if(navigator.vibrate) navigator.vibrate([40,60,40]); }catch(e){} try{ sfx("unlock"); }catch(e){} },1300);
     }
@@ -12974,7 +12996,7 @@ function ensureRestTimer(){
     if(!r2){ e2.remove(); document.body.classList.remove("rest-on"); clearInterval(restTick); restTick=null; try{ if(navigator.vibrate) navigator.vibrate([180,90,180]); }catch(e){} sfx("restOver"); toast("Rest's over - on to your next set",2600); return; }
     const onScreen=$("#s-trainee-workout")&&$("#s-trainee-workout").classList.contains("active"); e2.style.display=onScreen?"flex":"none"; document.body.classList.toggle("rest-on",!!onScreen);   /* GN: the streak badge steps aside */
     const left=Math.max(0,(r2.until-Date.now())/1000), frac=Math.min(1,left/r2.total), C=e2.__C;
-    const ring=e2.querySelector("#rt-ring"); const col=`hsl(${Math.round(115*frac)},100%,${50+Math.round(5*frac)}%)`;   /* neon green -> red */
+    const ring=e2.querySelector("#rt-ring"); const col=`hsl(${Math.round(45*frac)},${80+Math.round(2*frac)}%,${52-Math.round(1*frac)}%)`;   /* HZ: gold -> red */
     ring.style.strokeDashoffset=String(-(C*(1-frac)));   /* the empty part grows clockwise from the top */
     ring.style.stroke=col; ring.style.filter=`drop-shadow(0 0 5px ${col})`; ring.style.opacity=frac>0.002?"1":"0";
     const s=Math.ceil(left); if(s>=1&&s<=3&&e2.__lt!==s){ e2.__lt=s; sfx("restTick"); }   /* FZ: the last 3 seconds */
@@ -13534,7 +13556,7 @@ async function mountReviewReplies(body,review){
   const paint=async()=>{
     try{ const { data, error }=await store._sb.from("review_replies").select("id,author_id,body,created_at").eq("review_id",review.id).order("created_at");
       if(error) throw error;
-      list.innerHTML=(data||[]).map(r=>{ const mine=r.author_id===ME.id; return `<div style="margin-top:8px;padding:9px 12px;border-radius:12px;max-width:88%;${mine?"margin-left:auto;background:var(--accent-surface,rgba(198,244,50,.08));border:1px solid var(--accent-border,var(--line2))":"background:var(--panel);border:1px solid var(--line2)"}">
+      list.innerHTML=(data||[]).map(r=>{ const mine=r.author_id===ME.id; return `<div style="margin-top:8px;padding:9px 12px;border-radius:12px;max-width:88%;${mine?"margin-left:auto;background:var(--accent-surface,rgba(232,185,35,.08));border:1px solid var(--accent-border,var(--line2))":"background:var(--panel);border:1px solid var(--line2)"}">
         <div style="font-size:11px;color:var(--faint);margin-bottom:3px">${mine?"You":(roleOf()==="coach"?"Your trainee":"Your coach")} · ${new Date(r.created_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
         <div style="font-size:14px;line-height:1.45;white-space:pre-wrap">${escapeHtml(r.body)}</div></div>`; }).join("");
     }catch(e){ console.warn("review replies (HU)",e&&e.message); }
@@ -14568,7 +14590,7 @@ $("#confirm-cancel").addEventListener("click",()=>closeConfirm(false));
 $("#confirm-scrim").addEventListener("click",()=>closeConfirm(false));
 
 /* ---- celebration ---- */
-const CFCOLORS=['#F0D231','#FFC24A','#B79CFF','#ffffff','#7ee0a0'];
+const CFCOLORS=['#E8B923','#FFC24A','#B79CFF','#ffffff','#7ee0a0'];
 function celebrationStats(eng){
   // duration in weeks from started_at→completed_at (or now)
   const start=eng.started_at?new Date(eng.started_at):null;
@@ -15063,10 +15085,10 @@ async function referralShareImage(link,name){
   const qrEl=document.createElement("div"); await renderQrInto(qrEl,link); const src=qrEl.querySelector("canvas"); if(!src) return null;
   const W=720,H=960, cv=document.createElement("canvas"); cv.width=W; cv.height=H; const g=cv.getContext("2d");
   g.fillStyle="#0B0E11"; g.fillRect(0,0,W,H);
-  g.fillStyle="#C8FF3D"; g.font="900 34px system-ui,sans-serif"; g.textAlign="center"; g.fillText("FORMTRACE · COACH",W/2,110);
-  const box=440, x=(W-box)/2, y=170; g.fillStyle="#C8FF3D"; g.beginPath(); g.roundRect(x-8,y-8,box+16,box+16,34); g.fill(); g.fillStyle="#FFFFFF"; g.beginPath(); g.roundRect(x,y,box,box,28); g.fill();
+  g.fillStyle="#E8B923"; g.font="900 34px system-ui,sans-serif"; g.textAlign="center"; g.fillText("FORMTRACE · COACH",W/2,110);
+  const box=440, x=(W-box)/2, y=170; g.fillStyle="#E8B923"; g.beginPath(); g.roundRect(x-8,y-8,box+16,box+16,34); g.fill(); g.fillStyle="#FFFFFF"; g.beginPath(); g.roundRect(x,y,box,box,28); g.fill();
   g.imageSmoothingEnabled=false; g.drawImage(src,x+40,y+40,box-80,box-80);
-  g.fillStyle="#0B0E11"; g.beginPath(); g.roundRect(W/2-44,y+box/2-44,88,88,18); g.fill(); g.fillStyle="#C8FF3D"; g.font="900 30px system-ui,sans-serif"; g.fillText("FT",W/2,y+box/2+11);
+  g.fillStyle="#0B0E11"; g.beginPath(); g.roundRect(W/2-44,y+box/2-44,88,88,18); g.fill(); g.fillStyle="#E8B923"; g.font="900 30px system-ui,sans-serif"; g.fillText("FT",W/2,y+box/2+11);
   g.fillStyle="#EEF3F6"; g.font="800 40px system-ui,sans-serif"; g.fillText(name||"",W/2,y+box+90);
   g.fillStyle="#8593A0"; g.font="400 28px system-ui,sans-serif"; g.fillText("Scan to train with me on Formtrace",W/2,y+box+140);
   return await new Promise(r=>cv.toBlob(b=>r(b?new File([b],"formtrace-invite.png",{type:"image/png"}):null),"image/png"));
