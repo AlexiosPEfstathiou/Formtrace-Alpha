@@ -15,6 +15,8 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 self.addEventListener("fetch", (event) => {
+  /* 2026-11-26: let the browser load video itself (range requests) - iOS would not play the launch clip through the worker */
+  if (event.request.destination === "video" || /\.(mp4|webm)(\?|$)/.test(event.request.url)) return;
   event.respondWith(fetch(event.request));
 });
 
