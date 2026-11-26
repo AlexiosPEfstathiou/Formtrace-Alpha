@@ -2006,6 +2006,7 @@ duplicates (two wiring copies) and reverted before anything was written.
 **Owner 00:40: start frame approved, "animate it".** Submitted Veo 3.1 image-to-video (lite, 1080p, 9:16, no audio, 2 takes): start AND end frame = the logo frame, so it opens and closes on the F; 6 s (Veo offers 4 / 6 / 8 - trimmed to 5 s in the build). The F unravels into a gold line -> gold motion trails of people training together (squat, run, high-five) -> trails redraw the F with a glow pulse. Owner to pick a take and attach it (the sandbox cannot download from OpenArt).
 Both takes finished (~240 credits; balance 8,563 on 2026-11-26).
 **Owner 09:54 - second idea ("night park"):** a young man doing push-ups in a park at night, filmed from the side; mid-animation his body gets the Formtrace lines; the camera tilts up to the sky where constellations show; our F logo forms by connecting the stars, then fades into the original logo frame. Palette dark blue + dark green, gold lines as the contrast. Step 1: start frame (night park, side view, blue / green, starry upper half; Nano Banana Pro ~40) - generating; step 2: Veo 3.1 image-to-video, 8 s, end frame = the logo frame.
+**Owner 09:57: "Proceed"** - submitted Veo 3.1 (lite, 1080p, 9:16, 8 s, no audio, 1 take, ~120 credits): push-ups -> gold lines and joint dots on his body -> tilt up to the stars -> stars connect into the F -> settles into the logo frame (end frame).
 
 ---
 ## IR. Landing page redesign - LOGGED 2026-11-26 (personal account)
