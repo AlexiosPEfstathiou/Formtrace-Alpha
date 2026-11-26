@@ -2237,6 +2237,30 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
   .pk-goal{color:#E8B923}
   /* IB: claim buttons on the daily tasks */
+  /* IA: task / quest rows and the Today | This week toggle (OpenArt samples 2026-11-26) */
+  .dc-ring{flex:0 0 40px;width:40px;height:40px;border-radius:50%;border:1.6px solid #E8B923;color:#E8B923;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+  .dc-ring svg,.wq-tile svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .dc-ring.on{background:linear-gradient(180deg,#F5D46A,#E8B923);border-color:transparent;color:#0B0E11;box-shadow:0 0 12px rgba(232,185,35,.35)}
+  [data-dc]:has(.dc-got) .dc-ring.on{opacity:.55;box-shadow:none}
+  [data-dc]{padding:12px 0!important;gap:14px!important;border-top-color:rgba(232,185,35,.28)!important}
+  [data-dc] > span:nth-child(2){font-size:15px!important;text-decoration:none!important}
+  .qf-face > div:first-child:has(.qf-seg) > div:nth-child(2){display:none}
+  .wq-tile{flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.05);color:#E8B923;display:inline-flex;align-items:center;justify-content:center}
+  .wq-tile.on{background:rgba(232,185,35,.16);box-shadow:0 0 10px rgba(232,185,35,.25)}
+  [data-wq]{padding:12px 0!important;border-top-color:rgba(232,185,35,.28)!important}
+  [data-wq] > div:first-child{gap:14px!important}
+  .wq-segs{display:flex;gap:5px;margin:8px 0 0 56px;max-width:230px}
+  .wq-segs i{flex:1;height:8px;border-radius:99px;background:rgba(232,185,35,.16)}
+  .wq-segs i.on{background:linear-gradient(90deg,#E8B923,#F5D46A);box-shadow:0 0 8px rgba(232,185,35,.4)}
+  .wq-bar{height:8px;border-radius:99px;background:rgba(232,185,35,.16);margin:8px 0 0 56px;max-width:230px;overflow:hidden}
+  .wq-bar i{display:block;height:100%;background:linear-gradient(90deg,#E8B923,#F5D46A)}
+  .qf-seg{display:inline-flex;align-items:center;gap:2px;padding:3px;margin-left:10px;border-radius:999px;background:rgba(255,255,255,.07);border:0;font:inherit;cursor:pointer;flex:0 0 auto}
+  .qf-seg span{padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap;transition:background .2s,color .2s}
+  .qf-seg span b{font-weight:700;opacity:.75;margin-left:2px}
+  .qf-seg span.on{background:linear-gradient(180deg,#F5D46A,#E8B923);color:#0B0E11;box-shadow:0 0 12px rgba(232,185,35,.4)}
+  .qf-seg:active span:not(.on){background:rgba(232,185,35,.12);color:#E8B923}
+  html[data-theme="light"] .qf-seg{background:rgba(0,0,0,.06)}
+  html[data-theme="light"] .dc-ring,html[data-theme="light"] .wq-tile{color:#B8960A;border-color:#B8960A}
   .dc-pts{flex:0 0 auto;min-width:46px;text-align:right;font-size:12px;font-weight:800;color:var(--faint);white-space:nowrap}
   .dc-got{color:var(--muted)}
   .dc-claim{min-width:0;color:#0B0E11;background:linear-gradient(180deg,#F5D46A,#E8B923 55%,#D49B17);border-radius:999px;padding:6px 12px;box-shadow:0 0 12px rgba(232,185,35,.45);cursor:pointer;animation:dcglint 2.4s ease-in-out infinite}
@@ -5476,7 +5500,7 @@ async function renderCoachChecklist(el){
   const items=coachTodo(D); const n=items.filter(i=>i.done).length, all=n===items.length;
   el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
-    ${items.map(i=>`<button data-ck="${i.k}" data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
+    ${items.map(i=>`<button data-ck="${i.k}" data-cgo="${i.go}" data-ctgt="${i.done?"":(i.tgt||"")}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:pointer;font:inherit"><span class="dc-ring${i.done?" on":""}">${i.done?DT_TICK:dtIc(i.k)}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint);white-space:nowrap">${escapeHtml(i.sub)}</span>`:""}</button>`).join("")}`;
   el.style.display="";
   mountQuestFlip(el, all, todayISO());   /* HK */
   showNewCoachPoints(el);   /* HK */
@@ -5548,7 +5572,7 @@ async function renderHomeChecklist(engs, el){
   const n=items.filter(i=>i.done).length, all=n===items.length;
   el.className="card"; el.style.cssText="margin:0 0 12px;padding:12px 14px";
   el.innerHTML=`<div style="display:flex;align-items:center;margin-bottom:4px"><div class="eyebrow" style="flex:1;margin:0">Today</div><div style="font-size:12px;font-weight:800;color:${all?"var(--lime)":"var(--muted)"}">${all?"Day complete ✓":`${n} of ${items.length}`}</div></div>
-    ${items.map(i=>`<button data-dc="${i.k}" data-act="${i.act||""}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:${i.act?"pointer":"default"};font:inherit"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;${i.done?"background:var(--lime);color:var(--lime-ink)":"border:2px solid var(--line2)"}">${i.done?"✓":""}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint)">${escapeHtml(i.sub)}</span>`:""}${i.alt?`<span data-alt="rest" style="font-size:12px;font-weight:800;color:var(--lime);border:1px solid var(--lime-dim);border-radius:999px;padding:3px 9px;white-space:nowrap">I'll take a rest day</span>`:""}</button>`).join("")}`;
+    ${items.map(i=>`<button data-dc="${i.k}" data-act="${i.act||""}" style="display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:9px 0;color:inherit;text-align:left;cursor:${i.act?"pointer":"default"};font:inherit"><span class="dc-ring${i.done?" on":""}">${i.done?DT_TICK:dtIc(i.k)}</span><span style="flex:1;min-width:0;font-size:13.5px;${i.done?"color:var(--muted);text-decoration:line-through":"font-weight:700"}">${escapeHtml(i.t)}</span>${i.sub?`<span style="font-size:12px;color:var(--faint)">${escapeHtml(i.sub)}</span>`:""}${i.alt?`<span data-alt="rest" style="font-size:12px;font-weight:800;color:var(--lime);border:1px solid var(--lime-dim);border-radius:999px;padding:3px 9px;white-space:nowrap">I'll take a rest day</span>`:""}</button>`).join("")}`;
   el.style.display="";
   el.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",(ev)=>{ const alt=ev&&ev.target&&ev.target.closest?ev.target.closest("[data-alt]"):null; if(alt){ ev.stopPropagation(); if(!dcGet().rest){ dcSet("rest"); renderHomeChecklist(engs, el); } return; }   /* Item FF: "I'll take a rest day" */
     const k=b.getAttribute("data-dc"), a=b.getAttribute("data-act");
@@ -5568,6 +5592,30 @@ async function renderHomeChecklist(engs, el){
 /* HJ (owner, 2026-11-21): each daily task pays points once a day (server: claim_daily_task), with a short "+N" animation
    rising from its row. Remembered per task per day on the phone so the server is asked once. Coach list: not yet (HJ plan). */
 const DAILY_TASK_PTS={login:1,sleep:2,budget:2,weigh:3,macros:5,workout:10,rest:3};
+/* IA (owner, 2026-11-26): task and quest rows from the OpenArt sample - a gold ring with a line icon while open, a gold
+   tick disc when done (dimmed once claimed); quests get an icon tile and segmented progress pills. */
+const DT_SVG={
+  login:'<path d="M7 4h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M10.5 17.5h3"/>',
+  sleep:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+  weigh:'<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.5 9.5a3.5 3.5 0 0 1 7 0z"/><path d="M12 9.5l1.2-2"/>',
+  macros:'<circle cx="12" cy="12" r="5"/><path d="M4 5v4a1.5 1.5 0 0 0 3 0V5M5.5 9v10M19.5 5c-1.5 1-2 2.6-2 5h2V19"/>',
+  budget:'<circle cx="12" cy="12" r="8"/><path d="M12 12V7.5M12 12l3.2 2"/>',
+  workout:'<path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11"/>',
+  rest:'<path d="M4 15c3 0 4-2 8-2s5 2 8 2M5 19h14M8 10a4 4 0 0 1 8 0"/>',
+  workouts:'<path d="M6.5 8v8M17.5 8v8M4 10v4M20 10v4M6.5 12h11"/>',
+  streak:'<path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.2 2.4-4.6 3.3-7.4.6 1.6 1.6 2.4 2.4 2.8.2-2.6 1.4-5 3.6-6.8-.3 3.4 2.7 5.6 2.7 9.9 0 4.2-2.4 7.1-6 7.1z"/>',
+  pb3:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4"/>',
+  macros5:'<circle cx="12" cy="12" r="5"/><path d="M4 5v4a1.5 1.5 0 0 0 3 0V5M5.5 9v10M19.5 5c-1.5 1-2 2.6-2 5h2V19"/>',
+  weigh5:'<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.5 9.5a3.5 3.5 0 0 1 7 0z"/><path d="M12 9.5l1.2-2"/>',
+  calories:'<path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.2 2.4-4.6 3.3-7.4.6 1.6 1.6 2.4 2.4 2.8.2-2.6 1.4-5 3.6-6.8-.3 3.4 2.7 5.6 2.7 9.9 0 4.2-2.4 7.1-6 7.1z"/><path d="M10 16.5h4"/>',
+  photo:'<path d="M4 8h3.5L9 6h6l1.5 2H20v11H4z"/><circle cx="12" cy="13" r="3.2"/>',
+  call:'<path d="M6.5 4h3l1.5 4-2 1.5a10 10 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4.5 6a2 2 0 0 1 2-2z"/>',
+  friend:'<circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3.4 3-5.4 6-5.4s5.4 2 6 5.4M18 8v6M15 11h6"/>',
+  review24:'<path d="M5 5h14v10H9l-4 4z"/><path d="M9 10l2 2 4-4"/>', calls_all:'<path d="M6.5 4h3l1.5 4-2 1.5a10 10 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4.5 6a2 2 0 0 1 2-2z"/>',
+  assign_all:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M9 14.5l2 2 4-4"/>', streaks:'<path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.2 2.4-4.6 3.3-7.4.6 1.6 1.6 2.4 2.4 2.8.2-2.6 1.4-5 3.6-6.8-.3 3.4 2.7 5.6 2.7 9.9 0 4.2-2.4 7.1-6 7.1z"/>',
+  _:'<circle cx="12" cy="12" r="7.5"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'};
+function dtIc(k){ return `<svg viewBox="0 0 24 24" aria-hidden="true">${DT_SVG[k]||DT_SVG._}</svg>`; }
+const DT_TICK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4 4 9-9" style="stroke-width:2.6"/></svg>';
 async function claimDailyTaskPoints(items, iso, el){
   /* IB (owner, 2026-11-23): points are CLAIMED, never auto-paid - every task shows its points on the right; a done task
      shows a gold "Claim +N" button; tapping it calls the same claim_daily_task (the server pays once per task per day). */
@@ -5614,11 +5662,11 @@ function weeklyQuestsHtml(d){
     ${qs.map(q=>{ const goal=+q.goal||0, prog=Math.min(+q.progress||0,goal||0), pct=goal?Math.round(prog/goal*100):0;
       const chip=q.each?`+${q.points} each`:`+${q.points}`;
       return `<div data-wq="${escapeHtml(q.key)}" role="button" tabindex="0" style="cursor:pointer;border-top:1px solid var(--line);padding:9px 0;${goal?"":"opacity:.55"}">
-        <div style="display:flex;align-items:center;gap:10px"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;${q.done?"background:var(--lime);color:var(--lime-ink,#0B0E11)":"border:1.5px solid var(--line2);color:var(--faint)"}">${q.done?"✓":""}</span>
+        <div style="display:flex;align-items:center;gap:10px"><span class="wq-tile${q.done?" on":""}">${dtIc(q.key)}</span>
           <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;${q.done?"color:var(--muted)":""}">${escapeHtml(q.name)}</div>
             <div style="font-size:11.5px;color:var(--faint)">${q.note?escapeHtml(q.note)+(goal?" · ":""):""}${goal?`${prog} of ${goal}`:""}</div></div>
           ${q.done&&!q.paid&&!q.each?`<span class="dc-pts dc-claim" role="button" tabindex="0" data-wq-claim="${escapeHtml(q.key)}">Claim ${chip}</span>`:`<span style="font-size:12px;font-weight:900;white-space:nowrap;color:${q.paid?"var(--lime)":"var(--faint)"}">${q.paid&&!q.each?"✓ ":""}${chip}</span>`}<span style="color:var(--faint);font-size:16px;margin-left:2px">›</span></div>
-        ${goal&&!q.done?`<div style="height:4px;border-radius:3px;background:var(--line2);margin:7px 0 0 30px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--lime)"></div></div>`:""}
+        ${goal?(goal<=7?`<div class="wq-segs">${Array.from({length:goal},(_,k)=>`<i class="${k<prog?"on":""}"></i>`).join("")}</div>`:`<div class="wq-bar"><i style="width:${pct}%"></i></div>`):""}
       </div>`; }).join("")||`<div style="font-size:12.5px;color:var(--faint);padding:8px 0">No quests this week.</div>`}`;
 }
 /* HL (owner, 2026-11-21): a completed weekly quest gets its own celebration - what was achieved, the points, "Nice" and
@@ -5729,7 +5777,8 @@ function mountQuestFlip(el, allDone, iso){
     back.innerHTML=`<div style="font-size:12.5px;color:var(--faint);padding:6px 0">Loading this week's quests…</div>`;
     const inner=document.createElement("div"); inner.className="qf-inner"; inner.appendChild(front); inner.appendChild(back);
     el.className="qflip"; el.style.cssText=""; el.appendChild(inner);
-    const fb=document.createElement("button"); fb.type="button"; fb.className="qf-btn"; fb.textContent="⇄ Weekly"; fb.setAttribute("aria-label","Show this week's quests");
+    const fb=document.createElement("button"); fb.type="button"; fb.className="qf-seg"; fb.innerHTML=`<span class="on">Today <b class="qf-dc"></b></span><span>This week <b class="qf-wc"></b></span>`; fb.setAttribute("aria-label","Show this week's quests");   /* IA (owner 2026-11-26): segmented Today | This week, from the OpenArt sample */
+    try{ fb.querySelector(".qf-dc").textContent=`${front.querySelectorAll(".dc-ring.on").length}/${front.querySelectorAll("[data-dc]").length}`; }catch(e){}
     const fh=front.firstElementChild; if(fh&&fh.tagName==="DIV") fh.appendChild(fb); else front.insertBefore(fb,front.firstChild);   /* HL: top right, lime */
     const sideKey=`ft-qside-${ME.id}-${iso}`, autoKey=`ft-qauto-${ME.id}-${iso}`;
     const get=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
@@ -5740,9 +5789,11 @@ function mountQuestFlip(el, allDone, iso){
     else if(side==="weekly"||(allDone&&side!=="daily")) inner.classList.add("flipped");
     loadWeeklyQuests(false).then(d=>{
       back.innerHTML=weeklyQuestsHtml(d);
-      const bb=document.createElement("button"); bb.type="button"; bb.className="qf-btn"; bb.textContent="⇄ Today"; bb.setAttribute("aria-label","Show today's tasks");
+      const bb=document.createElement("button"); bb.type="button"; bb.className="qf-seg"; bb.innerHTML=`<span>Today <b class="qf-dc"></b></span><span class="on">This week <b class="qf-wc"></b></span>`; bb.setAttribute("aria-label","Show today's tasks");
       bb.addEventListener("click",()=>flip(false,true));
       const bh=back.firstElementChild; if(bh&&bh.tagName==="DIV") bh.appendChild(bb); else back.insertBefore(bb,back.firstChild);
+      try{ const qa=((d&&d.quests)||[]).filter(q=>+q.goal>0); const wt=`${qa.filter(q=>q.done).length}/${qa.length}`; el.querySelectorAll(".qf-wc").forEach(b=>b.textContent=wt);
+        const rows=front.querySelectorAll("[data-dc]"); const dt=`${front.querySelectorAll(".dc-ring.on").length}/${rows.length}`; el.querySelectorAll(".qf-dc").forEach(b=>b.textContent=dt); }catch(e){}   /* IA */
       back.querySelectorAll("[data-wq-claim]").forEach(c=>{ const claim=async ev=>{ ev.stopPropagation(); ev.preventDefault(); if(c.dataset.busy) return; c.dataset.busy="1"; c.classList.add("dc-busy");
           /* IB-2 (owner rule 2026-11-23): quests are claimed by hand - claim_weekly_quest pays this one and returns the week */
           try{ const { data:nd, error }=await store._sb.rpc("claim_weekly_quest",{p_key:c.getAttribute("data-wq-claim")}); if(error) throw error;
