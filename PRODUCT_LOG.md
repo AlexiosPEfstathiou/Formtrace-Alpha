@@ -46,7 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
-**IR (2026-11-26, owner): formtrace.ie landing page redesign - engaging, theme colours, the Try Formtrace button draws attention, space for 1-3 videos of the camera in use; 3 OpenArt concepts - LOGGED.**
+**IR (2026-11-26, owner): formtrace.ie landing page redesign - engaging, theme colours, the Try Formtrace button draws attention, space for 1-3 videos of the camera in use; A (mobile) + C (desktop) chosen; logo / traced lines to be ours - LOGGED.**
 **IQ (2026-11-25, owner): Settings redesign = concept C BUILT. Finding: country and language names show in the device language (Greek) in an English app.**
 **IP (2026-11-25, owner): Profile redesign - space preservation and UX, on theme with the Social artwork; concept C chosen; Cork / Dublin photos requested - LOGGED.**
 **IO (2026-11-25, owner): Social tab (In Touch) redesign - knock is the main attraction; congratulating friends' small wins; space for Formtrace events; concept B BUILT with every pressed state; events SQL applied.**
@@ -2003,7 +2003,9 @@ duplicates (two wiring copies) and reverted before anything was written.
 **Today's copy reused in the brief:** "A real coach for every rep you record"; Try Formtrace; "Free to join. You only pay for a goal when you accept a coach's offer"; the five feature cards; How it works 1-2-3; "Are you a coach?".
 **Done:** 3 concepts (Nano Banana Pro, ~120 credits, Social style): A mobile, video-first (glowing pulsing gold CTA, "See the camera in action" with three phone video frames, sticky bottom CTA); B mobile, full-bleed tilted phone hero with a traced squat + live overlay, shimmer CTA, "Real sessions, traced" carousel of up to three videos; C desktop split hero (CTA left, video wall of three phones right).
 **For the build:** the videos are the owner's recordings of the app (traced sets) - to be supplied; until then the frames show the current animated figure / a poster. Keep the page in index.html (landing section) and light (videos lazy-loaded, muted, playsinline).
-**Next:** owner picks a concept.
+**Owner 00:21: A (mobile) and C (desktop) liked** (`docs/brand/landing-concept-a-mobile.png`, `landing-concept-c-desktop.png`) - one responsive page: A's layout on phones, C's split hero + video wall on wide screens.
+**Note (owner): OpenArt did not use our logo, nor our traced lines, on the desktop version (C)** - its "F" mark is a generic outline and the figures carry a generic glowing skeleton. **Adjust in the build:** the real logo and wordmark from `docs/brand/logo/` (traced-line F, Montserrat ExtraBold wordmark) on both widths, and the video frames show our own camera's tracing (the owner's recordings, or our animated figure until then) - never the concept's skeleton art. Also from C: its "How it works" body text is garbled - use today's copy (Post your goal / Choose your coach / Train, record, improve).
+**Next:** owner's go to build; videos to be supplied.
 
 ---
 ## IQ. Settings redesign - LOGGED 2026-11-25 (personal account)
