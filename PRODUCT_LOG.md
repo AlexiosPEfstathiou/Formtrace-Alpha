@@ -2272,6 +2272,7 @@ Checked with mock data dark / light, sheet add / toggle / save (RPC payload chec
 2. **Bento grid** - today's workout as the large tile; streak, points / level, calories, weight and quests as small tiles around it.
 3. **"Needs you" list** - the ~25 conditional Home cards (call proposal, payments, check-in, review due, renewal, ...) gathered into one tidy list under the grid.
 **Blocker:** this workspace cannot download from OpenArt's file server - the owner attaches the concept PNG in chat before phase 1. Overlaps HZ (lime -> deep gold) on Home.
+**Owner 2026-11-26 19:46: concept attached** (`docs/brand/home-concept-b-dark.png`). First: the Today / This week swap button "is not good looking" and each line of the daily / weekly card needs polishing - **OpenArt, one sample each** (~72 credits): (1) a segmented Today | This week toggle with counts in the card header; (2) the task and quest rows in every state (open with a line-icon ring, done, Claim +N, claimed; quests with an icon tile and segmented progress pills). Waiting for the owner's look, then the build with the bento layout.
 
 ---
 ## HY. Requested length in the offer; Pitched / Counter stickers - BUILT 2026-11-22 (personal account)
