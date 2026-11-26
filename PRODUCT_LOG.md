@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IR (2026-11-26, owner): formtrace.ie landing page redesign - engaging, theme colours, the Try Formtrace button draws attention, space for 1-3 videos of the camera in use; 3 OpenArt concepts - LOGGED.**
 **IQ (2026-11-25, owner): Settings redesign = concept C BUILT. Finding: country and language names show in the device language (Greek) in an English app.**
 **IP (2026-11-25, owner): Profile redesign - space preservation and UX, on theme with the Social artwork; concept C chosen; Cork / Dublin photos requested - LOGGED.**
 **IO (2026-11-25, owner): Social tab (In Touch) redesign - knock is the main attraction; congratulating friends' small wins; space for Formtrace events; concept B BUILT with every pressed state; events SQL applied.**
@@ -1994,6 +1995,15 @@ the platform permits. **BUILT same day:**
 All notification types stay on by default. Both Settings / Profile wiring copies
 updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) and
 duplicates (two wiring copies) and reverted before anything was written.
+
+---
+## IR. Landing page redesign - LOGGED 2026-11-26 (personal account)
+
+**Owner 00:13:** redesign the formtrace.ie landing page in our theme colours; make it engaging; **draw attention to the "Try Formtrace" (or equivalent) button**; **reserve space for 1-3 videos of users using our camera software**, showing the audience how it looks. (This is the landing redesign queued in the OpenArt list on 2026-11-23 - the figure is remade too.)
+**Today's copy reused in the brief:** "A real coach for every rep you record"; Try Formtrace; "Free to join. You only pay for a goal when you accept a coach's offer"; the five feature cards; How it works 1-2-3; "Are you a coach?".
+**Done:** 3 concepts (Nano Banana Pro, ~120 credits, Social style): A mobile, video-first (glowing pulsing gold CTA, "See the camera in action" with three phone video frames, sticky bottom CTA); B mobile, full-bleed tilted phone hero with a traced squat + live overlay, shimmer CTA, "Real sessions, traced" carousel of up to three videos; C desktop split hero (CTA left, video wall of three phones right).
+**For the build:** the videos are the owner's recordings of the app (traced sets) - to be supplied; until then the frames show the current animated figure / a poster. Keep the page in index.html (landing section) and light (videos lazy-loaded, muted, playsinline).
+**Next:** owner picks a concept.
 
 ---
 ## IQ. Settings redesign - LOGGED 2026-11-25 (personal account)
