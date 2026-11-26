@@ -2236,6 +2236,14 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .lang-chip button:hover{color:var(--red);}
   .cb-toggle{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);cursor:pointer;}
   .pk-goal{color:#E8B923}
+  /* IB: claim buttons on the daily tasks */
+  .dc-pts{flex:0 0 auto;min-width:46px;text-align:right;font-size:12px;font-weight:800;color:var(--faint);white-space:nowrap}
+  .dc-got{color:var(--muted)}
+  .dc-claim{min-width:0;color:#0B0E11;background:linear-gradient(180deg,#F5D46A,#E8B923 55%,#D49B17);border-radius:999px;padding:6px 12px;box-shadow:0 0 12px rgba(232,185,35,.45);cursor:pointer;animation:dcglint 2.4s ease-in-out infinite}
+  .dc-claim:active{transform:scale(.95);filter:brightness(.9)}
+  .dc-busy{opacity:.55;animation:none}
+  @keyframes dcglint{50%{box-shadow:0 0 18px rgba(232,185,35,.7)}}
+  #home-checklist{max-width:520px;margin-left:auto!important;margin-right:auto!important}
   .pk-empty-wrap{color:#E8B923;opacity:.9;line-height:0;margin-bottom:10px}
   html[data-theme="light"] .pk-empty-wrap,html[data-theme="light"] .ach-svg,html[data-theme="light"] .pk-goal{color:#B8960A}
   .switch{position:relative;flex-shrink:0;width:46px;height:28px;}
@@ -5556,16 +5564,26 @@ async function renderHomeChecklist(engs, el){
    rising from its row. Remembered per task per day on the phone so the server is asked once. Coach list: not yet (HJ plan). */
 const DAILY_TASK_PTS={login:1,sleep:2,budget:2,weigh:3,macros:5,workout:10,rest:3};
 async function claimDailyTaskPoints(items, iso, el){
-  if(!ME||roleOf()!=="trainee") return;
+  /* IB (owner, 2026-11-23): points are CLAIMED, never auto-paid - every task shows its points on the right; a done task
+     shows a gold "Claim +N" button; tapping it calls the same claim_daily_task (the server pays once per task per day). */
+  if(!ME||roleOf()!=="trainee"||!el) return;
   const wantKey=i=>{ if(i.k!=="workout") return DAILY_TASK_PTS[i.k]!=null?i.k:null; return /done today/.test(i.sub||"")?"workout":"rest"; };
   for(const i of items){
-    if(!i.done) continue; const task=wantKey(i); if(!task) continue;
+    const task=wantKey(i); if(!task) continue; const pts=DAILY_TASK_PTS[task]||0;
+    const row=el.querySelector(`[data-dc="${i.k}"]`); if(!row||row.querySelector(".dc-pts")) continue;
     const ck=`ft-dcpts-${ME.id}-${iso}-${i.k}`; let had=false; try{ had=localStorage.getItem(ck)==="1"; }catch(e){}
-    if(had) continue;
-    try{ const { data, error }=await store._sb.rpc("claim_daily_task",{p_task:task,p_day:iso}); if(error) throw error;
-      try{ localStorage.setItem(ck,"1"); }catch(e){}
-      if(data&&data.paid){ pendingPops.push({k:i.k,pts:data.points}); schedulePopFlush(); }   /* HM: shown on the Home row once it is really on screen */
-    }catch(e){ console.warn("daily task points (HJ)",i.k,e&&e.message); }
+    const slot=document.createElement("span"); slot.className="dc-pts";
+    if(!i.done){ slot.textContent=`+${pts}`; }
+    else if(had){ slot.classList.add("dc-got"); slot.textContent=`✓ +${pts}`; }
+    else { slot.classList.add("dc-claim"); slot.setAttribute("role","button"); slot.tabIndex=0; slot.textContent=`Claim +${pts}`;
+      const claim=async ev=>{ ev.stopPropagation(); ev.preventDefault(); if(slot.dataset.busy) return; slot.dataset.busy="1"; slot.classList.add("dc-busy");
+        try{ const { data, error }=await store._sb.rpc("claim_daily_task",{p_task:task,p_day:iso}); if(error) throw error;
+          try{ localStorage.setItem(ck,"1"); }catch(e){}
+          slot.className="dc-pts dc-got"; slot.removeAttribute("role"); slot.textContent=`✓ +${(data&&data.points)||pts}`;
+          if(data&&data.paid){ pendingPops.push({k:i.k,pts:data.points}); schedulePopFlush(); }
+        }catch(e){ console.warn("daily task claim (IB)",i.k,e&&e.message); slot.classList.remove("dc-busy"); delete slot.dataset.busy; toast("Couldn't claim - try again",2200); } };
+      slot.addEventListener("click",claim); slot.addEventListener("keydown",ev=>{ if(ev.key==="Enter"||ev.key===" ") claim(ev); }); }
+    row.appendChild(slot);
   }
 }
 /* HK (owner, 2026-11-21): the Today card flips sideways to the weekly quests. When every daily task is done it flips by
