@@ -5555,10 +5555,15 @@ async function renderHomeChecklist(engs, el){
     if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="budget") openBudgetCard(plan,()=>{ if(!dcGet().budget){ dcSet("budget"); } renderHomeChecklist(engs, el); }); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
   mountQuestFlip(el, all, iso);   /* HK */
   claimDailyTaskPoints(items, iso, el);   /* HJ */
-  if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){} if(!seen){ try{ localStorage.setItem(ck,"1"); }catch(e){}
-    /* HH (owner, 2026-11-20): 10 bonus points for a complete day - the server pays once per local day */
-    let bonus=null; try{ const { data, error }=await store._sb.rpc("claim_daily_bonus",{p_day:iso}); if(error) throw error; bonus=data; }catch(e){ console.warn("daily bonus (HH)",e&&e.message); }
-    playDayComplete(bonus&&bonus.paid?bonus:null); } }
+  if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){}
+    /* HH -> IB-2 (owner rule 2026-11-23): the 10-point day bonus is CLAIMED - a gold "Claim +10" in the card header; the
+       Day complete celebration plays on the claim. The server pays once per local day. */
+    if(!seen){ const hdr=el.firstElementChild; const b=document.createElement("span"); b.className="dc-pts dc-claim"; b.setAttribute("role","button"); b.tabIndex=0; b.style.marginLeft="8px"; b.textContent="Claim +10";
+      const claim=async ev=>{ ev.stopPropagation(); ev.preventDefault(); if(b.dataset.busy) return; b.dataset.busy="1"; b.classList.add("dc-busy");
+        let bonus=null; try{ const { data, error }=await store._sb.rpc("claim_daily_bonus",{p_day:iso}); if(error) throw error; bonus=data; try{ localStorage.setItem(ck,"1"); }catch(e){} b.remove(); playDayComplete(bonus&&bonus.paid?bonus:null); }
+        catch(e){ console.warn("daily bonus (HH)",e&&e.message); b.classList.remove("dc-busy"); delete b.dataset.busy; toast("Couldn't claim - try again",2200); } };
+      b.addEventListener("click",claim); b.addEventListener("keydown",ev=>{ if(ev.key==="Enter"||ev.key===" ") claim(ev); });
+      if(hdr) hdr.appendChild(b); } }
 }
 /* HJ (owner, 2026-11-21): each daily task pays points once a day (server: claim_daily_task), with a short "+N" animation
    rising from its row. Remembered per task per day on the phone so the server is asked once. Coach list: not yet (HJ plan). */
@@ -5612,7 +5617,7 @@ function weeklyQuestsHtml(d){
         <div style="display:flex;align-items:center;gap:10px"><span style="width:20px;height:20px;border-radius:50%;flex:0 0 20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;${q.done?"background:var(--lime);color:var(--lime-ink,#0B0E11)":"border:1.5px solid var(--line2);color:var(--faint)"}">${q.done?"✓":""}</span>
           <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;${q.done?"color:var(--muted)":""}">${escapeHtml(q.name)}</div>
             <div style="font-size:11.5px;color:var(--faint)">${q.note?escapeHtml(q.note)+(goal?" · ":""):""}${goal?`${prog} of ${goal}`:""}</div></div>
-          <span style="font-size:12px;font-weight:900;white-space:nowrap;color:${q.paid?"var(--lime)":"var(--faint)"}">${q.paid&&!q.each?"✓ ":""}${chip}</span><span style="color:var(--faint);font-size:16px;margin-left:2px">›</span></div>
+          ${q.done&&!q.paid&&!q.each?`<span class="dc-pts dc-claim" role="button" tabindex="0" data-wq-claim="${escapeHtml(q.key)}">Claim ${chip}</span>`:`<span style="font-size:12px;font-weight:900;white-space:nowrap;color:${q.paid?"var(--lime)":"var(--faint)"}">${q.paid&&!q.each?"✓ ":""}${chip}</span>`}<span style="color:var(--faint);font-size:16px;margin-left:2px">›</span></div>
         ${goal&&!q.done?`<div style="height:4px;border-radius:3px;background:var(--line2);margin:7px 0 0 30px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--lime)"></div></div>`:""}
       </div>`; }).join("")||`<div style="font-size:12.5px;color:var(--faint);padding:8px 0">No quests this week.</div>`}`;
 }
@@ -5738,6 +5743,14 @@ function mountQuestFlip(el, allDone, iso){
       const bb=document.createElement("button"); bb.type="button"; bb.className="qf-btn"; bb.textContent="⇄ Today"; bb.setAttribute("aria-label","Show today's tasks");
       bb.addEventListener("click",()=>flip(false,true));
       const bh=back.firstElementChild; if(bh&&bh.tagName==="DIV") bh.appendChild(bb); else back.insertBefore(bb,back.firstChild);
+      back.querySelectorAll("[data-wq-claim]").forEach(c=>{ const claim=async ev=>{ ev.stopPropagation(); ev.preventDefault(); if(c.dataset.busy) return; c.dataset.busy="1"; c.classList.add("dc-busy");
+          /* IB-2 (owner rule 2026-11-23): quests are claimed by hand - claim_weekly_quest pays this one and returns the week */
+          try{ const { data:nd, error }=await store._sb.rpc("claim_weekly_quest",{p_key:c.getAttribute("data-wq-claim")}); if(error) throw error;
+            wqCache={t:Date.now(),d:nd}; const q=((nd&&nd.quests)||[]).find(x=>x.key===c.getAttribute("data-wq-claim"));
+            c.className=""; c.removeAttribute("role"); c.style.cssText="font-size:12px;font-weight:900;white-space:nowrap;color:var(--lime)"; c.textContent=`✓ +${q?q.points:""}`;
+            if(q&&q.just_paid){ queueQuestCheers([{key:q.key,name:q.name,points:q.points,week:nd.week_start}]); setTimeout(()=>flushQuestCheers(el),200); }
+          }catch(e){ console.warn("quest claim (IB-2)",e&&e.message); c.classList.remove("dc-busy"); delete c.dataset.busy; toast("Couldn't claim - try again",2200); } };
+        c.addEventListener("click",claim); c.addEventListener("keydown",ev=>{ if(ev.key==="Enter"||ev.key===" ") claim(ev); }); });
       back.querySelectorAll("[data-wq]").forEach(r=>{ const go1=()=>openQuestTarget(r.getAttribute("data-wq"),front); r.addEventListener("click",go1); r.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go1(); } }); });   /* HO */
       /* HL: each quest paid just now gets a celebration (queued until Home is on screen) */
       const paid=((d&&d.quests)||[]).filter(q=>q.just_paid&&!q.each).map(q=>({key:q.key,name:q.name,points:q.points,week:d.week_start}));
