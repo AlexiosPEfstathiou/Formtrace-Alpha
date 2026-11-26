@@ -1236,6 +1236,42 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .sheet .sh-h .x{width:32px;height:32px;border-radius:9px;background:var(--panel2);border:none;color:var(--ink);font-size:16px;cursor:pointer;}
   .sheet .sh-body{overflow-y:auto;padding:0 16px;flex:1;}
   .sheet .sh-body::-webkit-scrollbar{width:0;}
+  /* IT: Start a session sheet (concept B) */
+  .ss-head{margin:-4px 0 14px}
+  .ss-sub{font-size:13.5px;color:var(--muted);margin-bottom:8px}
+  .ss-barrow{display:flex;align-items:center;gap:10px}.ss-barrow span{font-size:12px;color:var(--muted);font-weight:700}
+  .ss-bar{flex:1;height:6px;border-radius:99px;background:rgba(127,127,127,.22);overflow:hidden}
+  .ss-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F2CC55,#E8B923)}
+  .ss-bar.ss-mini{flex:none;height:5px;margin:8px 0 2px}
+  .ss-car{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .ss-car::-webkit-scrollbar{display:none}
+  .ss-card{flex:0 0 86%;scroll-snap-align:center;box-sizing:border-box;border-radius:18px;padding:14px 16px 16px;border:1.5px solid rgba(232,185,35,.55);
+    background:linear-gradient(160deg,rgba(232,185,35,.14),rgba(232,185,35,.03) 60%),var(--panel);display:flex;flex-direction:column}
+  .ss-card.ss-unf{border-color:#E8B923;box-shadow:0 0 18px rgba(232,185,35,.18)}
+  .ss-unfrow{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:20px;font-size:12px;color:var(--text)}
+  .ss-unfrow b{color:#E8B923;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  .ss-eyebrow{color:#E8B923;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+  .ss-name{font-size:19px;font-weight:800;margin-top:12px;line-height:1.2}
+  .ss-meta{font-size:13px;color:var(--muted);margin-top:4px}
+  .ss-ex{font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ss-go{margin-top:14px;border:0;border-radius:12px;padding:12px;font:inherit;font-size:16px;font-weight:800;color:#0B0E11;cursor:pointer;
+    background:linear-gradient(180deg,#F2CC55,#E8B923 55%,#D9A21E);box-shadow:0 6px 18px rgba(232,185,35,.25)}
+  .ss-tag{display:inline-block;font-size:11.5px;font-weight:700;color:#0B0E11;background:#E8B923;border-radius:99px;padding:2px 9px;margin-top:3px}
+  .ss-dots{display:flex;justify-content:center;gap:7px;margin:12px 0 4px}
+  .ss-dots i{width:7px;height:7px;border-radius:50%;background:rgba(127,127,127,.4);transition:background .2s,transform .2s}
+  .ss-dots i.on{background:#E8B923;transform:scale(1.15)}
+  .ss-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .ss-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;
+    padding:11px 14px;border-radius:14px;border:1px solid rgba(232,185,35,.45);background:var(--panel)}
+  .ss-n{font-size:22px;font-weight:800;color:#E8B923;min-width:18px;text-align:center}
+  .ss-rt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+  .ss-rn{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .ss-rm{font-size:12.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px}
+  .ss-chev{width:18px;height:18px;color:var(--muted);flex:0 0 18px}
+  .ss-done{opacity:.5;border-color:var(--line);cursor:default}
+  .ss-done .ss-n{color:var(--muted)}
+  .ss-ok{color:#E8B923}.ss-ok svg{width:15px;height:15px}
+  html[data-theme="light"] .ss-n,html[data-theme="light"] .ss-ok,html[data-theme="light"] .ss-unfrow b,html[data-theme="light"] .ss-eyebrow{color:#B8960A}
   .sh-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel);margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
   .sh-item.sel{border-color:var(--lime);background:var(--accent-surface);}
   .sh-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--lime-ink);font-size:13px;}
@@ -9429,31 +9465,72 @@ async function startSessionInner(a){
    one stamps today as its due_date (the day it was actually done - that's what
    places it on the calendar) and opens it through the same openAssigned path
    every other entry point already uses. */
-async function openWeekPool(pool){
+async function openWeekPool(pool,wk){
+  /* IT (owner, 2026-11-26): concept B - week header, a swipeable carousel of the sessions still to do
+     (unfinished first, with its sets bar and Continue), then the whole week as a numbered list with done
+     sessions dimmed. Picking one still goes through startSession(a), unchanged. */
+  wk=wk||{}; const doneRows=wk.done||[];
   const body=$("#sheet-body"); body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent="Start a session";
   $("#sheet-add").style.display="none";
   const today=todayISO();
-  const sorted=[...pool].sort((a,b)=>{ // carried (created before its week) first, then oldest
+  const sorted=[...pool].sort((a,b)=>{ /* carried (created before its week) first, then oldest */
     const ca=a.created_at&&isoOf(new Date(a.created_at))<(a.week_start||today), cb=b.created_at&&isoOf(new Date(b.created_at))<(b.week_start||today);
     if(ca!==cb) return ca?-1:1; return String(a.created_at).localeCompare(String(b.created_at));
   });
   /* HC: unfinished workouts first, marked */
   const unf={}; (await unfinishedWorkouts({ids:pool.map(a=>a.id)})).forEach(u=>{ unf[u.id]=u.progress; });
   sorted.sort((a,b)=>(unf[b.id]?1:0)-(unf[a.id]?1:0));
-  for(const a of sorted){
-    const carried=a.created_at&&a.week_start&&isoOf(new Date(a.created_at))<a.week_start;
-    const eng=(traineeEngs||[]).find(e=>e.id===a.engagement_id)||currentEng||{};
-    const row=document.createElement("div"); row.className="sh-item";
-    row.innerHTML=`<div style="flex:1"><div style="font-size:15px;font-weight:700">${escapeHtml((a.snapshot&&a.snapshot.name)||"Workout")}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${((a.snapshot&&a.snapshot.items)||[]).length} exercises${eng.goal_title?` · ${escapeHtml(eng.goal_title)}`:""}${carried?` · <span style="color:var(--attn)">carried from last week</span>`:""}</div></div>
-      <div style="color:var(--lime)">→</div>`;
-    if(unf[a.id]){ row.style.border="1.5px solid var(--lime)"; row.style.borderRadius="14px";
-      const tag=document.createElement("div"); tag.style.cssText="font-size:11.5px;font-weight:700;color:var(--lime);margin-top:4px";
-      tag.textContent=`Unfinished · ${unf[a.id].done} of ${unf[a.id].total} sets saved - tap to continue`; row.firstElementChild.appendChild(tag); }
-    row.addEventListener("click",()=>startSession(a));
-    body.appendChild(row);
+  const nm=a=>(a.snapshot&&a.snapshot.name)||"Workout";
+  const its=a=>(a.snapshot&&a.snapshot.items)||[];
+  const exLine=a=>its(a).slice(0,3).map(it=>it&&(it.name||it.exercise||it.exercise_name)).filter(Boolean).join(" · ");
+  const isCarried=a=>a.created_at&&a.week_start&&isoOf(new Date(a.created_at))<a.week_start;
+  const nDone=doneRows.length, target=Math.max(wk.target||0,nDone+pool.length);
+  const head=document.createElement("div"); head.className="ss-head";
+  head.innerHTML=`<div class="ss-sub">This week · ${nDone} of ${target} done</div>
+    <div class="ss-barrow"><div class="ss-bar"><i style="width:${target?Math.round(nDone/target*100):0}%"></i></div><span>${nDone}/${target}</span></div>`;
+  body.appendChild(head);
+  /* carousel of the sessions still to do */
+  const car=document.createElement("div"); car.className="ss-car";
+  sorted.forEach(a=>{
+    const u=unf[a.id], eng=(traineeEngs||[]).find(e=>e.id===a.engagement_id)||currentEng||{};
+    const c=document.createElement("div"); c.className="ss-card"+(u?" ss-unf":"");
+    const ex=exLine(a), n=its(a).length;
+    c.innerHTML=`${u?`<div class="ss-unfrow"><b>Unfinished</b><span>${u.done} of ${u.total} sets saved</span></div><div class="ss-bar ss-mini"><i style="width:${u.total?Math.round(u.done/u.total*100):0}%"></i></div>`
+        :(isCarried(a)?`<div class="ss-unfrow"><span class="ss-tag">carried from last week</span></div>`:`<div class="ss-unfrow"><span class="ss-eyebrow">Up next</span></div>`)}
+      <div class="ss-name">${escapeHtml(nm(a))}</div>
+      <div class="ss-meta">${n} exercise${n===1?"":"s"}${eng.goal_title?` · ${escapeHtml(eng.goal_title)}`:""}</div>
+      ${ex?`<div class="ss-ex">${escapeHtml(ex)}</div>`:""}
+      <button class="ss-go" type="button">${u?"Continue":"Start"}</button>`;
+    c.querySelector(".ss-go").addEventListener("click",()=>startSession(a));
+    car.appendChild(c);
+  });
+  if(sorted.length){ body.appendChild(car);
+    if(sorted.length>1){ const dots=document.createElement("div"); dots.className="ss-dots";
+      dots.innerHTML=sorted.map((_,k)=>`<i${k?"":' class="on"'}></i>`).join(""); body.appendChild(dots);
+      car.addEventListener("scroll",()=>{ const w=car.firstElementChild?car.firstElementChild.offsetWidth+12:1;
+        const k=Math.round(car.scrollLeft/w); [...dots.children].forEach((d,m)=>d.classList.toggle("on",m===k)); },{passive:true});
+    }
   }
+  /* the whole week, numbered */
+  const list=document.createElement("div"); list.className="ss-list";
+  let k=0;
+  sorted.forEach(a=>{ k++;
+    const r=document.createElement("button"); r.type="button"; r.className="ss-row";
+    const n=its(a).length;
+    r.innerHTML=`<span class="ss-n">${k}</span><span class="ss-rt"><span class="ss-rn">${escapeHtml(nm(a))}</span>
+      ${isCarried(a)?`<span class="ss-tag">carried from last week</span>`:`<span class="ss-rm">${unf[a.id]?"Unfinished · ":""}${n} exercise${n===1?"":"s"}</span>`}</span>
+      <svg class="ss-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    r.addEventListener("click",()=>startSession(a));
+    list.appendChild(r);
+  });
+  doneRows.forEach(a=>{ k++;
+    const r=document.createElement("div"); r.className="ss-row ss-done";
+    r.innerHTML=`<span class="ss-n">${k}</span><span class="ss-rt"><span class="ss-rn">${escapeHtml(nm(a))}</span>
+      <span class="ss-rm ss-ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Done</span></span>`;
+    list.appendChild(r);
+  });
+  body.appendChild(list);
   $("#sheet-scrim").classList.add("on");$("#sheet-lib").classList.add("on");
 }
 /* Item AT: "This week" card - the trainee's primary action under the week model;
@@ -10110,7 +10187,7 @@ function thisWeekCardEl(iAmCoach){
             ? `<button class="btn primary tr-start" id="wk-start" style="order:-1" ${pool.length?"":"disabled"}>${pool.length?"\u25B6 Start a session":"No session to start yet"}</button>`
             : `<button class="btn primary sm" id="wk-start" style="width:auto;white-space:nowrap" ${pool.length?"":"disabled"}>Start a session</button>`)}
       </div>`;
-    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(weekDoneAll?nextMon:thisMon) : openWeekPool(pool));
+    card.querySelector("#wk-start").addEventListener("click",()=> iAmCoach ? assignWorkoutFlow(weekDoneAll?nextMon:thisMon) : openWeekPool(pool,{done:rows.filter(x=>x.status==="submitted"||x.status==="reviewed"),target}));
     return card;
 }
 /* Redraw just one week's header/slots (and the this-week card if it is this
