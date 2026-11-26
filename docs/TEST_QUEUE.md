@@ -37,6 +37,7 @@ Tip: allow ~10 minutes after a change for the phone to pick up the new version (
 - [ ] **IX-T1** App-wide: no lime-green left anywhere (buttons, glows, glisten, tabs); primary buttons darken when pressed; outline buttons fill faintly; inputs focus gold; achievements show gold line badges; Consistency card shows the tier shield; empty screens show the gold illustrations; Day complete shows the gold sun tick; light theme readable.
 - [ ] **IP-T1** Profile: Cork photo banner with the gold-ringed photo; Points / Credit tiles and Invite card open their full cards; Share works; each row opens and closes; Sign out row signs out; Edit profile saves.
 - [ ] **TB-T1** Top bar: gold-ringed avatar, plain gold gear, streak as a gold flame on a dark-gold tile (red when in danger, grey at zero); both themes.
+- [ ] **IN-T1** Notifications (trainee): cards sit under Needs you / Celebrate / Updates with gold icon tiles; every button still works (Log, Accept, Pay, Snap, Congratulate...); achievement cards show the medal; the tab badge count still matches; empty groups vanish; light theme.
 - [ ] **IX-T2** (templates pasted by the owner 2026-11-26 18:07 ✓ - still to check: a password reset email arrives branded) Owner: paste the 4 templates from supabase/email-templates into Supabase -> Authentication -> Email templates, then send yourself a password reset.
 
 ## First — after the security lock (GD, 2026-11-10)
