@@ -2004,6 +2004,7 @@ duplicates (two wiring copies) and reverted before anything was written.
 
 **Owner 11:24 (screenshots: Set complete, workout list with PB callout, Can't train today):** remake the workout session UI - the most important part of the app; easy to understand and comfortable for trainees. Explain to OpenArt the stopwatch, the coach example video, and that **"Can't train today" is no longer needed** (sessions are flexible within the week).
 Requested one Nano Banana Pro sheet (2K, ~36 credits): briefed the coach example video per exercise, recording with automatic rep count and later coach review, replay / skip / undo / locked sets, the rest stopwatch (2:30 default, per exercise; blocks recording; skip or +30 s - EU, GN, GX), the PB callout, session progress. A: one exercise at a time with a large rest ring; B: vertical timeline with a sticky rest bar; C: split view, video top and set card bottom, floating rest ring. Waiting for the owner's pick.
+**Owner 11:29:** likes B but it looks very similar to another app he does not want to copy - asked for 3 variations of B. Requested (~36 credits): B1 'Trace line' (a gold line like the F logo links the exercises as nodes; the rest fills the line to the next node), B2 'Set ladder' (each set a bar filling with reps; rest built into the Record button, draining), B3 'Deck' (done exercises stacked at the top, current card in front with the coach video, rest as a gold sweep round its border).
 
 ## IT. Start a session sheet redesign - BUILT 2026-11-26 (personal account)
 
