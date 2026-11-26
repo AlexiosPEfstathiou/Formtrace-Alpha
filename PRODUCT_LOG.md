@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IX (2026-11-26, owner): asset pack for the app-wide restyle - 7 OpenArt sheets requested (states, achievements, tiers, celebrations, empty states, icons, share image + email) - LOGGED.**
 **IW (2026-11-26, owner): Post-recording edit screen = concept B (filmstrip trimmer, mute, replay, gold check) - BUILT; SQL applied via MCP.**
 **IV (2026-11-26, owner): Camera (recorder) UI = concept B (right-edge gold rail, gold record button, title pill) - BUILT.**
 **IU (2026-11-26, owner): Workout session screen = concept B1 'trace line' with muscle-group icons; "Can't train today" removed - BUILT.**
@@ -2002,6 +2003,13 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## IX. Asset pack for the app-wide restyle - LOGGED 2026-11-26 (personal account)
+
+**Owner 12:13:** the trainee tabs redesign is done; next, apply it to the whole app. Before that: which OpenArt assets would make the restyle complete (pressed buttons, animations, sounds)? I proposed 8 groups; **owner 12:20: items 1-8 approved except 5** (5 = the notifications icon sheet, already generated - owner to attach).
+Submitted one batch of 7 Nano Banana Pro sheets (2K, ~36 credits each, ~252): (1) component states - primary / secondary / text / icon buttons, toggle, chip, input, tab bar, card in default / pressed / disabled / loading; (2) 27 achievement badges, one frame shape per family (names and families from the `achievements` table); (3) Consistency badge Bronze-Diamond + referral tiers (Ambassador, Partner) + Founding coach seal; (4) celebration artwork - streak, achievement unlocked, level up, personal best, quest complete, day complete, points coin + confetti pieces (animated in code, not video: video cannot be transparent and is too heavy); (6) 8 empty-state spot illustrations; (7) goal-category icons, shop icons (shop_items is empty, so generic: bag, voucher, t-shirt, cap, bottle, streak freeze, profile frame, gift), video placeholders; (8) share preview image 1200x630 and a branded email header + button (with the real logo as reference).
+**Sounds:** OpenArt has no audio models - stay with the synthesised placeholders (FZ) or CC0 libraries (Kenney UI Audio); a paid tool only with the owner's go.
+Next: owner attaches the sheets; trace / cut them in; then the app-wide restyle (HZ: lime -> gold, these components everywhere, coach screens).
+
 ## IW. Post-recording edit screen redesign - BUILT 2026-11-26 (personal account)
 
 **Owner 12:04 (screenshot of the review after recording: two grey range sliders Start/End, Use this take, Retake, Replay):** remake the post-recording edit UI - very smooth and intuitively easy: cropping the video, muting the video, etc.
