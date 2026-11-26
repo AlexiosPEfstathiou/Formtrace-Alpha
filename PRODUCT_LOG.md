@@ -46,7 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
-**IV (2026-11-26, owner): Camera (recorder) UI redesign to theme - OpenArt concepts A/B/C requested - LOGGED.**
+**IV (2026-11-26, owner): Camera (recorder) UI = concept B (right-edge gold rail, gold record button, title pill) - BUILT.**
 **IU (2026-11-26, owner): Workout session screen = concept B1 'trace line' with muscle-group icons; "Can't train today" removed - BUILT.**
 **IT (2026-11-26, owner): Start a session sheet redesign = concept B (carousel + numbered week list) - BUILT.**
 **IS (2026-11-26, owner): app launch animation - night-park push-up clip -> fade to black -> gold F drawn (in code) - BUILT (installed app only; ?launch=1 to preview).**
@@ -2001,10 +2001,13 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
-## IV. Camera (recorder) UI redesign - LOGGED 2026-11-26 (personal account)
+## IV. Camera (recorder) UI redesign - BUILT 2026-11-26 (personal account)
 
 **Owner 11:54 (screenshot of the recorder):** ask OpenArt to redesign the camera UI and make it more on theme (today: orange record button, lime Mirror chip, chips 3s timer / Portrait / Mirror / Touchless, Flip and Lines beside Record).
 Requested one Nano Banana Pro sheet (2K, ~36 credits) with every control kept: close, title + set/aim, gold Record, Flip, Lines, 3 s timer, Portrait/Landscape, Mirror, Touchless; gold traced-line pose overlay; live rep counter and recording time. A: frosted bottom tray with chips; B: right-edge rail, record ring fills with reps; C: record button inside F-logo lines, toggles behind one settings chip. Waiting for the owner's pick.
+**Owner 11:57: concept B ("minimalistic and beautiful"); ask for any files needed.** No files were needed - the six rail icons are simple line glyphs drawn as inline SVG in code (no OpenArt credits).
+**BUILT (index.html, recorder `#rec` only - same ids and handlers):** full-bleed preview; the bottom deck is now a transparent gradient with one gold record button (gold ring + glow, gold disc; while recording a gold stop square and a pulsing glow) and a RECORD / STOP label; the exercise title is a gold pill at the top (set and aim beneath it), the close button gold, the timer a dark pill. **Flip, Lines, 3 s timer, Portrait/Landscape, Mirror, Touchless** moved into a slim vertical rail on the right edge (`#r-tools`): gold outline icons, gold-filled when on (Lines and Touchless now show their state as a fill instead of lime text); rail icons turn with the phone like before. `syncOrientBtn` / `syncCaptureTools` keep the icons (they only change the label and the portrait/landscape glyph).
+**Not done:** the concept's live rep counter ("3 / 8") and the record ring filling with reps - reps are counted after the set, not live, so showing them would be invented; the check-in photo camera (`#photocap`) is unchanged. Preview: docs/brand/camera/camera-b-preview.png.
 
 ## IU. Workout session screen redesign - BUILT 2026-11-26 (personal account)
 

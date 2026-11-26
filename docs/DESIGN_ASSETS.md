@@ -135,6 +135,7 @@ All **Code**: keep the animation, apply the theme's colours and motion style; no
 | **Launch animation (IS)** | Installed app, first screen | **L1** | built: img/launch.mp4 (owner's OpenArt clip, 720x1280, 620 KB) + img/launch-poster.jpg; F drawn in code from docs/brand/logo | 9:16 MP4 H.264, muted, <1 MB; source docs/brand/launch/ |
 | **Start a session sheet (IT)** | Training tab | **Code** | built: concept B in CSS, inline chevron + tick SVG | docs/brand/session/ |
 | **Muscle-group icons (IU)** | Workout screen nodes | **L1** | built: 15 traced line icons (14 groups + other) from OpenArt | docs/brand/muscles/*.svg, viewBox 100, currentColor |
+| **Camera rail icons (IV)** | Recorder | **Code** | built: 6 inline line SVGs (flip, lines, timer, orientation, mirror, touchless) + gold record button | docs/brand/camera/ |
 | **Sign-in / password-reset emails** | Supabase Auth templates (FX) | **L1** | placeholder (Supabase default, no branding) | Logo PNG 2x (max 600 px wide), gold button, footer; must work in every mail client |
 | Landing display typeface: ~~Big Shoulders Display~~ **Montserrat 700/800** | landing headlines (EX) | L1 | done 2026-11-23 | Owner chose Montserrat with the wordmark |
 | Email signature | contact@formtrace.ie (Titan, EH) | L2 | future | Logo PNG, small |

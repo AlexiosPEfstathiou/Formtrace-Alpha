@@ -1972,6 +1972,31 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .ms-empty{font-size:20px;color:var(--faint);margin-top:6px;}
   .ms-single{font-size:10.5px;color:var(--faint);height:34px;display:flex;align-items:center;}
   /* touchless capture: tool row + shared 3-2-1 countdown */
+  /* IV: camera = concept B */
+  #rec .rdeck{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#0B0E1100,#0B0E11E6 55%);border-top:0;min-height:0;padding:40px 24px calc(env(safe-area-inset-bottom) + 18px)}
+  .r-recwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+  #rbtn{width:84px;height:84px;border:3px solid #E8B923;box-shadow:0 0 0 6px rgba(232,185,35,.14),0 0 26px rgba(232,185,35,.45)}
+  #rbtn::after{width:66px;height:66px;background:radial-gradient(circle at 40% 35%,#F5D46A,#E8B923 60%,#D49B17)}
+  #rbtn.rec::after{width:28px;height:28px;border-radius:8px;background:#E8B923}
+  #rbtn.rec{animation:recglow 1.6s ease-in-out infinite}
+  @keyframes recglow{50%{box-shadow:0 0 0 10px rgba(232,185,35,.08),0 0 34px rgba(232,185,35,.6)}}
+  .r-reclab{font-size:13px;font-weight:800;letter-spacing:.12em;color:#E8B923}
+  .r-reclab::before{content:"RECORD"}
+  #rbtn.rec+.r-reclab::before{content:"STOP"}
+  #rec .rtop{background:linear-gradient(#0B0E11D9,#0B0E1100)}
+  #rec .close{background:rgba(11,14,17,.55);color:#E8B923;border:1px solid rgba(232,185,35,.35)}
+  #rec .rtop .ttl{background:#E8B923;color:#0B0E11;border-radius:99px;padding:5px 14px;font-weight:800;max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #rec .rtop .ttl small{color:rgba(11,14,17,.7);font-weight:600}
+  #rtimer{background:rgba(11,14,17,.55);padding:5px 10px;border-radius:99px;color:#fff}
+  #r-tools{left:auto;right:12px;top:50%;bottom:auto;transform:translateY(-50%);flex-direction:column;gap:10px;padding:10px 7px;border-radius:30px;
+    background:rgba(11,14,17,.62);border:1px solid rgba(232,185,35,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  #r-tools .captool.rail{position:relative;width:44px;height:44px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:transparent;border:0;color:#E8B923;backdrop-filter:none}
+  #r-tools .captool.rail svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .38s cubic-bezier(.3,1.2,.4,1)}
+  #r-tools .captool.rail b{position:absolute;right:5px;bottom:4px;font-size:9.5px;font-weight:800;line-height:1}
+  #r-tools .captool.rail.on{background:#E8B923;color:#0B0E11;box-shadow:0 0 14px rgba(232,185,35,.45)}
+  body.rec-ui-90 #r-tools svg{transform:rotate(90deg)}
+  body.rec-ui-270 #r-tools svg{transform:rotate(-90deg)}
   .captools{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 118px);z-index:4;display:flex;gap:8px;justify-content:center;padding:0 18px;}
   .captool{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px);}
   .captool:active{transform:scale(.96);}
@@ -2716,16 +2741,18 @@ T(fade,9000);
       </div>
       <div class="rstat" id="r-stat"><div class="spin" id="r-spin"></div><div class="m" id="r-statmsg">Loading pose engine…</div></div>
     </div>
+    <!-- IV (owner, 2026-11-26): camera = concept B - full-bleed preview, a slim gold icon rail on the right edge, a gold
+         record button at the bottom centre, the exercise as a gold pill at the top. Same ids, same handlers. -->
     <div class="rdeck" id="r-deck">
-      <button class="rside" id="r-flip"><span class="i">⟳</span>Flip</button>
-      <button id="rbtn" disabled></button>
-      <button class="rside" id="r-ghost"><span class="i">◉</span>Lines</button>
+      <div class="r-recwrap"><button id="rbtn" disabled aria-label="Record"></button><div class="r-reclab"></div></div>
     </div>
-    <div class="captools" id="r-tools">
-      <button class="captool" id="r-timer">⏱ 3s timer</button>
-      <button class="captool" id="r-orient">▯ Portrait</button>
-      <button class="captool" id="r-mirror">&#8644; Mirror</button>
-      <button class="captool" id="r-hand">✋ Touchless</button>
+    <div class="captools" id="r-tools" role="toolbar" aria-label="Camera tools">
+      <button class="captool rail" id="r-flip" aria-label="Flip camera" title="Flip camera"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><path d="M9.2 13.2a2.9 2.9 0 0 1 5-1.9M14.8 13.4a2.9 2.9 0 0 1-5 1.9"/><path d="M14.4 9.6v1.9h-1.9M9.6 17v-1.9h1.9"/></svg></button>
+      <button class="captool rail" id="r-ghost" aria-label="Form lines" title="Form lines"><svg viewBox="0 0 24 24"><circle cx="7" cy="6" r="1.6"/><circle cx="16" cy="9" r="1.6"/><circle cx="9" cy="17" r="1.6"/><path d="M8.4 6.6l6.1 2M15 10.3l-4.9 5.5"/><path d="M4 20h16"/></svg></button>
+      <button class="captool rail" id="r-timer" aria-label="3 second timer" title="3 second timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M10 3.5h4M18.2 6.8l1.3-1.3"/></svg><b>3</b></button>
+      <button class="captool rail" id="r-orient" aria-label="Portrait" title="Portrait"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2.2"/><path d="M11 18h2"/></svg></button>
+      <button class="captool rail" id="r-mirror" aria-label="Mirror" title="Mirror"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 2.2"/><path d="M9 7L4 12l5 5zM15 7l5 5-5 5z"/></svg></button>
+      <button class="captool rail" id="r-hand" aria-label="Touchless" title="Touchless"><svg viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.6 7-6.3 7-2.4 0-3.7-1.2-5-3.2L3.6 14a1.5 1.5 0 0 1 2.4-1.7L8 14.5"/></svg></button>
     </div>
     <div id="rreview">
           <!-- Item BC: trim the start and end before using the clip. Offsets, not a recut. -->
@@ -16219,7 +16246,8 @@ document.addEventListener("click",e=>{ const b=e.target&&e.target.closest?e.targ
 function syncOrientBtn(){
   const b=$("#r-orient"); if(!b)return;
   const land=recOrient==="landscape";
-  b.textContent = land ? "▭ Landscape" : "▯ Portrait";
+  if(b.classList.contains("rail")){ b.setAttribute("aria-label",land?"Landscape":"Portrait"); b.title=land?"Landscape":"Portrait"; const r=b.querySelector("rect"); if(r){ if(land){ r.setAttribute("x","3");r.setAttribute("y","7");r.setAttribute("width","18");r.setAttribute("height","10"); } else { r.setAttribute("x","7");r.setAttribute("y","3");r.setAttribute("width","10");r.setAttribute("height","18"); } } }   /* IV */
+  else b.textContent = land ? "▭ Landscape" : "▯ Portrait";
   b.classList.toggle("on", land);
 }
 $("#r-orient")?.addEventListener("click",()=>{
@@ -16302,7 +16330,7 @@ async function openRecorder(opts){ lastRecorderOpts=opts; try{ if(typeof DeviceM
     }
     $("#r-statmsg").textContent="Starting camera…";
     await startCam();
-    $("#r-stat").classList.add("hidden");$("#rbtn").disabled=false;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";
+    $("#r-stat").classList.add("hidden");$("#rbtn").disabled=false;$("#r-ghost").classList.toggle("on",rShow);
     $("#r-tools").style.display="flex"; syncCaptureTools();
     if(landmarker) hidePoseWarn(); else showPoseWarn();
     if(gestureEnabled()) ensureGesture().then(syncCaptureTools);
@@ -16537,13 +16565,13 @@ function syncCaptureTools(){
   ["#r-hand","#pc-hand"].forEach(sel=>{
     const b=$(sel); if(!b)return;
     b.classList.toggle("on",on);
-    b.textContent=label;
+    if(b.classList.contains("rail")){ b.setAttribute("aria-label",label.replace("✋ ","")); b.title=label.replace("✋ ",""); } else b.textContent=label;   /* IV: the rail keeps its icon */
   });
 }
 $("#cd-cancel").addEventListener("click",()=>{ cancelCountdown(); gestureHold=0; });
 $("#r-close").addEventListener("click",closeRecorder);
 $("#r-flip").addEventListener("click",async()=>{rFacing=rFacing==="user"?"environment":"user";try{await startCam();}catch(e){toast("Couldn't switch camera");}});
-$("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").style.color=rShow?"var(--lime)":"#fff";if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);
+$("#r-ghost").addEventListener("click",()=>{rShow=!rShow;$("#r-ghost").classList.toggle("on",rShow);if(!rShow)rctx.clearRect(0,0,roverlay.width,roverlay.height);
   else if(Date.now()-poseLastHit>3000&&!poseRebuilding){ toast("Restarting the pose lines…",2200); resetPoseEngine(); }   /* HD: Lines on with no figure seen - rebuild the engine */
 });
 $("#r-retake").addEventListener("click",()=>{rplay.pause();rplay.style.display="none";rvideo.style.display="block";roverlay.style.display="block";$("#rreview").style.display="none";$("#r-deck").style.display="flex";$("#r-tools").style.display="flex";syncCaptureTools();rLastT=-1;rLoop();});
