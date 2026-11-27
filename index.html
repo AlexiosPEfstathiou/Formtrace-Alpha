@@ -899,6 +899,17 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .pd-chip b{font-size:14px}
 .pd-chip.ok{border-color:var(--line);background:rgba(232,185,35,.10)}
 .pd-chip.ok b{color:#E8B923}
+.pd-older-btn{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:11px 14px;border-radius:14px;border:1.5px solid rgba(232,185,35,.55);background:rgba(232,185,35,.06);color:var(--ink);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;text-align:left}
+.pd-older-btn .tr-svg,.pd-older-btn svg{width:22px;height:22px;flex:0 0 22px;color:#E8B923;fill:currentColor}.pd-older-btn span{flex:1}.pd-older-btn i{font-style:normal;color:var(--faint);font-size:18px}
+.pd-older-btn:active{transform:scale(.98);background:rgba(232,185,35,.14)}
+.wc-box{max-width:380px}.wc-head{display:flex;align-items:center;gap:8px;margin:4px 0 10px}.wc-t{flex:1;text-align:center;font-weight:900;font-size:15px}.wc-t span{display:block;font-size:11.5px;font-weight:700;color:var(--muted)}
+.wc-g{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.wc-g i{font-style:normal;font-size:10.5px;font-weight:800;color:var(--faint);text-align:center;padding-bottom:2px}
+.wc-d{aspect-ratio:1/1.1;border-radius:10px;border:1px dashed var(--line2);background:transparent;color:var(--ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;padding:0}
+.wc-d b{font-size:12.5px}.wc-d span{font-size:9.5px;font-weight:800;color:var(--faint)}
+.wc-d.ok{border:1px solid rgba(232,185,35,.6);background:rgba(232,185,35,.14)}.wc-d.ok span{color:#E8B923}
+.wc-d.miss span{color:#E8B923;font-size:13px}.wc-d.fut{opacity:.3;cursor:default;border-style:solid}.wc-d.today{box-shadow:0 0 0 2px #E8B923}
+.wc-k{display:flex;gap:14px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted)}.wc-k em{display:inline-block;width:10px;height:10px;border-radius:3px;border:1px dashed var(--line2);margin-right:5px;vertical-align:-1px}.wc-k em.ok{border:1px solid #E8B923;background:rgba(232,185,35,.3)}
+html[data-theme="light"] .wc-d.ok span,html[data-theme="light"] .wc-d.miss span,html[data-theme="light"] .pd-older-btn svg{color:#B8960A}
 .pd-older{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12.5px;color:var(--muted);font-weight:700}
 .pd-older input{flex:0 0 auto;height:34px;border-radius:10px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);padding:0 8px;font:inherit}
 .mv-week{position:relative;height:52px;border:0;border-top:1px solid var(--line);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
@@ -3973,7 +3984,7 @@ async function hydrateAvatars(root){
          needing a separate click handler wired per screen. Only added
          once a real photo actually loaded; an initials-only fallback has
          nothing to expand into. */
-      if(el.hasAttribute("data-nolightbox")) continue;   // CQ-5: the header avatar navigates, it does not expand
+      if(el.hasAttribute("data-nolightbox")||el.closest(".gh-coach")) continue;   /* IY: the Goal tab's coach photo opens the profile (data-coach) */   // CQ-5: the header avatar navigates, it does not expand
       el.style.cursor="pointer";
       el.addEventListener("click",()=>openPhotoLightbox(url));
     }
@@ -5762,17 +5773,50 @@ async function openQuestTarget(key,front){
       const row=k&&front&&front.querySelector(`[data-ck="${k}"]`); if(row){ row.click(); return; }
       go("trainee-home"); return;
     }
-    if(key==="workouts"||key==="streak"||key==="pb3"){ goToCalendarWeek(weekStartISO(new Date())); return; }
-    if(key==="macros5"){ openMacroLog(yest); return; }
-    if(key==="weigh5"||key==="calories"){ openMacroLog(today); return; }
+    /* IY (owner review 2026-11-27): each quest opens the Training card that shows its progress */
+    if(key==="workouts"){ openTrainingTile("calendar",()=>{ calView="weeks"; try{ localStorage.setItem("ft-cal-view","weeks"); }catch(e){} const b=document.querySelector('.tr-sec[data-sec="calendar"] .wv-switch [data-v="weeks"]'); if(b) b.click(); goToCalendarWeek(weekStartISO(new Date())); }); return; }
+    if(key==="streak"){ streakQuestPop(); return; }
+    if(key==="pb3"){ openTrainingTile("pbs",box=>{ const b=box.querySelector('[data-pb-sort="new"]'); if(b&&!b.classList.contains("on")) b.click(); }); return; }
+    if(key==="macros5"){ openTrainingTile("macros",box=>{ const b=box.querySelector('[data-mx-mode="week"]'); if(b&&!b.classList.contains("on")) b.click(); }); return; }
+    if(key==="calories"){ openTrainingTile("macros",box=>{ const b=box.querySelector('[data-mx-mode="day"]'); if(b&&!b.classList.contains("on")) b.click(); }); return; }
+    if(key==="weigh5"){ openTrainingTile("weight"); return; }
     if(key==="photo"){ startCheckin(today); return; }
     if(key==="friend"){ go("intouch"); renderInTouch(); return; }
     if(key==="call"){
+      if(await openTrainingTile("calls")) return;   /* IY: Training > Calls; the coaching page stays the fallback */
       const { data }=await store._sb.from("engagements").select("id").eq("trainee_id",ME.id).eq("status","active").order("started_at",{ascending:false}).limit(1);
       if(data&&data[0]){ openEngagement(data[0].id); toast("Arrange or join your call from here",2600); } else toast("You have no active coach right now",2600);
       return;
     }
   }catch(e){ console.warn("quest target (HO)",e&&e.message); }
+}
+/* IY (owner review 2026-11-27): open a Training-tab card (and optionally pick a view inside it). Resolves true once the card is open. */
+async function openTrainingTile(k,after){
+  try{
+    go("trainee-home");
+    for(let i=0;i<16;i++){ const b=document.querySelector(`.tr-tiles [data-tile="${k}"]`);
+      if(b&&b.offsetParent){ if(!b.classList.contains("on")) b.click(); const box=document.querySelector(`.tr-sec[data-sec="${k}"]`);
+        if(after&&box) setTimeout(()=>{ try{ after(box); }catch(e){} },120); return true; }
+      await new Promise(r=>setTimeout(r,250)); }
+  }catch(e){ console.warn("open training tile (IY)",e&&e.message); }
+  return false;
+}
+/* IY: the streak quest explains itself - how many workouts are still needed and how many days are left */
+function streakQuestPop(){
+  const q=((wqCache&&wqCache.d&&wqCache.d.quests)||[]).find(x=>x.key==="streak")||{};
+  const need=Math.max(0,(+q.goal||0)-(+q.progress||0));
+  const sun=new Date(weekStartISO(new Date())+"T00:00:00"); sun.setDate(sun.getDate()+6);
+  const days=Math.max(1,Math.round((sun-new Date(todayISO()+"T00:00:00"))/86400000)+1);
+  const msg=q.done||!q.goal?"This week already counts towards your streak. Keep it going next week.":`Perform ${need} workout${need===1?"":"s"} in the next ${days} day${days===1?"":"s"} to maintain your streak.`;
+  const ov=document.createElement("div"); ov.className="tut-ov";
+  ov.innerHTML=`<div class="tut-box" role="dialog" aria-modal="true" aria-label="Your streak"><div class="tut-h"><b>Keep your streak</b><button type="button" class="tut-x" aria-label="Close">×</button></div>
+    <div class="tut-i" style="font-size:15px;color:var(--text)">${escapeHtml(msg)}</div>
+    <button type="button" class="tut-ok" data-sq-go>See this week</button></div>`;
+  const close=()=>ov.remove();
+  ov.addEventListener("click",e=>{ if(e.target===ov) close(); });
+  ov.querySelector(".tut-x").addEventListener("click",close);
+  ov.querySelector("[data-sq-go]").addEventListener("click",()=>{ close(); openQuestTarget("workouts"); });
+  document.body.appendChild(ov);
 }
 function mountQuestFlip(el, allDone, iso){
   try{
@@ -5791,13 +5835,17 @@ function mountQuestFlip(el, allDone, iso){
     const fh=front.firstElementChild; if(fh&&fh.tagName==="DIV") fh.appendChild(fb); else front.insertBefore(fb,front.firstChild);   /* HL: top right, lime */
     const sideKey=`ft-qside-${ME.id}-${iso}`, autoKey=`ft-qauto-${ME.id}-${iso}`;
     const get=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
-    const flip=(toWeekly,remember)=>{ inner.classList.toggle("flipped",!!toWeekly); if(remember) set(sideKey,toWeekly?"weekly":"daily"); };
+    /* IY (owner review 2026-11-27): the card is as tall as the side on show, not the taller of the two */
+    const fitH=()=>{ try{ const f=inner.classList.contains("flipped")?back:front; const h=f.offsetHeight; if(h) inner.style.height=h+"px"; }catch(e){} };
+    inner.style.alignItems="start"; inner.style.transition="transform .75s cubic-bezier(.3,.9,.3,1),height .45s ease";
+    try{ if(window.ResizeObserver){ const ro=new ResizeObserver(fitH); ro.observe(front); ro.observe(back); } }catch(e){}
+    const flip=(toWeekly,remember)=>{ inner.classList.toggle("flipped",!!toWeekly); if(remember) set(sideKey,toWeekly?"weekly":"daily"); fitH(); };
     fb.addEventListener("click",()=>flip(true,true));
     let side=get(sideKey);
     if(allDone&&get(autoKey)!=="1"){ set(autoKey,"1"); set(sideKey,"weekly"); setTimeout(()=>flip(true,false),1100); }
     else if(side==="weekly"||(allDone&&side!=="daily")) inner.classList.add("flipped");
     loadWeeklyQuests(false).then(d=>{
-      back.innerHTML=weeklyQuestsHtml(d);
+      back.innerHTML=weeklyQuestsHtml(d); setTimeout(fitH,0);
       const bb=document.createElement("button"); bb.type="button"; bb.className="qf-seg"; bb.innerHTML=`<span>Today <b class="qf-dc"></b></span><span class="on">This week <b class="qf-wc"></b></span>`; bb.setAttribute("aria-label","Show today's tasks");
       bb.addEventListener("click",()=>flip(false,true));
       const bh=back.firstElementChild; if(bh&&bh.tagName==="DIV") bh.appendChild(bb); else back.insertBefore(bb,back.firstChild);
@@ -10174,11 +10222,36 @@ function weightJourneyEl(logs,goalRef){
     days.push(`<button type="button" class="wj-day${has?" ok":fut?" fut":" miss"}${iso===today?" today":""}" ${fut?"disabled":""} data-wj="${iso}" aria-label="${escapeHtml(fmtDay(iso))}${has?", weighed in":fut?"":", not logged - tap to log"}"><span class="wj-b">${has?"✓":fut?"":"+"}</span><b>${name}</b><span>${dt.getDate()} ${dt.toLocaleDateString("en-GB",{month:"short"})}</span></button>`); }
   const ml=missed.length?`You missed ${missed.length>1?missed.slice(0,-1).join(", ")+" and "+missed[missed.length-1]:missed[0]}.`:"No missed weigh-ins this week.";
   html+=`<div class="wj-sec">This week <span>${escapeHtml(ml)}</span></div><div class="wj-days">${days.join("")}</div>
-    <label class="pd-older">Log an earlier day <input type="date" max="${today}" aria-label="Pick an earlier day"></label>`;
+    <button type="button" class="pd-older-btn" data-wcal>${TR_ICONS.calendar||""}<span>Log an earlier day</span><i>›</i></button>`;   /* IY: a calendar of logged / missing days */
   el.innerHTML+=html;
   el.querySelectorAll("[data-wj]").forEach(b=>b.addEventListener("click",()=>{ if(!b.disabled) openMacroLog(b.dataset.wj); }));
-  const di=el.querySelector(".pd-older input"); if(di) di.addEventListener("change",e=>{ const v=e.target.value; if(v&&v<=today) openMacroLog(v); });
+  const wb=el.querySelector("[data-wcal]"); if(wb) wb.addEventListener("click",()=>openWeightCalendar(pts));
   return el;
+}
+/* IY (owner review 2026-11-27): "Log an earlier day" opens a month calendar - gold tick and kg on days with a weight, a
+   "+" on days without one; tap a day to log it or edit it. Future days are disabled. */
+function openWeightCalendar(pts){
+  const today=todayISO(), byD=Object.fromEntries((pts||[]).map(p=>[p.d,p.w]));
+  let m=new Date(today+"T12:00:00"); m.setDate(1);
+  const ov=document.createElement("div"); ov.className="tut-ov";
+  const draw=()=>{
+    const y=m.getFullYear(), mo=m.getMonth(), first=new Date(y,mo,1,12), n=new Date(y,mo+1,0).getDate(), lead=(first.getDay()+6)%7;
+    const iso=d=>`${y}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    let logged=0, cells="";
+    for(let i=0;i<lead;i++) cells+=`<span></span>`;
+    for(let d=1;d<=n;d++){ const k=iso(d), w=byD[k], fut=k>today; if(w!=null) logged++;
+      cells+=`<button type="button" class="wc-d${w!=null?" ok":fut?" fut":" miss"}${k===today?" today":""}" ${fut?"disabled":""} data-wcd="${k}" aria-label="${escapeHtml(fmtDay(k))}${w!=null?`, ${w} kg`:fut?"":", not logged"}"><b>${d}</b><span>${w!=null?(+w).toFixed(1):fut?"":"+"}</span></button>`; }
+    const next=new Date(y,mo+1,1,12), canNext=isoOf(next)<=today;
+    ov.innerHTML=`<div class="tut-box wc-box" role="dialog" aria-modal="true" aria-label="Weight calendar"><div class="tut-h"><b>Log an earlier day</b><button type="button" class="tut-x" aria-label="Close">×</button></div>
+      <div class="wc-head"><button type="button" class="mv-nav" data-wcm="-1" aria-label="Previous month">‹</button><div class="wc-t">${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}<span>${logged} day${logged===1?"":"s"} logged</span></div><button type="button" class="mv-nav" data-wcm="1" ${canNext?"":"disabled"} aria-label="Next month">›</button></div>
+      <div class="wc-g">${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x=>`<i>${x}</i>`).join("")}${cells}</div>
+      <div class="wc-k"><span><em class="ok"></em>Weighed in</span><span><em></em>Not logged - tap to add</span></div></div>`;
+    ov.querySelector(".tut-x").addEventListener("click",()=>ov.remove());
+    ov.querySelectorAll("[data-wcm]").forEach(b=>b.addEventListener("click",()=>{ if(b.disabled) return; m=new Date(m.getFullYear(),m.getMonth()+Number(b.dataset.wcm),1,12); draw(); }));
+    ov.querySelectorAll("[data-wcd]").forEach(b=>b.addEventListener("click",()=>{ if(b.disabled) return; ov.remove(); openMacroLog(b.dataset.wcd); }));
+  };
+  ov.addEventListener("click",e=>{ if(e.target===ov) ov.remove(); });
+  draw(); document.body.appendChild(ov);
 }
 /* IG (owner, 2026-11-24): the trainee's Macros card = the owner's "target rings" concept, used for both Week and Day.
    Week: the rings show the week's daily averages (logged days) against the coach's targets; Day: the same rings for the day
@@ -16141,7 +16214,7 @@ function COUNTRY_NAME(code){
 }
 $("#cp-back")?.addEventListener("click",()=>{
   if(cpFrom==="market"){ go("market"); return; }
-  if(cpFrom==="listings"){ go("listings"); return; }
+  if(cpFrom==="listings"){ if(listingsTab==="goals") window.__ftStayOnGoals=true; go("listings"); return; }   /* IY: back to the Goal tab, not Offers */
   if(cpFrom==="engagement"&&currentEng){ openEngagement(currentEng.id); return; }
   go(roleOf()==="coach"?"coach":"trainee-home");
 });
