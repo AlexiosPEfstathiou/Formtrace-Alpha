@@ -7873,6 +7873,10 @@ const MUSCLE_GROUPS=[
   ["full_body","Full body"],["cardio","Cardio"],["mobility","Mobility"]
 ];
 function mgLabel(k){ const f=MUSCLE_GROUPS.find(m=>m[0]===k); return f?f[1]:null; }
+/* JA (owner 2026-11-27): an exercise can have several muscle groups (exercises.muscle_groups); muscle_group = the first. */
+function exMGs(ex){ if(!ex) return []; const a=Array.isArray(ex.muscle_groups)?ex.muscle_groups.filter(Boolean):[]; return a.length?a:(ex.muscle_group?[ex.muscle_group]:[]); }
+function exHasMG(ex,k){ return exMGs(ex).includes(k); }
+let editMGs=[];
 let libFilterMG="";      // library filter, "" = all
 /* JA (owner 2026-11-27, OpenArt concept B approved): the coach's library as a body map + one section per muscle group.
    The map (traced from docs/brand/library/body-map-source.png) shades each group by how many exercises it has - faint or a
@@ -7886,10 +7890,10 @@ function libHasVideo(ex){ return !!(ex&&ex.ref_video_path); }
 function renderLibraryInto(el,list){
   el.innerHTML="";
   if(!list.length){el.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="ic">▤</div><p>Your library is empty.<br>Record an exercise and its correct form.</p></div>`;return;}
-  const cnt={}; for(const x of list) if(x.muscle_group) cnt[x.muscle_group]=(cnt[x.muscle_group]||0)+1;
+  const cnt={}; for(const x of list) for(const k of exMGs(x)) cnt[k]=(cnt[k]||0)+1;
   const max=Math.max(1,...BODY_REGIONS.map(k=>cnt[k]||0));
   const novid=list.filter(x=>x.kind!=="interval"&&!libHasVideo(x));
-  const unl=list.filter(x=>!x.muscle_group);
+  const unl=list.filter(x=>!exMGs(x).length);
   const thin=BODY_REGIONS.filter(k=>(cnt[k]||0)<=1);
   /* map */
   const reg=BODY_REGIONS.map(k=>{ const c=cnt[k]||0, on=libFilterMG===k;
@@ -7914,9 +7918,9 @@ function renderLibraryInto(el,list){
     return `<button type="button" class="lb-c" data-ex="${ex.id}"><span class="lb-th">${exThumb(ex)}${v?`<i class="lb-play">▶</i>`:""}</span><b>${escapeHtml(ex.name)}</b>${ex.kind==="interval"?`<span class="lb-k">Interval</span>`:""}</button>`; }
   function drawSecs(){
     const q=libQuery.trim().toLowerCase();
-    let pool=libFilterMG==="__novid"?novid:libFilterMG==="__none"?unl:libFilterMG?list.filter(x=>x.muscle_group===libFilterMG):list;
+    let pool=libFilterMG==="__novid"?novid:libFilterMG==="__none"?unl:libFilterMG?list.filter(x=>exHasMG(x,libFilterMG)):list;
     if(q) pool=pool.filter(x=>String(x.name||"").toLowerCase().includes(q));
-    const groups=[...MUSCLE_GROUPS.map(([k,l])=>[k,l,pool.filter(x=>x.muscle_group===k)]),["__none","No muscle group",pool.filter(x=>!x.muscle_group)]].filter(g=>g[2].length);
+    const groups=[...MUSCLE_GROUPS.map(([k,l])=>[k,l,pool.filter(x=>exHasMG(x,k))]),["__none","No muscle group",pool.filter(x=>!exMGs(x).length)]].filter(g=>g[2].length);
     secs.innerHTML=groups.length?groups.map(([k,l,xs])=>{ const tot=k==="__none"?unl.length:(cnt[k]||0);
       return `<div class="lb-sec"><div class="lb-h"><b>${escapeHtml(l)}</b> · ${xs.length}${!q&&libFilterMG!=="__novid"&&k!=="__none"&&BODY_REGIONS.includes(k)&&tot<=1?`<span> - add variety</span>`:""}</div><div class="lb-row">${xs.map(card).join("")}</div></div>`; }).join("")
       :`<div class="empty" style="padding:40px 20px"><p>${q?"No exercise matches that search.":"Nothing here yet."}</p></div>`;
@@ -7958,9 +7962,9 @@ async function openExEditor(id){
   if(mg){
     mg.innerHTML=`<option value="">— choose a muscle group —</option>`
       +MUSCLE_GROUPS.map(([k,l])=>`<option value="${k}">${escapeHtml(l)}</option>`).join("");
-    mg.value=(ex&&ex.muscle_group)||"";
+    editMGs=exMGs(ex).slice(); mg.value=editMGs[0]||"";   /* JA: several groups; the first tapped is the main one */
     /* DB: tap a chip to set the group, tap it again to clear */
-    const drawMg=()=>{ const box=$("#in-mg-chips"); if(!box) return; box.innerHTML=MUSCLE_GROUPS.map(([k,l])=>`<button type="button" class="mg-chip${mg.value===k?" on":""}" data-mgc="${k}">${escapeHtml(l)}</button>`).join(""); box.querySelectorAll("[data-mgc]").forEach(b=>b.addEventListener("click",()=>{ const k=b.getAttribute("data-mgc"); mg.value=(mg.value===k)?"":k; drawMg(); })); };
+    const drawMg=()=>{ const box=$("#in-mg-chips"); if(!box) return; box.innerHTML=MUSCLE_GROUPS.map(([k,l])=>{ const i=editMGs.indexOf(k); return `<button type="button" class="mg-chip${i>=0?" on":""}" data-mgc="${k}" aria-pressed="${i>=0}">${escapeHtml(l)}${i===0&&editMGs.length>1?" · main":""}</button>`; }).join("")+`<div style="flex-basis:100%;font-size:11.5px;color:var(--faint);margin-top:2px">Tap every group it works. The first one you pick is the main group.</div>`; box.querySelectorAll("[data-mgc]").forEach(b=>b.addEventListener("click",()=>{ const k=b.getAttribute("data-mgc"); const i=editMGs.indexOf(k); if(i>=0) editMGs.splice(i,1); else if(editMGs.length<6) editMGs.push(k); mg.value=editMGs[0]||""; drawMg(); })); };
     drawMg();
   }
   /* Item: timed interval exercises. The kind pill toggles which fields make
@@ -8036,11 +8040,11 @@ $("#ex-save").addEventListener("click",async()=>{
       landmarks={frames:pendingRef.frames,fps:pendingRef.fps,reps:pendingRef.reps};
     }
     if(editingExId){
-      const patch={name,muscle_group:($("#in-mg")?.value||null)||null,kind:editingExKind};
+      const patch={name,muscle_group:editMGs[0]||null,muscle_groups:editMGs.length?editMGs.slice():null,kind:editingExKind};   /* JA */
       if(pendingRef){patch.ref_video_path=ref_video_path;patch.landmarks=landmarks;}
       await store.exercises.update(editingExId,patch);
     }else{
-      await store.exercises.add({coach_id:ME.id,name,muscle_group:($("#in-mg")?.value||null)||null,ref_video_path:ref_video_path||null,landmarks:landmarks||null,kind:editingExKind});
+      await store.exercises.add({coach_id:ME.id,name,muscle_group:editMGs[0]||null,muscle_groups:editMGs.length?editMGs.slice():null,ref_video_path:ref_video_path||null,landmarks:landmarks||null,kind:editingExKind});
     }
     if(window.__exSaveNext){ window.__exSaveNext=false; toast(`Saved "${name}" - next one`,1800); await openExEditor(null); setTimeout(()=>{ const n=$("#in-name"); if(n) n.focus(); },60); }
     else { toast("Saved to library"); go("coach"); }
@@ -8144,9 +8148,9 @@ function renderBuilderLibrary(){
   const tabs=$("#wo-lib-tabs"), cards=$("#wo-lib-cards"); if(!tabs||!cards||!libCache||!builder) return;
   /* DD: Exercises | Workouts switch; muscle-group chips apply to both; a second click on a chip returns to All */
   if(woLibMode==="wo"&&!woTemplates.length) woLibMode="ex";
-  const exGroups=it=>{ if(it.wildcard_mg) return [it.wildcard_mg]; const e=libCache.find(x=>x.id===it.exercise_id); return e&&e.muscle_group?[e.muscle_group]:[]; };
+  const exGroups=it=>{ if(it.wildcard_mg) return [it.wildcard_mg]; const e=libCache.find(x=>x.id===it.exercise_id); return exMGs(e); };
   const woGroups=w=>new Set((w.items||[]).flatMap(exGroups));
-  const inGroup=(k)=>woLibMode==="wo"?woTemplates.filter(w=>k==="_none"?![...woGroups(w)].length:woGroups(w).has(k)).length:libCache.filter(e=>k==="_none"?!e.muscle_group:e.muscle_group===k).length;
+  const inGroup=(k)=>woLibMode==="wo"?woTemplates.filter(w=>k==="_none"?![...woGroups(w)].length:woGroups(w).has(k)).length:libCache.filter(e=>k==="_none"?!exMGs(e).length:exHasMG(e,k)).length;
   const groups=MUSCLE_GROUPS.filter(([k])=>inGroup(k)>0).concat(inGroup("_none")>0?[["_none","Untagged"]]:[]);
   if(woLibTab!=="all"&&!groups.some(([k])=>k===woLibTab)) woLibTab="all";
   const total=woLibMode==="wo"?woTemplates.length:libCache.length;
@@ -8156,7 +8160,7 @@ function renderBuilderLibrary(){
   tabs.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{ woLibMode=b.getAttribute("data-mode"); renderBuilderLibrary(); }));
   tabs.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{ const k=b.getAttribute("data-tab"); woLibTab=(woLibTab===k)?"all":k; renderBuilderLibrary(); }));
   const q=woLibQ.trim().toLowerCase();
-  const exMatches=e=>!q||(e.name||"").toLowerCase().includes(q)||(mgLabel(e.muscle_group)||"").toLowerCase().includes(q);
+  const exMatches=e=>!q||(e.name||"").toLowerCase().includes(q)||exMGs(e).some(k=>(mgLabel(k)||"").toLowerCase().includes(q));
   if(woLibMode==="wo"){
     const exN=id=>{ const x=libCache.find(y=>y.id===id); return x?x.name:null; };
     const ws=woTemplates.filter(w=>{
@@ -8170,7 +8174,7 @@ function renderBuilderLibrary(){
     cards.querySelectorAll("[data-addwo]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); addTemplateToBuilder(b.getAttribute("data-addwo")); }));
     cards.querySelectorAll("[data-wo]").forEach(card=>wireDragSource(card,{kind:"wo",id:card.getAttribute("data-wo")}));
   } else {
-    let list=libCache.filter(e=>woLibTab==="all"||(woLibTab==="_none"?!e.muscle_group:e.muscle_group===woLibTab)).filter(exMatches);
+    let list=libCache.filter(e=>woLibTab==="all"||(woLibTab==="_none"?!exMGs(e).length:exHasMG(e,woLibTab))).filter(exMatches);
     const inSet=new Set(builder.items.map(i=>i.exercise_id));
     cards.innerHTML=list.length?list.map(ex=>`<div class="wl-card ${inSet.has(ex.id)?"in":""}" data-ex="${ex.id}"><div class="ex-thumb">${ex.kind==="interval"?"⏱":exThumb(ex)}</div><div class="nm">${escapeHtml(ex.name)}</div><div class="mt"><span>${hasRef(ex)||ex.kind==="interval"?"ref ✓":"no ref"}</span><button type="button" class="add" data-add="${ex.id}" title="Add">+</button></div></div>`).join(""):`<div style="font-size:12px;color:var(--faint);padding:10px 4px">${q?"No exercise matches.":"Nothing in this group yet."}</div>`;
     cards.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",ev=>{ ev.stopPropagation(); addExerciseToBuilder(b.getAttribute("data-add")); }));
@@ -8520,7 +8524,7 @@ $("#wo-add-ex").addEventListener("click",openSheet);
    exercise. Only groups the coach actually has exercises for are offered —
    a wildcard pointing at an empty group would be a dead end for the trainee. */
 $("#wo-add-wild")?.addEventListener("click",()=>{
-  const present=MUSCLE_GROUPS.filter(([k])=>libCache.some(x=>x.muscle_group===k));
+  const present=MUSCLE_GROUPS.filter(([k])=>libCache.some(x=>exHasMG(x,k)));
   if(!present.length){ toast("Label some exercises with a muscle group first",4200); return; }
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent="Add a wildcard slot";
@@ -8530,7 +8534,7 @@ $("#wo-add-wild")?.addEventListener("click",()=>{
       The trainee picks the exercise and sets their own sets and reps. Useful for
       accessory work where the specific movement matters less than the muscle.</div>`;
   present.forEach(([k,l])=>{
-    const n=libCache.filter(x=>x.muscle_group===k).length;
+    const n=libCache.filter(x=>exHasMG(x,k)).length;
     const b=document.createElement("button");
     b.className="btn sm";b.style.cssText="width:100%;margin:0 0 8px;justify-content:space-between;display:flex";
     b.innerHTML=`<span>★ Wildcard ${escapeHtml(l)}</span><span style="color:var(--faint);font-weight:600">${n} to choose from</span>`;
@@ -8592,7 +8596,7 @@ function renderSheetLibrary(){
     body.innerHTML=`<div class="empty" style="padding:30px"><p>No exercises in your library yet. Add some from the Library tab first.</p></div>`;
     updateSheetBtn(); return;
   }
-  const present=MUSCLE_GROUPS.filter(([k])=>libCache.some(x=>x.muscle_group===k));
+  const present=MUSCLE_GROUPS.filter(([k])=>libCache.some(x=>exHasMG(x,k)));
   if(present.length>1){
     const bar=document.createElement("div");bar.className="mg-bar";
     bar.innerHTML=`<button class="mg-chip${sheetFilterMG===""?" on":""}" data-mg="">All</button>`
@@ -8602,11 +8606,11 @@ function renderSheetLibrary(){
       sheetFilterMG=b.getAttribute("data-mg"); renderSheetLibrary();
     }));
   }
-  const list=sheetFilterMG?libCache.filter(x=>x.muscle_group===sheetFilterMG):libCache;
+  const list=sheetFilterMG?libCache.filter(x=>exHasMG(x,sheetFilterMG)):libCache;
   if(!list.length) body.insertAdjacentHTML("beforeend",`<div class="empty" style="padding:26px"><p>Nothing in this group.</p></div>`);
   for(const ex of list){
     const row=document.createElement("div");row.className="sh-item"+(sheetSel.has(ex.id)?" sel":"");row.setAttribute("data-id",ex.id);
-    const mg=mgLabel(ex.muscle_group);
+    const mg=exMGs(ex).map(mgLabel).filter(Boolean).join(" + ");   /* JA */
     row.innerHTML=`<div class="sh-check">✓</div><div class="ex-thumb" style="width:42px;height:42px;border-radius:11px">${exThumb(ex)}</div>
       <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(ex.name)}</div>
       <div style="font-size:11px;margin-top:2px">${mg?`<span style="color:var(--muted)">${escapeHtml(mg)}</span> · `:""}<span style="color:${hasRef(ex)?'var(--lime-dim)':'var(--red)'};font-weight:600">${hasRef(ex)?'correct form set':'no reference'}</span></div></div>`;
@@ -13222,7 +13226,7 @@ async function openWildcardPicker(itemIndex){
   let list=[];
   try{
     const all=await store.exercises.list({coach_id:coachId});
-    list=all.filter(x=>x.muscle_group===it.wildcard_mg);
+    list=all.filter(x=>exHasMG(x,it.wildcard_mg));
   }catch(e){ console.error("wildcard library",e); }
   body.innerHTML="";
   if(!list.length){
