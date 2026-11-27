@@ -208,3 +208,5 @@ use) or CC0 libraries (e.g. Kenney UI Audio, Freesound CC0). Until then the app 
 | **Submitted session detail** | Training -> Calendar -> submitted session (exercises, sets, set graphics) | L1 | to request | one sample; replace the old-colour graphics |
 | **Replay player from session detail** | same section, Replay | L1 | to request | one sample; match the IV camera / IW review style |
 | **Weight calendar** | Training -> Weight -> log an earlier day | Code | to build | calendar of logged / missing days (no art needed unless the owner asks) |
+| **Post a goal (trainee)** | Goal tab -> + Post a goal (form and flow) | L1 | to request | one sample; brand gold, step-by-step |
+| **Weekly quest complete pop** | Home -> quest claimed | L1 | to request | one sample; replace the plain tick circle; use the IX quest-complete art |
