@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**JA (2026-11-27, owner): coach Library redesign - concept B approved (body map + sections by muscle group); body-map SVG requested - IN PROGRESS.**
 **IZ (2026-11-27, owner): coach homepage redesign - OpenArt concept approved (Needs you / Your trainees / Activity); built (Needs you, trainee cards, Activity, gold call card) - IN PROGRESS: inline call Accept not built.**
 **IY (2026-11-27, owner): app review notes, day 1 - 12 fixes (daily-task sheets, card height, quest links, calendar session detail, weight calendar, coach photo) + 3 OpenArt asks - IN PROGRESS: 1-4, 7, 8 and the quest pop built; 5-6 and Post a goal wait for screenshots.**
 **IB (2026-11-23/26, owner): daily tasks - gold Claim +N buttons, points never auto-paid - BUILT.**
@@ -2008,6 +2009,14 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## JA. Coach Library redesign - IN PROGRESS (personal account)
+
+**Owner 2026-11-27 19:48:** redesign Coach -> Library -> Library. It holds every exercise the coach made; the coach must browse and find them easily; each should have an example video of the coach showing correct form and muscle-group tags. Focus: let the coach see at once if the library lacks variety in some muscle groups and which example videos are missing.
+Sample 1 (coverage tiles + "8 missing example videos" chip): owner liked the coverage idea and the missing-video notice, but the layout was cramped and too close to the current screen - asked for 2 more. Sample A (ring chart + 2-column grid) and **sample B (gold front/back body map shaded by exercise count, "n exercises have no example video - Show", then one section per muscle group with a sideways carousel of large video cards, dashed "Record example" cards, "Calves · 1 - add variety") - owner 20:09: approved B** (docs/brand/library/library-concept-b.png). "We will need the SVG and to add every single muscle group."
+Requested a colour-coded body map (front + back, each of the app's 11 body groups in its own flat colour) to trace each region into its own SVG path; groups that are not body regions (Full body, Cardio, Mobility) will be listed as chips next to the map. ~36 credits per image; 4 images so far for JA.
+
+---
+
 ## IZ. Coach homepage redesign - IN PROGRESS (personal account)
 
 **Owner 2026-11-27 17:04** (screenshots of the current coach Home): ask OpenArt to redesign the coach homepage. It is detail-focused: every pending task shows so nothing is missed, plus a summary of the coach's trainees, each a shortcut to that trainee.
