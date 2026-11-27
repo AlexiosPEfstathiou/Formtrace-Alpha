@@ -1697,12 +1697,16 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
   .nf-list > div[id^=home-]{margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
   .nf-card .btn{padding-left:18px!important;padding-right:18px!important;min-width:84px}
   .nf-list > div[id^=home-] + div[id^=home-]:not([style*="none"]){border-top:1px solid rgba(232,185,35,.3)}
+  .nf-list > div[id^=home-].nf-card{padding:16px 16px 16px 78px!important}
+  .nf-list > div[id^=home-].nf-card:has(> .nf-own){padding-left:16px!important}
+  .nf-ic.nf-own{position:static;flex:0 0 46px;font-size:0}
+  .nf-list .nf-card .card{margin:6px 0 0!important}
   .nf-list .nf-card{position:relative;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:16px 16px 16px 78px!important;min-height:58px}
   .nf-list .nf-card + .nf-card{border-top:1px solid rgba(232,185,35,.3)!important}
   .nf-ic{position:absolute;left:16px;top:16px;width:46px;height:46px;border-radius:13px;border:1.5px solid rgba(232,185,35,.75);display:flex;align-items:center;justify-content:center;color:#E8B923;
     background:rgba(232,185,35,.06);box-shadow:0 0 12px rgba(232,185,35,.22)}
   .nf-group[data-g="need"] .nf-card::before{content:"";position:absolute;left:5px;top:36px;width:7px;height:7px;border-radius:50%;background:#E8B923;box-shadow:0 0 6px #E8B923}
-  .nf-medal{position:absolute;right:12px;top:50%;margin-top:-28px;width:56px;height:56px;pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+  .nf-medal{position:absolute;right:10px;top:8px;margin-top:0;width:44px;height:44px;pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
   .nf-list .nf-card .eyebrow{color:var(--muted)}
   .nf-list .nf-card:has(.nf-medal){padding-right:76px!important}
   html[data-theme="light"] .nf-ic{color:#B8960A;border-color:rgba(184,150,10,.7)}
@@ -5424,8 +5428,12 @@ function styleNotifC(){
       host.prepend(wrap); }
     [...host.children].filter(d=>d.id&&d.id.startsWith("home-")).forEach(d=>{ const k=d.id.slice(5); const g=(NF_MAP[k]||["upd"])[0]; wrap.querySelector(`.nf-group[data-g="${g}"] .nf-list`).appendChild(d); });
     wrap.querySelectorAll(".nf-list > div[id^=home-]").forEach(d=>{ const k=d.id.slice(5), ic=(NF_MAP[k]||["upd","week"])[1];
-      const cards=[...d.children].filter(c=>c.classList.contains("card")); const targets=cards.length?cards:(d.innerHTML.trim()?[d]:[]);
-      targets.forEach(c=>{ if(c.querySelector(":scope > .nf-ic")) return; c.classList.add("nf-card"); const t=document.createElement("span"); t.className="nf-ic"; t.innerHTML=nfIc(ic); c.prepend(t);
+      /* 2026-11-27 fix (owner: buttons overlapping): the home-* block itself is the row - inner cards are not decorated
+         again, and a block that already has its own icon tile (.ci-ic) gets OUR icon inside that tile instead of a second one. */
+      const targets=d.innerHTML.trim()?[d]:[];
+      targets.forEach(c=>{ if(c.querySelector(".nf-ic")) return; c.classList.add("nf-card");
+        const own=c.querySelector(":scope > .ci-ic"); if(own){ own.classList.add("nf-ic","nf-own"); own.innerHTML=nfIc(ic); return; }
+        const t=document.createElement("span"); t.className="nf-ic"; t.innerHTML=nfIc(ic); c.prepend(t);
         if(k==="achievements"&&!c.querySelector(".nf-medal")){ const m=document.createElement("img"); m.className="nf-medal"; m.src="medal-192.png"; m.alt=""; c.appendChild(m); } }); });
     wrap.querySelectorAll(".nf-group").forEach(g=>{ g.hidden=![...g.querySelectorAll(".nf-list > div[id^=home-]")].some(d=>d.style.display!=="none"&&d.innerHTML.trim()); });
   }catch(e){ console.warn("notifications layout (IN)",e); }
