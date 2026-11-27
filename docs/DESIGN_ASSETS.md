@@ -210,3 +210,5 @@ use) or CC0 libraries (e.g. Kenney UI Audio, Freesound CC0). Until then the app 
 | **Weight calendar** | Training -> Weight -> log an earlier day | Code | to build | calendar of logged / missing days (no art needed unless the owner asks) |
 | **Post a goal (trainee)** | Goal tab -> + Post a goal (form and flow) | L1 | to request | one sample; brand gold, step-by-step |
 | **Weekly quest complete pop** | Home -> quest claimed | L1 | built 2026-11-27 (code: SVG seal, from docs/brand/home/quest-complete-sample.png) | one sample; replace the plain tick circle; use the IX quest-complete art |
+
+| **Coach Home icons (IZ)** | Coach Home: Needs you, trainee cards, Activity, call card | L1 | built 2026-11-27 | 8 traced gold line icons in the bottom-bar style: review, call, calendar, target, macros, workout, camera, flame; docs/brand/coach-home/ |
