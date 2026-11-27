@@ -1,5 +1,7 @@
 # Formtrace Coach — Handover (as of 2026-11-10)
 
+**2026-11-27 16:40 (personal account):** owner review day 1 saved as **PRODUCT_LOG IY** (12 fixes + 4 OpenArt asks listed in DESIGN_ASSETS); nothing built yet; the review continues 2026-11-28. Also: launch clip now plays every boot; icon files versioned (-v2) - iPhone needs remove + re-add to home screen.
+
 **2026-11-26 20:45 (personal account):** IA started - Today | This week segmented switch and polished task / quest rows built from two OpenArt samples (docs/brand/home/). **Next for IA:** phase 2 bento layout (concept docs/brand/home-concept-b-dark.png), phase 3 Needs-you list. PRODUCT_LOG headings IE-IX corrected to BUILT (they still said LOGGED). Owner is low on Claude usage - keep steps small.
 
 **2026-11-26 20:30 (personal account):** owner "build only, no tests". Built: top bar (traced gear + flame), **IN** notifications (variation 3), **IR** landing (A phones / C desktop, real logo, video slots `LP_VIDEOS`), **IB** daily-task Claim buttons, **IB-2** day bonus + weekly quests claimed by hand (`claim_weekly_quest`, SQL applied via MCP). Email templates pasted by the owner. **Waiting:** IA Home bento - the owner attaches the concept (OpenArt W1QObL8jFhirGEVUoBGb, shown again in chat); the owner's landing videos. Tests queued but not run (owner asked for build only).

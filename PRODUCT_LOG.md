@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IY (2026-11-27, owner): app review notes, day 1 - 12 fixes (daily-task sheets, card height, quest links, calendar session detail, weight calendar, coach photo) + 3 OpenArt asks - LOGGED.**
 **IB (2026-11-23/26, owner): daily tasks - gold Claim +N buttons, points never auto-paid - BUILT.**
 **IR (2026-11-26, owner): Landing = A on phones / C on desktop, real logo, video slots - BUILT.**
 **IN (2026-11-24/26, owner): Notifications = variation 3 (groups, gold icon tiles, medal) - BUILT.**
@@ -2006,6 +2007,31 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## IY. Owner app review, day 1 (2026-11-27) - LOGGED (personal account)
+
+**Owner 2026-11-27 16:31** (screenshot: docs/brand/home/review-2026-11-27-today-card.png). Saved as given; the review continues tomorrow. Nothing built yet.
+**Daily tasks / quest card (Home)**
+1. **"Weigh yourself"** opens the full log sheet (weight + macros). Keep it simple: **weight only**. -> OpenArt asset (see below).
+2. **"Log yesterday's macros"** does the same. It must ask **only for macros**, and they must be saved to **YESTERDAY** (verify the date written).
+3. **Card height:** the daily side takes the height of the weekly side (the flip card is a CSS grid of both faces), leaving dead space. The card must be as short as its visible side: short on Today, grow when flipped to This week, shrink again when flipped back.
+4. Quest taps (weekly side):
+   - "Do every workout this week" -> Training -> Calendar -> **Weekly** view.
+   - "Keep your streak" -> a small animated pop: "Perform {workouts left} workouts in the next {days left in the week} to maintain your streak".
+   - "Personal Bests this week" -> Training -> Personal bests -> **Newest**.
+   - "Log your macros on 5 days" -> Training -> Macros -> **Week**.
+   - "Weigh in on 5 days" -> Training -> Weight.
+   - "Hit your calorie goal" -> Training -> Macros -> **Day**.
+   - "Arrange a call with your coach" (the call quest) -> Training -> Calls.
+**Training**
+5. **Calendar -> a submitted session** shows the overview of exercises and sets; opening a set shows graphics in the **old Formtrace colours** - the whole section must be brought to the new design. -> OpenArt asset.
+6. In that section the **Replay** button opens a camera / player UI that is **not the new design** (IV / IW). -> OpenArt asset.
+7. **Weight -> "Log an earlier day"** (date field) becomes a **button** that opens a calendar-like view showing which days have a weight and which do not; tap a day to log an empty day or edit a logged one.
+**Goal tab**
+8. Tapping the **coach's photo** maximises it and, on closing, goes to their profile. Change: go **straight to the coach's profile**, with a **Back** button that returns to the Goal tab.
+**OpenArt asks to add** (one sample each, owner credit rule): (a) the simple weight-only log sheet; (b) the macros-only sheet for yesterday; (c) the submitted-session detail (exercise and set overview + set detail graphics) in the new design; (d) the replay player opened from there (to match IV/IW). Listed in docs/DESIGN_ASSETS.md.
+
+---
+
 ## IX. Asset pack for the app-wide restyle - BUILT (logged 2026-11-26) (personal account)
 
 **Owner 12:13:** the trainee tabs redesign is done; next, apply it to the whole app. Before that: which OpenArt assets would make the restyle complete (pressed buttons, animations, sounds)? I proposed 8 groups; **owner 12:20: items 1-8 approved except 5** (5 = the notifications icon sheet, already generated - owner to attach).
