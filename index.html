@@ -1079,6 +1079,25 @@ html[data-theme="light"] .wc-d.ok span,html[data-theme="light"] .wc-d.miss span,
   .rv-chip .rv-tx{display:flex;flex-direction:column;line-height:1.25;}
   .rv-chip .rv-tx b{font-size:13px;color:var(--ink);}
   .rv-chip .rv-tx span{font-size:11.5px;color:var(--muted);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+  /* JB: coach Workouts - compact rows */
+  .wl-top{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+  .wl-chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.wl-chips::-webkit-scrollbar{display:none}
+  .wl-chip{flex:0 0 auto;border:1.5px solid rgba(232,185,35,.6);background:none;color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:13.5px;cursor:pointer}.wl-chip span{color:var(--muted)}
+  .wl-chip.on{background:#E8B923;color:#0B0E11;border-color:#E8B923}.wl-chip.on span{color:#0B0E11}
+  .wl-chip.wl-warn{border-color:rgba(255,140,80,.7);color:#FF9A5C}.wl-chip.wl-warn.on{background:#FF9A5C;color:#0B0E11}
+  .wl-sort{position:relative;display:flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:12px;border:1.5px solid rgba(232,185,35,.6);background:rgba(232,185,35,.08);color:var(--ink);font-size:14px}
+  .wl-sort select{flex:1;appearance:none;-webkit-appearance:none;background:none;border:0;color:var(--ink);font:inherit;font-weight:600;outline:none;cursor:pointer}.wl-sort select option{background:#151B21}.wl-sort i{font-style:normal;color:#E8B923;pointer-events:none}
+  .wl-list{margin:0 -16px;border-top:1px solid rgba(232,185,35,.25)}
+  .wl-row{display:flex;align-items:center;gap:10px;min-height:62px;padding:8px 16px;border-bottom:1px solid rgba(232,185,35,.2);cursor:pointer}.wl-row:active{background:rgba(232,185,35,.05)}
+  .wl-ics{flex:0 0 auto;display:flex;gap:2px;color:#E8B923;width:66px}.wl-ic{display:inline-flex;width:21px;height:21px}.wl-ic svg{width:21px;height:21px}
+  .wl-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.wl-tx b{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wl-tx>span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wl-r{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+  .wl-avs{display:flex}.wl-av{width:22px;height:22px;border-radius:50%;margin-left:-6px;border:1.5px solid var(--bg,#0B0E11);background:rgba(232,185,35,.25);color:var(--ink);font-size:9.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;background-size:cover;background-position:center}.wl-av:first-child{margin-left:0}.wl-av.wl-more{background:var(--panel2)}
+  .wl-n{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .wl-un .wl-ics,.wl-un .wl-tx{opacity:.5}.wl-old{font-size:10.5px;color:#FF9A5C;background:rgba(255,140,80,.12);border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .wl-del{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--line2);background:none;color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;cursor:pointer}.wl-del svg{width:14px;height:14px}
+  .wl-notice{display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(232,185,35,.08);border-bottom:1px solid rgba(232,185,35,.25);font-size:13px}.wl-notice span{flex:1}.wl-notice button{background:none;border:0;color:#E8B923;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+  html[data-theme="light"] .wl-ics,html[data-theme="light"] .wl-sort i,html[data-theme="light"] .wl-notice button{color:#B8960A}html[data-theme="light"] .wl-chip.on{background:#B8960A;border-color:#B8960A}
   /* JA: coach Library - body map + sections */
   .lb-top{display:flex;flex-direction:column;gap:12px;margin-bottom:6px}
   .lb-search{display:flex;align-items:center;gap:8px;padding:0 14px;height:44px;border-radius:14px;border:1px solid var(--line2);background:var(--panel);color:var(--muted)}
@@ -7929,26 +7948,83 @@ function renderLibraryInto(el,list){
   }
   drawSecs();
 }
+/* JB (owner 2026-11-27, OpenArt sample approved): the coach's workout library as compact rows for big libraries -
+   muscle-group icons, "n exercises · n sets · groups", the trainees it is assigned to and how often; search, group chips
+   (Upper / Lower / Full body / Cardio / Unused), sort (most assigned, recently used, name, newest, length). A workout not
+   assigned for 60+ days (and older than 60 days) is "unused": dimmed, labelled, with a Delete button. Stats come from
+   assigned_workouts.workout_id across the coach's engagements. */
+const WO_UPPER=["chest","back","shoulders","biceps","triceps","forearms"], WO_LOWER=["glutes","quads","hamstrings","calves"];
+let woQuery="", woChip="", woSort=(()=>{ try{ return localStorage.getItem("ft-wo-sort")||"assigned"; }catch(e){ return "assigned"; } })();
+const WO_TRASH='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
 function renderWorkoutsInto(el,wos,exs){
   el.innerHTML="";
   if(!wos.length){el.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="ic">▦</div><p>No workouts yet.<br>Build a single-day plan from your library.</p></div>`;return;}
   const exMap=Object.fromEntries(exs.map(e=>[e.id,e]));
-  el.innerHTML=`<div class="section-h"><div class="eyebrow">Single-day plans</div><div class="eyebrow">${wos.length}</div></div>`;
-  for(const w of wos){
-    const items=w.items||[];
-    const totalSets=items.reduce((s,i)=>s+(i.sets||0),0);
-    const names=items.map(i=>exMap[i.exercise_id]?exMap[i.exercise_id].name:"(removed)").slice(0,3).join(", ");
-    const div=document.createElement("div");div.className="card ex-card";
-    div.innerHTML=`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-        <div style="min-width:0"><h3 style="font-size:17px;font-weight:700">${escapeHtml(w.name)}</h3>
-          <div class="ex-meta"><div><b>${items.length}</b> exercises</div><div><b>${totalSets}</b> sets</div></div>
-          <div style="font-size:12px;color:var(--faint);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(names)||"empty"}</div></div>
-        <div style="color:var(--faint);font-size:20px">›</div></div>`;
-    div.addEventListener("click",()=>openBuilder(w.id));
-    el.appendChild(div);
+  const today=todayISO(), cut=addDaysISO(today,-60);
+  const info=w=>{ const items=w.items||[], g=new Set();
+    for(const it of items){ if(it.wildcard_mg) g.add(it.wildcard_mg); const e=exMap[it.exercise_id]; if(e){ if(e.kind==="interval") g.add("cardio"); exMGs(e).forEach(k=>g.add(k)); } }
+    const gs=[...g]; const up=gs.some(k=>WO_UPPER.includes(k)), lo=gs.some(k=>WO_LOWER.includes(k));
+    const cat=gs.includes("full_body")||(up&&lo)?"full":up?"upper":lo?"lower":gs.includes("cardio")?"cardio":"";
+    return {items,sets:items.reduce((a,i)=>a+(Number(i.sets)||0),0),gs,cat}; };
+  const meta=Object.fromEntries(wos.map(w=>[w.id,info(w)]));
+  let stats={}, profs={}, engTr={};
+  const unusedOf=w=>{ const st=stats[w.id]; const last=st&&st.last; const made=w.created_at?isoOf(new Date(w.created_at)):today; return (last?last<cut:true)&&made<cut; };
+  const top=document.createElement("div"); top.className="wl-top";
+  el.appendChild(top); const listEl=document.createElement("div"); listEl.className="wl-list"; el.appendChild(listEl);
+  function draw(){
+    const un=wos.filter(unusedOf);
+    const chips=[["","All",wos.length],["upper","Upper"],["lower","Lower"],["full","Full body"],["cardio","Cardio"]].filter(c=>c[0]===""||wos.some(w=>meta[w.id].cat===c[0]));
+    top.innerHTML=`<label class="lb-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input type="search" placeholder="Search workouts" value="${escapeHtml(woQuery)}" aria-label="Search workouts"></label>
+      <div class="wl-chips">${chips.map(([k,l,n])=>`<button type="button" class="wl-chip${woChip===k?" on":""}" data-wc="${k}">${l}${n!=null?` <span>${n}</span>`:""}</button>`).join("")}${un.length?`<button type="button" class="wl-chip wl-warn${woChip==="unused"?" on":""}" data-wc="unused">Unused ${un.length}</button>`:""}</div>
+      <label class="wl-sort"><span>Sort:</span><select aria-label="Sort workouts">${[["assigned","Most assigned"],["recent","Recently used"],["name","Name A-Z"],["newest","Newest"],["length","Length"]].map(([k,l])=>`<option value="${k}"${woSort===k?" selected":""}>${l}</option>`).join("")}</select><i>⌄</i></label>`;
+    top.querySelectorAll("[data-wc]").forEach(b=>b.addEventListener("click",()=>{ const k=b.dataset.wc; woChip=woChip===k?"":k; draw(); }));
+    const qi=top.querySelector("input"); qi.addEventListener("input",()=>{ woQuery=qi.value; drawList(); });
+    top.querySelector("select").addEventListener("change",e=>{ woSort=e.target.value; try{ localStorage.setItem("ft-wo-sort",woSort); }catch(x){} drawList(); });
+    drawList();
   }
+  function row(w,unused){ const m=meta[w.id], st=stats[w.id]||{n:0,tr:{}};
+    const ics=m.gs.slice(0,3).map(k=>`<span class="wl-ic">${mgIconSvg(k)}</span>`).join("")||`<span class="wl-ic">${mgIconSvg("other")}</span>`;
+    const gl=m.gs.map(mgLabel).filter(Boolean).slice(0,3).join(", ");
+    const trs=Object.entries(st.tr||{}).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+    const avs=trs.slice(0,3).map(t=>{ const p=profs[t]||{}; const nm=p.display_name||"Trainee"; return `<span class="wl-av" data-avatar="${escapeHtml(p.avatar_path||"")}" title="${escapeHtml(nm)}">${escapeHtml(p.avatar_initials||initials(nm))}</span>`; }).join("")+(trs.length>3?`<span class="wl-av wl-more">+${trs.length-3}</span>`:"");
+    const right=unused?`<span class="wl-old">${st.n?"Not assigned in 60 days":"Never assigned"}</span><button type="button" class="wl-del" data-del="${w.id}">Delete ${WO_TRASH}</button>`
+      :`<span class="wl-avs">${avs}</span><span class="wl-n">${st.n?`Assigned ${st.n}×`:"Not assigned yet"}</span>`;
+    return `<div class="wl-row${unused?" wl-un":""}" data-wo="${w.id}" role="button" tabindex="0"><span class="wl-ics">${ics}</span><span class="wl-tx"><b>${escapeHtml(w.name)}</b><span>${m.items.length} exercise${m.items.length===1?"":"s"} · ${m.sets} set${m.sets===1?"":"s"}${gl?` · ${escapeHtml(gl)}`:""}</span></span><span class="wl-r">${right}</span></div>`; }
+  function drawList(){
+    const q=woQuery.trim().toLowerCase();
+    let L=wos.filter(w=>!woChip||(woChip==="unused"?unusedOf(w):meta[w.id].cat===woChip));
+    if(q) L=L.filter(w=>String(w.name||"").toLowerCase().includes(q)||meta[w.id].items.some(it=>String((exMap[it.exercise_id]||{}).name||"").toLowerCase().includes(q)));
+    const n=w=>(stats[w.id]||{}).n||0, last=w=>(stats[w.id]||{}).last||"";
+    const cmp={assigned:(a,b)=>n(b)-n(a)||last(b).localeCompare(last(a)),recent:(a,b)=>last(b).localeCompare(last(a))||n(b)-n(a),name:(a,b)=>String(a.name).localeCompare(String(b.name)),newest:(a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")),length:(a,b)=>meta[b.id].items.length-meta[a.id].items.length||meta[b.id].sets-meta[a.id].sets}[woSort]||(()=>0);
+    L=L.slice().sort(cmp);
+    const used=woChip==="unused"?[]:L.filter(w=>!unusedOf(w)), old=L.filter(unusedOf);
+    listEl.innerHTML=(L.length?"":`<div class="empty" style="padding:40px 20px"><p>${q?"No workout matches that search.":"Nothing in this group."}</p></div>`)
+      +used.map(w=>row(w,false)).join("")
+      +(old.length?`<div class="wl-notice"><span>${old.length} workout${old.length===1?"":"s"} unused for 60+ days - review and delete</span>${woChip!=="unused"?`<button type="button" data-rev>Review</button>`:""}</div>`+old.map(w=>row(w,true)).join(""):"");
+    listEl.querySelectorAll("[data-wo]").forEach(r=>{ r.addEventListener("click",e=>{ if(e.target.closest("[data-del]")) return; openBuilder(r.dataset.wo); }); r.addEventListener("keydown",e=>{ if(e.key==="Enter") openBuilder(r.dataset.wo); }); });
+    listEl.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",async()=>{ const w=wos.find(x=>x.id===b.dataset.del); if(!w) return;
+      const ok=await openConfirm({title:`Delete "${w.name}"?`,body:"It is removed from your library for good. Workouts you have already assigned keep their own copy.",confirmLabel:"Delete",cancelLabel:"Keep it",danger:true});
+      if(!ok) return;
+      try{ await store.workouts.remove(w.id); wos.splice(wos.indexOf(w),1); toast("Workout deleted"); try{ $("#coach-sub").textContent=`${wos.length} workout${wos.length===1?"":"s"}`; }catch(e){} if(!wos.length) renderWorkoutsInto(el,wos,exs); else draw(); }
+      catch(err){ console.error("delete workout (JB)",err); toast("Couldn't delete the workout - try again",4000); } }));
+    const rv=listEl.querySelector("[data-rev]"); if(rv) rv.addEventListener("click",()=>{ woChip="unused"; draw(); });
+    try{ hydrateAvatars(listEl); }catch(e){}
+  }
+  draw();
+  /* stats: who each workout is assigned to, how often, and when last */
+  (async()=>{ try{
+    const engs=await store.engagements.list({coach_id:ME.id}); if(!engs.length) return;
+    engs.forEach(e=>{ engTr[e.id]=e.trainee_id; });
+    const ids=wos.map(w=>w.id);
+    const { data, error }=await store._sb.from("assigned_workouts").select("workout_id,engagement_id,due_date,created_at").in("workout_id",ids);
+    if(error) throw error;
+    for(const a of (data||[])){ const st=stats[a.workout_id]||(stats[a.workout_id]={n:0,tr:{},last:""}); st.n++; const t=engTr[a.engagement_id]; if(t) st.tr[t]=(st.tr[t]||0)+1;
+      const d=a.due_date||(a.created_at?isoOf(new Date(a.created_at)):""); if(d&&d>st.last) st.last=d; }
+    const tids=[...new Set(Object.values(engTr))];
+    if(tids.length){ const { data:ps }=await store._sb.from("profiles").select("id,display_name,avatar_initials,avatar_path").in("id",tids); (ps||[]).forEach(p=>{ profs[p.id]=p; }); }
+    if(el.isConnected) draw();
+  }catch(e){ console.warn("workout stats (JB)",e&&e.message); } })();
 }
-
 /* =========================================================================
    9. Exercise editor   (ref video -> Storage path; landmarks -> jsonb)
    ========================================================================= */

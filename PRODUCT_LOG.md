@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**JB (2026-11-27, owner): coach Library -> Workouts redesign (compact rows, filters, sort, assigned trainees, unused -> delete) - BUILT.**
 **JA (2026-11-27, owner): coach Library redesign - concept B approved (body map + sections by muscle group); built (body map, sections, missing-video filter, several muscle groups per exercise).**
 **IZ (2026-11-27, owner): coach homepage redesign - OpenArt concept approved (Needs you / Your trainees / Activity); built (Needs you, trainee cards, Activity, gold call card) - IN PROGRESS: inline call Accept not built.**
 **IY (2026-11-27, owner): app review notes, day 1 - 12 fixes (daily-task sheets, card height, quest links, calendar session detail, weight calendar, coach photo) + 3 OpenArt asks - IN PROGRESS: 1-4, 7, 8 and the quest pop built; 5-6 and Post a goal wait for screenshots.**
@@ -2009,6 +2010,13 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## JB. Coach Workouts library redesign - BUILT (personal account)
+
+**Owner 2026-11-27 21:23:** redesign Coach -> Library -> Workouts: the coach's premade workouts, ready to assign. Easy to filter; show which trainees they are regularly assigned to and the muscle groups; save space so big libraries need little scrolling; several easy sorts; underused workouts flagged with a recommendation to delete. One OpenArt sample, **approved 21:25** (docs/brand/library/workouts-concept.png). No new SVGs needed: the row icons are the existing muscle-group set (`mgIconSvg`), the bin icon is drawn in code.
+**Built (code, not tested on a phone):** `renderWorkoutsInto` rewritten - search (name or any exercise name), chips All / Upper / Lower / Full body / Cardio (only those present; category from the exercises' groups: upper-only, lower-only, both or full_body = Full body) and "Unused n"; a Sort select (Most assigned, Recently used, Name A-Z, Newest, Length; remembered on the device); compact ~62 px rows: up to 3 muscle icons, name, "n exercises · n sets · groups", the trainees it is assigned to (up to 3 avatars, +n) and "Assigned n×". Stats load after the list from `assigned_workouts.workout_id` across the coach's engagements. **Unused** = last assigned (or never) more than 60 days ago AND the workout itself is over 60 days old (new workouts are never flagged); unused rows sit at the bottom under "n workouts unused for 60+ days - review and delete" (Review = Unused filter), dimmed, with "Not assigned in 60 days" / "Never assigned" and a Delete button (same confirm as the builder's delete; assigned copies are kept). Tap a row = open the builder as before.
+
+---
+
 ## JA. Coach Library redesign - BUILT (personal account)
 
 **Owner 2026-11-27 19:48:** redesign Coach -> Library -> Library. It holds every exercise the coach made; the coach must browse and find them easily; each should have an example video of the coach showing correct form and muscle-group tags. Focus: let the coach see at once if the library lacks variety in some muscle groups and which example videos are missing.
