@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**IZ (2026-11-27, owner): coach homepage redesign - OpenArt concept approved (Needs you / Your trainees / Activity); icon sheet requested - IN PROGRESS.**
 **IY (2026-11-27, owner): app review notes, day 1 - 12 fixes (daily-task sheets, card height, quest links, calendar session detail, weight calendar, coach photo) + 3 OpenArt asks - IN PROGRESS: 1-4, 7, 8 and the quest pop built; 5-6 and Post a goal wait for screenshots.**
 **IB (2026-11-23/26, owner): daily tasks - gold Claim +N buttons, points never auto-paid - BUILT.**
 **IR (2026-11-26, owner): Landing = A on phones / C on desktop, real logo, video slots - BUILT.**
@@ -2007,6 +2008,14 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## IZ. Coach homepage redesign - IN PROGRESS (personal account)
+
+**Owner 2026-11-27 17:04** (screenshots of the current coach Home): ask OpenArt to redesign the coach homepage. It is detail-focused: every pending task shows so nothing is missed, plus a summary of the coach's trainees, each a shortcut to that trainee.
+One sample (Nano Banana Pro 2K, ~36 credits), style refs = trainee Home concept + workout B1 sheet. **Owner 17:06: approved** (docs/brand/home/coach-home-concept.png). Layout: greeting "Welcome back, Coach Harvey" + one-line summary of today's counts; **Needs you** card (gold border) - one row per pending task with icon tile, title, detail, count chip / inline actions (call proposal: Accept / Suggest a time), Today | This week toggle, done tasks collapsed into one line with ticks; **Your trainees** - horizontal cards (initials, name, goal + week n of N, progress bar, streak / sessions this week / kcal avg, gold pill for what waits from them), "See all trainees"; **Activity** - compact timeline with line icons; coach tab bar unchanged.
+Requested the icon sheet (one sheet, 12 gold line icons on black, no labels): review, phone, calendar, target, fork and knife, dumbbell, camera, flame, two people, book, list, house. Next: trace the sheet to SVG and build.
+
+---
+
 ## IY. Owner app review, day 1 (2026-11-27) - IN PROGRESS (personal account)
 
 **Owner 2026-11-27 16:31** (screenshot: docs/brand/home/review-2026-11-27-today-card.png). Saved as given; the review continues tomorrow. Nothing built yet.
