@@ -203,10 +203,10 @@ use) or CC0 libraries (e.g. Kenney UI Audio, Freesound CC0). Until then the app 
 ## OpenArt asks from the owner review 2026-11-27 (PRODUCT_LOG IY) - not yet requested
 | Asset | Where | Tier | Status | Spec |
 |---|---|---|---|---|
-| **Weight-only log sheet** | Home daily task "Weigh yourself" | L1 | to request | one sample; weight field only, brand gold, bottom sheet |
-| **Macros-only sheet (yesterday)** | Home daily task "Log yesterday's macros" | L1 | to request | one sample; kcal / protein / carbs / fat for yesterday, date shown |
+| **Weight-only log sheet** | Home daily task "Weigh yourself" | L1 | built 2026-11-27 (code, from docs/brand/home/weigh-sheet-sample.png) | one sample; weight field only, brand gold, bottom sheet |
+| **Macros-only sheet (yesterday)** | Home daily task "Log yesterday's macros" | L1 | built 2026-11-27 (code, from docs/brand/home/macros-sheet-sample.png) | one sample; kcal / protein / carbs / fat for yesterday, date shown |
 | **Submitted session detail** | Training -> Calendar -> submitted session (exercises, sets, set graphics) | L1 | to request | one sample; replace the old-colour graphics |
 | **Replay player from session detail** | same section, Replay | L1 | to request | one sample; match the IV camera / IW review style |
 | **Weight calendar** | Training -> Weight -> log an earlier day | Code | to build | calendar of logged / missing days (no art needed unless the owner asks) |
 | **Post a goal (trainee)** | Goal tab -> + Post a goal (form and flow) | L1 | to request | one sample; brand gold, step-by-step |
-| **Weekly quest complete pop** | Home -> quest claimed | L1 | to request | one sample; replace the plain tick circle; use the IX quest-complete art |
+| **Weekly quest complete pop** | Home -> quest claimed | L1 | built 2026-11-27 (code: SVG seal, from docs/brand/home/quest-complete-sample.png) | one sample; replace the plain tick circle; use the IX quest-complete art |

@@ -899,6 +899,29 @@ html[data-theme="light"] .tr-tile .tr-ic{background:rgba(184,150,10,.12);color:#
 .pd-chip b{font-size:14px}
 .pd-chip.ok{border-color:var(--line);background:rgba(232,185,35,.10)}
 .pd-chip.ok b{color:#E8B923}
+.ws{text-align:center;padding:6px 0 4px}.ws-ic{width:64px;height:64px;margin:0 auto 10px;color:#E8B923}.ws-ic svg{width:100%;height:100%}
+.ws-row{display:flex;align-items:center;justify-content:center;gap:10px}.ws-st{background:none;border:0;color:#E8B923;font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:8px;min-width:60px}
+.ws-st b{font-size:30px;font-weight:400;line-height:1}.ws-st span{font-size:11.5px;color:var(--muted)}.ws-st:active{transform:scale(.92)}
+.ws-num{display:flex;align-items:baseline;gap:4px}.ws-num input{width:150px;background:transparent;border:0;border-bottom:1.5px solid rgba(232,185,35,.35);color:var(--ink);font:inherit;font-size:54px;font-weight:300;text-align:center;padding:0;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.ws-num input::-webkit-outer-spin-button,.ws-num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.ws-num input:focus{outline:none;border-bottom-color:#E8B923}.ws-num em{font-style:normal;font-size:20px;color:var(--muted)}
+.ws-d{margin-top:10px;font-size:13.5px;color:var(--muted)}.ws-last{margin-top:8px;font-size:13px;color:#C9A227;min-height:18px}
+.ms-h{display:flex;flex-direction:column;align-items:center;gap:10px;margin:2px 0 14px}.ms-ic{width:64px;height:40px;color:#E8B923}.ms-ic svg{width:100%;height:100%}
+.ms-chip{padding:5px 16px;border:1.5px solid #E8B923;border-radius:999px;color:#E8B923;font-weight:800;font-size:13.5px}
+.ms-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ms-b{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border:1.5px solid rgba(232,185,35,.75);border-radius:16px;cursor:text}
+.ms-b span{font-size:13px;font-weight:700;color:var(--ink)}.ms-b input,.ms-b b{width:100%;background:transparent;border:0;color:#E8B923;font:inherit;font-size:32px;font-weight:800;text-align:center;padding:0;-moz-appearance:textfield}
+.ms-b input::-webkit-outer-spin-button,.ms-b input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.ms-b input:focus{outline:none}.ms-b:focus-within{box-shadow:0 0 0 3px rgba(232,185,35,.2)}
+.ms-b em{font-style:normal;font-size:13px;color:#C9A227}.ms-k{border-style:dashed;cursor:default}
+.ms-bar{height:7px;border-radius:9px;background:rgba(255,255,255,.07);margin:16px 0 8px;overflow:hidden}.ms-bar i{display:block;height:100%;background:#E8B923;border-radius:9px;transition:width .3s}
+.ms-t{text-align:center;font-size:12.5px;color:#C9A227}
+html[data-theme="light"] .ws-ic,html[data-theme="light"] .ms-ic,html[data-theme="light"] .ws-st,html[data-theme="light"] .ms-b input,html[data-theme="light"] .ms-b b,html[data-theme="light"] .ms-chip{color:#B8960A;border-color:#B8960A}
+.qc-card{position:relative;max-width:330px;width:100%;text-align:center;padding:24px 20px 20px;border-radius:24px;border:2px solid #E8B923;background:linear-gradient(180deg,#2A2312 0%,#14130F 38%,#0E1013 100%);box-shadow:0 0 34px rgba(232,185,35,.35),inset 0 0 24px rgba(232,185,35,.08);color:#fff}
+.qc-eb{font-size:11.5px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:#E8B923}
+.qc-art{position:relative;height:150px;margin:6px 0 4px}.qc-sp{position:absolute;inset:0;width:100%;height:100%;opacity:.9}.qc-seal{position:relative;height:140px;width:auto;filter:drop-shadow(0 0 14px rgba(232,185,35,.55))}
+.qc-h{font-size:26px;font-weight:900;color:#E8B923;letter-spacing:-.3px}.qc-l{font-size:15px;color:#fff;margin-top:6px;line-height:1.4}.qc-n{font-size:13px;color:#C9A227;margin-top:6px}
+.qc-pts{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:6px 8px 6px 16px;border-radius:999px;background:#E8B923;color:#0B0E11;font-weight:900;font-size:16px}
+.qc-coin{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F8DD84,#C9961A);border:1.5px solid #8A6512;color:#7A5810;font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;font-style:italic}
+.qc-btns{display:flex;gap:10px;margin-top:20px}.qc-b{flex:1;height:46px;border-radius:999px;border:1.5px solid #E8B923;background:transparent;color:#E8B923;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.qc-b.on{background:#E8B923;color:#0B0E11;box-shadow:0 0 16px rgba(232,185,35,.45)}.qc-b:active{transform:scale(.97)}
 .pd-older-btn{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:11px 14px;border-radius:14px;border:1.5px solid rgba(232,185,35,.55);background:rgba(232,185,35,.06);color:var(--ink);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;text-align:left}
 .pd-older-btn .tr-svg,.pd-older-btn svg{width:22px;height:22px;flex:0 0 22px;color:#E8B923;fill:currentColor}.pd-older-btn span{flex:1}.pd-older-btn i{font-style:normal;color:var(--faint);font-size:18px}
 .pd-older-btn:active{transform:scale(.98);background:rgba(232,185,35,.14)}
@@ -5596,7 +5619,7 @@ async function renderHomeChecklist(engs, el){
   el.style.display="";
   el.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",(ev)=>{ const alt=ev&&ev.target&&ev.target.closest?ev.target.closest("[data-alt]"):null; if(alt){ ev.stopPropagation(); if(!dcGet().rest){ dcSet("rest"); renderHomeChecklist(engs, el); } return; }   /* Item FF: "I'll take a rest day" */
     const k=b.getAttribute("data-dc"), a=b.getAttribute("data-act");
-    if(a==="weigh") openMacroLog(iso); else if(a==="macros") openMacroLog(yest); else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="budget") openBudgetCard(plan,()=>{ if(!dcGet().budget){ dcSet("budget"); } renderHomeChecklist(engs, el); }); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
+    if(a==="weigh") openWeighSheet(iso); else if(a==="macros") openMacrosSheet(yest);   /* IY: one-purpose sheets */ else if(a==="workout") goToCalendarWeek(weekStartISO(new Date()));   /* Item FF: this week's workouts */ else if(a==="budget") openBudgetCard(plan,()=>{ if(!dcGet().budget){ dcSet("budget"); } renderHomeChecklist(engs, el); }); else if(a==="tick"&&!dcGet()[k]){ dcSet(k); renderHomeChecklist(engs, el); } }));
   mountQuestFlip(el, all, iso);   /* HK */
   claimDailyTaskPoints(items, iso, el);   /* HJ */
   if(all){ const ck=`ft-dcdone-${ME.id}-${iso}`; let seen=false; try{ seen=localStorage.getItem(ck)==="1"; }catch(e){}
@@ -5725,15 +5748,16 @@ function showQuestCheer(q,done){
     const [head,line]=QUEST_CHEER[q.key]||["Quest complete",q.name||""];
     const ov=document.createElement("div");
     ov.style.cssText="position:fixed;inset:0;z-index:9998;background:rgba(5,7,9,.78);display:flex;align-items:center;justify-content:center;padding:24px;overflow:hidden";
-    let conf=""; if(!reduce){ const cols=["#E8B923","#fff","#7CE0FF","#FFB547"]; for(let i=0;i<34;i++){ conf+=`<i style="position:absolute;top:-12px;left:${Math.random()*100}%;width:7px;height:12px;border-radius:2px;background:${cols[i%4]};--dx:${(Math.random()*120-60).toFixed(0)}px;--r:${(Math.random()*720-360).toFixed(0)}deg;animation:dcFall ${(1.6+Math.random()*1.2).toFixed(2)}s ${(Math.random()*0.5).toFixed(2)}s ease-in forwards"></i>`; } }
-    ov.innerHTML=`${conf}<div class="card" style="position:relative;max-width:330px;width:100%;text-align:center;padding:24px 20px 18px;${reduce?"":"animation:dcPop .55s cubic-bezier(.2,1.4,.4,1) both"}">
-        <div class="eyebrow" style="margin:0 0 10px;color:var(--lime)">Weekly quest complete</div>
-        <div style="width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:var(--lime);color:var(--lime-ink,#0B0E11);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900">✓</div>
-        <div style="font-size:22px;font-weight:900;letter-spacing:-.3px">${escapeHtml(head)}</div>
-        <div style="font-size:13.5px;color:var(--muted);margin-top:6px;line-height:1.45">${escapeHtml(line)}</div>
-        <div style="font-size:12px;color:var(--faint);margin-top:4px">${escapeHtml(q.name||"")}</div>
-        <div style="display:inline-block;margin-top:14px;padding:6px 16px;border-radius:999px;background:var(--lime);color:var(--lime-ink,#0B0E11);font-weight:900;font-size:15px;${reduce?"":"animation:dcPop .55s .35s cubic-bezier(.2,1.4,.4,1) both"}">+${q.points} points</div>
-        <div style="display:flex;gap:10px;margin-top:18px"><button type="button" class="btn ghost" data-qc="share" style="flex:1">Share</button><button type="button" class="btn primary" data-qc="nice" style="flex:1">Nice</button></div>
+    let conf=""; if(!reduce){ const cols=["#E8B923","#F8DD84","#C9961A","#F2CC55"]; for(let i=0;i<26;i++){ conf+=`<i style="position:absolute;top:-12px;left:${Math.random()*100}%;width:4px;height:12px;border-radius:2px;background:${cols[i%4]};--dx:${(Math.random()*120-60).toFixed(0)}px;--r:${(Math.random()*720-360).toFixed(0)}deg;animation:dcFall ${(1.6+Math.random()*1.2).toFixed(2)}s ${(Math.random()*0.5).toFixed(2)}s ease-in forwards"></i>`; } }
+    /* IY (owner 2026-11-27, OpenArt sample approved): gold-bordered card, gold seal with ribbons, gold squiggles, coin pill */
+    ov.innerHTML=`${conf}<div class="qc-card" style="${reduce?"":"animation:dcPop .55s cubic-bezier(.2,1.4,.4,1) both"}">
+        <div class="qc-eb">Weekly quest complete</div>
+        <div class="qc-art"><svg class="qc-sp" viewBox="0 0 260 200" aria-hidden="true" fill="none" stroke="#E8B923" stroke-width="2.2" stroke-linecap="round"><path d="M44 14c6 4-6 10 2 14s6 8 0 10"/><path d="M216 22c-8 2-8 12-14 14s-6 10-4 16"/><path d="M28 150c2-8 10-10 16-8s10-6 10-12"/><path d="M226 150c-4-2-2-8 4-6s4 6 6 4"/><path d="M14 64l18 6M222 98l18 4M190 18l-10 12M60 176l8-10"/><g fill="#E8B923" stroke="none"><circle cx="78" cy="6" r="3.5"/><circle cx="40" cy="104" r="3.5"/><circle cx="236" cy="72" r="4"/><circle cx="212" cy="130" r="3"/><circle cx="22" cy="122" r="2.6"/></g></svg><svg class="qc-seal" viewBox="0 0 120 130" aria-hidden="true"><defs><linearGradient id="qcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F8DD84"/><stop offset=".55" stop-color="#E8B923"/><stop offset="1" stop-color="#C9961A"/></linearGradient></defs><path d="M40 86 L28 124 L42 117 L50 128 L58 92Z M80 86 L92 124 L78 117 L70 128 L62 92Z" fill="url(#qcg)" opacity=".92"/><path d="M60.0 12.0 67.6 17.7 76.8 15.3 81.7 23.6 91.1 24.9 92.4 34.3 100.7 39.2 98.3 48.4 104.0 56.0 98.3 63.6 100.7 72.8 92.4 77.7 91.1 87.1 81.7 88.4 76.8 96.7 67.6 94.3 60.0 100.0 52.4 94.3 43.2 96.7 38.3 88.4 28.9 87.1 27.6 77.7 19.3 72.8 21.7 63.6 16.0 56.0 21.7 48.4 19.3 39.2 27.6 34.3 28.9 24.9 38.3 23.6 43.2 15.3 52.4 17.7Z" fill="url(#qcg)" stroke-linejoin="round"/><circle cx="60" cy="56" r="29" fill="none" stroke="#8A6512" stroke-width="3" opacity=".55"/><circle cx="60" cy="56" r="25" fill="#F2CC55" opacity=".35"/><path d="M47 57l9 9 18-20" fill="none" stroke="#7A5810" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="qc-h">${escapeHtml(head)}</div>
+        <div class="qc-l">${escapeHtml(line)}</div>
+        <div class="qc-n">${escapeHtml(q.name||"")}</div>
+        <div class="qc-pts" style="${reduce?"":"animation:dcPop .55s .35s cubic-bezier(.2,1.4,.4,1) both"}">+${q.points} points <span class="qc-coin">F</span></div>
+        <div class="qc-btns"><button type="button" class="qc-b" data-qc="share">Share</button><button type="button" class="qc-b on" data-qc="nice">Nice</button></div>
       </div>`;
     document.body.appendChild(ov);
     try{ if(typeof sfx==="function") sfx("unlock"); }catch(e){}
@@ -8497,6 +8521,7 @@ let measureDate=null;
    used to persist, so opening the library picker afterwards showed no Add
    button. Reset it here so a hidden footer can never outlive its own sheet. */
 function closeSheet(){
+  mlMode="all";   /* IY */
   $("#sheet-scrim").classList.remove("on");$("#sheet-lib").classList.remove("on");
   macroLogDate=null; measureDate=null; ivEdIdx=null; macroGoalWeek=null; mlGoal=null;
   // Item V: if a voice-over recording is in progress when the sheet closes
@@ -12275,7 +12300,52 @@ $("#checkin-input").addEventListener("change",async e=>{
   }catch(err){console.error(err);toast(err.message||"Couldn't save check-in",4000);}
 });
 /* Macro logging sheet for a given date */
+/* IY (owner review 2026-11-27, OpenArt samples approved 16:51): Home's "Weigh yourself" asks for the weight only, and "Log
+   yesterday's macros" for protein / carbs / fat only, dated yesterday. Both reuse the log sheet and saveMacroLog(); mlMode makes
+   the save write ONLY the fields on show, so a weight-only save never blanks that day's macros and vice versa. */
+let mlMode="all";
+const SCALE_SVG='<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="6" width="34" height="36" rx="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15a13 13 0 0 1 18 0l-3 5H18z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M24 14v5M24 22v15M19.5 15.5l1 2.5M28.5 15.5l-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const PLATE_SVG='<svg viewBox="0 0 64 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v10a4 4 0 0 0 8 0V4M10 4v32"/><circle cx="32" cy="20" r="14"/><circle cx="32" cy="20" r="9"/><path d="M56 36V4c-4 2-6 8-6 14h6"/></svg>';
+function mlSheetOpen(iso,mode,title,btn){
+  mlMode=mode; macroLogDate=iso; mlGoal=null;
+  const body=$("#sheet-body"); body.innerHTML="";
+  $("#sheet-lib").querySelector("h3").textContent=title;
+  $("#sheet-add").style.display=""; $("#sheet-add").textContent=btn; $("#sheet-add").disabled=false;
+  $("#sheet-scrim").classList.add("on"); $("#sheet-lib").classList.add("on");
+  return body;
+}
+async function openWeighSheet(iso){
+  const today=todayISO(), l=logsByDate[iso]||{};
+  const body=mlSheetOpen(iso,"weight","Weigh yourself","Save weight");
+  const dl=new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+  body.innerHTML=`<div class="ws"><div class="ws-ic">${SCALE_SVG}</div>
+    <div class="ws-row"><button type="button" class="ws-st" data-ws="-1" aria-label="0.1 kg less"><b>−</b><span>0.1 kg</span></button>
+      <label class="ws-num"><input id="ml-weight" type="number" inputmode="decimal" min="0" step="0.1" value="${l.weight_kg!=null?l.weight_kg:""}" placeholder="0.0" aria-label="Weight in kg"><em>kg</em></label>
+      <button type="button" class="ws-st" data-ws="1" aria-label="0.1 kg more"><b>+</b><span>0.1 kg</span></button></div>
+    <div class="ws-d">${iso===today?"Today, ":""}${escapeHtml(dl)}</div><div class="ws-last" id="ws-last"></div></div>`;
+  const inp=body.querySelector("#ml-weight");
+  body.querySelectorAll("[data-ws]").forEach(b=>b.addEventListener("click",()=>{ const v=Number(inp.value)||Number(inp.placeholder)||0; inp.value=Math.max(0,Math.round((v+Number(b.dataset.ws)*0.1)*10)/10).toFixed(1); }));
+  try{ const logs=((await store.logs.list({trainee_id:ME.id}))||[]).filter(x=>x.weight_kg!=null&&x.log_date<iso).sort((a,b)=>String(b.log_date).localeCompare(String(a.log_date)));
+    if(macroLogDate!==iso||mlMode!=="weight") return;
+    if(logs[0]){ const d=logs[0].log_date, w=(+logs[0].weight_kg).toFixed(1); const lab=d===addDaysISO(iso,-1)?new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"}):fmtDay(d);
+      $("#ws-last").textContent=`Last: ${w} kg on ${lab}`; if(!inp.value) inp.placeholder=w; } }catch(e){}
+}
+function openMacrosSheet(iso){
+  const l=logsByDate[iso]||{}, yest=addDaysISO(todayISO(),-1);
+  const body=mlSheetOpen(iso,"macros",iso===yest?"Yesterday's macros":"Macros",iso===yest?"Save yesterday's macros":"Save macros");
+  const dl=new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+  const box=(id,label,val,unit)=>`<label class="ms-b"><span>${label}</span><input id="${id}" type="number" inputmode="decimal" min="0" step="any" value="${val!=null?val:""}" placeholder="0"><em>${unit}</em></label>`;
+  body.innerHTML=`<div class="ms"><div class="ms-h"><span class="ms-ic">${PLATE_SVG}</span><span class="ms-chip">${escapeHtml(dl)}</span></div>
+    <div class="ms-g"><div class="ms-b ms-k"><span>Calories</span><b id="ms-kcal">0</b><em>kcal</em></div>${box("ml-p","Protein",l.protein_g,"g")}${box("ml-c","Carbs",l.carbs_g,"g")}${box("ml-f","Fat",l.fat_g,"g")}</div>
+    <div class="ms-bar"><i id="ms-fill" style="width:0"></i></div><div class="ms-t" id="ms-t">Calories = protein×4 + carbs×4 + fat×9</div></div>`;
+  const upd=()=>{ const n=id=>Number(($("#"+id)?.value||"").trim())||0; const k=Math.round(n("ml-p")*4+n("ml-c")*4+n("ml-f")*9);
+    $("#ms-kcal").textContent=k.toLocaleString("en-GB");
+    if(mlGoal&&mlGoal.kcal){ $("#ms-fill").style.width=Math.min(100,k/mlGoal.kcal*100).toFixed(1)+"%"; $("#ms-t").textContent=`${k.toLocaleString("en-GB")} of ${Number(mlGoal.kcal).toLocaleString("en-GB")} kcal`; } };
+  ["ml-p","ml-c","ml-f"].forEach(id=>$("#"+id)?.addEventListener("input",upd)); upd();
+  store._sb.rpc("my_macro_goal",{p_date:iso}).then(({data,error})=>{ if(!error&&data&&macroLogDate===iso&&mlMode==="macros"){ mlGoal=data; upd(); } },()=>{});
+}
 function openMacroLog(iso){
+  mlMode="all";
   const l=logsByDate[iso]||{};
   const body=$("#sheet-body");body.innerHTML="";
   $("#sheet-lib").querySelector("h3").textContent="Log · "+fmtDay(iso);
@@ -12316,8 +12386,9 @@ async function saveMacroLog(){
   const num=id=>{const v=($("#"+id)?.value||"").trim();return v===""?null:Number(v);};
   const p=num("ml-p"),c=num("ml-c"),f=num("ml-f");
   const kcal=(p==null&&c==null&&f==null)?null:Math.round((p||0)*4+(c||0)*4+(f||0)*9);
-  if(!weightOk(num("ml-weight"))) return;   /* Item DT */
-  const patch={weight_kg:num("ml-weight"),kcal,protein_g:p,carbs_g:c,fat_g:f};
+  if(mlMode!=="macros"&&!weightOk(num("ml-weight"))) return;   /* Item DT */
+  const patch=mlMode==="weight"?{weight_kg:num("ml-weight")}:mlMode==="macros"?{kcal,protein_g:p,carbs_g:c,fat_g:f}:{weight_kg:num("ml-weight"),kcal,protein_g:p,carbs_g:c,fat_g:f};   /* IY: only the fields on show */
+  if(mlMode==="weight"&&patch.weight_kg==null){ toast("Enter your weight first",2200); return; }
   const btn=$("#sheet-add");btn.disabled=true;const o=btn.textContent;btn.textContent="Saving…";
   try{
     const existing=(await store.logs.list({trainee_id:ME.id,log_date:iso}))[0];
