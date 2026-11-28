@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**JD (2026-11-28, owner): coach New exercise redesign - BUILT.**
 **JC (2026-11-28, owner): coach Payments redesign - next payment run (amount, date, why, by trainee) - BUILT.**
 **JB (2026-11-27, owner): coach Library -> Workouts redesign (compact rows, filters, sort, assigned trainees, unused -> delete) - BUILT.**
 **JA (2026-11-27, owner): coach Library redesign - concept B approved (body map + sections by muscle group); built (body map, sections, missing-video filter, several muscle groups per exercise).**
@@ -2011,6 +2012,14 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## JD. Coach New exercise redesign - BUILT (personal account)
+
+**Owner 2026-11-28 00:42:** redesign the coach's Add new exercise screen. One OpenArt sample; **owner 00:50: approved** ("You already have the SVG for the body with the muscles") - docs/brand/library/new-exercise-concept.png.
+**Built (code; layout checked in a desktop mock):** the example video moves to the top as a 16:9 dashed gold hero ("Record example video" / "Show one clean rep with correct form - this is what trainees see"); tapping it starts the existing reference recorder; once a video exists the hero shows it with the state caption, and "Review recording" / "Re-record" links sit under it. Exercise name: large gold-outlined field. Type: a two-option segmented control with dumbbell / stopwatch icons and a one-line hint for the chosen type. Muscle groups: the JA body map beside the chips, selected groups glowing gold (Full body lights everything), "main" tag on the first pick, hint line. Gold section labels; "Note: sets and reps are chosen when you add it to a workout". Save & add another / Save to library unchanged. All element ids kept, so saving, recording and the interval type work as before.
+**Not built:** "Upload from gallery" from the concept - the reference needs pose landmarks extracted from a recording made in the app; uploading a gallery video would need that extraction run on a file. Logged as a possible follow-up.
+
+---
+
 ## JC. Coach Payments redesign - BUILT (personal account)
 
 **Owner 2026-11-28 00:16:** completely redesign Library -> Payments for coaches: the whole picture of the next payment run - how much, its date, from which trainees, and why. One OpenArt sample; **owner 00:36: "Euros will be used 99.99% of the time anyway. I like this layout a lot. Copy it faithfully."** (docs/brand/library/payments-concept.png).
