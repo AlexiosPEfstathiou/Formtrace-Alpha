@@ -46,6 +46,7 @@ the list below are done, superseded, or parked (bottom).
 **BH** marketplace polish feedback · **CN** remaining test-day findings.
 **After EG (C):** ~~**EK**~~ coach-ends-goal part 1 built 2026-11-02 (credit at checkout = **FC**, before go-live) · ~~**EL**~~ fast-review mark + 7-day release built 2026-11-02.
 **SECURITY (review 2026-11-10) - status 2026-11-11:** ~~GD~~ (lock + backstop) ~~GE~~ (all three webhook functions protected; the old unprotected `push-send` copy `smooth-service` found and deleted) ~~GF~~ ~~GG~~ ~~GH~~ - all built, all SQL run. **Left before live keys (DW): the owner tests GD-T1, GF-T2..T4, GG-T1..T6, GH-T2..T5.** Then GI hardening (~~GI-1 policies~~ run 2026-11-11, GI-2 Stripe events (built 2026-11-11: SQL given, webhook to redeploy, 4 events to add in Stripe), GI-3 library pin (built 2026-11-11) + CSP (next, behind a test switch), GI-4 Edge Function errors / origin), GJ code health.
+**JC (2026-11-28, owner): coach Payments redesign - next payment run (amount, date, why, by trainee) - BUILT.**
 **JB (2026-11-27, owner): coach Library -> Workouts redesign (compact rows, filters, sort, assigned trainees, unused -> delete) - BUILT.**
 **JA (2026-11-27, owner): coach Library redesign - concept B approved (body map + sections by muscle group); built (body map, sections, missing-video filter, several muscle groups per exercise).**
 **IZ (2026-11-27, owner): coach homepage redesign - OpenArt concept approved (Needs you / Your trainees / Activity); built (Needs you, trainee cards, Activity, gold call card) - IN PROGRESS: inline call Accept not built.**
@@ -2010,6 +2011,14 @@ updated. No SQL. Process: the anchor counter caught a miscount (7 edits, not 8) 
 duplicates (two wiring copies) and reverted before anything was written.
 
 ---
+## JC. Coach Payments redesign - BUILT (personal account)
+
+**Owner 2026-11-28 00:16:** completely redesign Library -> Payments for coaches: the whole picture of the next payment run - how much, its date, from which trainees, and why. One OpenArt sample; **owner 00:36: "Euros will be used 99.99% of the time anyway. I like this layout a lot. Copy it faithfully."** (docs/brand/library/payments-concept.png).
+**Built (code; checked in a desktop mock with sample data, not on a phone):** `renderCoachPayments` rewritten. Data: `coach_payment_summary` (unchanged) + the coach's `payment_cycles` (RLS lets parties read), engagements, offers (currency from `price_text`, euro by default), trainee profiles and the week's `assigned_workouts` (status `submitted` = waiting review). The run = every pending / payable cycle paid on the next payment date (plus payable cycles from before it). Hero card: amount, long date, "in n days" pill, segmented bar (earned gold / waiting striped / to train grey / missed red-orange tick), legend, colour key, and a gold "n sessions waiting for your review - €x" strip with Review (opens the trainee). By trainee: avatar, name, "€96 / week · 2 workouts · €48 each", chips (tick n reviewed, clock n waiting, cross missed, empty per session still to train), amount ("so far" when nothing earned yet), chevron expands the week's sums and an Open button. Why this amount: reviewed × per session, waiting review ("add €x if reviewed before Sun 23:59"), missed (not paid, or "part paid" when the offer pays a no-show fraction), still to train. Past payouts: earlier payment dates with their totals and Paid / Due / Processing.
+**Notes:** the per-session amount is the cycle's weekly rate / agreed sessions (as before). "Review before Sun 23:59" mirrors the concept's copy; the actual cut-off is whatever the weekly close job uses - not changed here. New helpers `moneyC` / `moneyS`; the old `money()` ($) is still used elsewhere and was not changed.
+
+---
+
 ## JB. Coach Workouts library redesign - BUILT (personal account)
 
 **Owner 2026-11-27 21:23:** redesign Coach -> Library -> Workouts: the coach's premade workouts, ready to assign. Easy to filter; show which trainees they are regularly assigned to and the muscle groups; save space so big libraries need little scrolling; several easy sorts; underused workouts flagged with a recommendation to delete. One OpenArt sample, **approved 21:25** (docs/brand/library/workouts-concept.png). No new SVGs needed: the row icons are the existing muscle-group set (`mgIconSvg`), the bin icon is drawn in code.

@@ -1079,6 +1079,29 @@ html[data-theme="light"] .wc-d.ok span,html[data-theme="light"] .wc-d.miss span,
   .rv-chip .rv-tx{display:flex;flex-direction:column;line-height:1.25;}
   .rv-chip .rv-tx b{font-size:13px;color:var(--ink);}
   .rv-chip .rv-tx span{font-size:11.5px;color:var(--muted);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+  /* JC: coach Payments (docs/brand/library/payments-concept.png) */
+  .py-hero{border:2px solid #E8B923;border-radius:22px;background:var(--panel);box-shadow:0 0 28px rgba(232,185,35,.22);overflow:hidden;margin-bottom:22px}
+  .py-top{display:flex;justify-content:space-between;gap:10px;padding:18px 18px 0}.py-eb{font-size:14px;color:#C9A227}.py-amt{font-size:40px;font-weight:900;color:#E8B923;letter-spacing:-.8px;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+  .py-when{text-align:right;font-size:14.5px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}.py-pill{background:rgba(232,185,35,.16);color:#E8B923;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600}
+  .py-bar{display:flex;gap:3px;height:12px;margin:16px 18px 0;border-radius:8px;overflow:hidden}.py-bar i{display:block;min-width:4px;border-radius:3px}
+  .py-bar .e{background:#E8B923}.py-bar .w{background:repeating-linear-gradient(135deg,#E8B923 0 4px,#7a6216 4px 8px)}.py-bar .t{background:#3a3f45}.py-bar .m{flex:0 0 4px;background:#FF6B3D}
+  .py-lg{display:flex;justify-content:space-between;gap:8px;padding:8px 18px 0;font-size:11.5px;color:var(--ink)}.py-lg div{display:flex;flex-direction:column}.py-lg div:nth-child(2){text-align:center}.py-lg div:last-child{text-align:right}.py-lg b{font-weight:500}.py-lg span{color:var(--muted)}
+  .py-key{padding:8px 18px 14px;font-size:10.5px;color:var(--muted)}.py-key em{font-style:normal}.py-key .e,.py-key .w{color:#E8B923}.py-key .t{color:#777}.py-key .m{color:#FF6B3D}
+  .py-cta{display:flex;align-items:center;gap:10px;background:#E8B923;color:#0B0E11;padding:12px 18px;font-size:14.5px;font-weight:600}.py-cta span{flex:1}.py-cta button{border:0;border-radius:12px;background:rgba(0,0,0,.14);color:#0B0E11;font:inherit;font-weight:700;padding:8px 14px;cursor:pointer}
+  .py-h{font-size:19px;font-weight:900;color:var(--ink);margin:0 0 10px}
+  .py-list{border-radius:18px;background:var(--panel);overflow:hidden;margin-bottom:22px}.py-row+.py-row{border-top:1px solid var(--line)}
+  .py-rb{display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;padding:12px 12px 12px 12px;color:inherit;font:inherit;text-align:left;cursor:pointer}
+  .py-av{flex:0 0 44px;width:44px;height:44px;border-radius:50%;background:rgba(232,185,35,.15);color:#E8B923;font-weight:800;display:inline-flex;align-items:center;justify-content:center;background-size:cover;background-position:center}
+  .py-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}.py-nm{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}.py-nm b{font-size:16px;font-weight:700;color:#E8B923}.py-nm span{font-size:11.5px;color:var(--muted)}
+  .py-cs{display:flex;gap:6px;flex-wrap:wrap}.py-c{display:inline-flex;align-items:center;gap:3px;height:24px;min-width:34px;padding:0 9px;border-radius:999px;font-size:12.5px;font-weight:700;justify-content:center}
+  .py-c svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.6}.py-c.ok,.py-c.wt{background:#E8B923;color:#0B0E11}.py-c.ms{border:1.5px solid #FF6B3D;color:#FF6B3D}.py-c.td{border:1.5px solid var(--line2);width:34px}
+  .py-v{font-size:15.5px;font-weight:600;white-space:nowrap;align-self:flex-end;padding-bottom:2px}.py-ch{font-style:normal;color:var(--muted);font-size:18px;transition:transform .2s;align-self:center}.py-row.on .py-ch{transform:rotate(180deg)}
+  .py-x[hidden]{display:none}.py-x{padding:0 14px 14px 67px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}.py-x b{color:var(--ink)}.py-x .m b{color:#FF6B3D}
+  .py-open{align-self:flex-start;margin-top:6px;border:1.5px solid #E8B923;background:none;color:#E8B923;border-radius:999px;padding:5px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+  .py-why{display:flex;flex-direction:column;gap:4px;font-size:15px;color:var(--ink);margin-bottom:22px}.py-why b{color:#E8B923;font-weight:500}.py-why .m,.py-why .m b{color:#FF6B3D}.py-why .t{color:var(--muted)}
+  .py-past>div{padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;display:flex;align-items:center;gap:6px}.py-past .ok{color:#E8B923}.py-past .due{color:var(--muted)}
+  .py-tk{display:inline-flex;width:20px;height:20px;border-radius:50%;background:#E8B923;color:#0B0E11;align-items:center;justify-content:center}.py-tk svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3}
+  html[data-theme="light"] .py-amt,html[data-theme="light"] .py-nm b,html[data-theme="light"] .py-why b,html[data-theme="light"] .py-past .ok{color:#B8960A}html[data-theme="light"] .py-hero{border-color:#B8960A}html[data-theme="light"] .py-cta,html[data-theme="light"] .py-bar .e{background:#B8960A}
   /* JB: coach Workouts - compact rows */
   .wl-top{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
   .wl-chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.wl-chips::-webkit-scrollbar{display:none}
@@ -7796,6 +7819,14 @@ function hasRef(ex){ return !!(ex && ex.landmarks && ex.landmarks.frames && ex.l
    since there's nothing to divide it by), reviewed-pending count, and the
    computed total, per trainee. coach_payment_summary recomputes on the
    server before returning, so these numbers are always current. */
+/* JC (owner 2026-11-28, OpenArt sample approved "copy it faithfully"): the coach's Payments tab shows the whole picture of
+   the NEXT PAYMENT RUN - amount, date, countdown; a bar of what makes it up (earned / waiting for review / still to train /
+   missed); a review prompt with the money at stake; one row per trainee (agreement, session chips, amount, tap to expand);
+   "Why this amount"; past payouts. Figures come from payment_cycles (reviewed_cents + noshow_cents = total_cents) and the
+   week's assigned_workouts (submitted = waiting review). The run = every pending / payable cycle paid on the next
+   payment date (plus anything payable from before it). Currency from the offer's price (euro by default). */
+function moneyC(cents,sym){ return (sym||"€")+((cents||0)/100).toFixed(2); }
+function moneyS(cents,sym){ const v=(cents||0)/100; return (sym||"€")+(Number.isInteger(v)?String(v):v.toFixed(2)); }
 async function renderCoachPayments(el){
   el.innerHTML=`<div class="empty" style="padding:50px"><div class="spin" style="margin:0 auto"></div></div>`;
   let rows=[];
@@ -7805,41 +7836,96 @@ async function renderCoachPayments(el){
     rows=data||[];
   }catch(err){
     console.error("coach_payment_summary",err);
-    el.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">!</div><p>Couldn't load payments.</p><p class="s">${escapeHtml(err.message||"Run migrations_payment_ledger_v2.sql")}</p></div>`;
+    el.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">!</div><p>Couldn't load payments.</p><p class="s">${escapeHtml(err.message||"Try again in a moment")}</p></div>`;
     return;
   }
   const priced=rows.filter(r=>r.weekly_rate_cents!=null && r.workouts_per_week);
   if(!priced.length){
-    el.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">$</div><p>No priced goals yet.</p><p class="s">Offers sent before structured pricing existed won't appear here — only new offers carry a weekly rate.</p></div>`;
+    el.innerHTML=`<div class="empty" style="padding:50px 20px"><div class="ic">€</div><p>No priced goals yet.</p><p class="s">Offers sent before structured pricing existed won't appear here - only new offers carry a weekly rate.</p></div>`;
     return;
   }
-  const nextAll=priced.map(r=>r.next_payment_date).filter(Boolean).sort();
-  const totalPayable=priced.reduce((s,r)=>s+(r.payable_total_cents||0),0);
-  el.innerHTML=`<div class="card" style="background:var(--accent-surface);border-color:var(--accent-border);margin-bottom:14px">
-      <div class="eyebrow">Next payment</div>
-      <div style="font-size:22px;font-weight:800;color:var(--ink);margin-top:4px">${money(totalPayable)}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">${nextAll.length?escapeHtml(fmtDay(nextAll[0])):"—"} · across ${priced.length} trainee${priced.length===1?"":"s"}</div>
-    </div>`;
-  for(const r of priced){
-    const cc=r.current_cycle||{};
-    const rate=(r.weekly_rate_cents/100), per=rate/r.workouts_per_week;
-    const card=document.createElement("div");card.className="card";card.style.marginBottom="10px";
-    card.innerHTML=`
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
-        <div style="font-weight:800;font-size:14.5px">${escapeHtml(r.trainee_name||"Trainee")}</div>
-        <div style="font-size:11px;color:var(--faint)">${cc.status==="payable"?"payable":"in progress"}</div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:3px">${money(r.weekly_rate_cents)}/week agreed · ${r.workouts_per_week} workout${r.workouts_per_week===1?"":"s"}/week · ${money(Math.round(per*100))} each</div>
-      <div style="display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
-        <div><div style="font-size:18px;font-weight:800;color:var(--lime-dim)">${cc.reviewed??0}</div><div style="font-size:10.5px;color:var(--faint)">reviewed</div></div>
-        <div><div style="font-size:18px;font-weight:800;color:${cc.missed?"var(--red)":"var(--faint)"}">${cc.missed??0}</div><div style="font-size:10.5px;color:var(--faint)">missed</div></div>
-        <div><div style="font-size:18px;font-weight:800;color:var(--faint)">${cc.agreed??r.workouts_per_week}</div><div style="font-size:10.5px;color:var(--faint)">agreed</div></div>
-        <div style="margin-left:auto;text-align:right"><div style="font-size:18px;font-weight:800;color:var(--ink)">${money(cc.total_cents||0)}</div><div style="font-size:10.5px;color:var(--faint)">this week</div></div>
-      </div>
-      ${r.next_payment_date?`<div style="font-size:11px;color:var(--faint);margin-top:8px">Paid ${escapeHtml(fmtDay(r.next_payment_date))}</div>`:""}`;
-    el.appendChild(card);
-  }
+  const ids=priced.map(r=>r.engagement_id), today=todayISO();
+  let cycles=[], engs=[], offers={}, profs={}, aw=[];
+  try{
+    const [c,e]=await Promise.all([
+      store._sb.from("payment_cycles").select("*").in("engagement_id",ids).order("cycle_start",{ascending:true}).then(r=>r.data||[]),
+      store._sb.from("engagements").select("id,trainee_id,offer_id").in("id",ids).then(r=>r.data||[])]);
+    cycles=c; engs=e;
+    const oids=engs.map(x=>x.offer_id).filter(Boolean), tids=engs.map(x=>x.trainee_id).filter(Boolean);
+    const minStart=cycles.length?cycles[0].cycle_start:addDaysISO(today,-14);
+    const [o,p,a]=await Promise.all([
+      oids.length?store._sb.from("offers").select("id,price_text").in("id",oids).then(r=>r.data||[]):[],
+      tids.length?store._sb.from("profiles").select("id,display_name,avatar_initials,avatar_path").in("id",tids).then(r=>r.data||[]):[],
+      store._sb.from("assigned_workouts").select("id,engagement_id,status,due_date").in("engagement_id",ids).gte("due_date",minStart).then(r=>r.data||[])]);
+    o.forEach(x=>{ offers[x.id]=x; }); p.forEach(x=>{ profs[x.id]=x; }); aw=a;
+  }catch(err){ console.warn("payments detail (JC)",err&&err.message); }
+  const engById=Object.fromEntries(engs.map(x=>[x.id,x]));
+  const symOf=id=>{ const e=engById[id]; const t=e&&offers[e.offer_id]&&offers[e.offer_id].price_text||""; const c=String(t).trim()[0]; return "€$£".includes(c||"x")?c:"€"; };
+  const sym=symOf(ids[0]);
+  /* the run */
+  const open=cycles.filter(c=>c.status==="pending"||c.status==="payable");
+  const dates=open.map(c=>c.payment_date).filter(d=>d&&d>=today).sort();
+  const runDate=dates[0]||open.map(c=>c.payment_date).filter(Boolean).sort()[0]||null;
+  const inRun=c=>(c.status==="pending"||c.status==="payable")&&c.payment_date&&(c.payment_date===runDate||(c.status==="payable"&&c.payment_date<runDate));
+  const per=r=>{ const c=r.cyc; const ag=(c&&c.agreed_count)||r.workouts_per_week||1; const w=(c&&c.weekly_rate_cents)||r.weekly_rate_cents||0; return Math.round(w/ag); };
+  let tot={earned:0,wait:0,todo:0,missed:0,missedPaid:0,nRev:0,nWait:0,nMiss:0,nTodo:0,total:0};
+  const T=priced.map(r=>{
+    const cs=cycles.filter(c=>c.engagement_id===r.engagement_id&&inRun(c));
+    const cyc=cs[cs.length-1]||null; r.cyc=cyc; const pc=per(r);
+    const ws=cyc?cyc.cycle_start:weekStartISO(), we=addDaysISO(ws,6);
+    const wk=aw.filter(a=>a.engagement_id===r.engagement_id&&a.due_date>=ws&&a.due_date<=we);
+    const rev=cs.reduce((a,c)=>a+(c.reviewed_count||0),0), miss=cs.reduce((a,c)=>a+(c.missed_count||0),0);
+    const wait=wk.filter(a=>a.status==="submitted").length;
+    const agreed=(cyc&&cyc.agreed_count)||r.workouts_per_week||0;
+    const todo=Math.max(0,agreed-rev-miss-wait);
+    const earned=cs.reduce((a,c)=>a+(c.reviewed_cents||0),0), mp=cs.reduce((a,c)=>a+(c.noshow_cents||0),0), amt=cs.reduce((a,c)=>a+(c.total_cents||0),0);
+    const firstWait=wk.find(a=>a.status==="submitted");
+    tot.earned+=earned; tot.missedPaid+=mp; tot.wait+=wait*pc; tot.todo+=todo*pc; tot.missed+=miss*pc; tot.nRev+=rev; tot.nWait+=wait; tot.nMiss+=miss; tot.nTodo+=todo; tot.total+=amt;
+    return {r,pc,rev,miss,wait,todo,earned,mp,amt,ws,firstWait,eng:engById[r.engagement_id]||{},pct:r.noshow_fraction_pct||0};
+  });
+  const days=runDate?Math.round((new Date(runDate+"T12:00:00")-new Date(today+"T12:00:00"))/864e5):null;
+  const dayLong=runDate?new Date(runDate+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"}):"Not scheduled";
+  const bar=tot.earned+tot.missedPaid+tot.wait+tot.todo+(tot.missed-tot.missedPaid>0?0:0)||1;
+  const seg=(v,c)=>v>0?`<i class="${c}" style="flex:${v}"></i>`:"";
+  const waitT=T.filter(t=>t.wait>0), waitEng=waitT[0];
+  const tchip=t=>`${t.rev?`<span class="py-c ok">${DT_TICK}${t.rev}</span>`:""}${t.wait?`<span class="py-c wt">${PY_CLOCK}${t.wait}</span>`:""}${t.miss?`<span class="py-c ms">✕${t.miss>1?" "+t.miss:""}</span>`:""}${"<span class=\"py-c td\"></span>".repeat(Math.min(t.todo,7))}`;
+  const pastMap={}; cycles.filter(c=>c.payment_date&&c.payment_date<today&&!inRun(c)).forEach(c=>{ const k=c.payment_date; (pastMap[k]=pastMap[k]||{d:k,c:0,st:new Set()}); pastMap[k].c+=c.total_cents||0; pastMap[k].st.add(c.status); });
+  const past=Object.values(pastMap).sort((a,b)=>b.d.localeCompare(a.d)).slice(0,6);
+  el.innerHTML=`<div class="py-hero">
+      <div class="py-top"><div><div class="py-eb">Next payment run</div><div class="py-amt">${moneyC(tot.total,sym)}</div></div>
+        <div class="py-when"><div>${escapeHtml(dayLong)}</div>${days!=null?`<span class="py-pill">${days<=0?"today":days===1?"tomorrow":`in ${days} days`}</span>`:""}</div></div>
+      <div class="py-bar">${seg(tot.earned+tot.missedPaid,"e")}${seg(tot.wait,"w")}${seg(tot.todo,"t")}${tot.nMiss?`<i class="m"></i>`:""}</div>
+      <div class="py-lg"><div><b>Reviewed &amp; earned</b><span>(${moneyS(tot.earned+tot.missedPaid,sym)})</span></div><div><b>Submitted, waiting review</b><span>(${moneyS(tot.wait,sym)}${tot.wait?", review to earn it":""})</span></div><div><b>To be trained</b><span>(${moneyS(tot.todo,sym)})</span></div></div>
+      <div class="py-key"><em class="e">Gold:</em> earned, <em class="w">striped gold:</em> waiting review, <em class="t">dark grey:</em> to do, <em class="m">red-orange:</em> missed</div>
+      ${tot.nWait?`<div class="py-cta"><span>${tot.nWait} session${tot.nWait===1?"":"s"} waiting for your review - ${moneyS(tot.wait,sym)}</span><button type="button" data-py-rev="${waitEng.r.engagement_id}">Review</button></div>`:""}
+    </div>
+    <div class="py-h">By trainee</div>
+    <div class="py-list">${T.map(t=>{ const p=profs[t.eng.trainee_id]||{}; const nm=t.r.trainee_name||p.display_name||"Trainee";
+      return `<div class="py-row" data-py="${t.r.engagement_id}"><button type="button" class="py-rb" aria-expanded="false">
+        <span class="py-av" data-avatar="${escapeHtml(p.avatar_path||"")}">${escapeHtml(p.avatar_initials||initials(nm))}</span>
+        <span class="py-mid"><span class="py-nm"><b>${escapeHtml(nm)}</b><span>${moneyS(t.r.weekly_rate_cents,sym)} / week · ${t.r.workouts_per_week} workout${t.r.workouts_per_week===1?"":"s"} · ${moneyS(t.pc,sym)} each</span></span><span class="py-cs">${tchip(t)}</span></span>
+        <span class="py-v">${moneyC(t.amt,sym)}${!t.rev&&!t.mp?" so far":""}</span><i class="py-ch">⌄</i></button>
+        <div class="py-x" hidden>
+          <div>Week of ${escapeHtml(fmtDay(t.ws))}${runDate?` · paid ${escapeHtml(fmtDay(runDate))}`:""}</div>
+          <div><b>${t.rev}</b> reviewed × ${moneyS(t.pc,sym)} = ${moneyS(t.earned,sym)}</div>
+          ${t.wait?`<div><b>${t.wait}</b> waiting review - adds ${moneyS(t.wait*t.pc,sym)} once reviewed</div>`:""}
+          ${t.miss?`<div class="m"><b>${t.miss}</b> missed - ${t.mp?`${t.pct}% paid (${moneyS(t.mp,sym)})`:"not paid"}</div>`:""}
+          ${t.todo?`<div><b>${t.todo}</b> still to train</div>`:""}
+          <button type="button" class="py-open" data-py-open="${t.r.engagement_id}">Open ${escapeHtml(String(nm).split(" ")[0])}</button>
+        </div></div>`; }).join("")}</div>
+    <div class="py-h">Why this amount</div>
+    <div class="py-why">
+      <div><b>${tot.nRev}</b> reviewed${T.length&&T.every(t=>t.pc===T[0].pc)?` × ${moneyS(T[0].pc,sym)}`:""} = ${moneyS(tot.earned,sym)}</div>
+      ${tot.nWait?`<div><b>${tot.nWait}</b> waiting review - add ${moneyS(tot.wait,sym)} if reviewed before ${runDate?escapeHtml(new Date(runDate+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"})):"the run"} 23:59</div>`:""}
+      ${tot.nMiss?`<div class="m"><b>${tot.nMiss}</b> missed - ${tot.missedPaid?`part paid (${moneyS(tot.missedPaid,sym)})`:"not paid"}</div>`:""}
+      ${tot.nTodo?`<div class="t"><b>${tot.nTodo}</b> still to train this week</div>`:""}
+    </div>
+    ${past.length?`<div class="py-h">Past payouts</div><div class="py-past">${past.map(x=>{ const paid=x.st.has("paid"); return `<div>${escapeHtml(fmtDay(x.d))} · ${moneyC(x.c,sym)} · <span class="${paid?"ok":"due"}">${paid?"Paid":x.st.has("payable")?"Due":"Processing"}</span>${paid?`<span class="py-tk">${DT_TICK}</span>`:""}</div>`; }).join("")}</div>`:""}`;
+  el.querySelectorAll(".py-rb").forEach(b=>b.addEventListener("click",()=>{ const x=b.nextElementSibling; const o=x.hidden; x.hidden=!o; b.setAttribute("aria-expanded",o?"true":"false"); b.parentElement.classList.toggle("on",o); }));
+  el.querySelectorAll("[data-py-open],[data-py-rev]").forEach(b=>b.addEventListener("click",()=>openEngagement(b.dataset.pyOpen||b.dataset.pyRev)));
+  try{ hydrateAvatars(el); }catch(e){}
 }
+const PY_CLOCK='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
 function money(cents){ return "$"+((cents||0)/100).toFixed(2); }
 
 /* Item: the default Interval Running exercise (coach_id null, a genuine

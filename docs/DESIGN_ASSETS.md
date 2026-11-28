@@ -214,3 +214,4 @@ use) or CC0 libraries (e.g. Kenney UI Audio, Freesound CC0). Until then the app 
 | **Coach Home icons (IZ)** | Coach Home: Needs you, trainee cards, Activity, call card | L1 | built 2026-11-27 | 8 traced gold line icons in the bottom-bar style: review, call, calendar, target, macros, workout, camera, flame; docs/brand/coach-home/ |
 | **Library body map (JA)** | Coach Library: exercises per muscle group | L1 | built 2026-11-27 | front + back figure, 11 groups as separate paths + outline, traced from docs/brand/library/body-map-source.png; gold fill scaled by count, dashed when zero |
 | **Workouts library rows (JB)** | Coach Library -> Workouts | Code | built 2026-11-27 | compact rows with muscle-group icons (existing set), trainee avatars, unused label + bin icon (code) |
+| **Coach payments (JC)** | Library -> Payments | Code | built 2026-11-28 | hero run card with segmented bar, session chips (tick / clock / cross / empty), clock icon in code |
